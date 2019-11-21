@@ -78,6 +78,14 @@ public abstract class Function implements TruffleObject {
         }
     }
 
+    protected static boolean expectBoolean(Object val) throws UnsupportedTypeException {
+        try {
+            return INTEROP.asBoolean(val);
+        } catch (UnsupportedMessageException e) {
+            throw UnsupportedTypeException.create(new Object[]{val}, "expected boolean argument");
+        }
+    }
+
     protected static long expectLong(Object number, String message) throws UnsupportedTypeException {
         try {
             return INTEROP.asLong(number);

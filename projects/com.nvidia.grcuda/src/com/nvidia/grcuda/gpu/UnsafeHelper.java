@@ -38,7 +38,7 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import sun.misc.Unsafe;
 
 public class UnsafeHelper {
-    private static final Unsafe unsafe;
+    public static final Unsafe unsafe;
 
     static {
         try {

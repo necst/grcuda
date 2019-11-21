@@ -606,6 +606,23 @@ public final class CUDARuntime {
     }
 
     @TruffleBoundary
+    public KernelWithSizes loadKernelWithSizes(String cubinFile, String kernelName, String signature, int numOfPointers) {
+        CUModule module = loadedModules.get(cubinFile);
+        try {
+            if (module == null) {
+                module = cuModuleLoad(cubinFile);
+            }
+            long kernelFunction = cuModuleGetFunction(module, kernelName);
+            return new KernelWithSizes(this, kernelName, module, kernelFunction, signature, numOfPointers);
+        } catch (Exception e) {
+            if ((module != null) && (module.getRefCount() == 1)) {
+                cuModuleUnload(module);
+            }
+            throw e;
+        }
+    }
+
+    @TruffleBoundary
     public Kernel buildKernel(String code, String kernelName, String signature) {
         String moduleName = "truffle" + context.getNextModuleId();
         PTXKernel ptx = nvrtc.compileKernel(code, kernelName, moduleName, "--std=c++14");

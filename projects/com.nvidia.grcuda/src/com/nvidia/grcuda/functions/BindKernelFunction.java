@@ -42,15 +42,70 @@ public final class BindKernelFunction extends Function {
         this.cudaRuntime = cudaRuntime;
     }
 
+    private String parseCubinFile(Object cubinFile) throws UnsupportedTypeException {
+        return expectString(cubinFile, "argument 0 of bindkernel must be string (cubin file)");
+    }
+
+    private String parseKernelName(Object kernelName) throws UnsupportedTypeException {
+        return expectString(kernelName, "argument 1 of bindkernel must be string (kernel name)");
+    }
+
+    private String parseKernelSignature(Object kernelSignature) throws UnsupportedTypeException {
+        return expectString(kernelSignature, "argument 2 of bindkernel must be string (signature of kernel)");
+    }
+
+    private String parseAddSizeParam(Object addSize) throws UnsupportedTypeException {
+        return expectString(addSize, "argument 3 of bindkernel must be string with value True or False");
+    }
+
+    private Object parseStandardParameters(Object[] arguments) throws UnsupportedTypeException {
+        String cubinFile = parseCubinFile(arguments[0]);
+        String kernelName = parseKernelName(arguments[1]);
+        String kernelSignature = parseKernelSignature(arguments[2]);
+        return cudaRuntime.loadKernel(cubinFile, kernelName, kernelSignature);
+    }
+
     @Override
     @TruffleBoundary
     public Object call(Object[] arguments) throws UnsupportedTypeException, ArityException {
-        checkArgumentLength(arguments, 3);
+        if (arguments.length == 3) {
+            // Default case;
+            checkArgumentLength(arguments, 3);
+            return parseStandardParameters(arguments);
+        } else if (arguments.length == 4) {
+            // If specified, add the array length parameters to the kernel signature;
+            checkArgumentLength(arguments, 4);
+            String addSizesStr = parseAddSizeParam(arguments[3]);
+            boolean addSizes = Boolean.parseBoolean(addSizesStr);
+            if (addSizes) {
+                String cubinFile = parseKernelName(arguments[0]);
+                String kernelName = parseKernelName(arguments[1]);
+                String kernelSignature = parseKernelSignature(arguments[2]);
+                String[] parameters = kernelSignature.trim().replaceAll("\\s+","").split(",");
+                StringBuilder newSignatureBuilder = new StringBuilder();
+                newSignatureBuilder.append(kernelSignature);
 
-        String cubinFile = expectString(arguments[0], "argument 1 of bindkernel must be string (cubin file)");
-        String kernelName = expectString(arguments[1], "argument 2 of bindkernel must be string (kernel name)");
-        String kernelSignature = expectString(arguments[2], "argument 3 of bindkernel must be string (signature of kernel)");
-
-        return cudaRuntime.loadKernel(cubinFile, kernelName, kernelSignature);
+                int numOfPointers = 0;
+                boolean sizes_array_added = false;
+                for (String p : parameters) {
+                    // Add a "pointer" parameter if any pointer argument is found, used to pass the size;
+                    if (p.equals("pointer")) {
+                        if (!sizes_array_added) {
+                            newSignatureBuilder.append(",pointer");
+                            sizes_array_added = true;
+                        }
+                        numOfPointers++;
+                    }
+                }
+                return cudaRuntime.loadKernelWithSizes(cubinFile, kernelName, newSignatureBuilder.toString(), numOfPointers);
+            } else {
+                // If the 4th parameter is false, fallback to the standard kernel loading;
+                return parseStandardParameters(arguments);
+            }
+        } else {
+            // The bindkernel function actually supports 3 or 4 arguments, but ArityException doesn't
+            // allow to specify >1 expected value;
+            throw ArityException.create(4, arguments.length);
+        }
     }
 }

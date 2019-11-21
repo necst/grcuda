@@ -192,7 +192,7 @@ public final class DeviceArray implements TruffleObject {
     }
 
     @ExportMessage
-    void writeArrayElement(long index, Object value,
+    public void writeArrayElement(long index, Object value,
                     @CachedLibrary(limit = "3") InteropLibrary valueLibrary,
                     @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException, InvalidArrayIndexException {
 

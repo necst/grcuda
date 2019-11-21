@@ -51,7 +51,7 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 
 @ExportLibrary(InteropLibrary.class)
-public final class Kernel implements TruffleObject {
+public class Kernel implements TruffleObject {
 
     private final CUDARuntime cudaRuntime;
     private final String kernelName;
@@ -94,6 +94,53 @@ public final class Kernel implements TruffleObject {
         return argumentTypes;
     }
 
+    protected void processAndAddKernelArgument(ArgumentType type, KernelArguments kernelArgs, int argIdx, Object[] args, InteropLibrary int32Access, InteropLibrary int64Access, InteropLibrary doubleAccess) throws UnsupportedTypeException {
+        try {
+            switch (type) {
+                case INT32:
+                    UnsafeHelper.Integer32Object int32 = UnsafeHelper.createInteger32Object();
+                    int32.setValue(int32Access.asInt(args[argIdx]));
+                    kernelArgs.setArgument(argIdx, int32);
+                    break;
+                case INT64:
+                    UnsafeHelper.Integer64Object int64 = UnsafeHelper.createInteger64Object();
+                    int64.setValue(int64Access.asLong(args[argIdx]));
+                    kernelArgs.setArgument(argIdx, int64);
+                    break;
+                case FLOAT32:
+                    UnsafeHelper.Float32Object fp32 = UnsafeHelper.createFloat32Object();
+                    // going via "double" to allow floats to be initialized with doubles
+                    fp32.setValue((float) doubleAccess.asDouble(args[argIdx]));
+                    kernelArgs.setArgument(argIdx, fp32);
+                    break;
+                case FLOAT64:
+                    UnsafeHelper.Float64Object fp64 = UnsafeHelper.createFloat64Object();
+                    fp64.setValue(doubleAccess.asDouble(args[argIdx]));
+                    kernelArgs.setArgument(argIdx, fp64);
+                    break;
+                case POINTER:
+                    if (args[argIdx] instanceof DeviceArray) {
+                        DeviceArray deviceArray = (DeviceArray) args[argIdx];
+                        UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();
+                        pointer.setValueOfPointer(deviceArray.getPointer());
+                        kernelArgs.setArgument(argIdx, pointer);
+                    } else if (args[argIdx] instanceof MultiDimDeviceArray) {
+                        MultiDimDeviceArray deviceArray = (MultiDimDeviceArray) args[argIdx];
+                        UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();
+                        pointer.setValueOfPointer(deviceArray.getPointer());
+                        kernelArgs.setArgument(argIdx, pointer);
+                    } else {
+                        CompilerDirectives.transferToInterpreter();
+                        throw UnsupportedTypeException.create(new Object[]{args[argIdx]}, "expected DeviceArray type");
+                    }
+                    break;
+            }
+        } catch (UnsupportedMessageException e) {
+            CompilerDirectives.transferToInterpreter();
+            throw UnsupportedTypeException.create(new Object[]{args[argIdx]}, "expected type " + type);
+        }
+    }
+
     KernelArguments createKernelArguments(Object[] args, InteropLibrary int32Access, InteropLibrary int64Access, InteropLibrary doubleAccess)
                     throws UnsupportedTypeException, ArityException {
         if (args.length != argumentTypes.length) {
@@ -103,50 +150,7 @@ public final class Kernel implements TruffleObject {
         KernelArguments kernelArgs = new KernelArguments(args.length);
         for (int argIdx = 0; argIdx < argumentTypes.length; argIdx++) {
             ArgumentType type = argumentTypes[argIdx];
-            try {
-                switch (type) {
-                    case INT32:
-                        UnsafeHelper.Integer32Object int32 = UnsafeHelper.createInteger32Object();
-                        int32.setValue(int32Access.asInt(args[argIdx]));
-                        kernelArgs.setArgument(argIdx, int32);
-                        break;
-                    case INT64:
-                        UnsafeHelper.Integer64Object int64 = UnsafeHelper.createInteger64Object();
-                        int64.setValue(int64Access.asLong(args[argIdx]));
-                        kernelArgs.setArgument(argIdx, int64);
-                        break;
-                    case FLOAT32:
-                        UnsafeHelper.Float32Object fp32 = UnsafeHelper.createFloat32Object();
-                        // going via "double" to allow floats to be initialized with doubles
-                        fp32.setValue((float) doubleAccess.asDouble(args[argIdx]));
-                        kernelArgs.setArgument(argIdx, fp32);
-                        break;
-                    case FLOAT64:
-                        UnsafeHelper.Float64Object fp64 = UnsafeHelper.createFloat64Object();
-                        fp64.setValue(doubleAccess.asDouble(args[argIdx]));
-                        kernelArgs.setArgument(argIdx, fp64);
-                        break;
-                    case POINTER:
-                        if (args[argIdx] instanceof DeviceArray) {
-                            DeviceArray deviceArray = (DeviceArray) args[argIdx];
-                            UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();
-                            pointer.setValueOfPointer(deviceArray.getPointer());
-                            kernelArgs.setArgument(argIdx, pointer);
-                        } else if (args[argIdx] instanceof MultiDimDeviceArray) {
-                            MultiDimDeviceArray deviceArray = (MultiDimDeviceArray) args[argIdx];
-                            UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();
-                            pointer.setValueOfPointer(deviceArray.getPointer());
-                            kernelArgs.setArgument(argIdx, pointer);
-                        } else {
-                            CompilerDirectives.transferToInterpreter();
-                            throw UnsupportedTypeException.create(new Object[]{args[argIdx]}, "expected DeviceArray type");
-                        }
-                        break;
-                }
-            } catch (UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw UnsupportedTypeException.create(new Object[]{args[argIdx]}, "expected type " + type);
-            }
+            processAndAddKernelArgument(type, kernelArgs, argIdx, args, int32Access, int64Access, doubleAccess);
         }
         return kernelArgs;
     }
@@ -197,7 +201,7 @@ public final class Kernel implements TruffleObject {
         return "Kernel(" + kernelName + ", " + kernelSignature + ", launchCount=" + launchCount + ")";
     }
 
-    private enum ArgumentType {
+    protected enum ArgumentType {
         POINTER,
         INT32,
         INT64,
