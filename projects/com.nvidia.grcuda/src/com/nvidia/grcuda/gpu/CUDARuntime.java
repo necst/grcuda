@@ -170,6 +170,24 @@ public final class CUDARuntime {
     }
 
     @TruffleBoundary
+    public void cudaMemPrefetchAsync(long devPtr, long numBytesToCopy, int deviceId) {
+        try {
+            Object callable = getSymbol(CUDARuntimeFunction.CUDA_MEM_PREFETCH_ASYNC);
+            if (numBytesToCopy < 0) {
+                throw new IllegalArgumentException("requested negative number of bytes to copy " + numBytesToCopy);
+            }
+            if (deviceId < 0) {
+                throw new IllegalArgumentException("requested negative number for device ID: " + deviceId);
+            }
+            // Always use the default stream, as streams are not exposed to the user;
+            Object result = INTEROP.execute(callable, devPtr, numBytesToCopy, deviceId);
+            checkCUDAReturnCode(result, "cudaMemPrefetchAsync");
+        } catch (InteropException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @TruffleBoundary
     public DeviceMemoryInfo cudaMemGetInfo() {
         try {
             final String symbol = "cudaMemGetInfo";
@@ -560,6 +578,33 @@ public final class CUDARuntime {
                         try {
                             Object callable = cudaRuntime.getSymbol(CUDARuntimeFunction.CUDA_MEMCPY);
                             Object result = INTEROP.execute(callable, destPointer, fromPointer, numBytesToCopy, cudaMemcpyDefault);
+                            cudaRuntime.checkCUDAReturnCode(result, getName());
+                        } catch (InteropException e) {
+                            throw new RuntimeException(e);
+                        }
+                        return NoneValue.get();
+                    }
+                };
+            }
+        }),
+        CUDA_MEM_PREFETCH_ASYNC(new CUDAFunctionFactory("cudaMemPrefetchAsync", "", "(pointer, uint64, sint32): sint32") {
+            @Override
+            public CUDAFunction makeFunction(CUDARuntime cudaRuntime) {
+                return new CUDAFunction(this) {
+                    @Override
+                    @TruffleBoundary
+                    public Object call(Object[] args) throws ArityException, UnsupportedTypeException {
+                        checkArgumentLength(args, 3);
+                        long devPtr = expectLong(args[0]);
+                        long numBytesToCopy = expectPositiveLong(args[1]);
+                        long deviceId = expectPositiveInt(args[2]);
+                        try {
+                            Object callable = cudaRuntime.getSymbol(CUDARuntimeFunction.CUDA_MEM_PREFETCH_ASYNC);
+                            Object result = INTEROP.execute(callable, devPtr, numBytesToCopy, deviceId);
+                            cudaRuntime.checkCUDAReturnCode(result, getName());
+                            // Explicit synchronization;
+                            callable = cudaRuntime.getSymbol(CUDARuntimeFunction.CUDA_DEVICESYNCHRONIZE);
+                            result = INTEROP.execute(callable);
                             cudaRuntime.checkCUDAReturnCode(result, getName());
                         } catch (InteropException e) {
                             throw new RuntimeException(e);

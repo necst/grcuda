@@ -296,21 +296,28 @@ public final class DeviceArray implements TruffleObject {
         return getPointer();
     }
 
-    public void copyFrom(long fromPointer, long numCopyElements) throws IndexOutOfBoundsException {
-        long numBytesToCopy = numCopyElements * elementType.getSizeBytes();
+    private void checkSize(long numBytesToCopy)  throws IndexOutOfBoundsException {
         if (numBytesToCopy > getSizeBytes()) {
             CompilerDirectives.transferToInterpreter();
             throw new IndexOutOfBoundsException();
         }
+    }
+
+    public void copyFrom(long fromPointer, long numCopyElements) throws IndexOutOfBoundsException {
+        long numBytesToCopy = numCopyElements * elementType.getSizeBytes();
+        checkSize(numBytesToCopy);
         runtime.cudaMemcpy(getPointer(), fromPointer, numBytesToCopy);
     }
 
     public void copyTo(long toPointer, long numCopyElements) throws IndexOutOfBoundsException {
         long numBytesToCopy = numCopyElements * elementType.getSizeBytes();
-        if (numBytesToCopy > getSizeBytes()) {
-            CompilerDirectives.transferToInterpreter();
-            throw new IndexOutOfBoundsException();
-        }
+        checkSize(numBytesToCopy);
         runtime.cudaMemcpy(toPointer, getPointer(), numBytesToCopy);
+    }
+
+    public void prefetchAsync(long numCopyElements, int deviceId) throws IndexOutOfBoundsException {
+        long numBytesToCopy = numCopyElements * elementType.getSizeBytes();
+        checkSize(numBytesToCopy);
+        runtime.cudaMemPrefetchAsync(getPointer(), numBytesToCopy, deviceId);
     }
 }
