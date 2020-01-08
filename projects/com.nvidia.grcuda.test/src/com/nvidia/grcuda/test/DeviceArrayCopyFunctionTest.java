@@ -146,15 +146,10 @@ public class DeviceArrayCopyFunctionTest {
             for (int i = 0; i < numElements; ++i) {
                 sourceDeviceArray.setArrayElement(i, i + 1);
             }
-            // create destination device array initialize its elements to zero.
-            Value destinationDeviceArray = createDeviceArray.execute("int", numElements);
-            for (int i = 0; i < numElements; ++i) {
-                destinationDeviceArray.setArrayElement(i, 0);
-            }
             sourceDeviceArray.invokeMember("prefetchAsync", numElements, 0);
             // Verify content of device array
             for (int i = 0; i < numElements; ++i) {
-                assertEquals(i + 1, destinationDeviceArray.getArrayElement(i).asInt());
+                assertEquals(i + 1, sourceDeviceArray.getArrayElement(i).asInt());
             }
         }
     }

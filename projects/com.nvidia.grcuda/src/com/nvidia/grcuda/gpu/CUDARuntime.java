@@ -180,7 +180,7 @@ public final class CUDARuntime {
                 throw new IllegalArgumentException("requested negative number for device ID: " + deviceId);
             }
             // Always use the default stream, as streams are not exposed to the user;
-            Object result = INTEROP.execute(callable, devPtr, numBytesToCopy, deviceId);
+            Object result = INTEROP.execute(callable, devPtr, numBytesToCopy, deviceId, null);
             checkCUDAReturnCode(result, "cudaMemPrefetchAsync");
         } catch (InteropException e) {
             throw new RuntimeException(e);
@@ -587,7 +587,7 @@ public final class CUDARuntime {
                 };
             }
         }),
-        CUDA_MEM_PREFETCH_ASYNC(new CUDAFunctionFactory("cudaMemPrefetchAsync", "", "(pointer, uint64, sint32): sint32") {
+        CUDA_MEM_PREFETCH_ASYNC(new CUDAFunctionFactory("cudaMemPrefetchAsync", "", "(pointer, uint64, sint32, pointer): sint32") {
             @Override
             public CUDAFunction makeFunction(CUDARuntime cudaRuntime) {
                 return new CUDAFunction(this) {
@@ -600,7 +600,7 @@ public final class CUDARuntime {
                         long deviceId = expectPositiveInt(args[2]);
                         try {
                             Object callable = cudaRuntime.getSymbol(CUDARuntimeFunction.CUDA_MEM_PREFETCH_ASYNC);
-                            Object result = INTEROP.execute(callable, devPtr, numBytesToCopy, deviceId);
+                            Object result = INTEROP.execute(callable, devPtr, numBytesToCopy, deviceId, null);
                             cudaRuntime.checkCUDAReturnCode(result, getName());
                             // Explicit synchronization;
                             callable = cudaRuntime.getSymbol(CUDARuntimeFunction.CUDA_DEVICESYNCHRONIZE);

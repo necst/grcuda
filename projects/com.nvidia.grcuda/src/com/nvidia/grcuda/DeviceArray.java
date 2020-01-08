@@ -278,7 +278,7 @@ public final class DeviceArray implements TruffleObject {
     @ExportMessage
     @SuppressWarnings("static-method")
     boolean isMemberInvocable(String memberName) {
-        return COPY_FROM.equals(memberName) || COPY_TO.equals(memberName);
+        return COPY_FROM.equals(memberName) || COPY_TO.equals(memberName) || PREFETCH_ASYNC.equals(memberName);
     }
 
     @ExportMessage
