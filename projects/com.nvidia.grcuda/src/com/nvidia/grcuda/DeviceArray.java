@@ -29,6 +29,7 @@
 package com.nvidia.grcuda;
 
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
+import com.nvidia.grcuda.functions.DeviceArrayPrefetchAsyncFunction;
 import com.nvidia.grcuda.gpu.CUDARuntime;
 import com.nvidia.grcuda.gpu.LittleEndianNativeArrayView;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -53,9 +54,10 @@ public final class DeviceArray implements TruffleObject {
     private static final String POINTER = "pointer";
     private static final String COPY_FROM = "copyFrom";
     private static final String COPY_TO = "copyTo";
+    private static final String PREFETCH_ASYNC = "prefetchAsync";
 
-    private static final MemberSet PUBLIC_MEMBERS = new MemberSet(COPY_FROM, COPY_TO);
-    private static final MemberSet MEMBERS = new MemberSet(POINTER, COPY_FROM, COPY_TO);
+    private static final MemberSet PUBLIC_MEMBERS = new MemberSet(COPY_FROM, COPY_TO, PREFETCH_ASYNC);
+    private static final MemberSet MEMBERS = new MemberSet(POINTER, COPY_FROM, COPY_TO, PREFETCH_ASYNC);
 
     @ExportLibrary(InteropLibrary.class)
     public static final class MemberSet implements TruffleObject {
@@ -247,7 +249,7 @@ public final class DeviceArray implements TruffleObject {
     boolean isMemberReadable(String memberName,
                     @Shared("memberName") @Cached("createIdentityProfile()") ValueProfile memberProfile) {
         String name = memberProfile.profile(memberName);
-        return POINTER.equals(name) || COPY_FROM.equals(name) || COPY_TO.equals(name);
+        return POINTER.equals(name) || COPY_FROM.equals(name) || COPY_TO.equals(name) || PREFETCH_ASYNC.equals(name);
     }
 
     @ExportMessage
@@ -265,6 +267,9 @@ public final class DeviceArray implements TruffleObject {
         }
         if (COPY_TO.equals(memberName)) {
             return new DeviceArrayCopyFunction(this, DeviceArrayCopyFunction.CopyDirection.TO_POINTER);
+        }
+        if (PREFETCH_ASYNC.equals(memberName)) {
+            return new DeviceArrayPrefetchAsyncFunction(this);
         }
         CompilerDirectives.transferToInterpreter();
         throw UnknownIdentifierException.create(memberName);
