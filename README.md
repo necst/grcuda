@@ -198,128 +198,63 @@ mx --dynamicimports graalpython --cp-sfx `pwd`/mxbuild/dists/jdk1.8/grcuda.jar \
 
 * This section contains all the steps required to setup GrCUDA if your goal is to contribute to its development, or simply hack with it. This guide refers to GraalVM Community Edition JDK8 for Linux with `amd64` architectures, i.e. download releases prefixed with `graalvm-ce-java8-linux-amd64` or something like that. 
 
-1. **Get the source code of GrCUDA, graal, mx**
+1. Get the source code of GrCUDA, graal, mx
 
-```
-git clone https://github.com/oracle/graal.git
-git clone https://github.com/graalvm/mx.git
-git clone https://github.com/NVIDIA/grcuda.git (this can be replaced with a fork)
-```
+	```
+	git clone https://github.com/oracle/graal.git
+	git clone https://github.com/graalvm/mx.git
+	git clone https://github.com/NVIDIA/grcuda.git (this can be replaced with a fork)
+	```
 
-2. **Download the right JDK**
-* [Here](https://github.com/graalvm/graal-jvmci-8/releases) you can find releases for GraalVM 20.2 or newer, but other versions are available on the same repository
+2. Download the right JDK
+	* [Here](https://github.com/graalvm/openjdk8-jvmci-builder/releases/tag/jvmci-20.0-b02) you can find releases for GraalVM 20.0, but other versions are available on the same repository
 
-3. **Download the right build for GraalVM**
-* [Here](https://github.com/graalvm/graalvm-ce-builds/releases) you can find releases for GraalVM 20.2, and more recent versions once they will become available
+3. Download the right build for GraalVM
+	* [Here](https://github.com/graalvm/graalvm-ce-builds/releases) you can find releases for GraalVM 20.0, and more recent versions once they will become available
 
-4. **Setup your CUDA environment**
-* Install CUDA and Nvidia drivers, for example following the steps [here](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&target_distro=CentOS&target_version=7&target_type=rpmnetwork)
-* Add the following to your environment (assuming you have installed CUDA in the default `/usr/local` location, and using the `nvcc` compiler
+4. Setup your CUDA environment
+    * Install CUDA and Nvidia drivers, for exampel following the steps [here](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&target_distro=CentOS&target_version=7&target_type=rpmnetwork)
+	* Add the following to your environment (assuming that you have installed CUDA in the default `/usr/local` location, and using the `nvcc` compiler
 
-```
-export CUDA_DIR=/usr/local/cuda
-export PATH=$PATH:$CUDA_DIR/bin
-```
+	```
+	export CUDA_DIR=/usr/local/cuda
+	export PATH=$PATH:$CUDA_DIR/bin
+	```
 
-5. **Setup your GraalVM and GrCUDA environment**
-* Add the following to your environment (assuming you have installed the releases mentioned in step 2 and 3)
+5. Setup your GraalVM and GrCUDA environment
+	* Add the following to your environment (assuming you have installed the releases mentioned in step 2 and 3)
 
-```
-export PATH=~/mx:$PATH
-export JAVA_HOME=~/openjdk1.8.0_242-jvmci-20.0-b02
-export GRAAL_HOME=~/graalvm-ce-java8-20.0.0
-export GRAALVM_HOME=$GRAAL_HOME
-export PATH=$GRAAL_HOME/bin:$PATH
-export PATH=$JAVA_HOME/bin:$PATH
-```
+	```
+	export PATH=~/mx:$PATH
+	export JAVA_HOME=~/openjdk1.8.0_242-jvmci-20.0-b02
+	export GRAAL_HOME=~/graalvm-ce-java8-20.0.0
+	export GRAALVM_HOME=$GRAAL_HOME
+	export PATH=$GRAAL_HOME/bin:$PATH
+	export PATH=$JAVA_HOME/bin:$PATH
+	```
 
-6. **Install languages for GraalVM** (optional, but recommended)
+6. Install languages for GraalVM (optional, but recommended)
+	```
+	gu available
+    gu install native-image
+	gu install llvm-toolchain
+	gu install python 
+    gu rebuild-images polyglot
+	```
 
-```
-gu available
-gu install native-image
-gu install llvm-toolchain
-gu install python 
-gu rebuild-images polyglot
-```
+	* If Graalpython is installed, create a `virtualenv` for it
 
-* If Graalpython is installed, create a `virtualenv` for it
+	```
+    graalpython -m venv ~/graalpython_venv
+    source ~/graalpython_venv/bin/activate
+	```
 
-```
-graalpython -m venv ~/graalpython_venv
-source ~/graalpython_venv/bin/activate
-```
+7. Install GrCUDA with `./install.sh`
 
-* Recommended: install 'numpy` in Graalpython (required for performance benchmarking)
+8. Setup your IDE with `mx ideinit`
 
-```
-graalpython -m ginstall install setuptools;
-graalpython -m ginstall install Cython;
-graalpython -m ginstall install numpy;
-```
+9. Run tests with `mx unittest com.nvidia`
+	
 
-7. **Install GrCUDA with** `./install.sh`
-
-8. **Setup your IDE with** `mx ideinit`
-* Also update the project SDK and the default JUnit configurations to use the GraalVM SDK in `$GRAAL_HOME`, and update the `PATH` variable so that it can find `nvcc`
-* Modify the template Junit test configuration adding `-Djava.library.path="/path/to/graalvmbuild/lib` to the VM options to find `trufflenfi`
- and update the environment variables with `PATH=your/path/env/var` to find `nvcc`
-9. **Run tests with** `mx unittest com.nvidia`
-* Run a specific test using, for example, `mx unittest com.nvidia.grcuda.test.gpu.ExecutionDAGTest#executionDAGConstructorTest`
-
-10. **Add your GrCUDA directory to the environment with** `export GRCUDA_HOME=/path/to/grcuda`
-
-11. **Execute performance tests using Graalpython**
-
-Run a specific benchmark with custom settings
-```
-graalpython --jvm --polyglot --grcuda.RetrieveNewStreamPolicy=fifo --grcuda.ExecutionPolicy=default --grcuda.DependencyPolicy=with-const --grcuda.RetrieveParentStreamPolicy=disjoint benchmark_main.py -d -i 10 -n 100 --no_cpu_validation --reinit false --realloc false -b b7
-```
-
-Run all benchmarks
-```
-graalpython --jvm --polyglot benchmark_wrapper.py -d -i 30 
-```
-
-Run the CUDA version of all benchmarks
-```
-graalpython --jvm --polyglor benchmark_wrapper.py -d -i 30 -c
-```
-
-Profile a specific benchmark using `nvprof`. Running `nvprof` as `sudo` might not be required, see [here](https://developer.nvidia.com/nvidia-development-tools-solutions-ERR_NVGPUCTRPERM-permission-issue-performance-counters).
- Note that the `graalpython` benchmark has the `--nvprof` flag, so that only the real computation is profiled (and not the benchmark initialization). 
- Additionally, provide `nvprof` with flags `--csv` to get a CSV output, and `--log-file bench-name_%p.csv"` to store the result.
-  Not using the flag `--print-gpu-trace` will print aggregated results. Additional metrics can be collected by `nvprof` with e.g. `--metrics "achieved_occupancy,sm_efficiency"` ([full list](https://docs.nvidia.com/cuda/profiler-users-guide/index.html#metrics-reference))
-```
-sudo /usr/local/cuda/bin/nvprof --profile-from-start off --print-gpu-trace --profile-child-processes  /path/to/graalpython --jvm --polyglot --WithThread --grcuda.RetrieveNewStreamPolicy=always-new --grcuda.ExecutionPolicy=default --grcuda.DependencyPolicy=with-const --grcuda.RetrieveParentStreamPolicy=disjoint benchmark_main.py  -i 10 -n 1000000  --reinit false --realloc false  -b b1 --no_cpu_validation -d --block_size_1d 256 --block_size_2d 16 --nvprof
-```
-
-* Benchmarks are defined in the `projects/resources/python/benchmark/bench` folder, 
-and you can create more benchmarks by inheriting from the `Benchmark` class
-* The output of benchmarks is stored in a JSON (by default, located in `data/results`)
-* The benchmarking suite supports the following options
-    1. `-d`, `--debug`: print to the console the results and details of each benchmark. False by default
-    2. `-t`, `--num_iter`: number of times that each benchmark is executed, for each combination of options. 30 by default
-    3. `-o`, `--output_path`: full path to the file where results are stored. By default results are stored in `data/results`,
-    and the file name is generated automatically
-    4. `--realloc`: if true, allocate new memory and rebuild the GPU code at each iteration. False by default
-    5. `--reinit`: if true, re-initialize the values used in each benchmark at each iteration. True by default
-    6. `-c`, `--cpu_validation`: if present, validate the result of each benchmark using the CPU (use `--no_cpu_validation` to skip it instead)
-    7. `-b`, `--benchmark`: run the benchmark only for the specified kernel. Otherwise run all benchmarks specified in `benchmark_main.py`
-    8. `-n`, `--size`: specify the input size of data used as input for each benchmark. Otherwise use the sizes specified in `benchmark_main.py`
-    9. `-r`, `--random`: initialize benchmarks randomly whenever possible. True by default
-
-## DAG Scheduling Settings
-The automatic DAG scheduling of GrCUDA supports different settings that can be used for debugging or to simplify the dependency computation in some circumstances
-
-* `ExecutionPolicy`: this regulates the global scheduling policy;
- `default` uses the DAG for asynchronous parallel execution, while `sync` executes each computation synchronously and can be used for debugging or to measure the execution time of each kernel
-* `DependencyPolicy`: choose how data dependencies between GrCUDA computations are computed;
-`with_const` considers read-only parameter, while `default` assumes that all arguments can be modified in a computation
-* `RetrieveNewStreamPolicy`: choose how streams for new GrCUDA computations are created;
- `fifo` (the default) reuses free streams whenever possible, while `always_new` creates new streams every time a computation should use a stream different from its parent
-* `RetrieveParentStreamPolicy`: choose how streams for new GrCUDA computations are obtained from parent computations;
-`default` simply reuse the stream of one of the parent computations, while `disjoint` allows parallel scheduling of multiple child computations as long as their arguments are disjoint
- 
 
 

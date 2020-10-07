@@ -61,7 +61,7 @@ public class NVRuntimeCompiler {
             NVRTCResult compileResult = nvrtcCompileProgram(program, compileOpts);
             if (compileResult != NVRTCResult.NVRTC_SUCCESS) {
                 String compileLog = getProgramLog(program);
-                PrintStream err = new PrintStream(GrCUDALanguage.getCurrentContext().getEnv().err());
+                PrintStream err = new PrintStream(GrCUDALanguage.getCurrentLanguage().getContextReference().get().getEnv().err());
                 err.println("compile result: " + compileResult);
                 err.println("program log: " + compileLog);
                 throw new NVRTCException(compileResult.errorCode, compileLog);
@@ -108,14 +108,13 @@ public class NVRuntimeCompiler {
         if (opts.length == 0) {
             return nvrtcCompileProgramInternal(program, 0, 0L);
         } else {
-            ArrayList<StringObject> optCStrings = new ArrayList<>();
+            ArrayList<StringObject> optCStrings = new ArrayList<>(opts.length);
             try (UnsafeHelper.PointerArray optCStringArr = new PointerArray(opts.length)) {
                 int idx = 0;
                 for (String optString : opts) {
                     UnsafeHelper.StringObject cString = UnsafeHelper.StringObject.fromJavaString(optString);
                     optCStrings.add(cString);
                     optCStringArr.setValueAt(idx, cString.getAddress());
-                    idx++;
                 }
                 NVRTCResult result = nvrtcCompileProgramInternal(program, opts.length,
                                 optCStringArr.getAddress());

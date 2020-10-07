@@ -28,31 +28,38 @@
  */
 package com.nvidia.grcuda.gpu;
 
-import com.nvidia.grcuda.gpu.stream.CUDAStream;
-import com.oracle.truffle.api.CompilerAsserts;
-
 import java.util.Arrays;
 import java.util.Objects;
+
+import com.oracle.truffle.api.CompilerAsserts;
 
 public final class KernelConfig {
     private final Dim3 gridSize;
     private final Dim3 blockSize;
     private final int dynamicSharedMemoryBytes;
-    private CUDAStream stream;
-    private final boolean useCustomStream;
 
-    public KernelConfig(Dim3 gridSize, Dim3 blockSize, int sharedMemoryBytes, CUDAStream stream, boolean useCustomStream) {
+    public KernelConfig(int numBlocks, int numThreadsPerBlock) {
+        gridSize = new Dim3(numBlocks);
+        blockSize = new Dim3(numThreadsPerBlock);
+        dynamicSharedMemoryBytes = 0;
+    }
+
+    public KernelConfig(Dim3 gridSize, Dim3 blockSize) {
+        this.gridSize = gridSize;
+        this.blockSize = blockSize;
+        this.dynamicSharedMemoryBytes = 0;
+    }
+
+    public KernelConfig(Dim3 gridSize, Dim3 blockSize, int sharedMemoryBytes) {
         this.gridSize = gridSize;
         this.blockSize = blockSize;
         this.dynamicSharedMemoryBytes = sharedMemoryBytes;
-        this.stream = stream;
-        this.useCustomStream = useCustomStream;
     }
 
     @Override
     public String toString() {
         return "KernelConfig(gridSize=" + gridSize + ", blockSize=" + blockSize +
-                        ", sharedMemoryBytes=" + dynamicSharedMemoryBytes + (useCustomStream ? ", stream=" + getStream() : "") + ')' ;
+                        ", sharedMemoryBytes=" + dynamicSharedMemoryBytes + ", stream=" + getStream() + ')';
     }
 
     public Dim3 getGridSize() {
@@ -68,16 +75,8 @@ public final class KernelConfig {
     }
 
     @SuppressWarnings("static-method")
-    public CUDAStream getStream() {
-        return stream;
-    }
-
-    public void setStream(CUDAStream stream) {
-        this.stream = stream;
-    }
-
-    public boolean useCustomStream() {
-        return useCustomStream;
+    public int getStream() {
+        return 0; // default stream
     }
 
     @Override
@@ -90,9 +89,9 @@ public final class KernelConfig {
         }
         KernelConfig that = (KernelConfig) o;
         return dynamicSharedMemoryBytes == that.dynamicSharedMemoryBytes &&
-                        getStream().equals(that.getStream()) &&
+                        getStream() == that.getStream() &&
                         gridSize.equals(that.gridSize) &&
-                        blockSize.equals(that.blockSize) && stream.equals(that.stream);
+                        blockSize.equals(that.blockSize);
     }
 
     @Override

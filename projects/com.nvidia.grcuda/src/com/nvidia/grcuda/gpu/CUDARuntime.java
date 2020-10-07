@@ -28,24 +28,21 @@
  */
 package com.nvidia.grcuda.gpu;
 
-import com.nvidia.grcuda.CUDAEvent;
+import static com.nvidia.grcuda.functions.Function.checkArgumentLength;
+import static com.nvidia.grcuda.functions.Function.expectInt;
+import static com.nvidia.grcuda.functions.Function.expectLong;
+import static com.nvidia.grcuda.functions.Function.expectPositiveLong;
+
+import java.util.HashMap;
+import org.graalvm.collections.Pair;
 import com.nvidia.grcuda.GPUPointer;
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.Namespace;
 import com.nvidia.grcuda.NoneValue;
-import com.nvidia.grcuda.array.AbstractArray;
-import com.nvidia.grcuda.array.DeviceArray;
-import com.nvidia.grcuda.array.MultiDimDeviceArray;
 import com.nvidia.grcuda.functions.CUDAFunction;
 import com.nvidia.grcuda.gpu.UnsafeHelper.Integer32Object;
 import com.nvidia.grcuda.gpu.UnsafeHelper.Integer64Object;
-import com.nvidia.grcuda.gpu.computation.ArrayStreamArchitecturePolicy;
-import com.nvidia.grcuda.gpu.computation.PostPascalArrayStreamAssociation;
-import com.nvidia.grcuda.gpu.computation.PrePascalArrayStreamAssociation;
-import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
-import com.nvidia.grcuda.gpu.stream.CUDAStream;
-import com.nvidia.grcuda.gpu.stream.DefaultStream;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -58,14 +55,6 @@ import com.oracle.truffle.api.interop.UnknownIdentifierException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.source.Source;
-import org.graalvm.collections.Pair;
-
-import java.util.HashMap;
-
-import static com.nvidia.grcuda.functions.Function.checkArgumentLength;
-import static com.nvidia.grcuda.functions.Function.expectInt;
-import static com.nvidia.grcuda.functions.Function.expectLong;
-import static com.nvidia.grcuda.functions.Function.expectPositiveLong;
 
 public final class CUDARuntime {
 
@@ -77,28 +66,6 @@ public final class CUDARuntime {
     private final NVRuntimeCompiler nvrtc;
 
     /**
-     * Users can manually create streams that are not managed directly by a {@link com.nvidia.grcuda.gpu.stream.GrCUDAStreamManager}.
-     * We keep track of how many of these streams have been created;
-     */
-    private int numUserAllocatedStreams = 0;
-    public void incrementNumStreams() {
-        numUserAllocatedStreams++;
-    }
-    public int getNumStreams() {
-        return numUserAllocatedStreams;
-    }
-
-    /**
-     * CUDA events are used to synchronize stream computations, and guarantee that a computation starts
-     * only when all computations that depends from it are completed. Keep track of the number of events created;
-     */
-    private long numEvents = 0;
-    public void incrementNumEvents() { numEvents++; }
-    public long getNumEvents() {
-        return numEvents;
-    }
-
-    /**
      * Map from library-path to NFI library.
      */
     private final HashMap<String, TruffleObject> loadedLibraries = new HashMap<>();
@@ -107,17 +74,6 @@ public final class CUDARuntime {
      * Map of (library-path, symbol-name) to callable.
      */
     private final HashMap<Pair<String, String>, Object> boundFunctions = new HashMap<>();
-
-    /**
-     * Depending on the available GPU, use a different policy to associate managed memory arrays to streams,
-     * as specified in {@link ArrayStreamArchitecturePolicy}
-     */
-    private final ArrayStreamArchitecturePolicy arrayStreamArchitecturePolicy;
-
-    /**
-     * True if the GPU architecture is Pascal or newer;
-     */
-    private final boolean architectureIsPascalOrNewer;
 
     public CUDARuntime(GrCUDAContext context, Env env) {
         this.context = context;
@@ -137,26 +93,10 @@ public final class CUDARuntime {
 
         nvrtc = new NVRuntimeCompiler(this);
         context.addDisposable(this::shutdown);
-
-        // Check if the GPU available in the system has Compute Capability >= 6.0 (Pascal architecture)
-        architectureIsPascalOrNewer = cudaDeviceGetAttribute(CUDADeviceAttribute.COMPUTE_CAPABILITY_MAJOR, 0) >= 6;
-
-        // Use pre-Pascal stream attachment policy if the CC is < 6 or if the attachment is forced by options;
-        this.arrayStreamArchitecturePolicy = (!architectureIsPascalOrNewer || context.isForceStreamAttach()) ? new PrePascalArrayStreamAssociation() : new PostPascalArrayStreamAssociation();
     }
 
     // using this slow/uncached instance since all calls are non-critical
     private static final InteropLibrary INTEROP = InteropLibrary.getFactory().getUncached();
-
-    private GPUPointer innerCudaContext;
-
-    public GrCUDAContext getContext() {
-        return context;
-    }
-
-    public boolean isArchitectureIsPascalOrNewer() {
-        return architectureIsPascalOrNewer;
-    }
 
     interface CallSupport {
         String getName();
@@ -242,24 +182,6 @@ public final class CUDARuntime {
             final long cudaMemcpyDefault = 4;
             Object result = INTEROP.execute(callable, destPointer, fromPointer, numBytesToCopy, cudaMemcpyDefault);
             checkCUDAReturnCode(result, "cudaMemcpy");
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    @TruffleBoundary
-    public void cudaMemcpy(long destPointer, long fromPointer, long numBytesToCopy, CUDAStream stream) {
-        try {
-            Object callable = CUDARuntimeFunction.CUDA_MEMCPYASYNC.getSymbol(this);
-            if (numBytesToCopy < 0) {
-                throw new IllegalArgumentException("requested negative number of bytes to copy " + numBytesToCopy);
-            }
-            // cudaMemcpyKind from driver_types.h (default: direction of transfer is inferred
-            // from the pointer values, uses virtual addressing)
-            final long cudaMemcpyDefault = 4;
-            Object result = INTEROP.execute(callable, destPointer, fromPointer, numBytesToCopy, cudaMemcpyDefault, stream.getRawPointer());
-            cudaStreamSynchronize(stream);
-            checkCUDAReturnCode(result, "cudaMemcpyAsync");
         } catch (InteropException e) {
             throw new GrCUDAException(e);
         }
@@ -354,180 +276,6 @@ public final class CUDARuntime {
         }
     }
 
-    @TruffleBoundary
-    public CUDAStream cudaStreamCreate(int streamId) {
-        try (UnsafeHelper.PointerObject streamPointer = UnsafeHelper.createPointerObject()) {
-            Object callable = CUDARuntimeFunction.CUDA_STREAMCREATE.getSymbol(this);
-            Object result = INTEROP.execute(callable, streamPointer.getAddress());
-            checkCUDAReturnCode(result, "cudaStreamCreate");
-            return new CUDAStream(streamPointer.getValueOfPointer(), streamId);
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    @TruffleBoundary
-    public void cudaStreamSynchronize(CUDAStream stream) {
-        try {
-            Object callable = CUDARuntimeFunction.CUDA_STREAMSYNCHRONIZE.getSymbol(this);
-            Object result = INTEROP.execute(callable, stream.getRawPointer());
-            checkCUDAReturnCode(result, "cudaStreamSynchronize");
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    @TruffleBoundary
-    public void cudaStreamDestroy(CUDAStream stream) {
-        try {
-            Object callable = CUDARuntimeFunction.CUDA_STREAMDESTROY.getSymbol(this);
-            Object result = INTEROP.execute(callable, stream.getRawPointer());
-            checkCUDAReturnCode(result, "cudaStreamDestroy");
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    /**
-     * Limit the visibility of a managed memory array to the specified stream;
-     * @param stream the stream to which we attach the array
-     * @param array an array that should be assigned exclusively to a stream
-     */
-    @TruffleBoundary
-    public void cudaStreamAttachMemAsync(CUDAStream stream, AbstractArray array) {
-
-
-        final int MEM_ATTACH_SINGLE = 0x04;
-        final int MEM_ATTACH_GLOBAL = 0x01;
-        try {
-            Object callable = CUDARuntimeFunction.CUDA_STREAMATTACHMEMASYNC.getSymbol(this);
-            int flag = stream.isDefaultStream() ? MEM_ATTACH_GLOBAL : MEM_ATTACH_SINGLE;
-//            System.out.println("\t* attach array=" + System.identityHashCode(array) + " to " + stream + "; flag=" + flag);
-
-            // Book-keeping of the stream attachment within the array;
-            array.setStreamMapping(stream);
-
-            Object result = INTEROP.execute(callable, stream.getRawPointer(), array.getPointer(), array.getSizeBytes(), flag);
-            checkCUDAReturnCode(result, "cudaStreamAttachMemAsync");
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    /**
-     * Synchronous version of "cudaStreamAttachMemAsync". This function doesn't exist in the CUDA API, but it is useful to have;
-     * @param stream the stream to which we attach the array
-     * @param array an array that should be assigned exclusively to a stream
-     */
-    @TruffleBoundary
-    public void cudaStreamAttachMem(CUDAStream stream, AbstractArray array) {
-        cudaStreamAttachMemAsync(stream, array);
-        cudaStreamSynchronize(stream);
-    }
-
-    @TruffleBoundary
-    public void cudaMemPrefetchAsync(AbstractArray array, CUDAStream stream) {
-        try {
-            Object callable = CUDARuntimeFunction.CUDA_MEMPREFETCHASYNC.getSymbol(this);
-            Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(), 0, stream.getRawPointer());
-            checkCUDAReturnCode(result, "cudaMemPrefetchAsync");
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    @TruffleBoundary
-    public GPUPointer getInnerCudaContext() {
-        if (this.innerCudaContext == null) {
-            assertCUDAInitialized();
-        }
-        return this.innerCudaContext;
-    }
-
-    @TruffleBoundary
-    public GPUPointer initializeInnerCudaContext() {
-        int CU_CTX_SCHED_YIELD = 0x02; // Optimal multi-threaded host flag;
-        int device = 0; // Support only device 0;
-        return new GPUPointer(cuDevicePrimaryCtxRetain(device));
-    }
-
-    /**
-     * Create a new {@link CUDAEvent} and keep track of it;
-     * @return a new CUDA event
-     */
-    @TruffleBoundary
-    public CUDAEvent cudaEventCreate() {
-        try (UnsafeHelper.PointerObject eventPointer = UnsafeHelper.createPointerObject()) {
-            Object callable = CUDARuntimeFunction.CUDA_EVENTCREATE.getSymbol(this);
-            Object result = INTEROP.execute(callable, eventPointer.getAddress());
-            checkCUDAReturnCode(result, "cudaEventCreate");
-            CUDAEvent event = new CUDAEvent(eventPointer.getValueOfPointer(), getNumEvents());
-            incrementNumEvents();
-            return event;
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    /**
-     * Destroy a given CUDA event;
-     * @param event a CUDA Event to destroy
-     */
-    @TruffleBoundary
-    public void cudaEventDestroy(CUDAEvent event) {
-        if (!event.isAlive()) {
-            throw new RuntimeException("CUDA event=" + event + " has already been destroyed");
-        }
-        try {
-            Object callable = CUDARuntimeFunction.CUDA_EVENTDESTROY.getSymbol(this);
-            Object result = INTEROP.execute(callable, event.getRawPointer());
-            checkCUDAReturnCode(result, "cudaEventDestroy");
-            event.setDead();
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    /**
-     * Add a given event to a stream. The event is a stream-ordered checkpoint on which we can perform synchronization,
-     * or force another stream to wait for the event to occur before executing any other scheduled operation queued on that stream;
-     * @param event a CUDA event
-     * @param stream a CUDA stream to which the event is associated
-     */
-    @TruffleBoundary
-    public void cudaEventRecord(CUDAEvent event, CUDAStream stream) {
-        if (!event.isAlive()) {
-            throw new RuntimeException("CUDA event=" + event + " has already been destroyed");
-        }
-        try {
-            Object callable = CUDARuntimeFunction.CUDA_EVENTRECORD.getSymbol(this);
-            Object result = INTEROP.execute(callable, event.getRawPointer(), stream.getRawPointer());
-            checkCUDAReturnCode(result, "cudaEventRecord");
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    /**
-     * Tell a stream to wait for a given event to occur on another stream before executing any other computation;
-     * @param stream a CUDA stream to which the event is associated
-     * @param event a CUDA event that the stream should wait for
-     */
-    @TruffleBoundary
-    public void cudaStreamWaitEvent(CUDAStream stream, CUDAEvent event) {
-        if (!event.isAlive()) {
-            throw new RuntimeException("CUDA event=" + event + " has already been destroyed");
-        }
-        try {
-            final int FLAGS = 0x0; // Must be 0 according to CUDA documentation;
-            Object callable = CUDARuntimeFunction.CUDA_STREAMWAITEVENT.getSymbol(this);
-            Object result = INTEROP.execute(callable, stream.getRawPointer(), event.getRawPointer(), FLAGS);
-            checkCUDAReturnCode(result, "cudaStreamWaitEvent");
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
     /**
      * Get function as callable from native library.
      *
@@ -587,10 +335,6 @@ public final class CUDARuntime {
         for (CUDARuntimeFunction function : CUDARuntimeFunction.values()) {
             rootNamespace.addFunction(new CUDAFunction(function, this));
         }
-    }
-
-    public ArrayStreamArchitecturePolicy getArrayStreamArchitecturePolicy() {
-        return arrayStreamArchitecturePolicy;
     }
 
     public enum CUDARuntimeFunction implements CUDAFunction.Spec, CallSupport {
@@ -722,256 +466,6 @@ public final class CUDARuntime {
                 callSymbol(cudaRuntime, destPointer, fromPointer, numBytesToCopy, cudaMemcpyDefault);
                 return NoneValue.get();
             }
-        },
-        CUDA_MEMCPYASYNC("cudaMemcpyAsync", "(pointer, pointer, uint64, sint32, pointer): sint32") {
-            @Override
-            @TruffleBoundary
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
-                checkArgumentLength(args, 3);
-                long destPointer = expectLong(args[0]);
-                long fromPointer = expectLong(args[1]);
-                long numBytesToCopy = expectPositiveLong(args[2]);
-                long streamPointer = expectLong(args[3]);
-                // cudaMemcpyKind from driver_types.h (default: direction of transfer is
-                // inferred from the pointer values, uses virtual addressing)
-                final long cudaMemcpyDefault = 4;
-                callSymbol(cudaRuntime, destPointer, fromPointer, numBytesToCopy, cudaMemcpyDefault, streamPointer);
-                return NoneValue.get();
-            }
-        },
-        CUDA_STREAMCREATE("cudaStreamCreate", "(pointer): sint32") {
-            @Override
-            @TruffleBoundary
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
-                checkArgumentLength(args, 0);
-                try (UnsafeHelper.PointerObject streamPointer = UnsafeHelper.createPointerObject()) {
-                    callSymbol(cudaRuntime, streamPointer.getAddress());
-                    CUDAStream stream = new CUDAStream(streamPointer.getValueOfPointer(), cudaRuntime.getNumStreams());
-                    cudaRuntime.incrementNumStreams();
-                    return stream;
-                }
-            }
-        },
-        CUDA_STREAMSYNCHRONIZE("cudaStreamSynchronize", "(pointer): sint32") {
-            @Override
-            @TruffleBoundary
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
-                checkArgumentLength(args, 1);
-                Object pointerObj = args[0];
-                long addr;
-                if (pointerObj instanceof CUDAStream) {
-                    addr = ((CUDAStream) pointerObj).getRawPointer();
-                } else {
-                    throw new GrCUDAException("expected CUDAStream object");
-                }
-                callSymbol(cudaRuntime, addr);
-                return NoneValue.get();
-            }
-        },
-        CUDA_STREAMDESTROY("cudaStreamDestroy", "(pointer): sint32") {
-            @Override
-            @TruffleBoundary
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
-                checkArgumentLength(args, 1);
-                Object pointerObj = args[0];
-                long addr;
-                if (pointerObj instanceof CUDAStream) {
-                    addr = ((CUDAStream) pointerObj).getRawPointer();
-                } else {
-                    throw new GrCUDAException("expected CUDAStream object");
-                }
-                callSymbol(cudaRuntime, addr);
-                return NoneValue.get();
-            }
-        },
-        CUDA_STREAMATTACHMEMASYNC("cudaStreamAttachMemAsync", "(pointer, pointer, uint64, uint32): sint32") {
-            @Override
-            @TruffleBoundary
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
-
-                Object streamObj;
-                Object arrayObj;
-                final int MEM_ATTACH_SINGLE = 0x04;
-                final int MEM_ATTACH_GLOBAL = 0x01;
-                int flag = MEM_ATTACH_SINGLE;
-
-                if (args.length == 1) {
-                    arrayObj = args[0];
-                    streamObj = DefaultStream.get();
-                    flag = MEM_ATTACH_GLOBAL;
-                } else if (args.length == 2) {
-                    streamObj = args[0];
-                    arrayObj = args[1];
-                } else if (args.length == 3) {
-                    streamObj = args[0];
-                    arrayObj = args[1];
-                    if (args[2] instanceof Integer) {
-                        flag = ((Integer) args[2]);
-                    } else {
-                        throw new GrCUDAException("expected Integer object");
-                    }
-                } else {
-                    CompilerDirectives.transferToInterpreter();
-                    throw ArityException.create(3, args.length);
-                }
-
-                // Extract pointers;
-                long streamAddr;
-                long arrayAddr;
-                streamAddr = extractStreamPointer(streamObj);
-                arrayAddr = extractArrayPointer(arrayObj);
-
-                // If using the default stream (0 address) use the "cudaMemAttachGlobal" flag;
-                if (streamAddr == 0) {
-                    flag = MEM_ATTACH_GLOBAL;
-                }
-
-                // Track the association between the stream and the array, if possible;
-                if (streamObj instanceof CUDAStream) {
-                    if (arrayObj instanceof AbstractArray) {
-                        ((AbstractArray) arrayObj).setStreamMapping((CUDAStream) streamObj);
-                    }
-                }
-
-                // Always set "size" to 0 to cover the entire array;
-                callSymbol(cudaRuntime, streamAddr, arrayAddr, 0, flag);
-                return NoneValue.get();
-            }
-        },
-        CUDA_MEMPREFETCHASYNC("cudaMemPrefetchAsync", "(pointer, uint64, sint32, pointer): sint32") {
-            @Override
-            @TruffleBoundary
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
-
-                Object streamObj;
-                Object arrayObj;
-                long size;
-                int destinationDevice;
-
-                if (args.length == 3) {
-                    arrayObj = args[0];
-                    streamObj = DefaultStream.get();
-                } else if (args.length == 4) {
-                    arrayObj = args[0];
-                    streamObj = args[3];
-                } else {
-                    CompilerDirectives.transferToInterpreter();
-                    throw ArityException.create(4, args.length);
-                }
-
-                if (args[1] instanceof Long) {
-                    size = ((Long) args[1]);
-                } else {
-                    throw new GrCUDAException("expected Long object for array size");
-                }
-
-                if (args[2] instanceof Integer) {
-                    destinationDevice = ((Integer) args[2]);
-                } else {
-                    throw new GrCUDAException("expected Integer object for destination device");
-                }
-
-                // Extract pointers;
-                long streamAddr;
-                long arrayAddr;
-                streamAddr = extractStreamPointer(streamObj);
-                arrayAddr = extractArrayPointer(arrayObj);
-
-                // Always set "size" to 0 to cover the entire array;
-                callSymbol(cudaRuntime, arrayAddr, size, destinationDevice, streamAddr);
-                return NoneValue.get();
-            }
-        },
-        CUDA_EVENTCREATE("cudaEventCreate", "(pointer): sint32") {
-            @Override
-            @TruffleBoundary
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
-                checkArgumentLength(args, 0);
-                try (UnsafeHelper.PointerObject eventPointer = UnsafeHelper.createPointerObject()) {
-                    callSymbol(cudaRuntime, eventPointer.getAddress());
-                    CUDAEvent event = new CUDAEvent(eventPointer.getValueOfPointer(), cudaRuntime.getNumEvents());
-                    cudaRuntime.incrementNumEvents();
-                    return event;
-                }
-            }
-        },
-        CUDA_EVENTDESTROY("cudaEventDestroy", "(pointer): sint32") {
-            @Override
-            @TruffleBoundary
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
-                checkArgumentLength(args, 1);
-                Object pointerObj = args[0];
-                long addr;
-                if (pointerObj instanceof CUDAEvent) {
-                    addr = ((CUDAEvent) pointerObj).getRawPointer();
-                } else {
-                    throw new GrCUDAException("expected CUDAEvent object");
-                }
-                callSymbol(cudaRuntime, addr);
-                return NoneValue.get();
-            }
-        },
-        CUDA_EVENTRECORD("cudaEventRecord", "(pointer, pointer): sint32") {
-            @Override
-            @TruffleBoundary
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
-                checkArgumentLength(args, 2);
-                Object eventObj = args[0];
-                Object streamObj = args[1];
-                long eventAddr, streamAddr;
-                if (eventObj instanceof CUDAEvent) {
-                    eventAddr = ((CUDAEvent) eventObj).getRawPointer();
-                } else {
-                    throw new GrCUDAException("expected CUDAEvent object");
-                }
-                if (streamObj instanceof CUDAStream) {
-                    streamAddr = ((CUDAStream) streamObj).getRawPointer();
-                } else {
-                    throw new GrCUDAException("expected CUDAStream object");
-                }
-                callSymbol(cudaRuntime, eventAddr, streamAddr);
-                return NoneValue.get();
-            }
-        },
-        CUDA_STREAMWAITEVENT("cudaStreamWaitEvent", "(pointer, pointer, uint32): sint32") {
-            @Override
-            @TruffleBoundary
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
-                checkArgumentLength(args, 2);
-                Object streamObj = args[0];
-                Object eventObj = args[1];
-                long streamAddr, eventAddr;
-                final int FLAGS = 0x0; // Flags must be zero according to CUDA documentation;
-
-                if (streamObj instanceof CUDAStream) {
-                    streamAddr = ((CUDAStream) streamObj).getRawPointer();
-                } else {
-                    throw new GrCUDAException("expected CUDAStream object");
-                }
-                if (eventObj instanceof CUDAEvent) {
-                    eventAddr = ((CUDAEvent) eventObj).getRawPointer();
-                } else {
-                    throw new GrCUDAException("expected CUDAEvent object");
-                }
-                callSymbol(cudaRuntime, streamAddr, eventAddr, FLAGS);
-                return NoneValue.get();
-            }
-        },
-        CUDA_PROFILERSTART("cudaProfilerStart", "(): sint32") {
-            @Override
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, InteropException, UnsupportedMessageException {
-                checkArgumentLength(args, 0);
-                callSymbol(cudaRuntime);
-                return NoneValue.get();
-            }
-        },
-        CUDA_PROFILERSTOP("cudaProfilerStop", "(): sint32") {
-            @Override
-            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, InteropException, UnsupportedMessageException {
-                checkArgumentLength(args, 0);
-                callSymbol(cudaRuntime);
-                return NoneValue.get();
-            }
         };
 
         private final String name;
@@ -989,41 +483,19 @@ public final class CUDARuntime {
         public Object getSymbol(CUDARuntime runtime) throws UnknownIdentifierException {
             return runtime.getSymbol(CUDA_RUNTIME_LIBRARY_NAME, name, nfiSignature);
         }
-
-        long extractArrayPointer(Object array) {
-            if (array instanceof GPUPointer) {
-                return ((GPUPointer) array).getRawPointer();
-            } else if (array instanceof LittleEndianNativeArrayView) {
-                return ((LittleEndianNativeArrayView) array).getStartAddress();
-            } else if (array instanceof DeviceArray) {
-                return ((DeviceArray) array).getPointer();
-            } else if (array instanceof MultiDimDeviceArray) {
-                return ((MultiDimDeviceArray) array).getPointer();
-            } else {
-                throw new GrCUDAException("expected GPUPointer or LittleEndianNativeArrayView or DeviceArray");
-            }
-        }
-
-        long extractStreamPointer(Object stream) {
-            if (stream instanceof CUDAStream) {
-                return ((CUDAStream) stream).getRawPointer();
-            } else {
-                throw new GrCUDAException("expected CUDAStream object");
-            }
-        }
     }
 
     private HashMap<String, CUModule> loadedModules = new HashMap<>();
 
     @TruffleBoundary
-    public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String signature) {
+    public Kernel loadKernel(String cubinFile, String kernelName, String signature) {
         CUModule module = loadedModules.get(cubinFile);
         try {
             if (module == null) {
                 module = cuModuleLoad(cubinFile);
             }
             long kernelFunction = cuModuleGetFunction(module, kernelName);
-            return new Kernel(grCUDAExecutionContext, kernelName, module, kernelFunction, signature);
+            return new Kernel(this, kernelName, module, kernelFunction, signature);
         } catch (Exception e) {
             if ((module != null) && (module.getRefCount() == 1)) {
                 cuModuleUnload(module);
@@ -1033,14 +505,14 @@ public final class CUDARuntime {
     }
 
     @TruffleBoundary
-    public Kernel buildKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String code, String kernelName, String signature) {
+    public Kernel buildKernel(String code, String kernelName, String signature) {
         String moduleName = "truffle" + context.getNextModuleId();
         PTXKernel ptx = nvrtc.compileKernel(code, kernelName, moduleName, "--std=c++14");
         CUModule module = null;
         try {
             module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
             long kernelFunction = cuModuleGetFunction(module, ptx.getLoweredKernelName());
-            return new Kernel(grCUDAExecutionContext, ptx.getLoweredKernelName(), module, kernelFunction,
+            return new Kernel(this, ptx.getLoweredKernelName(), module, kernelFunction,
                             signature, ptx.getPtxSource());
         } catch (Exception e) {
             if (module != null) {
@@ -1126,11 +598,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cuLaunchKernel(Kernel kernel, KernelConfig config, KernelArguments args) {
-        this.cuLaunchKernel(kernel, config, args, config.getStream());
-    }
-
-    @TruffleBoundary
-    public void cuLaunchKernel(Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream) {
         try {
             Object callable = CUDADriverFunction.CU_LAUNCHKERNEL.getSymbol(this);
             Dim3 gridSize = config.getGridSize();
@@ -1144,11 +611,12 @@ public final class CUDARuntime {
                             blockSize.getY(),
                             blockSize.getZ(),
                             config.getDynamicSharedMemoryBytes(),
-                            stream.getRawPointer(),
+                            config.getStream(),
                             args.getPointer(),              // pointer to kernel arguments array
                             0                               // extra args
             );
             checkCUReturnCode(result, "cuLaunchKernel");
+            cudaDeviceSynchronize();
         } catch (InteropException e) {
             throw new GrCUDAException(e);
         }
@@ -1240,36 +708,10 @@ public final class CUDARuntime {
     }
 
     @TruffleBoundary
-    private long cuCtxGetCurrent() {
-        try (UnsafeHelper.PointerObject ctxPointer = UnsafeHelper.createPointerObject()) {
-            Object callable = CUDADriverFunction.CU_CTXGETCURRENT.getSymbol(this);
-            Object result = INTEROP.execute(callable, ctxPointer.getAddress());
-            checkCUDAReturnCode(result, "cuCtxGetCurrent");
-            return ctxPointer.getValueOfPointer();
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    @TruffleBoundary
-    public void cuCtxSetCurrent(GPUPointer ctxPointer) {
-        try {
-            Object callable = CUDADriverFunction.CU_CTXSETCURRENT.getSymbol(this);
-            Object result = INTEROP.execute(callable, ctxPointer.getRawPointer());
-            checkCUDAReturnCode(result, "cuCtxSetCurrent");
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    @TruffleBoundary
     private void assertCUDAInitialized() {
         if (!context.isCUDAInitialized()) {
-            cuInit();
             // a simple way to create the device context in the driver is to call CUDA function
             cudaDeviceSynchronize();
-            this.innerCudaContext = initializeInnerCudaContext();
-
             context.setCUDAInitialized();
         }
     }
@@ -1286,7 +728,6 @@ public final class CUDARuntime {
                                             result.getClass().getName());
         }
         if (returnCode != 0) {
-            System.out.println("ERROR CODE=" + returnCode);
             throw new GrCUDAException(returnCode, DriverAPIErrorMessages.getString(returnCode), function);
         }
     }
@@ -1305,8 +746,6 @@ public final class CUDARuntime {
     public enum CUDADriverFunction {
         CU_CTXCREATE("cuCtxCreate", "(pointer, uint32, sint32) :sint32"),
         CU_CTXDESTROY("cuCtxDestroy", "(pointer): sint32"),
-        CU_CTXGETCURRENT("cuCtxGetCurrent", "(pointer) :sint32"),
-        CU_CTXSETCURRENT("cuCtxSetCurrent", "(pointer) :sint32"),
         CU_CTXSYNCHRONIZE("cuCtxSynchronize", "(): sint32"),
         CU_DEVICEGETCOUNT("cuDeviceGetCount", "(pointer): sint32"),
         CU_DEVICEGET("cuDeviceGet", "(pointer, sint32): sint32"),

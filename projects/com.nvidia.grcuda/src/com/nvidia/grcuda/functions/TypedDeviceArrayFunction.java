@@ -29,7 +29,7 @@
 package com.nvidia.grcuda.functions;
 
 import com.nvidia.grcuda.ElementType;
-import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.gpu.CUDARuntime;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ArityException;
@@ -40,12 +40,12 @@ import com.oracle.truffle.api.interop.UnsupportedTypeException;
  */
 public final class TypedDeviceArrayFunction extends Function {
 
-    private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
+    private final CUDARuntime runtime;
     private final ElementType elementType;
 
-    public TypedDeviceArrayFunction(AbstractGrCUDAExecutionContext grCUDAExecutionContext, ElementType elementType) {
+    public TypedDeviceArrayFunction(CUDARuntime runtime, ElementType elementType) {
         super("TypedDeviceArray");
-        this.grCUDAExecutionContext = grCUDAExecutionContext;
+        this.runtime = runtime;
         this.elementType = elementType;
     }
 
@@ -56,6 +56,6 @@ public final class TypedDeviceArrayFunction extends Function {
             CompilerDirectives.transferToInterpreter();
             throw ArityException.create(1, arguments.length);
         }
-        return DeviceArrayFunction.createArray(arguments, 0, elementType, grCUDAExecutionContext);
+        return DeviceArrayFunction.createArray(arguments, 0, elementType, runtime);
     }
 }

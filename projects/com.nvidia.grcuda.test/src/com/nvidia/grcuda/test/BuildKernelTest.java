@@ -27,15 +27,13 @@
  */
 package com.nvidia.grcuda.test;
 
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
-import org.junit.Test;
-
 import java.util.Random;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
+import org.junit.Test;
 
 public class BuildKernelTest {
 
@@ -154,12 +152,12 @@ public class BuildKernelTest {
             Value matmultKernel = buildkernel.execute(MATMULT_KERNEL_SOURCE, "matmult", MATMULT_KERNEL_SIGNATURE);
             assertNotNull(matmultKernel);
             assertTrue(matmultKernel.canExecute());
-//            assertEquals(0, matmultKernel.getMember("launchCount").asInt());
+            assertEquals(0, matmultKernel.getMember("launchCount").asInt());
             assertNotNull(matmultKernel.getMember("ptx").asString());
 
             // generate matrices
-            final int numARows = 128;
-            final int numACols = 128;
+            final int numARows = 256;
+            final int numACols = 192;
             final int numBRows = numACols;
             final int numBCols = 128;
             final int blockSize = 32;

@@ -28,13 +28,16 @@
  */
 package com.nvidia.grcuda.gpu;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import com.nvidia.grcuda.DeviceArray;
+import com.nvidia.grcuda.DeviceArray.MemberSet;
 import com.nvidia.grcuda.GrCUDAInternalException;
-import com.nvidia.grcuda.array.DeviceArray;
-import com.nvidia.grcuda.MemberSet;
-import com.nvidia.grcuda.array.MultiDimDeviceArray;
-import com.nvidia.grcuda.gpu.computation.ComputationArgument;
-import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
-import com.nvidia.grcuda.gpu.stream.CUDAStream;
+import com.nvidia.grcuda.MultiDimDeviceArray;
+import com.nvidia.grcuda.gpu.UnsafeHelper.MemoryObject;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -49,34 +52,35 @@ import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @ExportLibrary(InteropLibrary.class)
-public class Kernel implements TruffleObject {
+public final class Kernel implements TruffleObject {
 
-    private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
+    private final CUDARuntime cudaRuntime;
     private final String kernelName;
     private final CUDARuntime.CUModule kernelModule;
     private final long kernelFunction;
     private final String kernelSignature;
     private int launchCount = 0;
-    private final List<ComputationArgument> arguments = new ArrayList<>();
+    private ArgumentType[] argumentTypes;
     private String ptxCode;
 
-    public Kernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, CUDARuntime.CUModule kernelModule, long kernelFunction, String kernelSignature) {
-        this.grCUDAExecutionContext = grCUDAExecutionContext;
+    public Kernel(CUDARuntime cudaRuntime, String kernelName, CUDARuntime.CUModule kernelModule, long kernelFunction, String kernelSignature) {
+        this.cudaRuntime = cudaRuntime;
         this.kernelName = kernelName;
         this.kernelModule = kernelModule;
         this.kernelFunction = kernelFunction;
         this.kernelSignature = kernelSignature;
-        parseSignature(kernelSignature);
-        this.grCUDAExecutionContext.registerKernel(this);
+        this.argumentTypes = parseSignature(kernelSignature);
     }
 
-    public Kernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, CUDARuntime.CUModule kernelModule, long kernelFunction,
+    public Kernel(CUDARuntime cudaRuntime, String kernelName, CUDARuntime.CUModule kernelModule, long kernelFunction,
                     String kernelSignature, String ptx) {
-        this(grCUDAExecutionContext, kernelName, kernelModule, kernelFunction, kernelSignature);
+        this.cudaRuntime = cudaRuntime;
+        this.kernelName = kernelName;
+        this.kernelModule = kernelModule;
+        this.kernelFunction = kernelFunction;
+        this.kernelSignature = kernelSignature;
+        this.argumentTypes = parseSignature(kernelSignature);
         this.ptxCode = ptx;
     }
 
@@ -84,23 +88,23 @@ public class Kernel implements TruffleObject {
         launchCount++;
     }
 
-    public AbstractGrCUDAExecutionContext getGrCUDAExecutionContext() {
-        return grCUDAExecutionContext;
+    public CUDARuntime getCudaRuntime() {
+        return cudaRuntime;
     }
 
-    public List<ComputationArgument> getArguments() {
-        return arguments;
+    public ArgumentType[] getArgumentTypes() {
+        return argumentTypes;
     }
 
-    public KernelArguments createKernelArguments(Object[] args, InteropLibrary int32Access, InteropLibrary int64Access, InteropLibrary doubleAccess)
+    KernelArguments createKernelArguments(Object[] args, InteropLibrary int32Access, InteropLibrary int64Access, InteropLibrary doubleAccess)
                     throws UnsupportedTypeException, ArityException {
-        if (args.length != arguments.size()) {
+        if (args.length != argumentTypes.length) {
             CompilerDirectives.transferToInterpreter();
-            throw ArityException.create(arguments.size(), args.length);
+            throw ArityException.create(argumentTypes.length, args.length);
         }
-        KernelArguments kernelArgs = new KernelArguments(args, arguments);
-        for (int argIdx = 0; argIdx < arguments.size(); argIdx++) {
-            ArgumentType type = arguments.get(argIdx).getType();
+        KernelArguments kernelArgs = new KernelArguments(args.length);
+        for (int argIdx = 0; argIdx < argumentTypes.length; argIdx++) {
+            ArgumentType type = argumentTypes[argIdx];
             try {
                 switch (type) {
                     case INT32:
@@ -149,33 +153,12 @@ public class Kernel implements TruffleObject {
         return kernelArgs;
     }
 
-    private void parseSignature(String kernelSignature) {
+    private static ArgumentType[] parseSignature(String kernelSignature) {
+        CompilerAsserts.neverPartOfCompilation();
+        ArrayList<ArgumentType> args = new ArrayList<>();
         for (String s : kernelSignature.trim().split(",")) {
-
-            // Find if the type is const;
-            String[] typePieces = s.trim().split(" ");
-            String typeString;
-            boolean typeIsConst = false;
-            if (typePieces.length == 1) {
-                // If only 1 piece is found, the argument is not const;
-                typeString = typePieces[0].trim();
-            } else if (typePieces.length == 2) {
-                // Const can be either before or after the type;
-                if (typePieces[0].trim().equals("const")) {
-                    typeIsConst = true;
-                    typeString = typePieces[1].trim();
-                } else if (typePieces[1].trim().equals("const")) {
-                    typeIsConst = true;
-                    typeString = typePieces[0].trim();
-                } else {
-                    throw new IllegalArgumentException("invalid type identifier in kernel signature: " + s);
-                }
-            } else {
-                throw new IllegalArgumentException("invalid type identifier in kernel signature: " + s);
-            }
-
             ArgumentType type;
-            switch (typeString) {
+            switch (s.trim()) {
                 case "pointer":
                     type = ArgumentType.POINTER;
                     break;
@@ -196,8 +179,11 @@ public class Kernel implements TruffleObject {
                 default:
                     throw new IllegalArgumentException("invalid type identifier in kernel signature: " + s);
             }
-            this.arguments.add(new ComputationArgument(type, type.equals(ArgumentType.POINTER), typeIsConst));
+            args.add(type);
         }
+        ArgumentType[] argArray = new ArgumentType[args.size()];
+        args.toArray(argArray);
+        return argArray;
     }
 
     public long getKernelFunction() {
@@ -211,6 +197,14 @@ public class Kernel implements TruffleObject {
     @Override
     public String toString() {
         return "Kernel(" + kernelName + ", " + kernelSignature + ", launchCount=" + launchCount + ")";
+    }
+
+    private enum ArgumentType {
+        POINTER,
+        INT32,
+        INT64,
+        FLOAT32,
+        FLOAT64;
     }
 
     public String getPTX() {
@@ -320,15 +314,6 @@ public class Kernel implements TruffleObject {
         }
         return new Dim3(extractNumber(valueObj, argumentName, access));
     }
-    
-    private static CUDAStream extractStream(Object streamObj) throws UnsupportedTypeException {
-        if (streamObj instanceof CUDAStream) {
-            return (CUDAStream) streamObj;
-        } else {
-            CompilerDirectives.transferToInterpreter();
-            throw UnsupportedTypeException.create(new Object[]{streamObj}, "expected CUDAStream type, received " + streamObj.getClass());
-        }
-    }
 
     @ExportMessage
     @SuppressWarnings("static-method")
@@ -343,30 +328,52 @@ public class Kernel implements TruffleObject {
                     @CachedLibrary(limit = "3") InteropLibrary blockSizeAccess,
                     @CachedLibrary(limit = "3") InteropLibrary blockSizeElementAccess,
                     @CachedLibrary(limit = "3") InteropLibrary sharedMemoryAccess) throws UnsupportedTypeException, ArityException {
-        // FIXME: ArityException allows to specify only 1 arity, and cannot be subclassed! We might want to use a custom exception here;
-        if (arguments.length < 2 || arguments.length > 4) {
+        int dynamicSharedMemoryBytes;
+        if (arguments.length == 2) {
+            dynamicSharedMemoryBytes = 0;
+        } else if (arguments.length == 3) {
+            // dynamic shared memory specified
+            dynamicSharedMemoryBytes = extractNumber(arguments[2], "dynamicSharedMemory", sharedMemoryAccess);
+        } else {
             CompilerDirectives.transferToInterpreter();
             throw ArityException.create(2, arguments.length);
         }
 
         Dim3 gridSize = extractDim3(arguments[0], "gridSize", gridSizeAccess, gridSizeElementAccess);
         Dim3 blockSize = extractDim3(arguments[1], "blockSize", blockSizeAccess, blockSizeElementAccess);
-        KernelConfigBuilder configBuilder = new KernelConfigBuilder(gridSize, blockSize);
-        if (arguments.length == 3) {
-            if (sharedMemoryAccess.isNumber(arguments[2])) {
-                // Dynamic shared memory specified;
-                configBuilder.dynamicSharedMemoryBytes(extractNumber(arguments[2], "dynamicSharedMemory", sharedMemoryAccess));
-            } else {
-                // Stream specified;
-                configBuilder.stream(extractStream(arguments[2]));
-            }
-        } else if (arguments.length == 4) {
-            configBuilder.dynamicSharedMemoryBytes(extractNumber(arguments[2], "dynamicSharedMemory", sharedMemoryAccess));
-            // Stream specified;
-            configBuilder.stream(extractStream(arguments[3]));
-        }
-        return new ConfiguredKernel(this, configBuilder.build());
+        KernelConfig config = new KernelConfig(gridSize, blockSize, dynamicSharedMemoryBytes);
+
+        return new ConfiguredKernel(this, config);
     }
 }
 
+final class KernelArguments implements Closeable {
 
+    private final UnsafeHelper.PointerArray argumentArray;
+    private final ArrayList<Closeable> argumentValues = new ArrayList<>();
+
+    KernelArguments(int numArgs) {
+        this.argumentArray = UnsafeHelper.createPointerArray(numArgs);
+    }
+
+    public void setArgument(int argIdx, MemoryObject obj) {
+        argumentArray.setValueAt(argIdx, obj.getAddress());
+        argumentValues.add(obj);
+    }
+
+    long getPointer() {
+        return argumentArray.getAddress();
+    }
+
+    @Override
+    public void close() {
+        this.argumentArray.close();
+        for (Closeable c : argumentValues) {
+            try {
+                c.close();
+            } catch (IOException e) {
+                /* ignored */
+            }
+        }
+    }
+}

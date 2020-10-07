@@ -28,7 +28,6 @@
  */
 package com.nvidia.grcuda;
 
-import com.nvidia.grcuda.array.DeviceArray;
 import org.graalvm.options.OptionDescriptors;
 
 import com.nvidia.grcuda.nodes.ExpressionNode;
@@ -42,7 +41,7 @@ import com.oracle.truffle.api.interop.TruffleObject;
 /**
  * grCUDA Truffle language that exposes the GPU device and CUDA runtime to polyglot Graal languages.
  */
-@TruffleLanguage.Registration(id = GrCUDALanguage.ID, name = "grcuda", version = "0.1", internal = false, contextPolicy = TruffleLanguage.ContextPolicy.SHARED)
+@TruffleLanguage.Registration(id = GrCUDALanguage.ID, name = "grcuda", version = "0.1", internal = false)
 public final class GrCUDALanguage extends TruffleLanguage<GrCUDAContext> {
 
     public static final String ID = "grcuda";
@@ -75,10 +74,6 @@ public final class GrCUDALanguage extends TruffleLanguage<GrCUDAContext> {
         return TruffleLanguage.getCurrentLanguage(GrCUDALanguage.class);
     }
 
-    public static GrCUDAContext getCurrentContext() {
-        return getCurrentContext(GrCUDALanguage.class);
-    }
-
     @Override
     protected void disposeContext(GrCUDAContext cxt) {
         cxt.disposeAll();
@@ -88,15 +83,4 @@ public final class GrCUDALanguage extends TruffleLanguage<GrCUDAContext> {
     protected OptionDescriptors getOptionDescriptors() {
         return new GrCUDAOptionsOptionDescriptors();
     }
-
-    @Override
-    protected boolean isThreadAccessAllowed(Thread thread, boolean singleThreaded) {
-        return true;
-    }
-
-    @Override
-    protected void finalizeContext(GrCUDAContext context) {
-        context.cleanup();
-    }
-
 }

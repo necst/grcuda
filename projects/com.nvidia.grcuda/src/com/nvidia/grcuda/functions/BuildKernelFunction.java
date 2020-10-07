@@ -28,17 +28,17 @@
  */
 package com.nvidia.grcuda.functions;
 
-import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.gpu.CUDARuntime;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
 public class BuildKernelFunction extends Function {
-    private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
+    private final CUDARuntime cudaRuntime;
 
-    public BuildKernelFunction(AbstractGrCUDAExecutionContext grCUDAExecutionContext) {
+    public BuildKernelFunction(CUDARuntime cudaRuntime) {
         super("buildkernel");
-        this.grCUDAExecutionContext = grCUDAExecutionContext;
+        this.cudaRuntime = cudaRuntime;
     }
 
     @Override
@@ -50,6 +50,6 @@ public class BuildKernelFunction extends Function {
         String kernelName = expectString(arguments[1], "argument 2 of buildkernel must be string (kernel name)");
         String kernelSignature = expectString(arguments[2], "argument 3 of buildkernel must be string (signature of kernel)");
 
-        return grCUDAExecutionContext.buildKernel(code, kernelName, kernelSignature);
+        return this.cudaRuntime.buildKernel(code, kernelName, kernelSignature);
     }
 }

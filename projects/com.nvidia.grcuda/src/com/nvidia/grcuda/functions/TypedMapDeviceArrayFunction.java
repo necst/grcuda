@@ -29,7 +29,7 @@
 package com.nvidia.grcuda.functions;
 
 import com.nvidia.grcuda.ElementType;
-import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.gpu.CUDARuntime;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.interop.ArityException;
@@ -43,12 +43,12 @@ import com.oracle.truffle.api.library.ExportMessage;
 @ExportLibrary(InteropLibrary.class)
 public final class TypedMapDeviceArrayFunction extends Function {
 
-    private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
+    private final CUDARuntime runtime;
     private final ElementType elementType;
 
-    public TypedMapDeviceArrayFunction(AbstractGrCUDAExecutionContext grCUDAExecutionContext, ElementType elementType) {
+    public TypedMapDeviceArrayFunction(CUDARuntime runtime, ElementType elementType) {
         super("TypedMapDeviceArray");
-        this.grCUDAExecutionContext = grCUDAExecutionContext;
+        this.runtime = runtime;
         this.elementType = elementType;
     }
 
@@ -59,6 +59,6 @@ public final class TypedMapDeviceArrayFunction extends Function {
             CompilerDirectives.transferToInterpreter();
             throw ArityException.create(1, arguments.length);
         }
-        return mapNode.execute(arguments[0], elementType, grCUDAExecutionContext);
+        return mapNode.execute(arguments[0], elementType, runtime);
     }
 }

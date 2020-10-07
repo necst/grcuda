@@ -1,4 +1,3 @@
-# coding=utf-8
 import polyglot
 import time
 import math
@@ -53,7 +52,7 @@ REDUCE_KERNEL = """
 #            ├─> C: z=x-y ──> D: sum(z)
 #   B: x^2 ──┘
 if __name__ == "__main__":
-    N = 1000000
+    N = 100000
     NUM_BLOCKS = (N + NUM_THREADS_PER_BLOCK - 1) // NUM_THREADS_PER_BLOCK
 
     start_tot = time.time()
@@ -83,11 +82,9 @@ if __name__ == "__main__":
 
     # A. B. Compute the squares of each vector;
 
-    # First, build the kernels;
+    # First, build the kernel;
     build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
     square_kernel = build_kernel(SQUARE_KERNEL, "square", "pointer, sint32")
-    diff_kernel = build_kernel(DIFF_KERNEL, "diff", "pointer, pointer, pointer, sint32")
-    reduce_kernel = build_kernel(REDUCE_KERNEL, "reduce", "pointer, pointer, sint32")
 
     # Call the kernel. The 2 computations are independent, and can be done in parallel;
     start = time.time()
@@ -99,6 +96,7 @@ if __name__ == "__main__":
 
     # C. Compute the difference of the 2 vectors. This must be done after the 2 previous computations;
     start = time.time()
+    diff_kernel = build_kernel(DIFF_KERNEL, "diff", "pointer, pointer, pointer, sint32")
     diff_kernel(NUM_BLOCKS, NUM_THREADS_PER_BLOCK)(x, y, z, N)
     end = time.time()
     time_cumulative += end - start
@@ -106,6 +104,7 @@ if __name__ == "__main__":
 
     # D. Compute the sum of the result;
     start = time.time()
+    reduce_kernel = build_kernel(REDUCE_KERNEL, "reduce", "pointer, pointer, sint32")
     reduce_kernel(NUM_BLOCKS, NUM_THREADS_PER_BLOCK)(z, res, N)
     end = time.time()
     time_cumulative += end - start
@@ -115,17 +114,3 @@ if __name__ == "__main__":
 
     result = res[0]
     print(f"result={result:.4f}")
-
-    ##############################
-    # Validate the result ########
-    ##############################
-    import numpy as np
-    x_g = 1 / np.linspace(1, N, N)
-    y_g = 2 / np.linspace(1, N, N)
-
-    x_g = x_g**2
-    y_g = y_g**2
-    x_g -= y_g
-    res_g = np.sum(x_g)
-
-    print(f"result in python={res_g:.4f}, difference={np.abs(res_g - result)}")

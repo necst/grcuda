@@ -28,6 +28,9 @@
  */
 package com.nvidia.grcuda.functions;
 
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.nvidia.grcuda.DeviceArray;
 import com.nvidia.grcuda.ElementType;
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAException;
@@ -35,8 +38,7 @@ import com.nvidia.grcuda.GrCUDAInternalException;
 import com.nvidia.grcuda.GrCUDALanguage;
 import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.TypeException;
-import com.nvidia.grcuda.array.DeviceArray;
-import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.gpu.CUDARuntime;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
@@ -65,8 +67,6 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * This node is conceptually a simple memcpy operation, but it can take arbitrary Truffle objects as
  * input and uses {@link InteropLibrary} to access them. The target is a {@link DeviceArray}. The
@@ -75,7 +75,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @GenerateUncached
 abstract class MapArrayNode extends Node {
 
-    abstract Object execute(Object source, ElementType elementType, AbstractGrCUDAExecutionContext grCUDAExecutionContext);
+    abstract Object execute(Object source, ElementType elementType, CUDARuntime runtime);
 
     private static final FrameDescriptor DESCRIPTOR = new FrameDescriptor();
     private static final FrameSlot SIZE_SLOT = DESCRIPTOR.addFrameSlot("size", FrameSlotKind.Long);
@@ -150,7 +150,7 @@ abstract class MapArrayNode extends Node {
             frame.setLong(INDEX_SLOT, 0);
             frame.setObject(SOURCE_SLOT, frame.getArguments()[1]);
             frame.setObject(RESULT_SLOT, frame.getArguments()[2]);
-            loop.execute(frame);
+            loop.executeLoop(frame);
             return NoneValue.get();
         }
     }
@@ -170,7 +170,7 @@ abstract class MapArrayNode extends Node {
     }
 
     @Specialization(limit = "3")
-    Object doMap(Object source, ElementType elementType, AbstractGrCUDAExecutionContext grCUDAExecutionContext,
+    Object doMap(Object source, ElementType elementType, CUDARuntime runtime,
                     @CachedLibrary("source") InteropLibrary interop,
                     @CachedContext(GrCUDALanguage.class) @SuppressWarnings("unused") GrCUDAContext context,
                     @Cached(value = "createLoop(source)", uncached = "createUncachedLoop(source, context)") CallTarget loop) {
@@ -191,7 +191,7 @@ abstract class MapArrayNode extends Node {
             CompilerDirectives.transferToInterpreter();
             throw new GrCUDAException("cannot read array size");
         }
-        DeviceArray result = new DeviceArray(grCUDAExecutionContext, size, elementType);
+        DeviceArray result = new DeviceArray(runtime, size, elementType);
         loop.call(size, source, result);
         return result;
     }
@@ -205,11 +205,11 @@ abstract class MapArrayNode extends Node {
 @ExportLibrary(InteropLibrary.class)
 public final class MapDeviceArrayFunction extends Function {
 
-    private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
+    private final CUDARuntime runtime;
 
-    public MapDeviceArrayFunction(AbstractGrCUDAExecutionContext grCUDAExecutionContext) {
+    public MapDeviceArrayFunction(CUDARuntime runtime) {
         super("MapDeviceArray");
-        this.grCUDAExecutionContext = grCUDAExecutionContext;
+        this.runtime = runtime;
     }
 
     @ExportMessage
@@ -236,13 +236,13 @@ public final class MapDeviceArrayFunction extends Function {
             throw new GrCUDAInternalException(e.getMessage());
         }
         if (arguments.length == 1) {
-            return new TypedMapDeviceArrayFunction(grCUDAExecutionContext, elementType);
+            return new TypedMapDeviceArrayFunction(runtime, elementType);
         } else {
             if (arguments.length != 2) {
                 CompilerDirectives.transferToInterpreter();
                 throw ArityException.create(2, arguments.length);
             }
-            return mapNode.execute(arguments[1], elementType, grCUDAExecutionContext);
+            return mapNode.execute(arguments[1], elementType, runtime);
         }
     }
 }

@@ -27,8 +27,7 @@
  */
 package com.nvidia.grcuda.functions;
 
-import com.nvidia.grcuda.array.AbstractArray;
-import com.nvidia.grcuda.gpu.computation.ArrayReadWriteFunctionExecution;
+import com.nvidia.grcuda.DeviceArray;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropLibrary;
@@ -47,11 +46,11 @@ public class DeviceArrayCopyFunction implements TruffleObject {
         TO_POINTER
     }
 
-    private final AbstractArray array;
+    private final DeviceArray deviceArray;
     private final CopyDirection direction;
 
-    public DeviceArrayCopyFunction(AbstractArray array, CopyDirection direction) {
-        this.array = array;
+    public DeviceArrayCopyFunction(DeviceArray deviceArray, CopyDirection direction) {
+        this.deviceArray = deviceArray;
         this.direction = direction;
     }
 
@@ -88,7 +87,7 @@ public class DeviceArrayCopyFunction implements TruffleObject {
                     @CachedLibrary(limit = "3") InteropLibrary numElementsAccess) throws UnsupportedTypeException, ArityException, IndexOutOfBoundsException {
         long numElements;
         if (arguments.length == 1) {
-            numElements = array.getArraySize();
+            numElements = deviceArray.getArraySize();
         } else if (arguments.length == 2) {
             numElements = extractNumber(arguments[1], "numElements", numElementsAccess);
         } else {
@@ -96,12 +95,17 @@ public class DeviceArrayCopyFunction implements TruffleObject {
             throw ArityException.create(1, arguments.length);
         }
         long pointer = extractPointer(arguments[0], "fromPointer", pointerAccess);
-        new ArrayReadWriteFunctionExecution(array, direction, pointer, numElements).schedule();
-        return array;
+        if (direction == CopyDirection.FROM_POINTER) {
+            deviceArray.copyFrom(pointer, numElements);
+        }
+        if (direction == CopyDirection.TO_POINTER) {
+            deviceArray.copyTo(pointer, numElements);
+        }
+        return deviceArray;
     }
 
     @Override
     public String toString() {
-        return "DeviceArrayCopyFunction(deviceArray=" + array + ", direction=" + direction.name() + ")";
+        return "DeviceArrayCopyFunction(deviceArray=" + deviceArray + ", direction=" + direction.name() + ")";
     }
 }

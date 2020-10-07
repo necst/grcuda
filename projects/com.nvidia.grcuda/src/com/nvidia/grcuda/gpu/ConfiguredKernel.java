@@ -28,7 +28,6 @@
  */
 package com.nvidia.grcuda.gpu;
 
-import com.nvidia.grcuda.gpu.computation.KernelExecution;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropLibrary;
@@ -42,7 +41,6 @@ import com.oracle.truffle.api.library.ExportMessage;
 public class ConfiguredKernel implements TruffleObject {
 
     private final Kernel kernel;
-
     private final KernelConfig config;
 
     public ConfiguredKernel(Kernel kernel, KernelConfig config) {
@@ -58,31 +56,13 @@ public class ConfiguredKernel implements TruffleObject {
     @ExportMessage
     @TruffleBoundary
     Object execute(Object[] arguments,
-                   @CachedLibrary(limit = "3") InteropLibrary int32Access,
-                   @CachedLibrary(limit = "3") InteropLibrary int64Access,
-                   @CachedLibrary(limit = "3") InteropLibrary doubleAccess) throws UnsupportedTypeException, ArityException {
+                    @CachedLibrary(limit = "3") InteropLibrary int32Access,
+                    @CachedLibrary(limit = "3") InteropLibrary int64Access,
+                    @CachedLibrary(limit = "3") InteropLibrary doubleAccess) throws UnsupportedTypeException, ArityException {
         kernel.incrementLaunchCount();
         try (KernelArguments args = kernel.createKernelArguments(arguments, int32Access, int64Access, doubleAccess)) {
-            // If using a manually specified stream, do not schedule it automatically, but execute it immediately;
-            if (!config.useCustomStream()) {
-                new KernelExecution(this, args).schedule();
-            } else {
-                kernel.getGrCUDAExecutionContext().getCudaRuntime().cuLaunchKernel(kernel, config, args, config.getStream());
-            }
+            kernel.getCudaRuntime().cuLaunchKernel(kernel, config, args);
         }
         return this;
-    }
-
-    public Kernel getKernel() {
-        return kernel;
-    }
-
-    public KernelConfig getConfig() {
-        return config;
-    }
-
-    @Override
-    public String toString() {
-        return "ConfiguredKernel(" + kernel.toString() + "; " + config.toString() + ")";
     }
 }
