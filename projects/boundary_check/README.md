@@ -24,7 +24,7 @@
 	* `mkdir build; cd build`
 	* `cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS='clang;libcxx;libcxxabi' ../llvm`, this will build LLVM together with Clang, libcxx, and libcxxabi, with `-O3` optimizations, using the Ninja build generator (the default)
 	* GCC 5 is required (at least), on Centos enable it as `scl enable devtoolset-7 bash`
-	* After CMake, build with `cmake --build .  -j16 --target check-all`, this will build LLVM with Ninja using 16 cores, and rull all integration tests (`check-all` target). Use `--target ninja` to skip integrations tests.
+	* After CMake, build with `cmake --build .  -j16 --target check-all`, this will build LLVM with Ninja using 16 cores, and rull all integration tests (`check-all` target). Don't put `--target check-all` to skip integrations tests.
 * LLVM build notes:
 	* CMake 3.13 is required for installing LLVM
 	* Create an alias as `alias cmake=cmake3` or follow `https://stackoverflow.com/questions/48831131/cmake-on-linux-centos-7-how-to-force-the-system-to-use-cmake3`
@@ -133,6 +133,8 @@ axpy: cuda/axpy.cu
 cd examples/truffle_kernels/run_kernels/python
 python3 run.py
 ```
+
+* Graalpython options for debugging: `--WithJavaStacktrace=1 --ExposeInternalSources`
 
 * Results are stored in `data/results`
 * `resources/python` contains a number of scripts to generate plots and summary tables from these results

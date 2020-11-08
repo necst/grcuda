@@ -8,7 +8,7 @@ import argparse
 ##############################
 ##############################
 
-RESULT_FOLDER = "../../../../data/results"
+RESULT_FOLDER = "../../../../../data/oob/results"
 TRUFFLECUDA_jAR = "../../../../../../mxbuild/dists/jdk1.8/trufflecuda.jar"
 NUM_TESTS=100
 

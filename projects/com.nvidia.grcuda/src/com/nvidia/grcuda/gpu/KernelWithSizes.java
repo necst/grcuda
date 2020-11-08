@@ -1,18 +1,11 @@
 package com.nvidia.grcuda.gpu;
 
 
-import com.nvidia.grcuda.GrCUDAInternalException;
-import com.nvidia.grcuda.array.AbstractArray;
 import com.nvidia.grcuda.array.DeviceArray;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.*;
-import com.oracle.truffle.api.library.LibraryFactory;
-import com.oracle.truffle.api.profiles.ValueProfile;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class KernelWithSizes extends Kernel {
 
@@ -21,13 +14,13 @@ public final class KernelWithSizes extends Kernel {
     public KernelWithSizes(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String kernelSymbol,
                            long kernelFunction, String kernelSignature, CUDARuntime.CUModule module, int numOfPointers) {
         super(grCUDAExecutionContext, kernelName, kernelSymbol, kernelFunction, kernelSignature, module);
-        this.sizesArray = new DeviceArray(grCUDAExecutionContext, numOfPointers, Type.UINT64);
+        this.sizesArray = new DeviceArray(grCUDAExecutionContext, numOfPointers, Type.SINT64);
     }
 
     public KernelWithSizes(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String kernelSymbol,
                            long kernelFunction, String kernelSignature, CUDARuntime.CUModule module, String ptx, int numOfPointers) {
         super(grCUDAExecutionContext, kernelName, kernelSymbol, kernelFunction, kernelSignature, module, ptx);
-        this.sizesArray = new DeviceArray(grCUDAExecutionContext, numOfPointers, Type.UINT64);
+        this.sizesArray = new DeviceArray(grCUDAExecutionContext, numOfPointers, Type.SINT64);
     }
 
     @Override
@@ -41,35 +34,12 @@ public final class KernelWithSizes extends Kernel {
             CompilerDirectives.transferToInterpreter();
             throw ArityException.create(this.kernelComputationArguments.length, args.length + 1);
         }
-        KernelArguments kernelArgs = new KernelArguments(args, this.kernelComputationArguments);
+        // Initialize the arguments, and create a new array that stores the sizes of each array;
+        KernelArguments kernelArgs = new KernelArgumentsWithSizes(args, this.kernelComputationArguments, sizesArray);
 
         // Add all the arguments provided by the user;
         for (int argIdx = 0; argIdx < args.length; argIdx++) {
             processAndAddKernelArgument(kernelArgs, args, argIdx, booleanAccess, int8Access, int16Access, int32Access, int64Access, doubleAccess);
-        }
-        // Add the additional arguments;
-        List<Long> arraySizes = new ArrayList<>();
-        for (Object arg : args) {
-            if (arg instanceof AbstractArray) {
-                AbstractArray deviceArray = (AbstractArray) arg;
-                // Get the array size;
-                arraySizes.add(deviceArray.getArraySize());
-            }
-        }
-
-        // Create a new argument that represents the sizes array, and add it as last argument;
-        UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();
-        pointer.setValueOfPointer(sizesArray.getPointer());
-        kernelArgs.setArgument(args.length, pointer);
-        // Store each array size in the new input array;
-        for (int i = 0; i < arraySizes.size(); i++) {
-            try {
-                sizesArray.writeArrayElement(i, arraySizes.get(i),
-                        LibraryFactory.resolve(InteropLibrary.class).getUncached(),
-                        ValueProfile.getUncached());
-            } catch (InvalidArrayIndexException e) {
-                throw new GrCUDAInternalException("error setting size of array at index " + i + " , with value " + arraySizes.get(i));
-            }
         }
         return kernelArgs;
     }

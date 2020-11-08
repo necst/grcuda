@@ -20,8 +20,8 @@ ADD_SIZE_PASS_FLAGS := --dump_updated_kernel
 FIX_OOB_PASS_FLAGS := --dump_updated_kernel
 endif
 
-CXX_FLAGS := --cuda-gpu-arch=sm_60  -pthread -std=c++11 -S -emit-llvm --cuda-device-only
-PTXAS_FLAGS := -m64 --gpu-name sm_60
+CXX_FLAGS := --cuda-gpu-arch=sm_70  -pthread -std=c++11 -S -emit-llvm --cuda-device-only
+PTXAS_FLAGS := -m64 --gpu-name sm_70
 
 # Folders where files are located/placed;
 BIN_DIR := cubin

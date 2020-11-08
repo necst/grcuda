@@ -127,7 +127,11 @@ public abstract class AbstractGrCUDAExecutionContext {
     // Functions used to interface directly with the CUDA runtime;
 
     public Kernel loadKernel(Binding binding) {
-        return cudaRuntime.loadKernel(this, binding);
+        return cudaRuntime.loadKernel(this, binding, false);
+    }
+
+    public Kernel loadKernel(Binding binding, boolean preventOOB) {
+        return cudaRuntime.loadKernel(this, binding, preventOOB);
     }
 
     public Kernel buildKernel(String code, String kernelName, String signature) {

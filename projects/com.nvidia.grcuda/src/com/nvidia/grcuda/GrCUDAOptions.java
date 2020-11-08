@@ -68,7 +68,7 @@ public final class GrCUDAOptions {
     public static final OptionKey<String> RetrieveParentStreamPolicy = new OptionKey<>(GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY.getName());
 
     @Option(category = OptionCategory.USER, help = "Force the use of array stream attaching even when not required (e.g. post-Pascal GPUs)", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<Boolean> ForceStreamAttach = new OptionKey<>(false);
+    public static final OptionKey<Boolean> ForceStreamAttach = new OptionKey<>(GrCUDAContext.DEFAULT_FORCE_STREAM_ATTACH);
 
     @Option(category = OptionCategory.USER, help = "Always prefetch input arrays to GPU if possible (e.g. post-Pascal GPUs)", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<Boolean> InputPrefetch = new OptionKey<>(false);

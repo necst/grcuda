@@ -91,7 +91,7 @@ def run_kernel(debug: bool, num_blocks: int, kernel_name: str, kernel_path: str,
     start = time.perf_counter()
     
     code = """bindkernel("{}", "{}", "{}", "{}")""".format(kernel_path, kernel_name, kernel_params, deduct_sizes)
-    kernel = polyglot.eval(language='cuda', string=code)
+    kernel = polyglot.eval(language='grcuda', string=code)
 
     if debug:
         print("got '{}' kernel: {}".format(kernel_name, kernel))

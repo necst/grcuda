@@ -114,7 +114,7 @@ public final class BindKernelFunction extends Function {
             binding = parseSignature(signature, preventOOB);
         }
         binding.setLibraryFileName(fileName);
-        return grCUDAExecutionContext.loadKernel(binding);
+        return grCUDAExecutionContext.loadKernel(binding, preventOOB);
     }
 
     private static void updateParamListWithPointerArray(ArrayList<ComputationArgument> paramList) {

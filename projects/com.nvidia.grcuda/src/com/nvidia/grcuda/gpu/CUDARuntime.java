@@ -1040,7 +1040,7 @@ public final class CUDARuntime {
     private HashMap<String, CUModule> loadedModules = new HashMap<>();
 
     @TruffleBoundary
-    public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Binding binding) {
+    public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Binding binding, boolean preventOOB) {
         String cubinFile = binding.getLibraryFileName();
         String kernelName = binding.getName();
         String symbolName = binding.getSymbolName();
@@ -1052,7 +1052,7 @@ public final class CUDARuntime {
             loadedModules.put(cubinFile, module);
         }
         long kernelFunction = cuModuleGetFunction(module, symbolName);
-        if (!context.isPreventOOB()) {
+        if (!preventOOB) {
             return new Kernel(grCUDAExecutionContext, kernelName, symbolName, kernelFunction, signature, module);
         } else {
             int numOfPointers = 0 ;
@@ -1131,8 +1131,7 @@ public final class CUDARuntime {
     public long cuModuleGetFunction(CUModule kernelModule, String kernelName) {
         try (UnsafeHelper.Integer64Object functionPtr = UnsafeHelper.createInteger64Object()) {
             Object callable = CUDADriverFunction.CU_MODULEGETFUNCTION.getSymbol(this);
-            Object result = INTEROP.execute(callable,
-                            functionPtr.getAddress(), kernelModule.getModulePointer(), kernelName);
+            Object result = INTEROP.execute(callable, functionPtr.getAddress(), kernelModule.getModulePointer(), kernelName);
             checkCUReturnCode(result, "cuModuleGetFunction");
             return functionPtr.getValue();
         } catch (InteropException e) {

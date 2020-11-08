@@ -9,20 +9,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public final class KernelArguments implements Closeable {
+public class KernelArguments implements Closeable {
 
-    private final Object[] originalArgs;
+    protected final Object[] originalArgs;
     /**
      * Associate each input object to the characteristics of its argument, such as its type and if it's constant;
      */
-    private final List<ComputationArgumentWithValue> kernelArgumentWithValues = new ArrayList<>();
-    private final UnsafeHelper.PointerArray argumentArray;
-    private final ArrayList<Closeable> argumentValues = new ArrayList<>();
+    protected final List<ComputationArgumentWithValue> kernelArgumentWithValues = new ArrayList<>();
+    protected final UnsafeHelper.PointerArray argumentArray;
+    protected final ArrayList<Closeable> argumentValues = new ArrayList<>();
 
     public KernelArguments(Object[] args, ComputationArgument[] kernelArgumentList) {
+        this(args, kernelArgumentList, args.length);
+    }
+
+    protected KernelArguments(Object[] args, ComputationArgument[] kernelArgumentList, int argSize) {
         this.originalArgs = args;
-        this.argumentArray = UnsafeHelper.createPointerArray(args.length);
+        this.argumentArray = UnsafeHelper.createPointerArray(argSize);
         assert(args.length == kernelArgumentList.length);
+        assert(argSize >= args.length);
         // Initialize the list of arguments and object references;
         for (int i = 0; i < args.length; i++) {
             kernelArgumentWithValues.add(new ComputationArgumentWithValue(kernelArgumentList[i], args[i]));
