@@ -29,6 +29,7 @@
 package com.nvidia.grcuda.functions;
 
 import com.nvidia.grcuda.ComputationArgument;
+import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
 import java.util.ArrayList;
 
@@ -39,6 +40,7 @@ import com.nvidia.grcuda.gpu.Kernel;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import com.sun.org.apache.xpath.internal.functions.FuncFalse;
 
 public final class BindKernelFunction extends Function {
 
@@ -75,17 +77,27 @@ public final class BindKernelFunction extends Function {
      * @param Kernel object
      */
     public Kernel call(Object[] arguments) throws UnsupportedTypeException, ArityException {
-        if ((arguments.length != 2) && (arguments.length != 3)) {
-            throw new GrCUDAException("bindkernel function requires two or three arguments");
+        if ((arguments.length != 2) && (arguments.length != 3) && (arguments.length != 4)) {
+            throw new GrCUDAException("bindkernel function requires two or three or four arguments");
         }
         String fileName = expectString(arguments[0], "argument 1 of bindkernel must be string (name of cubin or PTX file)");
         KernelBinding binding = null;
-        if (arguments.length == 3) {
+        boolean preventOOB = grCUDAExecutionContext.getCudaRuntime().getContext().isPreventOOB();
+        if (arguments.length >= 3) {
+            if (arguments.length == 4) {
+                // If specified, add the array length parameters to the kernel signature;
+                String addSizesStr = expectString(arguments[3], "argument 3 of bindkernel must be string with value True or False");
+                preventOOB = Boolean.parseBoolean(addSizesStr);
+            }
             // parse legacy NFI-based kernel signature: comma-separated NFI types
             String symbolName = expectString(arguments[1], "argument 2 of bindkernel must be string (symbol name)").trim();
             String signature = expectString(arguments[2], "argument 3 of bind must be string (signature of kernel)").trim();
             try {
                 ArrayList<ComputationArgument> paramList = ComputationArgument.parseParameterSignature(signature);
+                // Check if any of the parameter is a pointer. If so, add a new pointer argument required to store pointer sizes;
+                if (preventOOB) {
+                    updateParamListWithPointerArray(paramList);
+                }
                 binding = KernelBinding.newCBinding(symbolName, paramList);
             } catch (TypeException e) {
                 throw new GrCUDAException("invalid type: " + e.getMessage());
@@ -99,13 +111,26 @@ public final class BindKernelFunction extends Function {
             // cxx kernelName(argName_i: sint32, argName_j: inout pointer float)
             // -> search for symbol "_Z10kernelNameiPf"
             String signature = expectString(arguments[1], "argument 2 of bindkernel must be string (NIDL signature)").trim();
-            binding = parseSignature(signature);
+            binding = parseSignature(signature, preventOOB);
         }
         binding.setLibraryFileName(fileName);
         return grCUDAExecutionContext.loadKernel(binding);
     }
 
-    private static KernelBinding parseSignature(String signature) {
+    private static void updateParamListWithPointerArray(ArrayList<ComputationArgument> paramList) {
+        boolean pointerFound = false;
+        for (ComputationArgument param : paramList) {
+            if (param.isPointer()) {
+                pointerFound = true;
+                break;
+            }
+        }
+        if (pointerFound) {
+            paramList.add(new ComputationArgument(paramList.size(), "sizes", Type.NFI_POINTER, ComputationArgument.Kind.POINTER_IN));
+        }
+    }
+
+    private static KernelBinding parseSignature(String signature, boolean preventOOB) {
         String s = signature.trim();
         boolean isCxxSymbol = false;
         if (s.startsWith("cxx ")) {
@@ -132,6 +157,9 @@ public final class BindKernelFunction extends Function {
 
         try {
             ArrayList<ComputationArgument> paramList = ComputationArgument.parseParameterSignature(parenSignature);
+            if (preventOOB) {
+                updateParamListWithPointerArray(paramList);
+            }
             if (isCxxSymbol) {
                 return KernelBinding.newCxxBinding(name, paramList);
             } else {

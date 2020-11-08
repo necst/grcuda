@@ -78,4 +78,7 @@ public final class GrCUDAOptions {
 
     @Option(category = OptionCategory.USER, help = "Set the location of the TensorRT library.", stability = OptionStability.STABLE) //
     public static final OptionKey<String> TensorRTLibrary = new OptionKey<>(TensorRTRegistry.DEFAULT_LIBRARY);
+
+    @Option(category = OptionCategory.USER, help = "Automatically modify CUDA kernels with array sizes to prevent out-of-boundary array accesses", stability = OptionStability.EXPERIMENTAL) //
+    public static final OptionKey<Boolean> PreventOOB = new OptionKey<>(false);
 }

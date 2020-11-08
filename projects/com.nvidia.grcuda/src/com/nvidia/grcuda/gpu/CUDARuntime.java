@@ -35,6 +35,8 @@ import static com.nvidia.grcuda.functions.Function.expectLong;
 import static com.nvidia.grcuda.functions.Function.expectPositiveLong;
 
 import java.util.HashMap;
+
+import com.nvidia.grcuda.ComputationArgument;
 import org.graalvm.collections.Pair;
 
 import com.nvidia.grcuda.Binding;
@@ -1037,27 +1039,12 @@ public final class CUDARuntime {
 
     private HashMap<String, CUModule> loadedModules = new HashMap<>();
 
-//    @TruffleBoundary
-//    public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String signature) {
-//        CUModule module = loadedModules.get(cubinFile);
-//        try {
-//            if (module == null) {
-//                module = cuModuleLoad(cubinFile);
-//            }
-//            long kernelFunction = cuModuleGetFunction(module, kernelName);
-//            return new Kernel(grCUDAExecutionContext, kernelName, module, kernelFunction, signature);
-//        } catch (Exception e) {
-//            if ((module != null) && (module.getRefCount() == 1)) {
-//                cuModuleUnload(module);
-//            }
-//            throw e;
     @TruffleBoundary
     public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Binding binding) {
-        return loadKernel(grCUDAExecutionContext, binding.getLibraryFileName(), binding.getName(), binding.getSymbolName(), binding.getNIDLParameterSignature());
-    }
-
-    @TruffleBoundary
-    public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature) {
+        String cubinFile = binding.getLibraryFileName();
+        String kernelName = binding.getName();
+        String symbolName = binding.getSymbolName();
+        String signature = binding.getNIDLParameterSignature();
         CUModule module = loadedModules.get(cubinFile);
         if (module == null) {
             // load module as it is not yet loaded
@@ -1065,7 +1052,17 @@ public final class CUDARuntime {
             loadedModules.put(cubinFile, module);
         }
         long kernelFunction = cuModuleGetFunction(module, symbolName);
-        return new Kernel(grCUDAExecutionContext, kernelName, symbolName, kernelFunction, signature, module);
+        if (!context.isPreventOOB()) {
+            return new Kernel(grCUDAExecutionContext, kernelName, symbolName, kernelFunction, signature, module);
+        } else {
+            int numOfPointers = 0 ;
+            for (ComputationArgument arg : binding.getComputationArguments()) {
+                if (arg.isPointer()) {
+                    numOfPointers++;
+                }
+            }
+            return new KernelWithSizes(grCUDAExecutionContext, kernelName, symbolName, kernelFunction, signature, module, numOfPointers);
+        }
     }
 
     @TruffleBoundary

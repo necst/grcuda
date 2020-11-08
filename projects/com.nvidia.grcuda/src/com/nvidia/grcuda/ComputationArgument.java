@@ -65,7 +65,7 @@ public class ComputationArgument {
      * @param type data type of the parameter
      * @param kind kind of the parameter (by-value, pointer with direction)
      */
-    ComputationArgument(int position, String name, Type type, Kind kind) {
+    public ComputationArgument(int position, String name, Type type, Kind kind) {
         this.position = position;
         this.name = name;
         this.type = type;
@@ -74,7 +74,7 @@ public class ComputationArgument {
         this.isConst = kind.equals(Kind.POINTER_IN) || kind.equals(Kind.BY_VALUE);
     }
 
-    ComputationArgument(String name, Type type, Kind kind) {
+    public ComputationArgument(String name, Type type, Kind kind) {
         this(DEFAULT_POSITION, name, type, kind);
     }
 

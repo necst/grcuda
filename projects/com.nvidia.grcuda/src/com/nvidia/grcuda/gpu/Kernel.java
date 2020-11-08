@@ -65,7 +65,7 @@ public class Kernel implements TruffleObject {
     private final String kernelSymbol;
     private final long nativeKernelFunctionHandle;
     private final CUModule module;
-    private final ComputationArgument[] kernelComputationArguments;
+    protected final ComputationArgument[] kernelComputationArguments;
     private int launchCount = 0;
     private String ptxCode;
 
@@ -98,7 +98,6 @@ public class Kernel implements TruffleObject {
      */
     public Kernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String kernelSymbol,
                     long kernelFunction, String kernelSignature, CUModule module, String ptx) {
-//        parseSignature(kernelSignature);
         try {
             ArrayList<ComputationArgument> paramList = ComputationArgument.parseParameterSignature(kernelSignature);
             ComputationArgument[] params = new ComputationArgument[paramList.size()];
@@ -128,7 +127,137 @@ public class Kernel implements TruffleObject {
         return kernelComputationArguments;
     }
 
-    KernelArguments createKernelArguments(Object[] args, InteropLibrary booleanAccess,
+    protected void processAndAddKernelArgument(KernelArguments kernelArgs, Object[] args, int paramIdx,
+                                               InteropLibrary booleanAccess, InteropLibrary int8Access, InteropLibrary int16Access,
+                                               InteropLibrary int32Access, InteropLibrary int64Access, InteropLibrary doubleAccess) throws UnsupportedTypeException {
+        Object arg = args[paramIdx];
+        ComputationArgument param = kernelComputationArguments[paramIdx];
+        Type paramType = param.getType();
+        try {
+            if (param.isPointer()) {
+                if (arg instanceof DeviceArray) {
+                    DeviceArray deviceArray = (DeviceArray) arg;
+                    if (!param.isSynonymousWithPointerTo(deviceArray.getElementType())) {
+                        throw new GrCUDAException("device array of " + deviceArray.getElementType() + " cannot be used as pointer argument " + paramType);
+                    }
+                    UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();
+                    pointer.setValueOfPointer(deviceArray.getPointer());
+                    kernelArgs.setArgument(paramIdx, pointer);
+                } else if (arg instanceof MultiDimDeviceArray) {
+                    MultiDimDeviceArray deviceArray = (MultiDimDeviceArray) arg;
+                    if (!param.isSynonymousWithPointerTo(deviceArray.getElementType())) {
+                        throw new GrCUDAException("multi-dimensional device array of " +
+                                deviceArray.getElementType() + " cannot be used as pointer argument " + paramType);
+                    }
+                    UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();
+                    pointer.setValueOfPointer(deviceArray.getPointer());
+                    kernelArgs.setArgument(paramIdx, pointer);
+                } else {
+                    CompilerDirectives.transferToInterpreter();
+                    throw UnsupportedTypeException.create(new Object[]{arg}, "expected DeviceArray type");
+                }
+            } else {
+                // by-value argument
+                switch (paramType) {
+                    case BOOLEAN: {
+                        UnsafeHelper.Integer8Object int8 = UnsafeHelper.createInteger8Object();
+                        int8.setValue(booleanAccess.asBoolean(arg) ? ((byte) 1) : ((byte) 0));
+                        kernelArgs.setArgument(paramIdx, int8);
+                        break;
+                    }
+                    case SINT8:
+                    case CHAR: {
+                        UnsafeHelper.Integer8Object int8 = UnsafeHelper.createInteger8Object();
+                        int8.setValue(int8Access.asByte(arg));
+                        kernelArgs.setArgument(paramIdx, int8);
+                        break;
+                    }
+                    case SINT16: {
+                        UnsafeHelper.Integer16Object int16 = UnsafeHelper.createInteger16Object();
+                        int16.setValue(int16Access.asShort(arg));
+                        kernelArgs.setArgument(paramIdx, int16);
+                        break;
+                    }
+                    case SINT32:
+                    case WCHAR: {
+                        UnsafeHelper.Integer32Object int32 = UnsafeHelper.createInteger32Object();
+                        int32.setValue(int32Access.asInt(arg));
+                        kernelArgs.setArgument(paramIdx, int32);
+                        break;
+                    }
+                    case SINT64:
+                    case SLL64:
+                        // no larger primitive type than long -> interpret long as unsigned
+                    case UINT64:
+                    case ULL64: {
+                        UnsafeHelper.Integer64Object int64 = UnsafeHelper.createInteger64Object();
+                        int64.setValue(int64Access.asLong(arg));
+                        kernelArgs.setArgument(paramIdx, int64);
+                        break;
+                    }
+                    case UINT8:
+                    case CHAR8: {
+                        int uint8 = int16Access.asShort(arg);
+                        if (uint8 < 0 || uint8 > 0xff) {
+                            CompilerDirectives.transferToInterpreter();
+                            throw createExceptionValueOutOfRange(paramType, uint8);
+                        }
+                        UnsafeHelper.Integer8Object int8 = UnsafeHelper.createInteger8Object();
+                        int8.setValue((byte) (0xff & uint8));
+                        kernelArgs.setArgument(paramIdx, int8);
+                        break;
+                    }
+                    case UINT16:
+                    case CHAR16: {
+                        int uint16 = int32Access.asInt(arg);
+                        if (uint16 < 0 || uint16 > 0xffff) {
+                            CompilerDirectives.transferToInterpreter();
+                            throw createExceptionValueOutOfRange(paramType, uint16);
+                        }
+                        UnsafeHelper.Integer16Object int16 = UnsafeHelper.createInteger16Object();
+                        int16.setValue((short) (0xffff & uint16));
+                        kernelArgs.setArgument(paramIdx, int16);
+                        break;
+                    }
+                    case UINT32: {
+                        long uint32 = int64Access.asLong(arg);
+                        if (uint32 < 0 || uint32 > 0xffffffffL) {
+                            CompilerDirectives.transferToInterpreter();
+                            throw createExceptionValueOutOfRange(paramType, uint32);
+                        }
+                        UnsafeHelper.Integer32Object int32 = UnsafeHelper.createInteger32Object();
+                        int32 = UnsafeHelper.createInteger32Object();
+                        int32.setValue((int) (0xffffffffL & uint32));
+                        kernelArgs.setArgument(paramIdx, int32);
+                        break;
+                    }
+                    case FLOAT: {
+                        UnsafeHelper.Float32Object fp32 = UnsafeHelper.createFloat32Object();
+                        // going via "double" to allow floats to be initialized with doubles
+                        fp32.setValue((float) doubleAccess.asDouble(arg));
+                        kernelArgs.setArgument(paramIdx, fp32);
+                        break;
+                    }
+                    case DOUBLE: {
+                        UnsafeHelper.Float64Object fp64 = UnsafeHelper.createFloat64Object();
+                        fp64.setValue(doubleAccess.asDouble(arg));
+                        kernelArgs.setArgument(paramIdx, fp64);
+                        break;
+                    }
+                    default:
+                        CompilerDirectives.transferToInterpreter();
+                        throw UnsupportedTypeException.create(new Object[]{arg},
+                                "unsupported by-value parameter type: " + paramType);
+                }
+            }
+        } catch (UnsupportedMessageException e) {
+            CompilerDirectives.transferToInterpreter();
+            throw UnsupportedTypeException.create(new Object[]{arg},
+                    "expected type " + paramType + " in argument " + arg);
+        }
+    }
+
+    protected KernelArguments createKernelArguments(Object[] args, InteropLibrary booleanAccess,
                     InteropLibrary int8Access, InteropLibrary int16Access,
                     InteropLibrary int32Access, InteropLibrary int64Access, InteropLibrary doubleAccess)
                     throws UnsupportedTypeException, ArityException {
@@ -138,131 +267,7 @@ public class Kernel implements TruffleObject {
         }
         KernelArguments kernelArgs = new KernelArguments(args, this.kernelComputationArguments);
         for (int paramIdx = 0; paramIdx < kernelComputationArguments.length; paramIdx++) {
-            Object arg = args[paramIdx];
-            ComputationArgument param = kernelComputationArguments[paramIdx];
-            Type paramType = param.getType();
-            try {
-                if (param.isPointer()) {
-                    if (arg instanceof DeviceArray) {
-                        DeviceArray deviceArray = (DeviceArray) arg;
-                        if (!param.isSynonymousWithPointerTo(deviceArray.getElementType())) {
-                            throw new GrCUDAException("device array of " + deviceArray.getElementType() + " cannot be used as pointer argument " + paramType);
-                        }
-                        UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();
-                        pointer.setValueOfPointer(deviceArray.getPointer());
-                        kernelArgs.setArgument(paramIdx, pointer);
-                    } else if (arg instanceof MultiDimDeviceArray) {
-                        MultiDimDeviceArray deviceArray = (MultiDimDeviceArray) arg;
-                        if (!param.isSynonymousWithPointerTo(deviceArray.getElementType())) {
-                            throw new GrCUDAException("multi-dimensional device array of " +
-                                    deviceArray.getElementType() + " cannot be used as pointer argument " + paramType);
-                        }
-                        UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();
-                        pointer.setValueOfPointer(deviceArray.getPointer());
-                        kernelArgs.setArgument(paramIdx, pointer);
-                    } else {
-                        CompilerDirectives.transferToInterpreter();
-                        throw UnsupportedTypeException.create(new Object[]{arg}, "expected DeviceArray type");
-                    }
-                } else {
-                    // by-value argument
-                    switch (paramType) {
-                        case BOOLEAN: {
-                            UnsafeHelper.Integer8Object int8 = UnsafeHelper.createInteger8Object();
-                            int8.setValue(booleanAccess.asBoolean(arg) ? ((byte) 1) : ((byte) 0));
-                            kernelArgs.setArgument(paramIdx, int8);
-                            break;
-                        }
-                        case SINT8:
-                        case CHAR: {
-                            UnsafeHelper.Integer8Object int8 = UnsafeHelper.createInteger8Object();
-                            int8.setValue(int8Access.asByte(arg));
-                            kernelArgs.setArgument(paramIdx, int8);
-                            break;
-                        }
-                        case SINT16: {
-                            UnsafeHelper.Integer16Object int16 = UnsafeHelper.createInteger16Object();
-                            int16.setValue(int16Access.asShort(arg));
-                            kernelArgs.setArgument(paramIdx, int16);
-                            break;
-                        }
-                        case SINT32:
-                        case WCHAR: {
-                            UnsafeHelper.Integer32Object int32 = UnsafeHelper.createInteger32Object();
-                            int32.setValue(int32Access.asInt(arg));
-                            kernelArgs.setArgument(paramIdx, int32);
-                            break;
-                        }
-                        case SINT64:
-                        case SLL64:
-                            // no larger primitive type than long -> interpret long as unsigned
-                        case UINT64:
-                        case ULL64: {
-                            UnsafeHelper.Integer64Object int64 = UnsafeHelper.createInteger64Object();
-                            int64.setValue(int64Access.asLong(arg));
-                            kernelArgs.setArgument(paramIdx, int64);
-                            break;
-                        }
-                        case UINT8:
-                        case CHAR8: {
-                            int uint8 = int16Access.asShort(arg);
-                            if (uint8 < 0 || uint8 > 0xff) {
-                                CompilerDirectives.transferToInterpreter();
-                                throw createExceptionValueOutOfRange(paramType, uint8);
-                            }
-                            UnsafeHelper.Integer8Object int8 = UnsafeHelper.createInteger8Object();
-                            int8.setValue((byte) (0xff & uint8));
-                            kernelArgs.setArgument(paramIdx, int8);
-                            break;
-                        }
-                        case UINT16:
-                        case CHAR16: {
-                            int uint16 = int32Access.asInt(arg);
-                            if (uint16 < 0 || uint16 > 0xffff) {
-                                CompilerDirectives.transferToInterpreter();
-                                throw createExceptionValueOutOfRange(paramType, uint16);
-                            }
-                            UnsafeHelper.Integer16Object int16 = UnsafeHelper.createInteger16Object();
-                            int16.setValue((short) (0xffff & uint16));
-                            kernelArgs.setArgument(paramIdx, int16);
-                            break;
-                        }
-                        case UINT32: {
-                            long uint32 = int64Access.asLong(arg);
-                            if (uint32 < 0 || uint32 > 0xffffffffL) {
-                                CompilerDirectives.transferToInterpreter();
-                                throw createExceptionValueOutOfRange(paramType, uint32);
-                            }
-                            UnsafeHelper.Integer32Object int32 = UnsafeHelper.createInteger32Object();
-                            int32 = UnsafeHelper.createInteger32Object();
-                            int32.setValue((int) (0xffffffffL & uint32));
-                            kernelArgs.setArgument(paramIdx, int32);
-                            break;
-                        }
-                        case FLOAT: {
-                            UnsafeHelper.Float32Object fp32 = UnsafeHelper.createFloat32Object();
-                            // going via "double" to allow floats to be initialized with doubles
-                            fp32.setValue((float) doubleAccess.asDouble(arg));
-                            kernelArgs.setArgument(paramIdx, fp32);
-                            break;
-                        }
-                        case DOUBLE: {
-                            UnsafeHelper.Float64Object fp64 = UnsafeHelper.createFloat64Object();
-                            fp64.setValue(doubleAccess.asDouble(arg));
-                            kernelArgs.setArgument(paramIdx, fp64);
-                            break;
-                        }
-                        default:
-                            CompilerDirectives.transferToInterpreter();
-                            throw UnsupportedTypeException.create(new Object[]{arg},
-                                    "unsupported by-value parameter type: " + paramType);
-                    }
-                }
-            } catch (UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw UnsupportedTypeException.create(new Object[]{arg},
-                        "expected type " + paramType + " in argument " + arg);
-            }
+            processAndAddKernelArgument(kernelArgs, args, paramIdx, booleanAccess, int8Access, int16Access, int32Access, int64Access, doubleAccess);
         }
         return kernelArgs;
     }

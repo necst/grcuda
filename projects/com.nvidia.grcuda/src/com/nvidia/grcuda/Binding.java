@@ -149,6 +149,10 @@ public abstract class Binding {
         return Arrays.stream(computationArguments).map(ComputationArgument::toNFISignatureElement).collect(Collectors.joining(", "));
     }
 
+    public ComputationArgument[] getComputationArguments() {
+        return computationArguments;
+    }
+
     public String toNIDLString() {
         return name + "(" + getNIDLParameterSignature() + ")";
     }
