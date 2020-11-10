@@ -28,19 +28,19 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
     }
 
     public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        this(cudaRuntime, threadManager, new GrCUDAStreamManager(cudaRuntime), dependencyPolicy, inputPrefetch);
+        this(cudaRuntime, threadManager, new GrCUDAStreamManager(cudaRuntime),new GrCUDADevicesManager(cudaRuntime), dependencyPolicy, inputPrefetch);
     }
 
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy) {
+    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, GrCUDADevicesManager devicesManager,DependencyPolicyEnum dependencyPolicy) {
         super(cudaRuntime, dependencyPolicy, PrefetcherEnum.NONE);
         this.streamManager = streamManager;
-        this.devicesManager = cudaRuntime.getContext().getGrCUDADevicesManager();
+        this.devicesManager = devicesManager;
     }
 
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
+    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, GrCUDADevicesManager devicesManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
         super(cudaRuntime, dependencyPolicy, inputPrefetch);
         this.streamManager = streamManager;
-        this.devicesManager = cudaRuntime.getContext().getGrCUDADevicesManager();
+        this.devicesManager = devicesManager;
     }
 
     /**

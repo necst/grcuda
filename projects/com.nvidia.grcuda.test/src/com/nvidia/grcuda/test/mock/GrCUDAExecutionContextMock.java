@@ -15,19 +15,19 @@ public class GrCUDAExecutionContextMock extends GrCUDAExecutionContext {
 
     public GrCUDAExecutionContextMock() {
         super(null, null,
-                new GrCUDAStreamManagerMock(null), DependencyPolicyEnum.DEFAULT, PrefetcherEnum.NONE);
+                new GrCUDAStreamManagerMock(null), null,DependencyPolicyEnum.DEFAULT, PrefetcherEnum.NONE);
     }
 
     public GrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy) {
         super(null, null,
-                new GrCUDAStreamManagerMock(null), dependencyPolicy, PrefetcherEnum.NONE);
+                new GrCUDAStreamManagerMock(null), null,dependencyPolicy, PrefetcherEnum.NONE);
     }
 
     public GrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy,
                                       RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
                                       RetrieveParentStreamPolicyEnum parentStreamPolicyEnum) {
         super(null, null,
-                new GrCUDAStreamManagerMock(null, retrieveStreamPolicy, parentStreamPolicyEnum), dependencyPolicy, PrefetcherEnum.NONE);
+                new GrCUDAStreamManagerMock(null, retrieveStreamPolicy, parentStreamPolicyEnum), null,dependencyPolicy, PrefetcherEnum.NONE);
     }
 
     public ArrayStreamArchitecturePolicy getArrayStreamArchitecturePolicy() {

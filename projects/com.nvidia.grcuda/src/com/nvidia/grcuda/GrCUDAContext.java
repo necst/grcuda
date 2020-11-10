@@ -91,6 +91,7 @@ public final class GrCUDAContext {
     public GrCUDAContext(Env env) {
         this.env = env;
 
+
         // Retrieve if we should force array stream attachment;
         forceStreamAttach = env.getOptions().get(GrCUDAOptions.ForceStreamAttach);
 
