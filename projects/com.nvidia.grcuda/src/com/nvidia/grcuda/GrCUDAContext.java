@@ -92,6 +92,7 @@ public final class GrCUDAContext {
     public GrCUDAContext(Env env) {
         this.env = env;
 
+
         // Retrieve if we should force array stream attachment;
         forceStreamAttach = env.getOptions().get(GrCUDAOptions.ForceStreamAttach);
 
@@ -113,8 +114,6 @@ public final class GrCUDAContext {
         // Initialize the execution policy;
         System.out.println("-- using " + executionPolicy.getName() + " execution policy");
 
-        //init device manager
-        grCUDADevicesManager = new GrCUDADevicesManager(getCUDARuntime());
 
         switch (executionPolicy) {
             case SYNC:
@@ -155,11 +154,13 @@ public final class GrCUDAContext {
             new TensorRTRegistry(this).registerTensorRTFunctions(trt);
         }
         this.rootNamespace = namespace;
+        //init device manager
+        grCUDADevicesManager = new GrCUDADevicesManager(getCUDARuntime());
 
     }
 
     public GrCUDADevicesManager getGrCUDADevicesManager(){
-        return grCUDADevicesManager;
+        return this.grCUDADevicesManager;
     }
 
 
