@@ -46,3 +46,5 @@ b8: b8*
 b10: b10*
 	$(CXX) old/b10_default.cu $(FLAGS) -o $(BIN_FOLDER)/b10_default;
 	$(CXX) old/b10_sync.cu $(FLAGS) -o $(BIN_FOLDER)/b10_sync
+b11: b11*
+	$(CXX) b11.cu $(FLAGS) -o $(BIN_FOLDER)/b11;
