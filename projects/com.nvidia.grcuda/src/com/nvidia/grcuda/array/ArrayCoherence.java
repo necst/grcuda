@@ -8,5 +8,6 @@ package com.nvidia.grcuda.array;
 public enum ArrayCoherence {
     SHARED,
     INVALID,
-    EXCLUSIVE
+    EXCLUSIVE,
+    MODIFIED
 }

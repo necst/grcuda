@@ -84,7 +84,6 @@ public final class GrCUDAContext {
     private final RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum;
     private final boolean forceStreamAttach;
     private final boolean inputPrefetch;
-    private final GrCUDADevicesManager grCUDADevicesManager;
 
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
     private final ConcurrentHashMap<Class<?>, CallTarget> uncachedMapCallTargets = new ConcurrentHashMap<>();
@@ -113,8 +112,6 @@ public final class GrCUDAContext {
         // Initialize the execution policy;
         System.out.println("-- using " + executionPolicy.getName() + " execution policy");
 
-        //init device manager
-        grCUDADevicesManager = new GrCUDADevicesManager(getCUDARuntime());
 
         switch (executionPolicy) {
             case SYNC:
@@ -158,9 +155,6 @@ public final class GrCUDAContext {
 
     }
 
-    public GrCUDADevicesManager getGrCUDADevicesManager(){
-        return grCUDADevicesManager;
-    }
 
 
     public Env getEnv() {

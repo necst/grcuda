@@ -39,7 +39,7 @@ public abstract class AbstractArray implements TruffleObject {
 
     protected static final MemberSet PUBLIC_MEMBERS = new MemberSet(COPY_FROM, COPY_TO, FREE, IS_MEMORY_FREED);
     protected static final MemberSet MEMBERS = new MemberSet(POINTER, COPY_FROM, COPY_TO, FREE, IS_MEMORY_FREED);
-
+    protected static final CoherenceState coherenceState = new CoherenceState();
     /**
      * Reference to the underlying CUDA runtime that manages the array memory.
      */
