@@ -112,6 +112,10 @@ public final class GrCUDAContext {
         ExecutionPolicyEnum executionPolicy = parseExecutionPolicy(env.getOptions().get(GrCUDAOptions.ExecutionPolicy));
         // Initialize the execution policy;
         System.out.println("-- using " + executionPolicy.getName() + " execution policy");
+
+        //init device manager
+        grCUDADevicesManager = new GrCUDADevicesManager(getCUDARuntime());
+
         switch (executionPolicy) {
             case SYNC:
                 this.grCUDAExecutionContext = new SyncGrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.SYNC : PrefetcherEnum.NONE);
@@ -151,9 +155,6 @@ public final class GrCUDAContext {
             new TensorRTRegistry(this).registerTensorRTFunctions(trt);
         }
         this.rootNamespace = namespace;
-
-        //init device manager
-        grCUDADevicesManager = new GrCUDADevicesManager(getCUDARuntime());
 
     }
 
