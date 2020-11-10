@@ -7,6 +7,7 @@ import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.gpu.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.gpu.computation.prefetch.PrefetcherEnum;
 import com.nvidia.grcuda.gpu.stream.GrCUDAStreamManager;
+import com.nvidia.grcuda.gpu.GrCUDADevicesManager;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
@@ -21,7 +22,7 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
      * scheduling computations on different streams;
      */
     private final GrCUDAStreamManager streamManager;
-
+    private final GrCUDADevicesManager devicesManager;
     public GrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
         this(new CUDARuntime(context, env), new GrCUDAThreadManager(context), dependencyPolicy, inputPrefetch);
     }
@@ -33,11 +34,13 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
     public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy) {
         super(cudaRuntime, dependencyPolicy, PrefetcherEnum.NONE);
         this.streamManager = streamManager;
+        this.devicesManager = cudaRuntime.getContext().getGrCUDADevicesManager();
     }
 
     public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
         super(cudaRuntime, dependencyPolicy, inputPrefetch);
         this.streamManager = streamManager;
+        this.devicesManager = cudaRuntime.getContext().getGrCUDADevicesManager();
     }
 
     /**
