@@ -27,7 +27,7 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
     }
 
     public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        this(cudaRuntime, threadManager, new GrCUDAStreamManager(cudaRuntime,new GrCUDADevicesManager(cudaRuntime)), dependencyPolicy, inputPrefetch);
+        this(cudaRuntime, threadManager, new GrCUDAStreamManager(cudaRuntime), dependencyPolicy, inputPrefetch);
     }
 
     public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager,DependencyPolicyEnum dependencyPolicy) {

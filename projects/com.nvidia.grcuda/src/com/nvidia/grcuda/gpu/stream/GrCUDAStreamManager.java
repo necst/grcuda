@@ -42,8 +42,8 @@ public class GrCUDAStreamManager {
     private final RetrieveNewStream retrieveNewStream;
     private final RetrieveParentStream retrieveParentStream;
 
-    public GrCUDAStreamManager(CUDARuntime runtime, GrCUDADevicesManager devicesManager) {
-        this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum(), devicesManager);
+    public GrCUDAStreamManager(CUDARuntime runtime) {
+        this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum(), new GrCUDADevicesManager(runtime));
     }
 
     public GrCUDAStreamManager(
