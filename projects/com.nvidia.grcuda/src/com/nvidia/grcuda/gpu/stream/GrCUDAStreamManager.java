@@ -45,13 +45,48 @@ public class GrCUDAStreamManager {
     public GrCUDAStreamManager(CUDARuntime runtime) {
         this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum(), new GrCUDADevicesManager(runtime));
     }
-
+    /**
+     * With DeviceManager
+     * */
     public GrCUDAStreamManager(
             CUDARuntime runtime,
             RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
             RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager) {
         this.runtime = runtime;
         this.devicesManager = devicesManager;
+        // Get how streams are retrieved for computations without parents;
+        switch(retrieveNewStreamPolicyEnum) {
+            case FIFO:
+                this.retrieveNewStream = new FifoRetrieveStream();
+                break;
+            case ALWAYS_NEW:
+                this.retrieveNewStream = new AlwaysNewRetrieveStream();
+                break;
+            default:
+                this.retrieveNewStream = new FifoRetrieveStream();
+        }
+        // Get how streams are retrieved for computations with parents;
+        switch(retrieveParentStreamPolicyEnum) {
+            case DISJOINT:
+                this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
+                break;
+            case DEFAULT:
+                this.retrieveParentStream = new DefaultRetrieveParentStream();
+                break;
+            default:
+                this.retrieveParentStream = new DefaultRetrieveParentStream();
+        }
+    }
+    
+    /**
+     *Without DeviceManager
+     */
+    public GrCUDAStreamManager(
+            CUDARuntime runtime,
+            RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
+            RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
+        this.runtime = runtime;
+        this.devicesManager = null;
         // Get how streams are retrieved for computations without parents;
         switch(retrieveNewStreamPolicyEnum) {
             case FIFO:
