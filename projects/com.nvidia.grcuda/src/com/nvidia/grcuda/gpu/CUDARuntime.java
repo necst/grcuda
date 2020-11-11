@@ -362,7 +362,7 @@ public final class CUDARuntime {
             Object callable = CUDARuntimeFunction.CUDA_STREAMCREATE.getSymbol(this);
             Object result = INTEROP.execute(callable, streamPointer.getAddress());
             checkCUDAReturnCode(result, "cudaStreamCreate");
-            return new CUDAStream(streamPointer.getValueOfPointer(), streamId);
+            return new CUDAStream(streamPointer.getValueOfPointer(), streamId, cudaGetDevice());
         } catch (InteropException e) {
             throw new GrCUDAException(e);
         }
@@ -768,7 +768,7 @@ public final class CUDARuntime {
                 checkArgumentLength(args, 0);
                 try (UnsafeHelper.PointerObject streamPointer = UnsafeHelper.createPointerObject()) {
                     callSymbol(cudaRuntime, streamPointer.getAddress());
-                    CUDAStream stream = new CUDAStream(streamPointer.getValueOfPointer(), cudaRuntime.getNumStreams());
+                    CUDAStream stream = new CUDAStream(streamPointer.getValueOfPointer(), cudaRuntime.getNumStreams(), cudaRuntime.cudaGetDevice());
                     cudaRuntime.incrementNumStreams();
                     return stream;
                 }
