@@ -54,6 +54,7 @@ public class GrCUDAStreamManager {
             RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager) {
         this.runtime = runtime;
         this.devicesManager = devicesManager;
+
         // Get how streams are retrieved for computations without parents;
         switch(retrieveNewStreamPolicyEnum) {
             case FIFO:
@@ -111,13 +112,18 @@ public class GrCUDAStreamManager {
         }
     }
 
+    private int cheapestDeviceForStream(ExecutionDAG.DAGVertex vertex){
+        int parentDeviceId = vertex.getParentComputations().get(0).getStream().getStreamDeviceId();
+
+        return 0;
+    }
+
     /**
      * Assign a {@link CUDAStream} to the input computation, based on its dependencies and on the available streams.
      * This function has no effect if the stream was manually specified by the user;
      * @param vertex an input computation for which we want to assign a stream
      */
     public void assignStream(ExecutionDAG.DAGVertex vertex) {
-
         // If the computation cannot use customized streams, return immediately;
         if (vertex.getComputation().canUseStream()) {
             CUDAStream stream;
