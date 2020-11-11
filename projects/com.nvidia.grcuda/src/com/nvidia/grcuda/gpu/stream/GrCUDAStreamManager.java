@@ -77,7 +77,7 @@ public class GrCUDAStreamManager {
                 this.retrieveParentStream = new DefaultRetrieveParentStream();
         }
     }
-    
+
     /**
      *Without DeviceManager
      */
