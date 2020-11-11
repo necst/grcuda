@@ -22,25 +22,22 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
      * scheduling computations on different streams;
      */
     private final GrCUDAStreamManager streamManager;
-    private final GrCUDADevicesManager devicesManager;
     public GrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
         this(new CUDARuntime(context, env), new GrCUDAThreadManager(context), dependencyPolicy, inputPrefetch);
     }
 
     public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        this(cudaRuntime, threadManager, new GrCUDAStreamManager(cudaRuntime),new GrCUDADevicesManager(cudaRuntime), dependencyPolicy, inputPrefetch);
+        this(cudaRuntime, threadManager, new GrCUDAStreamManager(cudaRuntime,new GrCUDADevicesManager(cudaRuntime)), dependencyPolicy, inputPrefetch);
     }
 
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, GrCUDADevicesManager devicesManager,DependencyPolicyEnum dependencyPolicy) {
+    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager,DependencyPolicyEnum dependencyPolicy) {
         super(cudaRuntime, dependencyPolicy, PrefetcherEnum.NONE);
         this.streamManager = streamManager;
-        this.devicesManager = devicesManager;
     }
 
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, GrCUDADevicesManager devicesManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
+    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
         super(cudaRuntime, dependencyPolicy, inputPrefetch);
         this.streamManager = streamManager;
-        this.devicesManager = devicesManager;
     }
 
     /**

@@ -2,6 +2,7 @@ package com.nvidia.grcuda.gpu.stream;
 
 import com.nvidia.grcuda.CUDAEvent;
 import com.nvidia.grcuda.gpu.CUDARuntime;
+import com.nvidia.grcuda.gpu.GrCUDADevicesManager;
 import com.nvidia.grcuda.gpu.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
@@ -33,19 +34,24 @@ public class GrCUDAStreamManager {
      * Track the active computations each stream has, excluding the default stream;
      */
     protected final Map<CUDAStream, Set<ExecutionDAG.DAGVertex>> activeComputationsPerStream = new HashMap<>();
+    /**
+     * Device manager in order to track the device which is currently used
+     */
+    protected final GrCUDADevicesManager devicesManager;
 
     private final RetrieveNewStream retrieveNewStream;
     private final RetrieveParentStream retrieveParentStream;
 
-    public GrCUDAStreamManager(CUDARuntime runtime) { 
-        this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum());
+    public GrCUDAStreamManager(CUDARuntime runtime, GrCUDADevicesManager devicesManager) {
+        this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum(), devicesManager);
     }
 
     public GrCUDAStreamManager(
             CUDARuntime runtime,
             RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
-            RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
+            RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager) {
         this.runtime = runtime;
+        this.devicesManager = devicesManager;
         // Get how streams are retrieved for computations without parents;
         switch(retrieveNewStreamPolicyEnum) {
             case FIFO:

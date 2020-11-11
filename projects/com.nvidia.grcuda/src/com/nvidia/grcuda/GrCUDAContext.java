@@ -153,7 +153,8 @@ public final class GrCUDAContext {
             new TensorRTRegistry(this).registerTensorRTFunctions(trt);
         }
         this.rootNamespace = namespace;
-
+        GrCUDADevicesManager devicesManager = new GrCUDADevicesManager(getCUDARuntime());
+        System.out.println(devicesManager.getCurrentDeviceId());
     }
 
 
