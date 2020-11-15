@@ -319,7 +319,7 @@ public class GrCUDAStreamManager {
 
     public CUDAStream createStreamDifferentDevice() {
         int deviceId = cheapestDeviceForStream();
-        devicesManager.setDevice(deviceId);
+        devicesManager.setDevice(0);
         CUDAStream newStream = runtime.cudaStreamCreate(streams.size());
         System.out.println("Stream is assigned to device: " + newStream.getStreamDeviceId());
         streams.add(newStream);
