@@ -42,6 +42,8 @@ public class GrCUDAStreamManager {
     private final RetrieveNewStream retrieveNewStream;
     private final RetrieveParentStream retrieveParentStream;
 
+    private int deviceId = 0;
+
     public GrCUDAStreamManager(CUDARuntime runtime) {
         this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum(), new GrCUDADevicesManager(runtime));
     }
@@ -114,9 +116,14 @@ public class GrCUDAStreamManager {
 
     private int cheapestDeviceForStream(ExecutionDAG.DAGVertex vertex){
         int parentDeviceId = vertex.getParentComputations().get(0).getStream().getStreamDeviceId();
-
-        return 0;
+        return parentDeviceId;
     }
+    private int cheapestDeviceForStream(){
+        int val = deviceId%2;
+        deviceId++;
+        return val;
+    }
+
 
     /**
      * Assign a {@link CUDAStream} to the input computation, based on its dependencies and on the available streams.
@@ -310,6 +317,14 @@ public class GrCUDAStreamManager {
         return newStream;
     }
 
+    public CUDAStream createStreamDifferentDevice() {
+        int deviceId = cheapestDeviceForStream();
+        devicesManager.setDevice(deviceId);
+        CUDAStream newStream = runtime.cudaStreamCreate(streams.size());
+        System.out.println("Stream is assigned to device: " + newStream.getStreamDeviceId());
+        streams.add(newStream);
+        return newStream;
+    }
     /**
      * Check if a given stream is free to use, and has no active computations on it;
      * @param stream a CUDAStream
@@ -398,6 +413,7 @@ public class GrCUDAStreamManager {
 
         @Override
         public CUDAStream retrieve() {
+
             return createStream();
         }
     }
@@ -435,7 +451,8 @@ public class GrCUDAStreamManager {
         CUDAStream retrieve() {
             if (freeStreams.isEmpty()) {
                 // Create a new stream if none is available;
-                return createStream();
+                //return createStream();
+                return createStreamDifferentDevice();
             } else {
                 // Get the first stream available, and remove it from the list of free streams;
                 CUDAStream stream = freeStreams.poll();
