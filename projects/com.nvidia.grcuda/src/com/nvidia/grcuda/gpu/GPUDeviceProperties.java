@@ -45,7 +45,7 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 
 @ExportLibrary(InteropLibrary.class)
-public final class GPUDeviceProperties implements TruffleObject {
+public class GPUDeviceProperties implements TruffleObject {
 
     private final CUDARuntime runtime;
     private final int deviceId;

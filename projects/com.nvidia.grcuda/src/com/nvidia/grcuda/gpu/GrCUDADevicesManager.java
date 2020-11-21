@@ -7,12 +7,16 @@ public class GrCUDADevicesManager {
     private final ArrayList<Device> devices = new ArrayList<>();
     private final Integer numberOfGPUs;
     private Integer currentDeviceId;
+
     public GrCUDADevicesManager(CUDARuntime runtime){
         this.runtime = runtime;
         this.numberOfGPUs = runtime.cudaGetDeviceCount();
         this.currentDeviceId = runtime.cudaGetDevice();
         initDevices();
+
     }
+
+
 
     private void initDevices(){
         for(int i = 0; i<numberOfGPUs;i++) {

@@ -45,7 +45,7 @@ import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
 @ExportLibrary(InteropLibrary.class)
-public final class Device implements TruffleObject {
+public class Device implements TruffleObject {
 
     private static final String ID = "id";
     private static final String PROPERTIES = "properties";

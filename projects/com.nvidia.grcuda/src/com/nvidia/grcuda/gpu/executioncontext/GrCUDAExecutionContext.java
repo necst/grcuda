@@ -52,6 +52,7 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
 
         // Compute the stream where the computation will be done, if the computation can be performed asynchronously;
         streamManager.assignStream(vertex);
+        new GrCUDADevicesManager(cudaRuntime).setDevice(vertex.getComputation().getStream().getStreamDeviceId());
 
         // Prefetching;
         arrayPrefetcher.prefetchToGpu(vertex);
@@ -61,7 +62,6 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
 
         // Associate a CUDA event to this computation, if performed asynchronously;
         streamManager.assignEvent(vertex);
-
 //        System.out.println("-- running " + vertex.getComputation());
 
         return result;
