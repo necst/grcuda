@@ -147,7 +147,8 @@ void Benchmark15::execute_cudagraph(int iter) {
 
 void Benchmark15::execute_cudagraph_manual(int iter) {
 }
-
+void Benchmark15::execute_cudagraph_single(int iter) {
+}
 std::string
 Benchmark15::print_result(bool short_form) {
     if (short_form) {

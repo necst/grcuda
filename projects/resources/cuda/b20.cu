@@ -302,6 +302,7 @@ void Benchmark20::execute_async(int iter) {
 void Benchmark20::execute_cudagraph(int iter) {}
 
 void Benchmark20::execute_cudagraph_manual(int iter) {}
+void Benchmark20::execute_cudagraph_single(int iter) {}
 
 std::string Benchmark20::print_result(bool short_form) {
     return std::to_string(res[0]);

@@ -34,6 +34,7 @@ import static com.nvidia.grcuda.functions.Function.expectInt;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 import static com.nvidia.grcuda.functions.Function.expectPositiveLong;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import org.graalvm.collections.Pair;
 
@@ -99,7 +100,6 @@ public final class CUDARuntime {
     public long getNumEvents() {
         return numEvents;
     }
-
     /**
      * Map from library-path to NFI library.
      */
@@ -150,7 +150,8 @@ public final class CUDARuntime {
     // using this slow/uncached instance since all calls are non-critical
     private static final InteropLibrary INTEROP = InteropLibrary.getFactory().getUncached();
 
-    private GPUPointer innerCudaContext;
+    private ArrayList<GPUPointer> innerCudaContext = new ArrayList<>();
+    
 
     public GrCUDAContext getContext() {
         return context;
@@ -439,7 +440,7 @@ public final class CUDARuntime {
     }
 
     @TruffleBoundary
-    public GPUPointer getInnerCudaContext() {
+    public ArrayList<GPUPointer> getInnerCudaContext() {
         if (this.innerCudaContext == null) {
             assertCUDAInitialized();
         }
@@ -447,10 +448,10 @@ public final class CUDARuntime {
     }
 
     @TruffleBoundary
-    public GPUPointer initializeInnerCudaContext() {
+    public GPUPointer initializeInnerCudaContext(int deviceId) {
         int CU_CTX_SCHED_YIELD = 0x02; // Optimal multi-threaded host flag;
-        int device = 0; // Support only device 0;
-        return new GPUPointer(cuDevicePrimaryCtxRetain(device));
+        //int device = 0; // Support only device 0;
+        return new GPUPointer(cuDevicePrimaryCtxRetain(deviceId));
     }
 
     /**
@@ -502,6 +503,7 @@ public final class CUDARuntime {
             throw new RuntimeException("CUDA event=" + event + " has already been destroyed");
         }
         try {
+            assert stream.getStreamDeviceId() == cudaGetDevice();
             Object callable = CUDARuntimeFunction.CUDA_EVENTRECORD.getSymbol(this);
             Object result = INTEROP.execute(callable, event.getRawPointer(), stream.getRawPointer());
             checkCUDAReturnCode(result, "cudaEventRecord");
@@ -1163,6 +1165,11 @@ public final class CUDARuntime {
     @TruffleBoundary
     public void cuLaunchKernel(Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream) {
         try {
+            cudaSetDevice(stream.getStreamDeviceId());
+
+            System.out.println("Stream is assigned to device cuLauchKernel: " + stream.getStreamDeviceId());
+            System.out.println("current Device in cuLauchKernel is: " + cudaGetDevice());
+
             Object callable = CUDADriverFunction.CU_LAUNCHKERNEL.getSymbol(this);
             Dim3 gridSize = config.getGridSize();
             Dim3 blockSize = config.getBlockSize();
@@ -1295,13 +1302,14 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     private void assertCUDAInitialized() {
+
         if (!context.isCUDAInitialized()) {
             cuInit();
             // a simple way to create the device context in the driver is to call CUDA function
             cudaDeviceSynchronize();
-            this.innerCudaContext = initializeInnerCudaContext();
-
+            this.innerCudaContext.add(initializeInnerCudaContext(0));
             context.setCUDAInitialized();
+            cudaSetDevice(1);
         }
     }
 

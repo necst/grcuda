@@ -321,7 +321,7 @@ void Benchmark16::execute_async(int iter) {
 void Benchmark16::execute_cudagraph(int iter) {}
 
 void Benchmark16::execute_cudagraph_manual(int iter) {}
-
+void Benchmark16::execute_cudagraph_single(int iter) {}
 std::string Benchmark16::print_result(bool short_form) {
     if (short_form) {
         return std::to_string(r[0]);

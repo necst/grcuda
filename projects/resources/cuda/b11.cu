@@ -148,9 +148,13 @@ void Benchmark11::execute_async(int iter)
 
 
 
+
+
 void Benchmark11::execute_cudagraph(int iter) {}
 
 void Benchmark11::execute_cudagraph_manual(int iter) {}
+
+void Benchmark11::execute_cudagraph_single(int iter) {}
 
 std::string Benchmark11::print_result(bool short_form)
 {

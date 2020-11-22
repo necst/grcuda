@@ -348,6 +348,7 @@ void Benchmark17::execute_cudagraph(int iter) {}
 
 void Benchmark17::execute_cudagraph_manual(int iter) {}
 
+void Benchmark17::execute_cudagraph_single(int iter) {}
 std::string Benchmark17::print_result(bool short_form) {
     if (short_form) {
         return std::to_string(auth1[0]);
