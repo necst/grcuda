@@ -503,7 +503,10 @@ public final class CUDARuntime {
             throw new RuntimeException("CUDA event=" + event + " has already been destroyed");
         }
         try {
+            
+            //check if the stream is on the right device
             assert stream.getStreamDeviceId() == cudaGetDevice();
+
             Object callable = CUDARuntimeFunction.CUDA_EVENTRECORD.getSymbol(this);
             Object result = INTEROP.execute(callable, event.getRawPointer(), stream.getRawPointer());
             checkCUDAReturnCode(result, "cudaEventRecord");
@@ -1304,13 +1307,18 @@ public final class CUDARuntime {
     private void assertCUDAInitialized() {
 
         if (!context.isCUDAInitialized()) {
-            cuInit();
-            // a simple way to create the device context in the driver is to call CUDA function
-            cudaDeviceSynchronize();
-            this.innerCudaContext.add(initializeInnerCudaContext(0));
+            int numDevices = cudaGetDeviceCount();
+            for(int i = 0; i<numDevices; i++){
+                cudaSetDevice(i);
+                cuInit();
+                // a simple way to create the device context in the driver is to call CUDA function
+                cudaDeviceSynchronize();
+                this.innerCudaContext.add(initializeInnerCudaContext(i));
+            }
+
             context.setCUDAInitialized();
-            cudaSetDevice(1);
         }
+
     }
 
     @SuppressWarnings("static-method")

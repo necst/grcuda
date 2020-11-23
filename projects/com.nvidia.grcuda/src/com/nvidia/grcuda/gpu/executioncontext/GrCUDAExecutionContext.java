@@ -52,11 +52,10 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
 
         // Compute the stream where the computation will be done, if the computation can be performed asynchronously;
         streamManager.assignStream(vertex);
-        System.out.println("current Device in GrExecutionContext : " + cudaRuntime.cudaGetDevice() + "current device for stream" + vertex.getComputation().getStream().getStreamDeviceId());
 
         // Prefetching;
         arrayPrefetcher.prefetchToGpu(vertex);
-
+        
         // Start the computation;
         Object result = executeComputationSync(vertex);
 
