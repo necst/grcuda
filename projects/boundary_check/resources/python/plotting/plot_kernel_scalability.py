@@ -13,6 +13,14 @@ import os
 
 from plot_kernel_exec_time import build_plot, r1, r2, r3, b1, b2, b3, b4, load_data, get_upper_ci_size, remove_outliers
 
+GPU = "GTX1660"
+DATE = "2020_11_13_20_24_57"
+
+RES_FOLDER = f"../../../../../data/oob/results/{GPU}/{DATE}"
+PLOT_FOLDER = f"../../../../../data/oob/plots/{GPU}/{DATE}"
+
+KERNELS =  ["mmul", "autocov", 
+            "backprop", "needle"]
 
 def get_exp_label(val):
     
@@ -138,6 +146,9 @@ def build_overhead_plot(data, position, opt=""):
 
 if __name__ == "__main__":
     
+    if not os.path.exists(PLOT_FOLDER):
+        os.mkdir(PLOT_FOLDER)
+    
     # Plotting setup;
     sns.set(font_scale=1.2)
     sns.set_style("whitegrid", {"xtick.bottom": True, "ytick.left": True, "xtick.color": ".8", "ytick.color": ".8"})
@@ -151,16 +162,23 @@ if __name__ == "__main__":
     # Load data ######################
     ##################################
     
-    res_folder = "../../../data/results/scalability/2019_09_03"
-    plot_dir = "../../../data/plots/scalability/2020_02_13"
+    # res_folder = "../../../data/results/scalability/2019_09_03"
+    # plot_dir = "../../../data/plots/scalability/2020_02_13"
     
     
-    res_mmul = load_data(os.path.join(res_folder, "mmul_2019_09_03_08_21_45.csv"))
-    res_autocov = load_data(os.path.join(res_folder, "autocov_2019_09_01_11_50_00.csv"))
-    res_bb = load_data(os.path.join(res_folder, "backprop_2019_09_01_11_50_00.csv"))
-    res_needle = load_data(os.path.join(res_folder, "needle_2019_09_01_11_19_29.csv"))
+    # res_mmul = load_data(os.path.join(res_folder, "mmul_2019_09_03_08_21_45.csv"))
+    # res_autocov = load_data(os.path.join(res_folder, "autocov_2019_09_01_11_50_00.csv"))
+    # res_bb = load_data(os.path.join(res_folder, "backprop_2019_09_01_11_50_00.csv"))
+    # res_needle = load_data(os.path.join(res_folder, "needle_2019_09_01_11_19_29.csv"))
     
-    res_list = [res_mmul, res_autocov, res_bb, res_needle]
+    # res_list = [res_mmul, res_autocov, res_bb, res_needle]
+    
+    res_list = []
+    for k in KERNELS:
+        for f in os.listdir(RES_FOLDER):
+            if k == "_".join(f.split("_")[:-6]):
+                print(f, k)
+                res_list += [load_data(os.path.join(RES_FOLDER, f))]
     
     res_list = [remove_outliers(res) for res in res_list]
     
@@ -205,8 +223,8 @@ if __name__ == "__main__":
     leg.set_title(None)
     leg._legend_box.align = "left"
     
-    plt.savefig(os.path.join(plot_dir, "scalability_o1o2.pdf"))
-    plt.savefig(os.path.join(plot_dir, "scalability_o1o2.png"))
+    plt.savefig(os.path.join(PLOT_FOLDER, "scalability_o1o2.pdf"))
+    plt.savefig(os.path.join(PLOT_FOLDER, "scalability_o1o2.png"))
     
     
     #%% Only O2 optimization;
@@ -224,17 +242,23 @@ if __name__ == "__main__":
     # Load data ######################
     ##################################
     
-    res_folder = "../../../data/results/scalability/2019_09_03"
-    plot_dir = "../../../data/plots/scalability/2020_02_13"
+    # res_folder = "../../../data/results/scalability/2019_09_03"
+    # plot_dir = "../../../data/plots/scalability/2020_02_13"
     
-    res_autocov = load_data(os.path.join(res_folder, "autocov_2019_09_01_11_50_00.csv"))
-    res_bb = load_data(os.path.join(res_folder, "backprop_2019_09_01_11_50_00.csv"))
-    res_mmul = load_data(os.path.join(res_folder, "mmul_2019_09_03_08_21_45.csv"))
-    res_needle = load_data(os.path.join(res_folder, "needle_2019_09_01_11_19_29.csv"))
+    # res_autocov = load_data(os.path.join(res_folder, "autocov_2019_09_01_11_50_00.csv"))
+    # res_bb = load_data(os.path.join(res_folder, "backprop_2019_09_01_11_50_00.csv"))
+    # res_mmul = load_data(os.path.join(res_folder, "mmul_2019_09_03_08_21_45.csv"))
+    # res_needle = load_data(os.path.join(res_folder, "needle_2019_09_01_11_19_29.csv"))
     
-    res_list = [res_autocov, res_bb, res_mmul, res_needle]
+    res_list = []
+    for k in KERNELS:
+        for f in os.listdir(RES_FOLDER):
+            if k == "_".join(f.split("_")[:-6]):
+                print(f, k)
+                res_list += [load_data(os.path.join(RES_FOLDER, f))]
     
     res_list = [remove_outliers(res) for res in res_list]
+    
     
     ##################################
     # Plotting #######################
@@ -282,7 +306,7 @@ if __name__ == "__main__":
     
     fig.suptitle("Kernels Scalability & Overheads,\nO2 Opt. Level", ha="left", x=0.1, y=0.98, fontsize=20)
     
-    plt.savefig(os.path.join(plot_dir, "scalability_o2.pdf"))
-    plt.savefig(os.path.join(plot_dir, "scalability_o2.png"))
+    plt.savefig(os.path.join(PLOT_FOLDER, "scalability_o2.pdf"))
+    plt.savefig(os.path.join(PLOT_FOLDER, "scalability_o2.png"))
 
     

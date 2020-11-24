@@ -45,13 +45,13 @@ def main(args):
     num_blocks = (num_blocks_rows, num_blocks_cols)
 
     # Use separate data for the 2 kernels, to have the same memory transfers across tests;
-    x = polyglot.eval(language='cuda', string='float[{}]'.format(x_dim_row * x_dim_col))
-    y = polyglot.eval(language='cuda', string='float[{}]'.format(x_dim_row * y_dim_row))
-    z = polyglot.eval(language='cuda', string='float[{}]'.format(x_dim_col * y_dim_row))
+    x = polyglot.eval(language="grcuda", string='float[{}]'.format(x_dim_row * x_dim_col))
+    y = polyglot.eval(language="grcuda", string='float[{}]'.format(x_dim_row * y_dim_row))
+    z = polyglot.eval(language="grcuda", string='float[{}]'.format(x_dim_col * y_dim_row))
     
-    x2 = polyglot.eval(language='cuda', string='float[{}]'.format(x_dim_row * x_dim_col))
-    y2 = polyglot.eval(language='cuda', string='float[{}]'.format(x_dim_row * y_dim_row))
-    z2 = polyglot.eval(language='cuda', string='float[{}]'.format(x_dim_col * y_dim_row))
+    x2 = polyglot.eval(language="grcuda", string='float[{}]'.format(x_dim_row * x_dim_col))
+    y2 = polyglot.eval(language="grcuda", string='float[{}]'.format(x_dim_row * y_dim_row))
+    z2 = polyglot.eval(language="grcuda", string='float[{}]'.format(x_dim_col * y_dim_row))
 
     exec_time_unmodified = []
     exec_time_k_unmodified = []
@@ -65,10 +65,10 @@ def main(args):
         for i in range(x_dim_row * x_dim_col):
             x[i] = i
             x2[i] = i
-         for i in range(x_dim_row * y_dim_row):   
+        for i in range(x_dim_row * y_dim_row):   
             y[i] = i
             y2[i] = i
-         for i in range(x_dim_col * y_dim_row):   
+        for i in range(x_dim_col * y_dim_row):   
             z[i] = 0
             z2[i] = 0
         

@@ -40,8 +40,8 @@ def main(args):
     num_blocks = (num_elements - offset) / NUM_THREADS - 1
 
     # Use separate data for the 2 kernels, to have the same memory transfers across tests;
-    x = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements * num_elements))
-    x2 = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements * num_elements))
+    x = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements * num_elements))
+    x2 = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements * num_elements))
 
     exec_time_unmodified = []
     exec_time_k_unmodified = []

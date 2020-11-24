@@ -5,6 +5,7 @@ import time
 import math
 import polyglot
 import random
+from java.lang import System
 
 NUM_THREADS = 128
 
@@ -88,7 +89,7 @@ def generate_graph(N, max_degree=10, avoid_self_edges=True):
 def run_kernel(debug: bool, num_blocks: int, kernel_name: str, kernel_path: str,
                kernel_params: str, params: list, num_threads=NUM_THREADS, deduct_sizes=False):
 
-    start = time.perf_counter()
+    start = System.nanoTime()
     
     code = """bindkernel("{}", "{}", "{}", "{}")""".format(kernel_path, kernel_name, kernel_params, deduct_sizes)
     kernel = polyglot.eval(language='grcuda', string=code)
@@ -98,12 +99,12 @@ def run_kernel(debug: bool, num_blocks: int, kernel_name: str, kernel_path: str,
         print("invoking kernel as {}<<<{}, {}>>>(...)".format(kernel_name, num_blocks, num_threads))
 
     # Call the kernel;
-    start_k = time.perf_counter()
+    start_k = System.nanoTime()
     kernel(num_blocks, num_threads)(*params)
-    end = time.perf_counter()
+    end = System.nanoTime()
 
-    exec_time = (end - start) * 1000000
-    exec_time_k = (end - start_k) * 1000000
+    exec_time = (end - start) / 1_000
+    exec_time_k = (end - start_k) / 1_000
     
     if debug:
         print("{} kernel exec.time: {:.2f} μs".format(kernel_name, exec_time_k))

@@ -8,7 +8,7 @@
 ///////////////////////////////
 ///////////////////////////////
 
-extern "C" __global__ void backprop_2(float *delta,
+extern "C" __global__ void backprop2(float *delta,
                                          int hid,
                                          float *ly,
                                          int in,

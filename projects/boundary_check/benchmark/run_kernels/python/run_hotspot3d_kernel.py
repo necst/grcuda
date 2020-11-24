@@ -79,12 +79,12 @@ def main(args):
     num_test = args.num_test if args.num_test else 1
     debug = args.debug
 
-    p = polyglot.eval(language='cuda', string='float[{}]'.format(s))
-    t_in = polyglot.eval(language='cuda', string='float[{}]'.format(s))
-    t_out = polyglot.eval(language='cuda', string='float[{}]'.format(s))
-    p2 = polyglot.eval(language='cuda', string='float[{}]'.format(s))
-    t_in2 = polyglot.eval(language='cuda', string='float[{}]'.format(s))
-    t_out2 = polyglot.eval(language='cuda', string='float[{}]'.format(s))
+    p = polyglot.eval(language="grcuda", string='float[{}]'.format(s))
+    t_in = polyglot.eval(language="grcuda", string='float[{}]'.format(s))
+    t_out = polyglot.eval(language="grcuda", string='float[{}]'.format(s))
+    p2 = polyglot.eval(language="grcuda", string='float[{}]'.format(s))
+    t_in2 = polyglot.eval(language="grcuda", string='float[{}]'.format(s))
+    t_out2 = polyglot.eval(language="grcuda", string='float[{}]'.format(s))
 
     exec_time_unmodified = []
     exec_time_k_unmodified = []

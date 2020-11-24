@@ -42,15 +42,15 @@ def main(args):
     WIDTH = 16
 
     # Use separate data for the 2 kernels, to have the same memory transfers across tests;
-    input_units = polyglot.eval(language='cuda', string='float[{}]'.format(in_size + 1))
-    input_weights_one_dim = polyglot.eval(language='cuda', string='float[{}]'.format((in_size + 1) * (hid + 1)))
-    partial_sum = polyglot.eval(language='cuda', string='float[{}]'.format(num_blocks * WIDTH))
-    output_hidden = polyglot.eval(language='cuda', string='float[{}]'.format(hid + 1))
+    input_units = polyglot.eval(language="grcuda", string='float[{}]'.format(in_size + 1))
+    input_weights_one_dim = polyglot.eval(language="grcuda", string='float[{}]'.format((in_size + 1) * (hid + 1)))
+    partial_sum = polyglot.eval(language="grcuda", string='float[{}]'.format(num_blocks * WIDTH))
+    output_hidden = polyglot.eval(language="grcuda", string='float[{}]'.format(hid + 1))
 
-    input_units2 = polyglot.eval(language='cuda', string='float[{}]'.format(in_size + 1))
-    input_weights_one_dim2 = polyglot.eval(language='cuda', string='float[{}]'.format((in_size + 1) * (hid + 1)))
-    partial_sum2 = polyglot.eval(language='cuda', string='float[{}]'.format(num_blocks * WIDTH))
-    output_hidden2 = polyglot.eval(language='cuda', string='float[{}]'.format(hid + 1))
+    input_units2 = polyglot.eval(language="grcuda", string='float[{}]'.format(in_size + 1))
+    input_weights_one_dim2 = polyglot.eval(language="grcuda", string='float[{}]'.format((in_size + 1) * (hid + 1)))
+    partial_sum2 = polyglot.eval(language="grcuda", string='float[{}]'.format(num_blocks * WIDTH))
+    output_hidden2 = polyglot.eval(language="grcuda", string='float[{}]'.format(hid + 1))
 
     exec_time_unmodified = []
     exec_time_k_unmodified = []

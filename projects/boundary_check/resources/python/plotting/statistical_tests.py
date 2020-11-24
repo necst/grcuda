@@ -12,36 +12,54 @@ from plot_kernel_scalability import remove_outliers
 from scipy.stats.mstats import gmean
 
 
+GPU = "GTX1660"
+DATE = "2020_11_13_16_06_37"
+
+RES_FOLDER = f"../../../../../data/oob/results/{GPU}/{DATE}"
+PLOT_FOLDER = f"../../../../../data/oob/plots/{GPU}/{DATE}"
+
+KERNELS =  ["axpy", "dot_product", "convolution", "mmul", "autocov", "hotspot", "hotspot3d",
+            "backprop", "backprop2", "bfs", "pr", "nested", "gaussian",
+            "histogram", "lud", "needle"]
+
+
 if __name__ == "__main__":
     
     ##################################
     # Load data ######################
     ##################################
         
-    res_folder = "../../../data/results/with_lower_bounds/2019_10_23"
-    out_folder = "../../../data/tables/2019_10_23"
+    # res_folder = "../../../data/results/with_lower_bounds/2019_10_23"
+    # out_folder = "../../../data/tables/2019_10_23"
     
-    res_axpy = load_data(os.path.join(res_folder, "axpy_2019_10_23_16_55_54.csv"))
-    res_dp = load_data(os.path.join(res_folder, "dot_product_2019_10_23_16_55_54.csv"))
-    res_conv = load_data(os.path.join(res_folder, "convolution_2019_10_23_17_42_09.csv"))
-    res_mmul = load_data(os.path.join(res_folder, "mmul_2019_10_23_17_42_09.csv"))
-    res_autocov = load_data(os.path.join(res_folder, "autocov_2019_10_23_16_55_54.csv"))
-    res_hotspot = load_data(os.path.join(res_folder, "hotspot_2019_10_23_17_42_09.csv"))
-    res_hotspot3d = load_data(os.path.join(res_folder, "hotspot3d_2019_10_23_16_55_54.csv"))
-    res_bb = load_data(os.path.join(res_folder, "backprop_2019_10_23_16_55_54.csv"))
-    res_bb2 = load_data(os.path.join(res_folder, "backprop2_2019_10_23_16_55_54.csv"))
-    res_bfs = load_data(os.path.join(res_folder, "bfs_2019_10_23_16_55_54.csv"))
-    res_pr = load_data(os.path.join(res_folder, "pr_2019_10_23_16_55_54.csv"))  
-    res_gaussian = load_data(os.path.join(res_folder, "gaussian_2019_10_23_16_55_54.csv"))
-    res_histogram = load_data(os.path.join(res_folder, "histogram_2019_10_23_17_42_09.csv"))
-    res_lud = load_data(os.path.join(res_folder, "lud_2019_10_23_17_42_09.csv"))
-    res_needle = load_data(os.path.join(res_folder, "needle_2019_10_23_16_55_54.csv"))
-    res_nested = load_data(os.path.join(res_folder, "nested_2019_10_23_16_55_54.csv"))
+    # res_axpy = load_data(os.path.join(res_folder, "axpy_2019_10_23_16_55_54.csv"))
+    # res_dp = load_data(os.path.join(res_folder, "dot_product_2019_10_23_16_55_54.csv"))
+    # res_conv = load_data(os.path.join(res_folder, "convolution_2019_10_23_17_42_09.csv"))
+    # res_mmul = load_data(os.path.join(res_folder, "mmul_2019_10_23_17_42_09.csv"))
+    # res_autocov = load_data(os.path.join(res_folder, "autocov_2019_10_23_16_55_54.csv"))
+    # res_hotspot = load_data(os.path.join(res_folder, "hotspot_2019_10_23_17_42_09.csv"))
+    # res_hotspot3d = load_data(os.path.join(res_folder, "hotspot3d_2019_10_23_16_55_54.csv"))
+    # res_bb = load_data(os.path.join(res_folder, "backprop_2019_10_23_16_55_54.csv"))
+    # res_bb2 = load_data(os.path.join(res_folder, "backprop2_2019_10_23_16_55_54.csv"))
+    # res_bfs = load_data(os.path.join(res_folder, "bfs_2019_10_23_16_55_54.csv"))
+    # res_pr = load_data(os.path.join(res_folder, "pr_2019_10_23_16_55_54.csv"))  
+    # res_gaussian = load_data(os.path.join(res_folder, "gaussian_2019_10_23_16_55_54.csv"))
+    # res_histogram = load_data(os.path.join(res_folder, "histogram_2019_10_23_17_42_09.csv"))
+    # res_lud = load_data(os.path.join(res_folder, "lud_2019_10_23_17_42_09.csv"))
+    # res_needle = load_data(os.path.join(res_folder, "needle_2019_10_23_16_55_54.csv"))
+    # res_nested = load_data(os.path.join(res_folder, "nested_2019_10_23_16_55_54.csv"))
+
+    res_list = []
+    for k in KERNELS:
+        for f in os.listdir(RES_FOLDER):
+            if k == "_".join(f.split("_")[:-6]):
+                print(f, k)
+                res_list += [load_data(os.path.join(RES_FOLDER, f))]
 
      
-    res_list = [res_axpy, res_dp, res_conv, res_autocov, res_hotspot3d, res_bb, res_bfs, res_pr, res_mmul, res_hotspot,
-                res_bb2, res_gaussian,
-                res_histogram, res_lud, res_needle, res_nested]
+    # res_list = [res_axpy, res_dp, res_conv, res_autocov, res_hotspot3d, res_bb, res_bfs, res_pr, res_mmul, res_hotspot,
+    #             res_bb2, res_gaussian,
+    #             res_histogram, res_lud, res_needle, res_nested]
     
     res_list = [remove_outliers(res) for res in res_list]
     
@@ -91,5 +109,5 @@ if __name__ == "__main__":
     test_df = pd.DataFrame(test_res, columns=["Kernel Name", "Optimization Level", "Wilcoxon Test p-value", "Faster Kernel"])
     
     # Store the results;
-    out_path = os.path.join(out_folder, "exec_time_wilcoxon.csv")
+    out_path = os.path.join(PLOT_FOLDER, "exec_time_wilcoxon.csv")
     test_df.to_csv(out_path, index=False, float_format="%.3g")

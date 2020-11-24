@@ -36,13 +36,13 @@ def main(args):
     debug = args.debug
 
     # Use separate data for the 2 kernels, to have the same memory transfers across tests;
-    x = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements))
-    y = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements))
-    res = polyglot.eval(language='cuda', string='float[{}]'.format(1))
+    x = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements))
+    y = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements))
+    res = polyglot.eval(language="grcuda", string='float[{}]'.format(1))
     
-    x2 = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements))
-    y2 = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements))
-    res2 = polyglot.eval(language='cuda', string='float[{}]'.format(1))
+    x2 = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements))
+    y2 = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements))
+    res2 = polyglot.eval(language="grcuda", string='float[{}]'.format(1))
 
     exec_time_unmodified = []
     exec_time_k_unmodified = []

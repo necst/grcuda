@@ -13,6 +13,17 @@ from scipy.stats.mstats import gmean
 import matplotlib.lines as lines
 
 
+GPU = "GTX1660"
+DATE = "2020_11_13_16_06_37"
+
+RES_FOLDER = f"../../../../../data/oob/results/{GPU}/{DATE}"
+PLOT_FOLDER = f"../../../../../data/oob/plots/{GPU}/{DATE}"
+
+KERNELS =  ["axpy", "dot_product", "convolution", "mmul", "autocov", "hotspot", "hotspot3d",
+            "backprop", "backprop2", "bfs", "pr", "nested", "gaussian",
+            "histogram", "lud", "needle"]
+
+
 def remove_outliers(data, threshold=3):
     sizes = set(data["num_elements"])
     types_k = ["time_m_k_ms", "time_u_k_ms"]
@@ -248,87 +259,93 @@ b4 = "#8FA69E"
 
 if __name__ == "__main__":
     
-    # Plotting setup;
-    sns.set(font_scale=1.4)
-    sns.set_style("whitegrid")
-    plt.rcParams["font.family"] = ["Latin Modern Roman"]
-    plt.rcParams['axes.titlepad'] = 20 
-    plt.rcParams['axes.labelpad'] = 10 
-    plt.rcParams['axes.titlesize'] = 22 
-    plt.rcParams['axes.labelsize'] = 14 
+    if not os.path.exists(PLOT_FOLDER):
+        os.mkdir(PLOT_FOLDER)
     
-    ##################################
-    # Load data ######################
-    ##################################
+#     # Plotting setup;
+#     sns.set(font_scale=1.4)
+#     sns.set_style("whitegrid")
+#     plt.rcParams["font.family"] = ["Latin Modern Roman"]
+#     plt.rcParams['axes.titlepad'] = 20 
+#     plt.rcParams['axes.labelpad'] = 10 
+#     plt.rcParams['axes.titlesize'] = 22 
+#     plt.rcParams['axes.labelsize'] = 14 
     
-    res_folder = "../../../data/results/with_lower_bounds/2019_10_23"
-    plot_dir = "../../../data/plots/with_lower_bounds/2020_02_13"
+#     ##################################
+#     # Load data ######################
+#     ##################################
     
-    res_axpy = load_data(os.path.join(res_folder, "axpy_2019_10_23_16_55_54.csv"))
-    res_dp = load_data(os.path.join(res_folder, "dot_product_2019_10_23_16_55_54.csv"))
-    res_conv = load_data(os.path.join(res_folder, "convolution_2019_10_23_16_55_54.csv"))
-    res_mmul = load_data(os.path.join(res_folder, "mmul_2019_10_23_16_55_54.csv"))
-    res_autocov = load_data(os.path.join(res_folder, "autocov_2019_10_23_16_55_54.csv"))
-    res_hotspot = load_data(os.path.join(res_folder, "hotspot_2019_10_23_16_55_54.csv"))
-    res_hotspot3d = load_data(os.path.join(res_folder, "hotspot3d_2019_10_23_16_55_54.csv"))
-    res_bb = load_data(os.path.join(res_folder, "backprop_2019_10_23_16_55_54.csv"))
-    res_bb2 = load_data(os.path.join(res_folder, "backprop2_2019_10_23_16_55_54.csv"))
-    res_bfs = load_data(os.path.join(res_folder, "bfs_2019_10_23_16_55_54.csv"))
-    res_pr = load_data(os.path.join(res_folder, "pr_2019_10_23_16_55_54.csv"))  
-    res_gaussian = load_data(os.path.join(res_folder, "gaussian_2019_10_23_16_55_54.csv"))
-    res_histogram = load_data(os.path.join(res_folder, "histogram_2019_10_23_16_55_54.csv"))
-    res_lud = load_data(os.path.join(res_folder, "lud_2019_10_23_16_55_54.csv"))
-    res_needle = load_data(os.path.join(res_folder, "needle_2019_10_23_16_55_54.csv"))
-    res_nested = load_data(os.path.join(res_folder, "nested_2019_10_23_16_55_54.csv"))
+# #    res_axpy = load_data(os.path.join(res_folder, "axpy_2019_10_23_16_55_54.csv"))
+# #    res_dp = load_data(os.path.join(res_folder, "dot_product_2019_10_23_16_55_54.csv"))
+# #    res_conv = load_data(os.path.join(res_folder, "convolution_2019_10_23_16_55_54.csv"))
+# #    res_mmul = load_data(os.path.join(res_folder, "mmul_2019_10_23_16_55_54.csv"))
+# #    res_autocov = load_data(os.path.join(res_folder, "autocov_2019_10_23_16_55_54.csv"))
+# #    res_hotspot = load_data(os.path.join(res_folder, "hotspot_2019_10_23_16_55_54.csv"))
+# #    res_hotspot3d = load_data(os.path.join(res_folder, "hotspot3d_2019_10_23_16_55_54.csv"))
+# #    res_bb = load_data(os.path.join(res_folder, "backprop_2019_10_23_16_55_54.csv"))
+# #    res_bb2 = load_data(os.path.join(res_folder, "backprop2_2019_10_23_16_55_54.csv"))
+# #    res_bfs = load_data(os.path.join(res_folder, "bfs_2019_10_23_16_55_54.csv"))
+# #    res_pr = load_data(os.path.join(res_folder, "pr_2019_10_23_16_55_54.csv"))  
+# #    res_gaussian = load_data(os.path.join(res_folder, "gaussian_2019_10_23_16_55_54.csv"))
+# #    res_histogram = load_data(os.path.join(res_folder, "histogram_2019_10_23_16_55_54.csv"))
+# #    res_lud = load_data(os.path.join(res_folder, "lud_2019_10_23_16_55_54.csv"))
+# #    res_needle = load_data(os.path.join(res_folder, "needle_2019_10_23_16_55_54.csv"))
+# #    res_nested = load_data(os.path.join(res_folder, "nested_2019_10_23_16_55_54.csv"))
+    
+#     res_list = []
+#     for k in KERNELS:
+#         for f in os.listdir(RES_FOLDER):
+#             if k in f:
+#                 res_list += [load_data(os.path.join(RES_FOLDER, f))]
 
-    res_list = [res_axpy, res_dp, res_conv, res_mmul, res_autocov, res_hotspot, res_hotspot3d,
-                res_bb, res_bb2, res_bfs, res_pr, res_nested, res_gaussian,
-                res_histogram, res_lud, res_needle]
+# #    res_list = [res_axpy, res_dp, res_conv, res_mmul, res_autocov, res_hotspot, res_hotspot3d,
+# #                res_bb, res_bb2, res_bfs, res_pr, res_nested, res_gaussian,
+# #                res_histogram, res_lud, res_needle]
     
-    res_list = [remove_outliers(res) for res in res_list]
+#     res_list = [remove_outliers(res) for res in res_list]
     
-    ##################################
-    # Plotting #######################
-    ##################################
+#     ##################################
+#     # Plotting #######################
+#     ##################################
     
-    num_plots = len(res_list)
-    num_col = 5
-    fig = plt.figure(figsize=(4.0 * num_col, num_plots * 5.2))
-    gs = gridspec.GridSpec(num_plots, 5)
-    plt.subplots_adjust(top=0.98,
-                    bottom=0.03,
-                    left=0.11,
-                    right=0.95,
-                    hspace=1.3,
-                    wspace=0.7)
+#     num_plots = len(res_list)
+#     num_col = 5
+#     fig = plt.figure(figsize=(4.0 * num_col, num_plots * 5.2))
+#     gs = gridspec.GridSpec(num_plots, 5)
+#     plt.subplots_adjust(top=0.98,
+#                     bottom=0.03,
+#                     left=0.11,
+#                     right=0.95,
+#                     hspace=1.3,
+#                     wspace=0.7)
     
-    names = ["Axpy", "Dot Product", "Convolution 1D", "Matrix Multiplication", "Auto-covariance", "Hotspot", "Hotspot - 3D",
-             "NN - Forward Phase", "NN - Backpropagation", "BFS", "PageRank", "Nested Loops", "Gaussian Elimination",
-             "Histogram", "LU Decomposition", "Needleman-Wunsch"]
-    vlabel_offsets= [0.4, 0.10, 0.10, 0.15, 0.5, 0.07, 0.2,
-                     0.5, 0.5, 0.5, 0.5, 0.5,
-                     0.2, 0.1, 0.2, 0.2]
+#     names = ["Axpy", "Dot Product", "Convolution 1D", "Matrix Multiplication", "Auto-covariance", "Hotspot", "Hotspot - 3D",
+#              "NN - Forward Phase", "NN - Backpropagation", "BFS", "PageRank", "Nested Loops", "Gaussian Elimination",
+#              "Histogram", "LU Decomposition", "Needleman-Wunsch"]
+#     vlabel_offsets= [0.4, 0.10, 0.10, 0.15, 0.5, 0.07, 0.2,
+#                      0.5, 0.5, 0.5, 0.5, 0.5,
+#                      0.2, 0.1, 0.2, 0.2]
     
-    for i, res in enumerate(res_list):
-        print(f"Plot {names[i]}")
-        draw_plot(res, fig, gs, i, names[i], vlabel_offsets[i])
+#     for i, res in enumerate(res_list):
+#         print(f"Plot {names[i]}")
+#         draw_plot(res, fig, gs, i, names[i], vlabel_offsets[i])
         
-    ##################################
-    # Legend #########################
+#     ##################################
+#     # Legend #########################
     
-    # Add custom legend;
-    custom_lines = [Patch(facecolor=b1, edgecolor="#2f2f2f", label="Overall Time"),
-                    Patch(facecolor=r3, edgecolor="#2f2f2f", label="Kernel Time"),
-                    ]
+#     # Add custom legend;
+#     custom_lines = [Patch(facecolor=b1, edgecolor="#2f2f2f", label="Overall Time"),
+#                     Patch(facecolor=r3, edgecolor="#2f2f2f", label="Kernel Time"),
+#                     ]
     
-    ax = fig.get_axes()[0]
-    leg = ax.legend(custom_lines, ["Overall Time", "Kernel Time"],
-                             bbox_to_anchor=(7.5, 0.9), fontsize=16)
-    leg.set_title("Exec. Time Group", prop={"size": 18})
-    leg._legend_box.align = "left"
+#     ax = fig.get_axes()[0]
+#     leg = ax.legend(custom_lines, ["Overall Time", "Kernel Time"],
+#                              bbox_to_anchor=(7.5, 0.9), fontsize=16)
+#     leg.set_title("Exec. Time Group", prop={"size": 18})
+#     leg._legend_box.align = "left"
     
-    # plt.savefig(os.path.join(plot_dir, "exec_times.pdf"))
-    # plt.savefig(os.path.join(plot_dir, "exec_times.png"))         
+    # plt.savefig(os.path.join(PLOT_FOLDER, "exec_times.pdf"))
+    # plt.savefig(os.path.join(PLOT_FOLDER, "exec_times.png"))         
     
     
     #%
@@ -354,46 +371,56 @@ if __name__ == "__main__":
 #    for i, res in enumerate(res_list):
 #        build_plot_simple(res, fig, i, gs, None, o_list[i], s_list[i], names[i], vlabel_offsets[i], time_cols=["time_u_k_ms", "time_m_k_ms"], speedup_label=True)                                       
 #
-#    plt.savefig(os.path.join(plot_dir, "exec_times_small.pdf"))
-#    plt.savefig(os.path.join(plot_dir, "exec_times_small.png"))   
+#    plt.savefig(os.path.join(PLOT_FOLDER, "exec_times_small.pdf"))
+#    plt.savefig(os.path.join(PLOT_FOLDER, "exec_times_small.png"))   
     
-    #%
+    #%%
     
     ##################################
     # Other summary plot #############
     ##################################
     
-    res_axpy = load_data(os.path.join(res_folder, "axpy_2019_10_23_19_41_23.csv"))
-    res_dp = load_data(os.path.join(res_folder, "dot_product_2019_10_23_16_55_54.csv"))
-    res_conv = load_data(os.path.join(res_folder, "convolution_2019_10_23_17_42_09.csv"))
-    res_mmul = load_data(os.path.join(res_folder, "mmul_2019_10_23_17_42_09.csv"))
-    res_autocov = load_data(os.path.join(res_folder, "autocov_2019_10_23_16_55_54.csv"))
-    res_hotspot = load_data(os.path.join(res_folder, "hotspot_2019_10_23_17_42_09.csv"))
-    res_hotspot3d = load_data(os.path.join(res_folder, "hotspot3d_2019_10_23_19_41_23.csv"))
-    res_bb = load_data(os.path.join(res_folder, "backprop_2019_10_23_19_41_23.csv"))
-    res_bb2 = load_data(os.path.join(res_folder, "backprop2_2019_10_23_16_55_54.csv"))
-    res_bfs = load_data(os.path.join(res_folder, "bfs_2019_10_23_19_41_23.csv"))
-    res_pr = load_data(os.path.join(res_folder, "pr_2019_10_23_16_55_54.csv"))  
-    res_gaussian = load_data(os.path.join(res_folder, "gaussian_2019_10_23_16_55_54.csv"))
-    res_histogram = load_data(os.path.join(res_folder, "histogram_2019_10_23_17_42_09.csv"))
-    res_lud = load_data(os.path.join(res_folder, "lud_2019_10_23_17_42_09.csv"))
-    res_needle = load_data(os.path.join(res_folder, "needle_2019_10_23_16_55_54.csv"))
-    res_nested = load_data(os.path.join(res_folder, "nested_2019_10_23_19_41_23.csv"))
+    # res_axpy = load_data(os.path.join(res_folder, "axpy_2019_10_23_19_41_23.csv"))
+    # res_dp = load_data(os.path.join(res_folder, "dot_product_2019_10_23_16_55_54.csv"))
+    # res_conv = load_data(os.path.join(res_folder, "convolution_2019_10_23_17_42_09.csv"))
+    # res_mmul = load_data(os.path.join(res_folder, "mmul_2019_10_23_17_42_09.csv"))
+    # res_autocov = load_data(os.path.join(res_folder, "autocov_2019_10_23_16_55_54.csv"))
+    # res_hotspot = load_data(os.path.join(res_folder, "hotspot_2019_10_23_17_42_09.csv"))
+    # res_hotspot3d = load_data(os.path.join(res_folder, "hotspot3d_2019_10_23_19_41_23.csv"))
+    # res_bb = load_data(os.path.join(res_folder, "backprop_2019_10_23_19_41_23.csv"))
+    # res_bb2 = load_data(os.path.join(res_folder, "backprop2_2019_10_23_16_55_54.csv"))
+    # res_bfs = load_data(os.path.join(res_folder, "bfs_2019_10_23_19_41_23.csv"))
+    # res_pr = load_data(os.path.join(res_folder, "pr_2019_10_23_16_55_54.csv"))  
+    # res_gaussian = load_data(os.path.join(res_folder, "gaussian_2019_10_23_16_55_54.csv"))
+    # res_histogram = load_data(os.path.join(res_folder, "histogram_2019_10_23_17_42_09.csv"))
+    # res_lud = load_data(os.path.join(res_folder, "lud_2019_10_23_17_42_09.csv"))
+    # res_needle = load_data(os.path.join(res_folder, "needle_2019_10_23_16_55_54.csv"))
+    # res_nested = load_data(os.path.join(res_folder, "nested_2019_10_23_19_41_23.csv"))
     
-    boundary_merging_statistics = pd.read_csv("../../../data/results/access_merging_statistics.csv")
-    boundary_merging_statistics["plot_merged"] = True # boundary_merging_statistics["unprotected_num_of_accesses"] > boundary_merging_statistics["merged_num_of_accesses"]
+    boundary_merging_statistics = None #pd.read_csv("../../../data/results/access_merging_statistics.csv")
+    # boundary_merging_statistics["plot_merged"] = True # boundary_merging_statistics["unprotected_num_of_accesses"] > boundary_merging_statistics["merged_num_of_accesses"]
     
-    res_list = [res_axpy, res_dp, res_conv, res_autocov, res_hotspot3d, res_bb, res_bfs, res_pr, res_nested, res_mmul, res_hotspot, 
-                 res_bb2, res_gaussian,
-                res_histogram, res_lud, res_needle, ]
+    # res_list = [res_axpy, res_dp, res_conv, res_autocov, res_hotspot3d, res_bb, res_bfs, res_pr, res_nested, res_mmul, res_hotspot, 
+    #              res_bb2, res_gaussian,
+    #             res_histogram, res_lud, res_needle, ]
     
 #    res_list = [remove_outliers(res) for res in res_list]
+
+    res_list = []
+    for k in KERNELS:
+        for f in os.listdir(RES_FOLDER):
+            if k == "_".join(f.split("_")[:-6]):
+                print(f, k)
+                res_list += [load_data(os.path.join(RES_FOLDER, f))]
+    
+    res_list = [remove_outliers(res) for res in res_list]
     
     names = ["Summary,\nGeomean", "AXPY", "DP", "CONV", "ACV", "HP3D",
              "NN1", "BFS", "PR", "NEST", "MULT", "HP",  "NN2",  "GE",
              "HIST", "LU", "NW"]
     
-    boundary_merging_statistics["kernel"] = names[1:] 
+    # boundary_merging_statistics["kernel"] = names[1:] 
+
     plt.rcParams['axes.titlepad'] = 90 
     
     plt.rcParams["font.family"] = ["Latin Modern Roman Demi"]
@@ -407,7 +434,8 @@ if __name__ == "__main__":
         res["kernel"] = names[i + 1]
         
     def plot_merge(i):
-        return i == 0 or boundary_merging_statistics[boundary_merging_statistics["kernel"] == names[i]]["plot_merged"].iloc[0]
+        return True
+        # return i == 0 or (boundary_merging_statistics and boundary_merging_statistics[boundary_merging_statistics["kernel"] == names[i]]["plot_merged"].iloc[0])
         
     for o_i, o in enumerate(["O0", "O2"]):
         
@@ -477,8 +505,8 @@ if __name__ == "__main__":
     leg._legend_box.align = "left"
     leg.get_frame().set_facecolor('white')
     
-    plt.savefig(os.path.join(plot_dir, "exec_times_tot_2.pdf"))
-    plt.savefig(os.path.join(plot_dir, "exec_times_tot_2.png"))  
+    plt.savefig(os.path.join(PLOT_FOLDER, "exec_times_tot_2.pdf"))
+    plt.savefig(os.path.join(PLOT_FOLDER, "exec_times_tot_2.png"))  
     
     #%%
     
@@ -536,5 +564,5 @@ if __name__ == "__main__":
     fig.suptitle("Kernel Relative\nExec. Time,\nGeomean", ha="left", x=0.04, y=0.92, fontsize=18)
     plt.subplots_adjust(top=0.64)
     
-    plt.savefig(os.path.join(plot_dir, "exec_times_summary.pdf"))
-    plt.savefig(os.path.join(plot_dir, "exec_times_summary.png"))  
+    plt.savefig(os.path.join(PLOT_FOLDER, "exec_times_summary.pdf"))
+    plt.savefig(os.path.join(PLOT_FOLDER, "exec_times_summary.png"))  

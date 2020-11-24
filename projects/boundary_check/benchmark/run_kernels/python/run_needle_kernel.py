@@ -68,10 +68,10 @@ def main(args):
     penalty = 10
 
     # Use separate data for the 2 kernels, to have the same memory transfers across tests;
-    matrix = polyglot.eval(language='cuda', string='int[{}]'.format(num_elements * num_elements))
-    matrix2 = polyglot.eval(language='cuda', string='int[{}]'.format(num_elements * num_elements))
-    reference = polyglot.eval(language='cuda', string='int[{}]'.format(num_elements * num_elements))
-    reference2 = polyglot.eval(language='cuda', string='int[{}]'.format(num_elements * num_elements))
+    matrix = polyglot.eval(language="grcuda", string='int[{}]'.format(num_elements * num_elements))
+    matrix2 = polyglot.eval(language="grcuda", string='int[{}]'.format(num_elements * num_elements))
+    reference = polyglot.eval(language="grcuda", string='int[{}]'.format(num_elements * num_elements))
+    reference2 = polyglot.eval(language="grcuda", string='int[{}]'.format(num_elements * num_elements))
 
     exec_time_unmodified = []
     exec_time_k_unmodified = []

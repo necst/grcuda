@@ -80,12 +80,12 @@ def main(args):
     num_test = args.num_test if args.num_test else 1
     debug = args.debug
 
-    matrix_power = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements))
-    matrix_temp_src = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements))
-    matrix_temp_dest = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements))
-    matrix_power2 = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements))
-    matrix_temp_src2 = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements))
-    matrix_temp_dest2 = polyglot.eval(language='cuda', string='float[{}]'.format(num_elements))
+    matrix_power = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements))
+    matrix_temp_src = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements))
+    matrix_temp_dest = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements))
+    matrix_power2 = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements))
+    matrix_temp_src2 = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements))
+    matrix_temp_dest2 = polyglot.eval(language="grcuda", string='float[{}]'.format(num_elements))
 
     exec_time_unmodified = []
     exec_time_k_unmodified = []

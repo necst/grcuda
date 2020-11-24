@@ -13,14 +13,14 @@ OPT_LEVEL = "O0"
 SIMPLIFICATION= "no_simplification"
 
 UNMODIFIED_CUBIN_NAME = "backprop2.cubin"
-UNMODIFIED_KERNEL_NAME = "backprop_2"
+UNMODIFIED_KERNEL_NAME = "backprop2"
 UNMODIFIED_KERNEL_FOLDER = "../../unmodified_kernel_cubin"
-UNMODIFIED_KERNEL_PARAMS = "pointer, uint32, pointer, uint32, pointer, pointer"
+UNMODIFIED_KERNEL_PARAMS = "pointer, sint32, pointer, sint32, pointer, pointer"
 
 MODIFIED_CUBIN_NAME = "backprop2.cubin"
-MODIFIED_KERNEL_NAME = "backprop_2"
+MODIFIED_KERNEL_NAME = "backprop2"
 MODIFIED_KERNEL_FOLDER = "../../cubin/"
-MODIFIED_KERNEL_PARAMS = "pointer, uint32, pointer, uint32, pointer, pointer"
+MODIFIED_KERNEL_PARAMS = "pointer, sint32, pointer, sint32, pointer, pointer"
 
 ##############################
 ##############################
@@ -42,15 +42,15 @@ def main(args):
     WIDTH = 16
 
     # Use separate data for the 2 kernels, to have the same memory transfers across tests;
-    input_units = polyglot.eval(language='cuda', string='float[{}]'.format(in_size + 1))
-    input_weights_one_dim = polyglot.eval(language='cuda', string='float[{}]'.format((in_size + 1) * (hid + 1)))
-    input_prev_weights = polyglot.eval(language='cuda', string='float[{}]'.format((in_size + 1) * (hid + 1)))
-    hidden_delta = polyglot.eval(language='cuda', string='float[{}]'.format(hid + 1))
+    input_units = polyglot.eval(language="grcuda", string='float[{}]'.format(in_size + 1))
+    input_weights_one_dim = polyglot.eval(language="grcuda", string='float[{}]'.format((in_size + 1) * (hid + 1)))
+    input_prev_weights = polyglot.eval(language="grcuda", string='float[{}]'.format((in_size + 1) * (hid + 1)))
+    hidden_delta = polyglot.eval(language="grcuda", string='float[{}]'.format(hid + 1))
 
-    input_units2 = polyglot.eval(language='cuda', string='float[{}]'.format(in_size + 1))
-    input_weights_one_dim2 = polyglot.eval(language='cuda', string='float[{}]'.format((in_size + 1) * (hid + 1)))
-    input_prev_weights2 = polyglot.eval(language='cuda', string='float[{}]'.format((in_size + 1) * (hid + 1)))
-    hidden_delta2 = polyglot.eval(language='cuda', string='float[{}]'.format(hid + 1))
+    input_units2 = polyglot.eval(language="grcuda", string='float[{}]'.format(in_size + 1))
+    input_weights_one_dim2 = polyglot.eval(language="grcuda", string='float[{}]'.format((in_size + 1) * (hid + 1)))
+    input_prev_weights2 = polyglot.eval(language="grcuda", string='float[{}]'.format((in_size + 1) * (hid + 1)))
+    hidden_delta2 = polyglot.eval(language="grcuda", string='float[{}]'.format(hid + 1))
 
     exec_time_unmodified = []
     exec_time_k_unmodified = []

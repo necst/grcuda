@@ -44,19 +44,19 @@ def main(args):
     E = len(idx)  
 
     # Use separate data for the 2 kernels, to have the same memory transfers across tests;
-    ptr_d = polyglot.eval(language='cuda', string='int[{}]'.format(N + 1))
-    idx_d = polyglot.eval(language='cuda', string='int[{}]'.format(E))
-    res = polyglot.eval(language='cuda', string='int[{}]'.format(N))
-    graph_mask = polyglot.eval(language='cuda', string='int[{}]'.format(N))
-    graph_visited = polyglot.eval(language='cuda', string='int[{}]'.format(N))
-    updating_graph_mask = polyglot.eval(language='cuda', string='int[{}]'.format(N))
+    ptr_d = polyglot.eval(language="grcuda", string='int[{}]'.format(N + 1))
+    idx_d = polyglot.eval(language="grcuda", string='int[{}]'.format(E))
+    res = polyglot.eval(language="grcuda", string='int[{}]'.format(N))
+    graph_mask = polyglot.eval(language="grcuda", string='int[{}]'.format(N))
+    graph_visited = polyglot.eval(language="grcuda", string='int[{}]'.format(N))
+    updating_graph_mask = polyglot.eval(language="grcuda", string='int[{}]'.format(N))
 
-    ptr_d2 = polyglot.eval(language='cuda', string='int[{}]'.format(N + 1))
-    idx_d2 = polyglot.eval(language='cuda', string='int[{}]'.format(E))
-    res2 = polyglot.eval(language='cuda', string='int[{}]'.format(N))
-    graph_mask2 = polyglot.eval(language='cuda', string='int[{}]'.format(N))
-    graph_visited2 = polyglot.eval(language='cuda', string='int[{}]'.format(N))
-    updating_graph_mask2 = polyglot.eval(language='cuda', string='int[{}]'.format(N))
+    ptr_d2 = polyglot.eval(language="grcuda", string='int[{}]'.format(N + 1))
+    idx_d2 = polyglot.eval(language="grcuda", string='int[{}]'.format(E))
+    res2 = polyglot.eval(language="grcuda", string='int[{}]'.format(N))
+    graph_mask2 = polyglot.eval(language="grcuda", string='int[{}]'.format(N))
+    graph_visited2 = polyglot.eval(language="grcuda", string='int[{}]'.format(N))
+    updating_graph_mask2 = polyglot.eval(language="grcuda", string='int[{}]'.format(N))
 
     exec_time_unmodified = []
     exec_time_k_unmodified = []

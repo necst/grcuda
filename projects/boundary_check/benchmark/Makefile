@@ -147,7 +147,7 @@ backprop: cuda/backprop.cu
 	$(call compile_kernel,$^,backprop) 
 
 backprop2: cuda/backprop2.cu
-	$(call compile_kernel,$^,backprop_2) 
+	$(call compile_kernel,$^,backprop2) 
 
 bfs: cuda/bfs.cu
 	$(call compile_kernel,$^,bfs) 
@@ -216,8 +216,8 @@ autocov_u: cuda/checked/autocov.cu
 backprop_u: cuda/checked/backprop.cu
 	$(call compile_original_kernel,cuda/checked/backprop.cu,backprop_checked)
 
-backprop2_u: cuda/checked/backprop.cu
-	$(call compile_original_kernel,cuda/checked/backprop.cu,backprop_2)
+backprop2_u: cuda/checked/backprop2.cu
+	$(call compile_original_kernel,cuda/checked/backprop2.cu,backprop2)
 
 bfs_u: cuda/checked/bfs.cu
 	$(call compile_original_kernel,cuda/checked/bfs.cu,bfs_checked)
