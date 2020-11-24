@@ -94,29 +94,6 @@ void Benchmark11::execute_sync(int iter)
     err = cudaDeviceSynchronize();
 }
 
-void Benchmark11::first(){
-    cudaSetDevice(0);            // Set device 0 as current
-    cudaStreamAttachMemAsync(s1, x, sizeof(float) * N);
-    cudaStreamAttachMemAsync(s1, x1, sizeof(float) * N);
-    squareMulti<<<num_blocks, block_size_1d, 0, s1>>>(x, x1, N);
-
-    reduceMulti<<<num_blocks, block_size_1d, 0, s1>>>(x1, y1, res, N);
-    cudaStreamSynchronize(s1);
-}
-
-void Benchmark11::second(){
-    cudaSetDevice(1);            // Set device 1 as current
-    cudaDeviceEnablePeerAccess(0, 0);   // Enable peer-to-peer access
-    cudaStreamAttachMemAsync(s2, y, sizeof(float) * N);
-    cudaStreamAttachMemAsync(s2, y1, sizeof(float) * N);
-    squareMulti<<<num_blocks, block_size_1d, 0, s2>>>(y, y1, N);
-
-    // Stream 1 waits stream 2;
-    cudaEvent_t e1;
-    cudaEventCreate(&e1);
-    cudaEventRecord(e1, s2);
-    cudaStreamWaitEvent(s1, e1, 0);
-}
 
 void Benchmark11::execute_async(int iter)
 {

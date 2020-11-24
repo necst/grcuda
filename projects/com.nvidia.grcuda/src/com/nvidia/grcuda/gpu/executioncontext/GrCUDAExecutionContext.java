@@ -52,7 +52,7 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
 
         // Compute the stream where the computation will be done, if the computation can be performed asynchronously;
         streamManager.assignStream(vertex);
-
+        
         // Prefetching;
         arrayPrefetcher.prefetchToGpu(vertex);
         

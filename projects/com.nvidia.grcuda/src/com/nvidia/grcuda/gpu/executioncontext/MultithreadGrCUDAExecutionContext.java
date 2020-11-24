@@ -174,7 +174,7 @@ public class MultithreadGrCUDAExecutionContext extends AbstractGrCUDAExecutionCo
         }
 
         protected void setContext() {
-            cudaRuntime.cudaSetDevice(0);
+            cudaRuntime.cudaSetDevice(1);
         }
 
         public ExecutionDAG.DAGVertex getVertex() {
