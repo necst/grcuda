@@ -69,7 +69,20 @@ namespace llvm {
             LLVMContext &context,
             std::vector<ArrayAccess *> &array_accesses_postprocessed,
             bool protect_lower_bounds,
-            std::set<Value *> &positive_cuda_dependent_values);
+            std::set<Value *> &positive_cuda_dependent_values
+        );
+
+        // Function that adds a specific boundary check if-statement by replacing the unconditional jump between 2 blocks with an in-statement created by combining the boundary conditions specified in access.
+        // "comparison" is used to specify the comparison operator in the boundary check. By default, it is (signed) <, although one can use different operators e.g. to track or force OOB accesses, 
+        // or using unsigned operators if possible;
+        void add_array_size_if_statement(
+            ArrayAccess *access,
+            BasicBlock *start_if_block,
+            BasicBlock *end_if_block,
+            bool protect_lower_bounds,
+            std::set<Value *> &positive_cuda_dependent_values,
+            CmpInst::Predicate comparison = CmpInst::Predicate::ICMP_SLT
+        );
 
         // Reference to the array that stores sizes;
         Value* sizes_array;
