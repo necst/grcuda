@@ -10,9 +10,8 @@ import numpy as np
 ##############################
 ##############################
 
-RESULT_FOLDER = "../../../../data/results/compilation"
-TRUFFLECUDA_jAR = "../../../../../../mxbuild/dists/jdk1.8/trufflecuda.jar"
-NUM_TESTS = 2
+RESULT_FOLDER = "../../../../../data/oob/results/GTX1660/compilation"
+NUM_TESTS = 10
 
 ##############################
 ##############################

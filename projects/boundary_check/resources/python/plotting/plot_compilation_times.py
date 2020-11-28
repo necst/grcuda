@@ -139,11 +139,12 @@ if __name__ == "__main__":
     # Load data ######################
     ##################################
     
-    res_folder = "../../../data/results/compilation"
-    plot_dir = "../../../data/plots/compilation"
+    res_folder = "../../../../../data/oob/results/GTX1660/compilation"
+    plot_dir = "../../../../../data/oob/plots/GTX1660/compilation"
     
-    res = load_data(os.path.join(res_folder, "makefile_2019_09_09_15_46_42.csv"))
-    
+    # res = load_data(os.path.join(res_folder, "makefile_2019_09_09_15_46_42.csv"))
+    res = load_data(os.path.join(res_folder, "makefile_2020_11_24_12_15_25.csv"))
+
     kernel_set = []
     for k in res["kernel"]:
         if k not in kernel_set:
@@ -194,8 +195,8 @@ if __name__ == "__main__":
     leg.set_title("Exec. Time Group", prop={"size": 18})
     leg._legend_box.align = "left"
     
-    plt.savefig(os.path.join(plot_dir, "compilation_times.pdf"))
-    plt.savefig(os.path.join(plot_dir, "compilation_times.png"))         
+    # plt.savefig(os.path.join(plot_dir, "compilation_times.pdf"))
+    # plt.savefig(os.path.join(plot_dir, "compilation_times.png"))         
     
     #%%
     
@@ -243,5 +244,5 @@ if __name__ == "__main__":
     fig.suptitle("Relative Compilation Time,\nGeomean", ha="left", x=0.04, y=0.89, fontsize=18)
     plt.subplots_adjust(top=0.64)
     
-    plt.savefig(os.path.join(plot_dir, "compilation_times_summary.pdf"))
-    plt.savefig(os.path.join(plot_dir, "compilation_times_summary.png"))  
+    # plt.savefig(os.path.join(plot_dir, "compilation_times_summary.pdf"))
+    # plt.savefig(os.path.join(plot_dir, "compilation_times_summary.png"))  

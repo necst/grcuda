@@ -7,7 +7,7 @@ import polyglot
 import random
 from java.lang import System
 
-NUM_THREADS = 128
+NUM_THREADS = 32
 
 def timeit(function):
     def timed(*args, **kw):

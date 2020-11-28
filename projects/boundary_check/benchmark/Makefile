@@ -176,6 +176,9 @@ needle: cuda/needle.cu
 nested: cuda/nested.cu
 	$(call compile_kernel,$^,nested) 
 
+spmv: cuda/spmv.cu
+	$(call compile_kernel,$^,spmv) 
+
 .PHONY: unmodified_kernels
 unmodified_kernels: \
 	axpy_u \
