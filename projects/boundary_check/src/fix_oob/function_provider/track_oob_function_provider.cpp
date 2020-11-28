@@ -60,72 +60,29 @@ bool TrackOOBFunctionProvider::add_array_access_protection(
 
     bool ir_updated = false;
 
-    // Do a pass over the array accesses, and add "if" statements to protect them;
+    // Do a pass over the array accesses, and add "if" statements before each GEP instruction to track them and update the OOB debug array if any OOB accesses occur;
     int access_number = 0;
     for (auto access : array_accesses_postprocessed) {
 
-        // This is the basic block where the boundary check ends.
-        // If the array access is not performed, or if it performed, jump to this block;
-        BasicBlock *end_if_block = nullptr;
+        // We insert an if-statement before the GEP, so we split the basic block where the GEP appears right before the GEP itself,
+        // and add a simple basic block where we jump if we have an OOB and update the OOB debug array;
 
-        // First, we need to understand where the boundary check is going to end.
-        // If the end instruction is in the same basic block as the start, we simply split twice this block
-        // (starting from the end, then the start), and replace the first unconditional branch with the boundary check.
-        // If the end instruction is in a different basic block, the end instruction is a terminator of the basic block
-        // (to avoid splitting it in two, which creates an unreachable scenario). In this second case,
-        // the ending basic block will be the basic block that follows the one where the end instruction is;
-
-        // 1) The end instruction is a terminator IFF the ending basic block is different from the start;
-        if (access->end->isTerminator()) {
-            // 1.1) The end instruction is not a return statement: jump at the next BB;
-            if (!isa<ReturnInst>(access->end)) {
-
-                // Obtain the basic block where the end instruction is;
-                BasicBlock *end_inst_block = access->end->getParent();
-                // Obtain the basic block that follows the end instruction.
-                // We take the first basic block that follows the current one, and is different from it;
-                Instruction *terminatorI = access->end->getParent()->getTerminator();
-                if (auto branchI = dyn_cast<BranchInst>(terminatorI)) {
-                    for (auto successor_block : branchI->successors()) {
-                        if (successor_block != end_inst_block) {
-                            end_if_block = successor_block;
-                            break;
-                        }
-                    }
-                }
-                if (end_if_block) {
-                    // Note: splitting the edge guarantees, on paper, a unique place to end the loop.
-                    // Based on the tests so far, this doesn't seem necessary however!
-                    // SplitEdge(end_inst_block, end_if_block);
-                } else {
-                    outs() << "WARNING: skipping processing of access " << access_number << ", no next BasicBlock found!";
-                    access_number++;
-                    continue;
-                }
-            } else {
-                // 1.2) If the last instruction is a return statement, jump right before it;
-                end_if_block = SplitBlock(access->end->getParent(), access->end);
-            }
-        } else {
-            // 2) Handle the standard situation where the start and end of the array access are in the same basic block.
-            // In this case, split again the current basic block to create the area protected by the boundary check;
-
-            // Get the instruction after the last instruction affected by the array access;
-            Instruction *end_if_instruction = access->end->getNextNode();
-            // Create a new block after the array access instruction.
-            // This represents the end of the "if" statement;
-            end_if_block = SplitBlock(end_if_instruction->getParent(), end_if_instruction);
-        }
-        if (end_if_block) {
-            end_if_block->setName(formatv("end_array_access_{0}", access_number));
-        }
-
-        // Start a new block right before the first instruction of the array access.
+        // Start a new block right before the first instruction of the array access (i.e. the GEP).
         // This represents the start of the "if" statement;
         Instruction *start_if_instruction = access->start; // obtain_array_access_start(access);
         BasicBlock *start_if_block = SplitBlock(start_if_instruction->getParent(), start_if_instruction);
-        start_if_block->setName(formatv("start_array_access_{0}", access_number));
+        start_if_block->setName(formatv("start_array_access_tracking_{0}", access_number));
 
+        // The end instruction is the GEP itself, we split the basic block right before it;
+        Instruction *end_if_instruction = access->end;
+        // Create a new block after the array access instruction.
+        // This represents the end of the "if" statement;
+        BasicBlock *end_if_block = SplitBlock(end_if_instruction->getParent(), end_if_instruction);
+        
+        if (end_if_block) {
+            end_if_block->setName(formatv("end_array_access_tracking_{0}", access_number));
+        }
+/*
         // Delete the unconditional branch added by the block creation;
         start_if_instruction->getParent()->getPrevNode()->getTerminator()->eraseFromParent();
 
@@ -188,7 +145,7 @@ bool TrackOOBFunctionProvider::add_array_access_protection(
         } else {
             builder.CreateCondBr(icmp_list.back(), start_if_block, end_if_block);
         }
-
+*/
         ir_updated = true;
         access_number++;
     }
