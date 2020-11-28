@@ -21,29 +21,18 @@ using std::endl;
 ////////////////////////////////
 ////////////////////////////////
 
-std::string examples_folder = "examples/truffle_kernels/llvm/added_size/";
+std::string examples_folder = "benchmark/llvm/added_size/O0/no_simplification/";
 
 std::vector<std::pair<std::string, std::string>> example_kernels = {
-    std::pair<std::string, std::string>("O0/no_simplification/axpy.ll", "axpy"),
-    std::pair<std::string, std::string>("O1/no_simplification/axpy.ll", "axpy"),
-    std::pair<std::string, std::string>("O0/no_simplification/dot_product.ll", "dot_product"),
-    std::pair<std::string, std::string>("O1/no_simplification/dot_product.ll", "dot_product"),
-    std::pair<std::string, std::string>("O0/no_simplification/convolution.ll", "convolution"),
-    std::pair<std::string, std::string>("O1/no_simplification/convolution.ll", "convolution"),
-    std::pair<std::string, std::string>("O0/no_simplification/calculate_temp.ll", "calculate_temp"),
-    std::pair<std::string, std::string>("O1/no_simplification/calculate_temp.ll", "calculate_temp"),
-    std::pair<std::string, std::string>("O0/no_simplification/mmul.ll", "mmul"),
-    std::pair<std::string, std::string>("O1/no_simplification/mmul.ll", "mmul"),
-    std::pair<std::string, std::string>("O0/no_simplification/autocov.ll", "autocov"),
-    std::pair<std::string, std::string>("O1/no_simplification/autocov.ll", "autocov"),
-    std::pair<std::string, std::string>("O0/no_simplification/bfs.ll", "bfs"),
-    std::pair<std::string, std::string>("O1/no_simplification/bfs.ll", "bfs"),
-    std::pair<std::string, std::string>("O0/no_simplification/pr.ll", "pr"),
-    std::pair<std::string, std::string>("O1/no_simplification/pr.ll", "pr"),
-    std::pair<std::string, std::string>("O0/no_simplification/histogram.ll", "histogram"),
-    std::pair<std::string, std::string>("O1/no_simplification/histogram.ll", "histogram"),
-
-};
+    std::pair<std::string, std::string>("axpy.ll", "axpy"),
+    std::pair<std::string, std::string>("dot_product.ll", "dot_product"),
+    std::pair<std::string, std::string>("convolution.ll", "convolution"),
+    std::pair<std::string, std::string>("calculate_temp.ll", "calculate_temp"),
+    std::pair<std::string, std::string>("backprop.ll", "backprop"),
+    std::pair<std::string, std::string>("backprop2.ll", "backprop2"),
+    std::pair<std::string, std::string>("bfs.ll", "bfs"),
+    std::pair<std::string, std::string>("pr.ll", "pr")
+    };
 
 ////////////////////////////////
 ////////////////////////////////
@@ -57,6 +46,7 @@ int main(int argc, char **argv) {
     extern cl::opt<bool> TestKernels;
     extern cl::opt<bool> Debug;
     extern cl::opt<bool> DumpKernel;
+    extern cl::opt<int> Mode;
 
     cl::ParseCommandLineOptions(argc, argv);
 

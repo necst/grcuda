@@ -21,6 +21,8 @@
 
 #include "../utils.hpp"
 #include "array_access.hpp"
+#include "function_provider/fix_oob_function_provider.hpp"
+#include "function_provider/track_oob_function_provider.hpp"
 
 ////////////////////////////////
 ////////////////////////////////
@@ -40,16 +42,6 @@ struct TestPass : public FunctionPass {
     OOB_PROTECTION_TYPE protection_type = PREVENT;
 
     virtual bool runOnFunction(Function &F);
-
-    // Process the argument list:
-    // assume that each input pointer/array has its size, expressed as integer, after it.
-    // Return false if 1! pointer argument was found, 
-    // i.e. the sizes array is missing, or it is present but no pointer argument exist;
-    bool parse_argument_list(Function &F);
-
-    // Insert at the beginning of the kernel code a sequence of instructions 
-    // that loads each array value and stores it in a local value;
-    void insert_load_sizes_instructions(Function &F);
 
     // Check if an input array is stored inside some other value.
     // If so, mark this other value as alias.
@@ -72,12 +64,6 @@ struct TestPass : public FunctionPass {
 
     void check_if_positive_cuda_dependent(Instruction &I);
 
-    // Handle array/pointer accesses: if the index used to access the array is CUDA-dependent,
-    // keep track of the array access;
-    bool handle_array_access(Instruction &I);
-
-    void filter_accesses_with_protection();
-
     // Check if the span of instructions covered by access x
     // is included inside the span covered by y;
     bool inside_access(ArrayAccess *x, ArrayAccess *y);
@@ -87,8 +73,6 @@ struct TestPass : public FunctionPass {
     // We can add the boundary condition of the "smaller" array access into the "larger" access,
     // and process only the "larger" access;
     void simplify_array_accesses();
-
-    bool add_array_access_protection(LLVMContext &context);
 
     Instruction* obtain_array_access_start(ArrayAccess* access);
 
@@ -105,9 +89,6 @@ struct TestPass : public FunctionPass {
     bool is_value_cuda_dependent(Value &V) {
         return is_in_set(&cuda_dependent_values, V);
     }
-
-    bool check_if_same_index(Value *x, Value *y);
-    bool check_if_same_size(Value *x, Value *y);
 
     ////////////////////////////////
     ////////////////////////////////
@@ -135,8 +116,8 @@ struct TestPass : public FunctionPass {
     // Set of values used to store array sizes;
     std::set<Value *> array_sizes_set;
 
-    // Reference to the array that stores sizes;
-    Value* sizes_array;
+    // Reference to the class that implements the function required for OOB detection & protection;
+    FixOOBFunctionProvider *function_provider;
 };
 
 } // namespace llvm
