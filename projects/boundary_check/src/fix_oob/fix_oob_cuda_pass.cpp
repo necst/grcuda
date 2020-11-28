@@ -22,6 +22,7 @@ cl::opt<bool> LowerBounds("lower_bounds", cl::desc("If present, add >= 0 boundar
 cl::opt<bool> TestKernels("test", cl::desc("If present, apply the optimization pass to a few sample kernels and check if the output IR is valid"));
 cl::opt<bool> Debug("debug", cl::desc("If present, print debug messages during the transformation pass"));
 cl::opt<bool> DumpKernel("dump_updated_kernel", cl::desc("If present, print the updated kernel IR"));
+cl::opt<int> Mode("oob_protection_type", cl::desc("Specify the type of protection: [0] Prevent OOB accesses [1] Track OOB accesses [2] Prevent and track OOB accesses"));
 
 namespace llvm {
 
@@ -31,6 +32,8 @@ TestPass::TestPass() : FunctionPass(ID) {
     } else {
         kernel_name = "";
     }
+    // Define how this transformation pass should operate;
+    protection_type = (Mode.getNumOccurrences() > 0 && Mode.getValue() < NUM_PROTECTION_TYPES) ? (OOB_PROTECTION_TYPE) Mode.getValue() : PREVENT;
 }
 
 bool TestPass::runOnFunction(Function &F) {

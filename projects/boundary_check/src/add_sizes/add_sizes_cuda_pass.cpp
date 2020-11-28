@@ -90,35 +90,34 @@ struct CudaAddSizesPass : public ModulePass {
 
             // Look at each argument of the kernel. If any is a pointer, or an array,
             // add a pointer argument at the end, it will be an array containing sizes;
-            // for (auto &p : original_kernel->args()) {
-            //     if (p.getType()->isArrayTy() || p.getType()->isPointerTy()) {
-            //         // TODO: these arrays 
-            //         params.push_back(Type::getInt64PtrTy(original_kernel->getContext()));
-            //         // If required, add a second array that can be used to count OOB accesses during execution;
-            //         if (AddDebugArray) {
-            //             params.push_back(Type::getInt64PtrTy(original_kernel->getContext()));
-            //         }
-            //         ir_updated = true;
-            //         break;
-            //     }
-            // }
-
-            // Look at each argument of the kernel. If any is a pointer, or an array,
-            // add a pointer argument at the end, it will be an array containing sizes;
-            unsigned int pointer_count = 0;
             for (auto &p : original_kernel->args()) {
                 if (p.getType()->isArrayTy() || p.getType()->isPointerTy()) {
-                    pointer_count++;
+                    // TODO: these arrays 
+                    params.push_back(Type::getInt64PtrTy(original_kernel->getContext()));
+                    // If required, add a second array that can be used to count OOB accesses during execution;
+                    if (AddDebugArray) {
+                        params.push_back(Type::getInt64PtrTy(original_kernel->getContext()));
+                    }
+                    ir_updated = true;
+                    break;
                 }
             }
-            if (pointer_count > 0) {
-                params.push_back(ArrayType::get(Type::getInt64Ty(original_kernel->getContext()), pointer_count));
-                // If required, add a second array that can be used to count OOB accesses during execution;
-                if (AddDebugArray) {
-                    params.push_back(ArrayType::get(Type::getInt64Ty(original_kernel->getContext()), pointer_count));
-                }
-                ir_updated = true;
-            }
+
+            // Alternative: add an array with precise size. It seems that arrays passed as pointers are treated as standard pointers anyway by LLVM, so this step is not required;
+            // unsigned int pointer_count = 0;
+            // for (auto &p : original_kernel->args()) {
+            //     if (p.getType()->isArrayTy() || p.getType()->isPointerTy()) {
+            //         pointer_count++;
+            //     }
+            // }
+            // if (pointer_count > 0) {
+            //     params.push_back(ArrayType::get(Type::getInt64Ty(original_kernel->getContext()), pointer_count));
+            //     // If required, add a second array that can be used to count OOB accesses during execution;
+            //     if (AddDebugArray) {
+            //         params.push_back(ArrayType::get(Type::getInt64Ty(original_kernel->getContext()), pointer_count));
+            //     }
+            //     ir_updated = true;
+            // }
 
             // We need to preserve the kernel entrypoint. For now, obtain a reference to the metadata where
             // the original kernel is listed as entrypoint;
@@ -189,16 +188,16 @@ struct CudaAddSizesPass : public ModulePass {
 
                 // Small optimizaztion: specify the sizes array to be read only, and "no capture",
                 // i.e. no copies of this pointer are done in the function and outlive the function call;
-                // unsigned int array_offset = AddDebugArray ? 2 : 1;
-                // auto new_attr = new_kernel->getAttributes().addParamAttribute(new_kernel->getContext(), params.size() - array_offset ,llvm::Attribute::ReadOnly);
-                // new_kernel->setAttributes(new_attr);
-                // new_attr = new_kernel->getAttributes().addParamAttribute(new_kernel->getContext(), params.size() - array_offset, llvm::Attribute::NoCapture);
-                // new_kernel->setAttributes(new_attr);
-                // // Also specify the debug array as "no capture";
-                // if (AddDebugArray) {
-                //     new_attr = new_kernel->getAttributes().addParamAttribute(new_kernel->getContext(), params.size() - 1, llvm::Attribute::NoCapture);
-                // }
-                // new_kernel->setAttributes(new_attr);
+                unsigned int array_offset = AddDebugArray ? 2 : 1;
+                auto new_attr = new_kernel->getAttributes().addParamAttribute(new_kernel->getContext(), params.size() - array_offset ,llvm::Attribute::ReadOnly);
+                new_kernel->setAttributes(new_attr);
+                new_attr = new_kernel->getAttributes().addParamAttribute(new_kernel->getContext(), params.size() - array_offset, llvm::Attribute::NoCapture);
+                new_kernel->setAttributes(new_attr);
+                // Also specify the debug array as "no capture";
+                if (AddDebugArray) {
+                    new_attr = new_kernel->getAttributes().addParamAttribute(new_kernel->getContext(), params.size() - 1, llvm::Attribute::NoCapture);
+                }
+                new_kernel->setAttributes(new_attr);
 
                 // Cleanup steps, taken from: https://llvm.org/doxygen/DeadArgumentElimination_8cpp_source.html
                 cleanup();

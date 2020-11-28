@@ -27,8 +27,17 @@
 
 namespace llvm {
 
+#define NUM_PROTECTION_TYPES 3
+enum OOB_PROTECTION_TYPE {
+    PREVENT = 0,
+    TRACK = 1,
+    PREVENT_AND_TRACK = 2
+};
+
 struct TestPass : public FunctionPass {
     TestPass();
+
+    OOB_PROTECTION_TYPE protection_type = PREVENT;
 
     virtual bool runOnFunction(Function &F);
 

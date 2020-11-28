@@ -27,7 +27,7 @@ struct ArrayAccess {
     // These instructions compose an array/pointer access building block;
     Value *array_load;
     Instruction *index_expression;
-    // Casting is optionalM
+    // Casting is optional;
     CastInst *index_casting;
     GetElementPtrInst *get_array_value;
     // List of load/store instructions that use a given array access.
