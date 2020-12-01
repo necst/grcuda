@@ -87,6 +87,9 @@ namespace llvm {
         // Reference to the array that stores sizes;
         Value* sizes_array;
 
+        // Track for each input array its position in the signature (considering only input arrays). Shared memory arrays are not stored in this
+        std::map<Value*, int> input_array_position_map;
+
         // If true, print stuff;
         bool debug;
     };

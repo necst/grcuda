@@ -26,6 +26,10 @@ namespace llvm {
             bool protect_lower_bounds,
             std::set<Value *> &positive_cuda_dependent_values) override;
 
+        // Add a sequence of instructions that update the OOB tracking array for a given access.
+        // If we have an OOB access on the array at the i-th position, we update the i-th position in the tracking array with an atomic add;
+        void add_update_to_oob_tracking_array(LLVMContext &context, ArrayAccess *array_access, BasicBlock *start_if_block);
+
         // Reference to the array that tracks OOB accesses;
         Value* track_oob_array;
     };

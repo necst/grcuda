@@ -53,6 +53,7 @@ void FixOOBFunctionProvider::insert_load_sizes_instructions(Function &F, std::ve
         Value *array_size = builder.CreateLoad(ptrI, formatv("array_size_{0}", i));
         // Associate the array size with the corresponding array;
         input_array_sizes[array_arguments[i]] = array_size;
+        input_array_position_map[array_arguments[i]] = i;
         if (debug) {
             outs() << "Loading size of array " << i << "\n\t";
             ptrI->print(outs());
@@ -87,6 +88,27 @@ bool FixOOBFunctionProvider::handle_array_access(
         ArrayAccess *access = new ArrayAccess();
         access->get_array_value = getI;
         access->array_load = getI->getPointerOperand();
+
+        // Track the position of this array access among the input arrays (skipping shared-memory arrays);
+        if (is_in_map(&input_array_position_map, access->array_load)) {
+            // The array operand is an input array;
+            access->array_signature_position = input_array_position_map[access->array_load];
+            access->array_type = ArrayMemoryType::INPUT;
+        } else if (is_in_map(&input_alias_map, access->array_load) &&
+                is_in_map(&input_array_position_map, input_alias_map[access->array_load])) {
+            // The accessed pointer is an alias for an input argument;
+            access->array_signature_position = input_array_position_map[input_alias_map[access->array_load]];
+            access->array_type = ArrayMemoryType::INPUT;
+        } else if (dyn_cast<ArrayType>(getI->getSourceElementType())) {
+            // Shared-memory array (with fixed size);
+            // TODO: we cannot handle shared-memory with size not known statically: not difficult, we can just pass information about shared memory size allocated dynamically as addtional input array size;
+            access->array_type = ArrayMemoryType::SHARED_MEMORY;
+        } else {
+            // Undefined position;
+            access->array_type = ArrayMemoryType::UNDEFINED;
+            outs() << "WARNING: detected array access to array with undefined position in the input signature!\n";
+        }
+        
 
         // DEBUG PRINTING;
         if (debug) {
@@ -127,13 +149,13 @@ bool FixOOBFunctionProvider::handle_array_access(
         // If the array is allocated with a fixed size, we can obtain the size at compile time;
         if (auto arrayT = dyn_cast<ArrayType>(getI->getSourceElementType())) {
             access->array_size = ConstantInt::get(access->index_expression->getType(), arrayT->getNumElements());
-        } else if (is_in_map(&input_array_sizes, getI->getPointerOperand())) {
+        } else if (is_in_map(&input_array_sizes, access->array_load)) {
             // If the accessed pointer is an input argument, use its size;
-            access->array_size = input_array_sizes[getI->getPointerOperand()];
-        } else if (is_in_map(&input_alias_map, getI->getPointerOperand()) &&
-                   is_in_map(&input_array_sizes, input_alias_map[getI->getPointerOperand()])) {
+            access->array_size = input_array_sizes[access->array_load];
+        } else if (is_in_map(&input_alias_map, access->array_load) &&
+                   is_in_map(&input_array_sizes, input_alias_map[access->array_load])) {
             // The accessed pointer is an alias for an input argument;
-            access->array_size = input_array_sizes[input_alias_map[getI->getPointerOperand()]];
+            access->array_size = input_array_sizes[input_alias_map[access->array_load]];
         } else {
             // Use an undefined value;
             access->array_size = UndefValue::get(access->index_expression->getType());

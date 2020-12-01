@@ -16,15 +16,24 @@ enum ArrayAccessType { LOAD,
                        STORE,
                        CALL };
 
+enum ArrayMemoryType { INPUT,
+                       SHARED_MEMORY,
+                       UNDEFINED };
+
 // Each array access is associated to a GetElementPointer instruction,
 // i.e. an address computation. A single computation might be used for
 // multiple array accesses, especially if the code has been optimized;
 struct ArrayAccess {
+
+    // Position of the array to which this access refers to in the signature, counting only arrays. The value is not relevant for shared-memory accesses;
+    int array_signature_position;
+    ArrayMemoryType array_type;
+
     // Type of array accesses;
     std::vector<ArrayAccessType> access_type;
     // Size of the array being accessed;
     Value *array_size;
-    // These instructions compose an array/pointer access building block;
+    // Array to which this array access refers to, the operator of the GEP;
     Value *array_load;
     Instruction *index_expression;
     // Casting is optional;
