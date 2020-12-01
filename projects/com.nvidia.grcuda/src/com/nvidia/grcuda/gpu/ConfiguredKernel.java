@@ -41,9 +41,9 @@ import com.oracle.truffle.api.library.ExportMessage;
 @ExportLibrary(InteropLibrary.class)
 public class ConfiguredKernel implements TruffleObject {
 
-    private final Kernel kernel;
+    protected final Kernel kernel;
 
-    private final KernelConfig config;
+    protected final KernelConfig config;
 
     public ConfiguredKernel(Kernel kernel, KernelConfig config) {
         this.kernel = kernel;

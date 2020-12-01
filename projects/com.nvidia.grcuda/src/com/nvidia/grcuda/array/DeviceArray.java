@@ -177,7 +177,7 @@ public final class DeviceArray extends AbstractArray implements TruffleObject {
     }
 
     @ExportMessage
-    Object readArrayElement(long index,
+    public Object readArrayElement(long index,
                     @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws InvalidArrayIndexException {
         if (arrayFreed) {
             CompilerDirectives.transferToInterpreter();

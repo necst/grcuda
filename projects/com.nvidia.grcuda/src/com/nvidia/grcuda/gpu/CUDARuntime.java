@@ -1056,6 +1056,8 @@ public final class CUDARuntime {
         if (preventOOB == OOBProtectionPolicyEnum.NO_PROTECTION) {
             return new Kernel(grCUDAExecutionContext, kernelName, symbolName, kernelFunction, signature, module);
         } else {
+            // FIXME: the number of pointers include the sizes array and the tracking array.
+            //  Not a big problem, we just have these arrays with 1/2 extra values;
             int numOfPointers = 0 ;
             for (ComputationArgument arg : binding.getComputationArguments()) {
                 if (arg.isPointer()) {

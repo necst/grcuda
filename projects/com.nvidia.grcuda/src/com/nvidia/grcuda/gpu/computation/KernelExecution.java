@@ -22,10 +22,10 @@ import java.util.stream.Collectors;
  */
 public class KernelExecution extends GrCUDAComputationalElement {
 
-    private final Kernel kernel;
-    private final ConfiguredKernel configuredKernel;
-    private final KernelConfig config;
-    private final KernelArguments args;
+    protected final Kernel kernel;
+    protected final ConfiguredKernel configuredKernel;
+    protected final KernelConfig config;
+    protected final KernelArguments args;
 
     public KernelExecution(ConfiguredKernel configuredKernel, KernelArguments args) {
         super(

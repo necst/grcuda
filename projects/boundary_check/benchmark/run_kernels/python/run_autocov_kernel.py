@@ -11,6 +11,7 @@ from trufflecuda_python_utils import *
 
 OPT_LEVEL = "O0"
 SIMPLIFICATION= "no_simplification"
+DEDUCT_SIZES = "prevent"
 
 UNMODIFIED_CUBIN_NAME = "autocov_checked.cubin"
 UNMODIFIED_KERNEL_NAME = "autocov_checked"
@@ -92,7 +93,7 @@ def main(args):
         # Run the kernel with boundary checks;
         if os.path.isfile(modified_kernel_path):
             exec_time, exec_time_k = run_kernel(debug, num_blocks, MODIFIED_KERNEL_NAME, modified_kernel_path, MODIFIED_KERNEL_PARAMS,
-             [x2, k, len(x2), res2], num_threads, deduct_sizes=True)
+             [x2, k, len(x2), res2], num_threads, deduct_sizes=DEDUCT_SIZES)
             
             exec_time_modified += [exec_time]
             exec_time_k_modified += [exec_time_k]

@@ -35,7 +35,7 @@ import com.oracle.truffle.api.TruffleException;
 import com.oracle.truffle.api.interop.InteropException;
 import com.oracle.truffle.api.nodes.Node;
 
-public final class GrCUDAException extends RuntimeException implements TruffleException {
+public class GrCUDAException extends RuntimeException implements TruffleException {
     private static final long serialVersionUID = 8614211550329856579L;
 
     private final Node node;

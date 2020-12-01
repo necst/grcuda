@@ -141,6 +141,7 @@ public class GrCUDAStreamManager {
                     syncParentStreamsImpl(vertex);
                 }
             }
+            // TODO: callbacks execution;
         }
     }
 
@@ -168,7 +169,6 @@ public class GrCUDAStreamManager {
                 if (parent.getEvent().isPresent()) {
                     CUDAEvent event = parent.getEvent().get();
                     runtime.cudaStreamWaitEvent(vertex.getComputation().getStream(), event);
-
 //                    System.out.println("\t* wait event on stream; stream to sync=" + stream.getStreamNumber()
 //                            + "; stream that waits=" + vertex.getComputation().getStream().getStreamNumber()
 //                            + "; event=" + event.getEventNumber());
@@ -203,12 +203,14 @@ public class GrCUDAStreamManager {
                 // Skip computations that have already finished;
                 if (!v.getComputation().isComputationFinished()) {
                     setComputationsFinished(v, streamsToSync);
+                    // TODO: setComputationsFinished should return all vertices that are now finished, add them to list of vertices to callback;
                 }
             });
             // Now the stream is free to be re-used;
             activeComputationsPerStream.remove(s);
             retrieveNewStream.update(s);
         });
+        // TODO: Execute callbacks (or return vertices for which callbacks must be done), possibly after sorting vertices by ID so that callbacks are executed in order;
     }
 
     protected void setComputationFinishedInner(GrCUDAComputationalElement computation) {

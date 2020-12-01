@@ -81,4 +81,7 @@ public final class GrCUDAOptions {
 
     @Option(category = OptionCategory.USER, help = "Automatically modify CUDA kernels with array sizes to prevent out-of-boundary array accesses", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> PreventOOB = new OptionKey<>(GrCUDAContext.DEFAULT_OOB_PROTECTION_POLICY.getName());
+
+    @Option(category = OptionCategory.USER, help = "Specify if OOB accesses should throw exceptions", stability = OptionStability.EXPERIMENTAL) //
+    public static final OptionKey<Boolean> ThrowExceptionOnOOB = new OptionKey<>(false);
 }

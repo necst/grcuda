@@ -107,23 +107,24 @@ void TrackOOBFunctionProvider::add_update_to_oob_tracking_array(LLVMContext &con
     IRBuilder<> builder(&first_inst);
 
     // Compute the pointer value;
-    Value *ptrI = builder.CreateGEP(track_oob_array, ConstantInt::get(IntegerType::getInt64Ty(context), array_access->array_signature_position), formatv("compute_ptr_tracking_array_{0}", array_access->array_signature_position));
+    Value *ptrI = builder.CreateGEP(track_oob_array, ConstantInt::get(IntegerType::getInt32Ty(context), array_access->array_signature_position), formatv("compute_ptr_tracking_array_{0}", array_access->array_signature_position));
     // Add a load instruction;
-    Value *array_size = builder.CreateLoad(ptrI, formatv("tracking_array_{0}", array_access->array_signature_position));
+    // Value *array_size = builder.CreateLoad(ptrI, formatv("tracking_array_{0}", array_access->array_signature_position));
     // Add an atomic sum instruction;
-    Value *sum_one = builder.CreateAdd(array_size, ConstantInt::get(array_size->getType(), 1, true));
+    Value *atomic_add = builder.CreateAtomicRMW(llvm::AtomicRMWInst::Add, ptrI, ConstantInt::get(IntegerType::getInt32Ty(context), 1, true), llvm::AtomicOrdering::SequentiallyConsistent);
+    // Value *sum_one = builder.CreateAdd(array_size, ConstantInt::get(array_size->getType(), 1, true));
     // Add store;
-    Value *array_store = builder.CreateStore(sum_one, ptrI, true);    
+    // Value *array_store = builder.CreateStore(sum_one, ptrI, false);    
     
     if (debug) {
         outs() << "Inserted OOB tracking array operation at position " << array_access->array_signature_position << "\n\t";
         ptrI->print(outs());
+        // outs() << "\n\t";
+        // array_size->print(outs());
         outs() << "\n\t";
-        array_size->print(outs());
-        outs() << "\n\t";
-        sum_one->print(outs());
-        outs() << "\n\t";
-        array_store->print(outs());
+        // atomic_add->print(outs());
+        // outs() << "\n\t";
+        // array_store->print(outs());
         outs() << "\n";
     }
     

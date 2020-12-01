@@ -12,6 +12,7 @@ from trufflecuda_python_utils import *
 
 OPT_LEVEL = "O0"
 SIMPLIFICATION= "no_simplification"
+DEDUCT_SIZES = "prevent"
 
 UNMODIFIED_CUBIN_NAME = "calculate_temp_checked.cubin"
 UNMODIFIED_KERNEL_NAME = "calculate_temp_checked"
@@ -130,7 +131,7 @@ def main(args):
         # Run the kernel with boundary checks;
         if os.path.isfile(modified_kernel_path):
             exec_time, exec_time_k = run_kernel(debug, num_blocks, MODIFIED_KERNEL_NAME, modified_kernel_path, MODIFIED_KERNEL_PARAMS,
-                [0, matrix_power2, matrix_temp_src2, matrix_temp_dest2, col, row, borderCols, borderRows, Cap, Rx, Ry, Rz, step, 0], num_threads, deduct_sizes=True)
+                [0, matrix_power2, matrix_temp_src2, matrix_temp_dest2, col, row, borderCols, borderRows, Cap, Rx, Ry, Rz, step, 0], num_threads, deduct_sizes=DEDUCT_SIZES)
             
             exec_time_modified += [exec_time]
             exec_time_k_modified += [exec_time_k]

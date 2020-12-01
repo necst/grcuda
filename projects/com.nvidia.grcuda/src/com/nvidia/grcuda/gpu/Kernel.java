@@ -416,13 +416,13 @@ public class Kernel implements TruffleObject {
         return true;
     }
 
-    @ExportMessage
-    Object execute(Object[] arguments,
-                    @CachedLibrary(limit = "3") InteropLibrary gridSizeAccess,
-                    @CachedLibrary(limit = "3") InteropLibrary gridSizeElementAccess,
-                    @CachedLibrary(limit = "3") InteropLibrary blockSizeAccess,
-                    @CachedLibrary(limit = "3") InteropLibrary blockSizeElementAccess,
-                    @CachedLibrary(limit = "3") InteropLibrary sharedMemoryAccess) throws UnsupportedTypeException, ArityException {
+    protected KernelConfigBuilder setupKernelConfiguration(
+            Object[] arguments,
+            @CachedLibrary(limit = "3") InteropLibrary gridSizeAccess,
+            @CachedLibrary(limit = "3") InteropLibrary gridSizeElementAccess,
+            @CachedLibrary(limit = "3") InteropLibrary blockSizeAccess,
+            @CachedLibrary(limit = "3") InteropLibrary blockSizeElementAccess,
+            @CachedLibrary(limit = "3") InteropLibrary sharedMemoryAccess) throws UnsupportedTypeException, ArityException {
         // FIXME: ArityException allows to specify only 1 arity, and cannot be subclassed! We might want to use a custom exception here;
         if (arguments.length < 2 || arguments.length > 4) {
             CompilerDirectives.transferToInterpreter();
@@ -445,7 +445,17 @@ public class Kernel implements TruffleObject {
             // Stream specified;
             configBuilder.stream(extractStream(arguments[3]));
         }
-        return new ConfiguredKernel(this, configBuilder.build());
+        return configBuilder;
+    }
+
+    @ExportMessage
+    Object execute(Object[] arguments,
+                    @CachedLibrary(limit = "3") InteropLibrary gridSizeAccess,
+                    @CachedLibrary(limit = "3") InteropLibrary gridSizeElementAccess,
+                    @CachedLibrary(limit = "3") InteropLibrary blockSizeAccess,
+                    @CachedLibrary(limit = "3") InteropLibrary blockSizeElementAccess,
+                    @CachedLibrary(limit = "3") InteropLibrary sharedMemoryAccess) throws UnsupportedTypeException, ArityException {
+        return new ConfiguredKernel(this, setupKernelConfiguration(arguments, gridSizeAccess, gridSizeElementAccess, blockSizeAccess, blockSizeElementAccess, sharedMemoryAccess).build());
     }
 }
 

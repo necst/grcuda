@@ -11,6 +11,7 @@ from trufflecuda_python_utils import *
 
 OPT_LEVEL = "O0"
 SIMPLIFICATION= "no_simplification"
+DEDUCT_SIZES = "prevent"
 
 UNMODIFIED_CUBIN_NAME = "histogram.cubin"
 UNMODIFIED_KERNEL_NAME = "histogram"

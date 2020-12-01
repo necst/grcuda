@@ -87,7 +87,7 @@ def generate_graph(N, max_degree=10, avoid_self_edges=True):
 ##############################
 
 def run_kernel(debug: bool, num_blocks: int, kernel_name: str, kernel_path: str,
-               kernel_params: str, params: list, num_threads=NUM_THREADS, deduct_sizes=False):
+               kernel_params: str, params: list, num_threads=NUM_THREADS, deduct_sizes="no_protection"):
 
     start = System.nanoTime()
     

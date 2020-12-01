@@ -11,6 +11,7 @@ from trufflecuda_python_utils import *
 
 OPT_LEVEL = "O0"
 SIMPLIFICATION= "no_simplification"
+DEDUCT_SIZES = "prevent"
 
 UNMODIFIED_CUBIN_NAME = "bfs_checked.cubin"
 UNMODIFIED_KERNEL_NAME = "bfs_checked"
@@ -105,7 +106,7 @@ def main(args):
         modified_kernel_path = os.path.join(MODIFIED_KERNEL_FOLDER, opt_level, simplify, MODIFIED_CUBIN_NAME)
         if os.path.isfile(modified_kernel_path):
             exec_time, exec_time_k = run_kernel(debug, num_blocks, MODIFIED_KERNEL_NAME, modified_kernel_path, MODIFIED_KERNEL_PARAMS,
-             [ptr_d2, idx_d2, res2, 1, N, E, graph_mask2, graph_visited2, updating_graph_mask2], deduct_sizes=True)
+             [ptr_d2, idx_d2, res2, 1, N, E, graph_mask2, graph_visited2, updating_graph_mask2], deduct_sizes=DEDUCT_SIZES)
             
             exec_time_modified += [exec_time]
             exec_time_k_modified += [exec_time_k]

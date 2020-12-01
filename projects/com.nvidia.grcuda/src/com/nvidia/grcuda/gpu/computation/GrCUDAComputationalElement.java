@@ -227,6 +227,16 @@ public abstract class GrCUDAComputationalElement {
     }
 
     /**
+     * Function that can be used by concrete computational elements to implement some kind of callback,
+     * e.g. logging information, checking the validity of the computation, etc.
+     * Currently supported only in synchronous execution.
+     * In asynchronous execution, the idea is to execute callbacks only when the computation is guaranteed to be finished,
+     * which might happen later compared to the actual end of the computation, and after the execution of other
+     * asynchronous computation.
+     */
+    public void callback() {}
+
+    /**
      * The default initializer will simply store all the arguments,
      * and consider each of them in the dependency computations;
      */

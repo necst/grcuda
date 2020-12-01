@@ -29,8 +29,10 @@ void axpy_cpu(float *x, float *y, float a, int size, float *res) {
     }
 }
 
-extern "C" __global__ void axpy(float *x, float *y, float a, int size, float *res) {
+extern "C" __global__ void axpy(float *x, float *y, float a, int size, float *res, int check[3]) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= 0)
+        atomicAdd(&check[1], 1);
     res[i] = a * x[i] + y[i];
 }
 
@@ -93,6 +95,8 @@ int main(int argc, char *argv[]) {
     float *res_gold = (float *)calloc(size, sizeof(float));
     float *res = (float *)calloc(size, sizeof(float));
 
+    int *check = (int *)malloc(3 * sizeof(int));
+
     // Fill with random values;
     create_sample_vector(&a, 1, true, false);
     create_sample_vector(x, size, true);
@@ -111,9 +115,12 @@ int main(int argc, char *argv[]) {
     float *x_d;
     float *y_d;
     float *res_d;
+    int *check_d;
+    cudaMalloc(&check_d, sizeof(int) * 3);
     cudaMalloc(&x_d, sizeof(float) * size);
     cudaMalloc(&y_d, sizeof(float) * size);
     cudaMalloc(&res_d, sizeof(float) * size);
+    cudaMemcpy(check_d, check, 3 * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(x_d, x, size * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(y_d, y, size * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(res_d, res, size * sizeof(float), cudaMemcpyHostToDevice);
@@ -152,15 +159,19 @@ int main(int argc, char *argv[]) {
 
     // Compute on GPU - Checked;
     start = clock_type::now();
-    axpy<<<num_blocks, NUM_THREADS>>>(x_d, y_d, a, size, res_d);
+    axpy<<<num_blocks, NUM_THREADS>>>(x_d, y_d, a, size, res_d, check_d);
     end = clock_type::now();
     duration = chrono::duration_cast<chrono::milliseconds>(end - start).count();
     cudaMemcpy(res, res_d, size * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(check, check_d, 3 * sizeof(int), cudaMemcpyDeviceToHost);
     cudaCheckError();
     if (human_readable) {
         cout << "GPU Result - Checked:" << endl;
         print_array_indexed(res, std::min(20, size));
         cout << "Duration: " << duration << " ms" << endl;
+        for (int i = 0; i < 3; i++) {
+            std::cout << "check " << i << "=" << check[i] << std::endl;
+        }
     }
     num_errors = check_array_equality(res_gold, res, size, 0.00000001, human_readable);
     if (human_readable) {

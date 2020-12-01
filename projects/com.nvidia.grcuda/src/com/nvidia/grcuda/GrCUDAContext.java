@@ -84,6 +84,7 @@ public final class GrCUDAContext {
     private final boolean forceStreamAttach;
     private final boolean inputPrefetch;
     private final OOBProtectionPolicyEnum preventOOB;
+    private final boolean throwExceptionOnOOB;
 
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
     private final ConcurrentHashMap<Class<?>, CallTarget> uncachedMapCallTargets = new ConcurrentHashMap<>();
@@ -105,6 +106,9 @@ public final class GrCUDAContext {
 
         // Find if OOB should be automatically prevented;
         preventOOB = parseOOBProtectionPolicy(env.getOptions().get(GrCUDAOptions.PreventOOB));
+
+        // If true, throw a GrCUDAKernelOOBException instead of just giving a warning;
+        throwExceptionOnOOB = env.getOptions().get(GrCUDAOptions.ThrowExceptionOnOOB);
 
         // Retrieve the dependency computation policy;
         DependencyPolicyEnum dependencyPolicy = parseDependencyPolicy(env.getOptions().get(GrCUDAOptions.DependencyPolicy));
@@ -211,6 +215,10 @@ public final class GrCUDAContext {
 
     public OOBProtectionPolicyEnum getPreventOOBPolicy() {
         return preventOOB;
+    }
+
+    public boolean isThrowExceptionOnOOB() {
+        return throwExceptionOnOOB;
     }
 
     /**

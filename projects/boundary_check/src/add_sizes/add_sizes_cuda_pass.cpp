@@ -96,7 +96,7 @@ struct CudaAddSizesPass : public ModulePass {
                     params.push_back(Type::getInt64PtrTy(original_kernel->getContext()));
                     // If required, add a second array that can be used to count OOB accesses during execution;
                     if (AddDebugArray) {
-                        params.push_back(Type::getInt64PtrTy(original_kernel->getContext()));
+                        params.push_back(Type::getInt32PtrTy(original_kernel->getContext()));
                     }
                     ir_updated = true;
                     break;

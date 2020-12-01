@@ -9,8 +9,8 @@ from trufflecuda_python_utils import *
 ##############################
 ##############################
 
-OPT_LEVEL = "O2"
-SIMPLIFICATION= "simplify_accesses"
+OPT_LEVEL = "O0"
+SIMPLIFICATION= "no_simplification"
 
 UNMODIFIED_CUBIN_NAME = "axpy_checked.cubin"
 UNMODIFIED_KERNEL_NAME = "axpy_checked"
@@ -20,7 +20,7 @@ UNMODIFIED_KERNEL_PARAMS = "pointer, pointer, float, uint32, pointer"
 MODIFIED_CUBIN_NAME = "axpy.cubin"
 MODIFIED_KERNEL_NAME = "axpy"
 MODIFIED_KERNEL_FOLDER = "../../cubin/"
-MODIFIED_KERNEL_PARAMS = "pointer, pointer, float, pointer"
+MODIFIED_KERNEL_PARAMS = "pointer, pointer, float, pointer, pointer, pointer"
 
 AXPY_KERNEL = """
 extern "C" __global__ void axpy(float* x, float* y, float a, int n, float *z) {
@@ -59,9 +59,12 @@ def main(args):
     y3 = polyglot.eval(language='grcuda', string='float[{}]'.format(num_elements))
     res3 = polyglot.eval(language='grcuda', string='float[{}]'.format(num_elements))
     sizes = polyglot.eval(language='grcuda', string='int[{}]'.format(3))
+    checks = polyglot.eval(language='grcuda', string='int[{}]'.format(10))
     sizes[0] = num_elements
     sizes[1] = num_elements
     sizes[2] = num_elements
+    for i in range(10):
+        checks[i] = 0
     a = 2.0
 
     exec_time_unmodified = []
@@ -73,12 +76,12 @@ def main(args):
     
     # Load unmodified CUBIN;
     kernel_path = os.path.join(UNMODIFIED_KERNEL_FOLDER, OPT_LEVEL, UNMODIFIED_CUBIN_NAME)
-    code = """bindkernel("{}", "{}", "{}", "{}")""".format(kernel_path, UNMODIFIED_KERNEL_NAME, UNMODIFIED_KERNEL_PARAMS, False)
+    code = """bindkernel("{}", "{}", "{}", "{}")""".format(kernel_path, UNMODIFIED_KERNEL_NAME, UNMODIFIED_KERNEL_PARAMS, "no_protection")
     kernel_2 = polyglot.eval(language='grcuda', string=code)
     
     # Load modified CUBIN;
     kernel_path = os.path.join(MODIFIED_KERNEL_FOLDER, OPT_LEVEL, SIMPLIFICATION, MODIFIED_CUBIN_NAME)
-    code = """bindkernel("{}", "{}", "{}", "{}")""".format(kernel_path, MODIFIED_KERNEL_NAME, MODIFIED_KERNEL_PARAMS, True)
+    code = """bindkernel("{}", "{}", "{}", "{}")""".format(kernel_path, MODIFIED_KERNEL_NAME, MODIFIED_KERNEL_PARAMS, "no_protection")
     kernel_3 = polyglot.eval(language='grcuda', string=code)
     
     exec_time_source = []
@@ -94,6 +97,8 @@ def main(args):
             x3[i] = i
             y3[i] = i
             res3[i] = 0
+            for i in range(10):
+                checks[i] = 0
             
         # Run kernel from source;
         start = System.nanoTime()
@@ -117,15 +122,16 @@ def main(args):
             print('first 10 elements of res:', res2[0:10])
         exec_time_unmodified += [exec_time]
         
-        # Run the unmodified CUBIN;
+        # Run the modified CUBIN;
         start = System.nanoTime()
-        kernel_3(num_blocks, NUM_THREADS)(x3, y3, a, res3)
+        kernel_3(num_blocks, NUM_THREADS)(x3, y3, a, res3, sizes, checks)
         exec_time = (System.nanoTime() - start) / 1_000_000_000
         print(f"exec time: {exec_time:.6f} sec")
         if debug:
             print('first 10 elements of x: ', x3[0:10])
             print('first 10 elements of y: ', y3[0:10])
             print('first 10 elements of res:', res3[0:10])
+            print('checks:', checks[:10])
         exec_time_modified += [exec_time]
         
 #        # Run the kernel without boundary checks;
@@ -148,7 +154,7 @@ def main(args):
 #        modified_kernel_path = os.path.join(MODIFIED_KERNEL_FOLDER, opt_level, simplify, MODIFIED_CUBIN_NAME)
 #        if os.path.isfile(modified_kernel_path):
 #            exec_time, exec_time_k = run_kernel(debug, num_blocks, MODIFIED_KERNEL_NAME, modified_kernel_path, MODIFIED_KERNEL_PARAMS,
-#             [x2, y2, a, res2], deduct_sizes=True)
+#             [x2, y2, a, res2], deduct_sizes=DEDUCT_SIZES)
 #            
 #            exec_time_modified += [exec_time]
 #            exec_time_k_modified += [exec_time_k]

@@ -46,6 +46,9 @@ public class SyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
         // Wait for the computation to end;
         cudaRuntime.cudaDeviceSynchronize();
 
+        // Execute callback on computation;
+        computation.callback();
+
         return result;
     }
 

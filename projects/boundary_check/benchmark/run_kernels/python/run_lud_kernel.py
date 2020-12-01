@@ -10,6 +10,7 @@ from trufflecuda_python_utils import *
 
 OPT_LEVEL = "O0"
 SIMPLIFICATION= "no_simplification"
+DEDUCT_SIZES = "prevent"
 
 UNMODIFIED_CUBIN_NAME = "lud_perimeter.cubin"
 UNMODIFIED_KERNEL_NAME = "lud_perimeter"
@@ -76,7 +77,7 @@ def main(args):
         modified_kernel_path = os.path.join(MODIFIED_KERNEL_FOLDER, opt_level, simplify, MODIFIED_CUBIN_NAME)
         if os.path.isfile(modified_kernel_path):
             exec_time, exec_time_k = run_kernel(debug, num_blocks, MODIFIED_KERNEL_NAME, modified_kernel_path, KERNEL_PARAMS,
-             [x2, num_elements, offset], threads_per_block, deduct_sizes=True)
+             [x2, num_elements, offset], threads_per_block, deduct_sizes=DEDUCT_SIZES)
             
             exec_time_modified += [exec_time]
             exec_time_k_modified += [exec_time_k]

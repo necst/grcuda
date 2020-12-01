@@ -43,10 +43,10 @@ public class KernelArgumentsWithSizes extends KernelArguments implements Closeab
         // Store each array size in the new input array;
         for (int i = 0; i < argsArraySizes.size(); i++) {
             try {
-                sizesArray.writeArrayElement(i, argsArraySizes.get(i),
+                sizesArray.writeArrayElementImpl(i, argsArraySizes.get(i),
                         LibraryFactory.resolve(InteropLibrary.class).getUncached(),
                         ValueProfile.getUncached());
-            } catch (InvalidArrayIndexException | UnsupportedTypeException e) {
+            } catch (UnsupportedTypeException e) {
                 throw new GrCUDAInternalException("error setting size of array at index " + i + " , with value " + argsArraySizes.get(i));
             }
         }

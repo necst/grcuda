@@ -10,6 +10,7 @@ from trufflecuda_python_utils import *
 
 OPT_LEVEL = "O0"
 SIMPLIFICATION= "no_simplification"
+DEDUCT_SIZES = "track"
 
 UNMODIFIED_CUBIN_NAME = "axpy_checked.cubin"
 UNMODIFIED_KERNEL_NAME = "axpy_checked"
@@ -81,7 +82,7 @@ def main(args):
         modified_kernel_path = os.path.join(MODIFIED_KERNEL_FOLDER, opt_level, simplify, MODIFIED_CUBIN_NAME)
         if os.path.isfile(modified_kernel_path):
             exec_time, exec_time_k = run_kernel(debug, num_blocks, MODIFIED_KERNEL_NAME, modified_kernel_path, MODIFIED_KERNEL_PARAMS,
-             [x2, y2, a, res2], deduct_sizes=True)
+             [x2, y2, a, res2], deduct_sizes=DEDUCT_SIZES)
             
             exec_time_modified += [exec_time]
             exec_time_k_modified += [exec_time_k]
