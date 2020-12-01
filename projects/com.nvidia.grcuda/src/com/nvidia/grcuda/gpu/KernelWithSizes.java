@@ -7,9 +7,9 @@ import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.*;
 
-public final class KernelWithSizes extends Kernel {
+public class KernelWithSizes extends Kernel {
 
-    private final DeviceArray sizesArray;
+    protected final DeviceArray sizesArray;
 
     public KernelWithSizes(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String kernelSymbol,
                            long kernelFunction, String kernelSignature, CUDARuntime.CUModule module, int numOfPointers) {
@@ -30,7 +30,7 @@ public final class KernelWithSizes extends Kernel {
             throws UnsupportedTypeException, ArityException {
         // The number of provided arguments should be equal to the number of arguments in the modified signature - 1,
         // as we added the sizes array to the modified signature;
-        if (args.length + 1 != this.kernelComputationArguments.length) {
+        if (args.length != this.kernelComputationArguments.length - 1) {
             CompilerDirectives.transferToInterpreter();
             throw ArityException.create(this.kernelComputationArguments.length, args.length + 1);
         }

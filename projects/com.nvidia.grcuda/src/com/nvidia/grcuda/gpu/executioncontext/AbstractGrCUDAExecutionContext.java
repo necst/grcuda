@@ -2,6 +2,7 @@ package com.nvidia.grcuda.gpu.executioncontext;
 
 import com.nvidia.grcuda.Binding;
 import com.nvidia.grcuda.GrCUDAContext;
+import com.nvidia.grcuda.OOBProtectionPolicyEnum;
 import com.nvidia.grcuda.array.AbstractArray;
 import com.nvidia.grcuda.gpu.CUDARuntime;
 import com.nvidia.grcuda.gpu.Kernel;
@@ -127,10 +128,10 @@ public abstract class AbstractGrCUDAExecutionContext {
     // Functions used to interface directly with the CUDA runtime;
 
     public Kernel loadKernel(Binding binding) {
-        return cudaRuntime.loadKernel(this, binding, false);
+        return cudaRuntime.loadKernel(this, binding, OOBProtectionPolicyEnum.NO_PROTECTION);
     }
 
-    public Kernel loadKernel(Binding binding, boolean preventOOB) {
+    public Kernel loadKernel(Binding binding, OOBProtectionPolicyEnum preventOOB) {
         return cudaRuntime.loadKernel(this, binding, preventOOB);
     }
 

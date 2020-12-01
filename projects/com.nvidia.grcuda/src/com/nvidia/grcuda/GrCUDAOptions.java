@@ -80,5 +80,5 @@ public final class GrCUDAOptions {
     public static final OptionKey<String> TensorRTLibrary = new OptionKey<>(TensorRTRegistry.DEFAULT_LIBRARY);
 
     @Option(category = OptionCategory.USER, help = "Automatically modify CUDA kernels with array sizes to prevent out-of-boundary array accesses", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<Boolean> PreventOOB = new OptionKey<>(false);
+    public static final OptionKey<String> PreventOOB = new OptionKey<>(GrCUDAContext.DEFAULT_OOB_PROTECTION_POLICY.getName());
 }

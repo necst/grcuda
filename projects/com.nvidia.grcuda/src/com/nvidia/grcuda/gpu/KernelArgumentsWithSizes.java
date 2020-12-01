@@ -17,10 +17,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public final class KernelArgumentsWithSizes extends KernelArguments implements Closeable {
+public class KernelArgumentsWithSizes extends KernelArguments implements Closeable {
 
     public KernelArgumentsWithSizes(Object[] args, ComputationArgument[] kernelArgumentList, DeviceArray sizesArray) {
-        super(args, kernelArgumentList, args.length + 1);
+        this(args, kernelArgumentList, args.length + 1, sizesArray);
+    }
+
+    protected KernelArgumentsWithSizes(Object[] args, ComputationArgument[] kernelArgumentList, int extendedArgsLength, DeviceArray sizesArray) {
+        super(args, kernelArgumentList, extendedArgsLength);
 
         // Add the additional arguments;
         List<Long> argsArraySizes = new ArrayList<>();

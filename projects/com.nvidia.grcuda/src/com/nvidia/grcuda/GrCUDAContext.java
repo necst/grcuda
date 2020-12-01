@@ -68,6 +68,7 @@ public final class GrCUDAContext {
     public static final DependencyPolicyEnum DEFAULT_DEPENDENCY_POLICY = DependencyPolicyEnum.DEFAULT;
     public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.FIFO;
     public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.DEFAULT;
+    public static final OOBProtectionPolicyEnum DEFAULT_OOB_PROTECTION_POLICY = OOBProtectionPolicyEnum.NO_PROTECTION;
     public static final boolean DEFAULT_FORCE_STREAM_ATTACH = false;
 
     private static final String ROOT_NAMESPACE = "CU";
@@ -82,7 +83,7 @@ public final class GrCUDAContext {
     private final RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum;
     private final boolean forceStreamAttach;
     private final boolean inputPrefetch;
-    private final boolean preventOOB;
+    private final OOBProtectionPolicyEnum preventOOB;
 
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
     private final ConcurrentHashMap<Class<?>, CallTarget> uncachedMapCallTargets = new ConcurrentHashMap<>();
@@ -103,7 +104,7 @@ public final class GrCUDAContext {
         retrieveParentStreamPolicyEnum = parseParentStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveParentStreamPolicy));
 
         // Find if OOB should be automatically prevented;
-        preventOOB = env.getOptions().get(GrCUDAOptions.PreventOOB);
+        preventOOB = parseOOBProtectionPolicy(env.getOptions().get(GrCUDAOptions.PreventOOB));
 
         // Retrieve the dependency computation policy;
         DependencyPolicyEnum dependencyPolicy = parseDependencyPolicy(env.getOptions().get(GrCUDAOptions.DependencyPolicy));
@@ -208,7 +209,7 @@ public final class GrCUDAContext {
         return forceStreamAttach;
     }
 
-    public boolean isPreventOOB() {
+    public OOBProtectionPolicyEnum getPreventOOBPolicy() {
         return preventOOB;
     }
 
@@ -264,6 +265,7 @@ public final class GrCUDAContext {
                 return GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY;
         }
     }
+
     @TruffleBoundary
     private static RetrieveParentStreamPolicyEnum parseParentStreamPolicy(String policyString) {
         switch(policyString) {
@@ -277,6 +279,22 @@ public final class GrCUDAContext {
         }
     }
 
+    @TruffleBoundary
+    public static OOBProtectionPolicyEnum parseOOBProtectionPolicy(String policyString) {
+        switch(policyString) {
+            case "no_protection":
+                return OOBProtectionPolicyEnum.NO_PROTECTION;
+            case "prevent":
+                return OOBProtectionPolicyEnum.PREVENT;
+            case "track":
+                return OOBProtectionPolicyEnum.TRACK;
+            case "prevent_and_track":
+                return OOBProtectionPolicyEnum.PREVENT_AND_TRACK;
+            default:
+                System.out.println("Warning: unknown OOB protection policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY);
+                return OOBProtectionPolicyEnum.NO_PROTECTION;
+        }
+    }
 
     /**
      * Cleanup the GrCUDA context at the end of the execution;

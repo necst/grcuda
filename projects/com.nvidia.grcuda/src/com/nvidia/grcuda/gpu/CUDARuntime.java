@@ -37,6 +37,7 @@ import static com.nvidia.grcuda.functions.Function.expectPositiveLong;
 import java.util.HashMap;
 
 import com.nvidia.grcuda.ComputationArgument;
+import com.nvidia.grcuda.OOBProtectionPolicyEnum;
 import org.graalvm.collections.Pair;
 
 import com.nvidia.grcuda.Binding;
@@ -1040,7 +1041,7 @@ public final class CUDARuntime {
     private HashMap<String, CUModule> loadedModules = new HashMap<>();
 
     @TruffleBoundary
-    public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Binding binding, boolean preventOOB) {
+    public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Binding binding, OOBProtectionPolicyEnum preventOOB) {
         String cubinFile = binding.getLibraryFileName();
         String kernelName = binding.getName();
         String symbolName = binding.getSymbolName();
@@ -1052,7 +1053,7 @@ public final class CUDARuntime {
             loadedModules.put(cubinFile, module);
         }
         long kernelFunction = cuModuleGetFunction(module, symbolName);
-        if (!preventOOB) {
+        if (preventOOB == OOBProtectionPolicyEnum.NO_PROTECTION) {
             return new Kernel(grCUDAExecutionContext, kernelName, symbolName, kernelFunction, signature, module);
         } else {
             int numOfPointers = 0 ;
@@ -1061,7 +1062,11 @@ public final class CUDARuntime {
                     numOfPointers++;
                 }
             }
-            return new KernelWithSizes(grCUDAExecutionContext, kernelName, symbolName, kernelFunction, signature, module, numOfPointers);
+            if (preventOOB == OOBProtectionPolicyEnum.PREVENT) {
+                return new KernelWithSizes(grCUDAExecutionContext, kernelName, symbolName, kernelFunction, signature, module, numOfPointers);
+            } else {
+                return new KernelWithSizesAndTracking(grCUDAExecutionContext, kernelName, symbolName, kernelFunction, signature, module, numOfPointers);
+            }
         }
     }
 

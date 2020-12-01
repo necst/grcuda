@@ -29,6 +29,8 @@
 package com.nvidia.grcuda.functions;
 
 import com.nvidia.grcuda.ComputationArgument;
+import com.nvidia.grcuda.GrCUDAContext;
+import com.nvidia.grcuda.OOBProtectionPolicyEnum;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
 import java.util.ArrayList;
@@ -82,12 +84,12 @@ public final class BindKernelFunction extends Function {
         }
         String fileName = expectString(arguments[0], "argument 1 of bindkernel must be string (name of cubin or PTX file)");
         KernelBinding binding = null;
-        boolean preventOOB = grCUDAExecutionContext.getCudaRuntime().getContext().isPreventOOB();
+        OOBProtectionPolicyEnum preventOOB = grCUDAExecutionContext.getCudaRuntime().getContext().getPreventOOBPolicy();
         if (arguments.length >= 3) {
             if (arguments.length == 4) {
                 // If specified, add the array length parameters to the kernel signature;
                 String addSizesStr = expectString(arguments[3], "argument 3 of bindkernel must be string with value True or False");
-                preventOOB = Boolean.parseBoolean(addSizesStr);
+                preventOOB = GrCUDAContext.parseOOBProtectionPolicy(addSizesStr);
             }
             // parse legacy NFI-based kernel signature: comma-separated NFI types
             String symbolName = expectString(arguments[1], "argument 2 of bindkernel must be string (symbol name)").trim();
@@ -95,8 +97,10 @@ public final class BindKernelFunction extends Function {
             try {
                 ArrayList<ComputationArgument> paramList = ComputationArgument.parseParameterSignature(signature);
                 // Check if any of the parameter is a pointer. If so, add a new pointer argument required to store pointer sizes;
-                if (preventOOB) {
+                if (preventOOB == OOBProtectionPolicyEnum.PREVENT) {
                     updateParamListWithPointerArray(paramList);
+                } else if (preventOOB == OOBProtectionPolicyEnum.TRACK || preventOOB == OOBProtectionPolicyEnum.PREVENT_AND_TRACK) {
+                    updateParamListWithPointerAndTrackingArray(paramList);
                 }
                 binding = KernelBinding.newCBinding(symbolName, paramList);
             } catch (TypeException e) {
@@ -117,20 +121,29 @@ public final class BindKernelFunction extends Function {
         return grCUDAExecutionContext.loadKernel(binding, preventOOB);
     }
 
-    private static void updateParamListWithPointerArray(ArrayList<ComputationArgument> paramList) {
-        boolean pointerFound = false;
+    private static boolean isPointerInSignature(ArrayList<ComputationArgument> paramList) {
         for (ComputationArgument param : paramList) {
             if (param.isPointer()) {
-                pointerFound = true;
-                break;
+                return true;
             }
         }
-        if (pointerFound) {
+        return false;
+    }
+
+    private static void updateParamListWithPointerArray(ArrayList<ComputationArgument> paramList) {
+        if (isPointerInSignature(paramList)) {
             paramList.add(new ComputationArgument(paramList.size(), "sizes", Type.NFI_POINTER, ComputationArgument.Kind.POINTER_IN));
         }
     }
 
-    private static KernelBinding parseSignature(String signature, boolean preventOOB) {
+    private static void updateParamListWithPointerAndTrackingArray(ArrayList<ComputationArgument> paramList) {
+        if (isPointerInSignature(paramList)) {
+            paramList.add(new ComputationArgument(paramList.size(), "sizes", Type.NFI_POINTER, ComputationArgument.Kind.POINTER_IN));
+            paramList.add(new ComputationArgument(paramList.size(), "oob_tracking", Type.NFI_POINTER, ComputationArgument.Kind.POINTER_IN));
+        }
+    }
+
+    private static KernelBinding parseSignature(String signature, OOBProtectionPolicyEnum preventOOB) {
         String s = signature.trim();
         boolean isCxxSymbol = false;
         if (s.startsWith("cxx ")) {
@@ -157,8 +170,10 @@ public final class BindKernelFunction extends Function {
 
         try {
             ArrayList<ComputationArgument> paramList = ComputationArgument.parseParameterSignature(parenSignature);
-            if (preventOOB) {
+            if (preventOOB == OOBProtectionPolicyEnum.PREVENT) {
                 updateParamListWithPointerArray(paramList);
+            } else if (preventOOB == OOBProtectionPolicyEnum.TRACK || preventOOB == OOBProtectionPolicyEnum.PREVENT_AND_TRACK) {
+                updateParamListWithPointerAndTrackingArray(paramList);
             }
             if (isCxxSymbol) {
                 return KernelBinding.newCxxBinding(name, paramList);

@@ -20,6 +20,11 @@ ADD_SIZE_PASS_FLAGS := --dump_updated_kernel
 FIX_OOB_PASS_FLAGS := --dump_updated_kernel
 endif
 
+ifeq ($(EXECUTION_MODE),1)
+ADD_SIZE_PASS_FLAGS := $(ADD_SIZE_PASS_FLAGS) --add_debug_array
+FIX_OOB_PASS_FLAGS := $(FIX_OOB_PASS_FLAGS) --oob_protection_type 1
+endif
+
 CXX_FLAGS := --cuda-gpu-arch=sm_70  -pthread -std=c++11 -S -emit-llvm --cuda-device-only
 PTXAS_FLAGS := -m64 --gpu-name sm_70
 
@@ -73,7 +78,7 @@ define compile_kernel
 	# Obtain the original LLVM code;
 	$(CLANG_DIR)/clang++ $(CXX_FLAGS) $(CUDA_FILE_NAME) -o $(LLVM_ORIGINAL_FOLDER)/$(DEVICE_LL_NAME) 
 	# Add the array sizes to the function signature;
-	$(CLANG_DIR)/opt  -S -o $(LLVM_ADDED_SIZE_FOLDER)/$(DEVICE_LL_NAME) -load $(ADD_SIZE_CUDA_PASS) -add_sizes_cuda_pass < $(LLVM_ORIGINAL_FOLDER)/$(DEVICE_LL_NAME) --kernel $(KERNEL_NAME) $(ADD_SIZE_PASS_FLAGS) --add_debug_array
+	$(CLANG_DIR)/opt  -S -o $(LLVM_ADDED_SIZE_FOLDER)/$(DEVICE_LL_NAME) -load $(ADD_SIZE_CUDA_PASS) -add_sizes_cuda_pass < $(LLVM_ORIGINAL_FOLDER)/$(DEVICE_LL_NAME) --kernel $(KERNEL_NAME) $(ADD_SIZE_PASS_FLAGS) 
 	# Add out-of-boundary checks;
 	$(CLANG_DIR)/opt  -S -o $(LLVM_FIX_OOB_FOLDER)/$(DEVICE_LL_NAME) -load $(FIX_OOB_CUDA_PASS) -fix_oob_cuda_pass < $(LLVM_ADDED_SIZE_FOLDER)/$(DEVICE_LL_NAME) --kernel $(KERNEL_NAME) $(FIX_OOB_PASS_FLAGS) --lower_bounds
 	# Perform optimization on LLVM code if required;
