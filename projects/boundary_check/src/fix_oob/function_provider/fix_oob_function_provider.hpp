@@ -38,7 +38,7 @@ namespace llvm {
 
         // Insert at the beginning of the kernel code a sequence of instructions 
         // that loads each array value and stores it in a local value;
-        virtual void insert_load_sizes_instructions(Function &F, std::vector<Value *> &array_arguments, std::map<Value *, Value *> &input_array_sizes);
+        void insert_load_sizes_instructions(Function &F, std::vector<Value *> &array_arguments, std::map<Value *, Value *> &input_array_sizes);
 
         // Handle array/pointer accesses: if the index used to access the array is CUDA-dependent,
         // keep track of the array access;

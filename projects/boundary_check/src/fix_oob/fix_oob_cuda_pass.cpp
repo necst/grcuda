@@ -44,6 +44,9 @@ TestPass::TestPass() : FunctionPass(ID) {
     case TRACK:
         function_provider = new TrackOOBFunctionProvider(Debug, PrintOOB);
         break;
+    case PREVENT_AND_TRACK:
+        function_provider = new TrackAndFixOOBFunctionProvider(Debug, PrintOOB);
+        break;
     default:
         function_provider = new FixOOBFunctionProvider(Debug);
         break;

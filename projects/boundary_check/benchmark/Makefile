@@ -30,6 +30,16 @@ FIX_OOB_PASS_FLAGS := $(FIX_OOB_PASS_FLAGS) --oob_protection_type 1
 	endif
 endif
 
+# Track and prevent OOB accesses in kernel;
+ifeq ($(EXECUTION_MODE),2)
+ADD_SIZE_PASS_FLAGS := $(ADD_SIZE_PASS_FLAGS) --add_debug_array
+FIX_OOB_PASS_FLAGS := $(FIX_OOB_PASS_FLAGS) --oob_protection_type 2
+	# Add prints to kernel;
+	ifeq ($(PRINT_OOB_ACCESSES),1)
+	FIX_OOB_PASS_FLAGS := $(FIX_OOB_PASS_FLAGS) --print_oob
+	endif
+endif
+
 CXX_FLAGS := --cuda-gpu-arch=sm_70  -pthread -std=c++11 -S -emit-llvm --cuda-device-only
 PTXAS_FLAGS := -m64 --gpu-name sm_70
 

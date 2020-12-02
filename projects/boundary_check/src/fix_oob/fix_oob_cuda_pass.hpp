@@ -23,6 +23,7 @@
 #include "array_access.hpp"
 #include "function_provider/fix_oob_function_provider.hpp"
 #include "function_provider/track_oob_function_provider.hpp"
+#include "function_provider/track_and_fix_oob_function_provider.hpp"
 
 ////////////////////////////////
 ////////////////////////////////

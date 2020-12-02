@@ -59,11 +59,6 @@ bool TrackOOBFunctionProvider::parse_argument_list(Function &F, std::vector<Valu
 ////////////////////////////////
 ////////////////////////////////
 
- 
-
-////////////////////////////////
-////////////////////////////////
-
 Instruction* TrackOOBFunctionProvider::find_array_access_end(ArrayAccess *access, DominatorTree *DT, GetElementPtrInst *getI) {
     return access->get_array_value;
 }
@@ -153,6 +148,6 @@ void TrackOOBFunctionProvider::add_update_to_oob_tracking_array(LLVMContext &con
         atomic_add->print(outs());
         outs() << "\n";
     }
-    
 }
+
 }

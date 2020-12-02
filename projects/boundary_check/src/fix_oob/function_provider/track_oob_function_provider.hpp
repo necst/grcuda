@@ -16,11 +16,11 @@ namespace llvm {
         bool parse_argument_list(Function &F, std::vector<Value *> &array_arguments) override;
 
         // In this case, the start and end of the array coincide with the GEP itself, as we are simply adding a boundary check before the instruction;
-        Instruction* find_array_access_end(ArrayAccess *access, DominatorTree *DT, GetElementPtrInst *getI) override;
+        virtual Instruction* find_array_access_end(ArrayAccess *access, DominatorTree *DT, GetElementPtrInst *getI) override;
 
         // Add a simple if-statement before the GEP that will check if the value used for the GEP is not OOB.
         // If it is, increment the OOB counter for the array that presents an OOB access, and print a warning;
-        bool add_array_access_protection(
+        virtual bool add_array_access_protection(
             LLVMContext &context,
             std::vector<ArrayAccess *> &array_accesses_postprocessed,
             bool protect_lower_bounds,
