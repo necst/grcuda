@@ -9,7 +9,7 @@
 namespace llvm {
     struct TrackOOBFunctionProvider : public FixOOBFunctionProvider {
 
-        TrackOOBFunctionProvider(bool debug = 0): FixOOBFunctionProvider(debug) { }
+        TrackOOBFunctionProvider(bool debug = 0, bool print_oob_accesses = 0): FixOOBFunctionProvider(debug), print_oob_accesses(print_oob_accesses) { }
 
         // Process the argument list:
         // in this case, assume we have 2 additional arrays, one containing sizes and the other used to count OOB accesses;
@@ -32,6 +32,36 @@ namespace llvm {
 
         // Reference to the array that tracks OOB accesses;
         Value* track_oob_array;
+
+        // If true, add print instruction to kernels to track OOB accesses;
+        bool print_oob_accesses;
+
+        // Reference to printf function that can be used inside CUDA kernels;
+        Function *printf_function;
+        // Global string pointer used in printf;
+        Value *printf_string;
+        Type *printf_alloca_type;
+        Value *printf_alloca;
+
+        // Obtain the CUDA printf function, https://clang.llvm.org/doxygen/CGCUDABuiltin_8cpp_source.html
+        static inline llvm::Function *get_vprintf_declaration(llvm::Module &M) {
+            llvm::Type *ArgTypes[] = {llvm::Type::getInt8PtrTy(M.getContext()),
+                                      llvm::Type::getInt8PtrTy(M.getContext())};
+            llvm::FunctionType *VprintfFuncType = llvm::FunctionType::get(
+                llvm::Type::getInt32Ty(M.getContext()), ArgTypes, false);
+            
+            if (auto* F = M.getFunction("vprintf")) {
+                // Our CUDA system header declares vprintf with the right signature, so
+                // nobody else should have been able to declare vprintf with a bogus
+                // signature.
+                assert(F->getFunctionType() == VprintfFuncType);
+                return F;
+            }
+            
+            // vprintf doesn't already exist; create a declaration and insert it into the
+            // module.
+            return llvm::Function::Create(VprintfFuncType, llvm::GlobalVariable::ExternalLinkage, "vprintf", &M);
+        }
     };
 }
 

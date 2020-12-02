@@ -11,7 +11,7 @@ from trufflecuda_python_utils import *
 
 OPT_LEVEL = "O0"
 SIMPLIFICATION= "no_simplification"
-DEDUCT_SIZES = "prevent"
+DEDUCT_SIZES = "track"
 
 UNMODIFIED_CUBIN_NAME = "bfs_checked.cubin"
 UNMODIFIED_KERNEL_NAME = "bfs_checked"

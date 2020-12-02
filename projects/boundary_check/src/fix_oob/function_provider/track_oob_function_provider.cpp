@@ -38,8 +38,28 @@ bool TrackOOBFunctionProvider::parse_argument_list(Function &F, std::vector<Valu
     sizes_array = array_arguments.back();
     array_arguments.pop_back();
 
+    // Initialize print function;
+    if (print_oob_accesses) {
+        printf_function = get_vprintf_declaration(*F.getParent());
+
+        Instruction &first_inst = F.getBasicBlockList().front().front();
+        IRBuilder<> builder(&first_inst);
+        std::string s = "WARNING: encountered out-of-bounds array access in kernel " + F.getName().str() + ", array_index=%d, index=%d, array size=%d\n";
+        printf_string = builder.CreateGlobalStringPtr(s);
+    
+        llvm::SmallVector<llvm::Type*, 8> printf_arg_types;
+        for (unsigned int i = 0; i < 3; i++)
+            printf_arg_types.push_back(IntegerType::getInt32Ty(F.getContext()));
+        printf_alloca_type = llvm::StructType::create(printf_arg_types, "printf_args");
+        printf_alloca = builder.CreateAlloca(printf_alloca_type);
+    }
     return true;
 }
+
+////////////////////////////////
+////////////////////////////////
+
+ 
 
 ////////////////////////////////
 ////////////////////////////////
@@ -108,23 +128,29 @@ void TrackOOBFunctionProvider::add_update_to_oob_tracking_array(LLVMContext &con
 
     // Compute the pointer value;
     Value *ptrI = builder.CreateGEP(track_oob_array, ConstantInt::get(IntegerType::getInt32Ty(context), array_access->array_signature_position), formatv("compute_ptr_tracking_array_{0}", array_access->array_signature_position));
-    // Add a load instruction;
-    // Value *array_size = builder.CreateLoad(ptrI, formatv("tracking_array_{0}", array_access->array_signature_position));
     // Add an atomic sum instruction;
     Value *atomic_add = builder.CreateAtomicRMW(llvm::AtomicRMWInst::Add, ptrI, ConstantInt::get(IntegerType::getInt32Ty(context), 1, true), llvm::AtomicOrdering::SequentiallyConsistent);
-    // Value *sum_one = builder.CreateAdd(array_size, ConstantInt::get(array_size->getType(), 1, true));
-    // Add store;
-    // Value *array_store = builder.CreateStore(sum_one, ptrI, false);    
-    
+
+    // Add print, storing the array access information in the printf buffer;   
+    if (print_oob_accesses) {
+        Value *gep = builder.CreateStructGEP(printf_alloca_type, printf_alloca, 0);
+        Value *arg = ConstantInt::get(IntegerType::getInt32Ty(context), array_access->array_signature_position, true);
+        builder.CreateStore(arg, gep);
+        gep = builder.CreateStructGEP(printf_alloca_type, printf_alloca, 1);
+        arg = array_access->index_expression;
+        builder.CreateStore(arg, gep);
+        gep = builder.CreateStructGEP(printf_alloca_type, printf_alloca, 2);
+        arg = builder.CreateIntCast(array_access->array_size, IntegerType::getInt32Ty(context), true);
+        builder.CreateStore(arg, gep);
+        Value *printf_pointer_cast = builder.CreatePointerCast(printf_alloca, Type::getInt8PtrTy(context));
+        // Add build function;
+        builder.CreateCall(printf_function, {printf_string, printf_pointer_cast});
+    }
     if (debug) {
         outs() << "Inserted OOB tracking array operation at position " << array_access->array_signature_position << "\n\t";
         ptrI->print(outs());
-        // outs() << "\n\t";
-        // array_size->print(outs());
         outs() << "\n\t";
-        // atomic_add->print(outs());
-        // outs() << "\n\t";
-        // array_store->print(outs());
+        atomic_add->print(outs());
         outs() << "\n";
     }
     
