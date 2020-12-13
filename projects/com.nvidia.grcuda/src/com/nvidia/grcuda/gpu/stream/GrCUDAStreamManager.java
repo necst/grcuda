@@ -74,10 +74,10 @@ public class GrCUDAStreamManager {
                 this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
                 break;
             case DEFAULT:
-                this.retrieveParentStream = new DefaultRetrieveParentStream();
+                this.retrieveParentStream = new DefaultRetrieveParentStream(this.retrieveNewStream);
                 break;
             default:
-                this.retrieveParentStream = new DefaultRetrieveParentStream();
+                this.retrieveParentStream = new DefaultRetrieveParentStream(this.retrieveNewStream);
         }
     }
 
@@ -107,10 +107,10 @@ public class GrCUDAStreamManager {
                 this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
                 break;
             case DEFAULT:
-                this.retrieveParentStream = new DefaultRetrieveParentStream();
+                this.retrieveParentStream = new DefaultRetrieveParentStream(this.retrieveNewStream);
                 break;
             default:
-                this.retrieveParentStream = new DefaultRetrieveParentStream();
+                this.retrieveParentStream = new DefaultRetrieveParentStream(this.retrieveNewStream);
         }
     }
 
@@ -182,6 +182,7 @@ public class GrCUDAStreamManager {
                     // If we require synchronization on the default stream, perform it in a specialized way;
                     if (stream.isDefaultStream()) {
 //                        System.out.println("--\tsync stream " + stream + " by " + vertex.getComputation());
+                        System.out.println("default stream");
                         // Synchronize the device;
                         syncDevice();
                         // All computations are now finished;
@@ -318,9 +319,9 @@ public class GrCUDAStreamManager {
     }
 
     public CUDAStream createStreamDifferentDevice() {
-        //int deviceId = cheapestDeviceForStream();
+        int deviceId = cheapestDeviceForStream();
         //devicesManager.setDevice(deviceId);
-        //runtime.cudaSetDevice(1);
+        //runtime.cudaSetDevice(0);
         CUDAStream newStream = runtime.cudaStreamCreate(streams.size());
         System.out.println("Stream in GrCudaStreamManager is assigned to device: " + newStream.getStreamDeviceId());
         streams.add(newStream);
@@ -423,7 +424,7 @@ public class GrCUDAStreamManager {
      * Keep a queue of free (currently not utilized) streams, and retrieve the oldest one added to the queue;
      */
     private class FifoRetrieveStream extends RetrieveNewStream {
-
+        
         /**
          * Keep a queue of free streams;
          */
@@ -450,7 +451,8 @@ public class GrCUDAStreamManager {
 
         @Override
         CUDAStream retrieve() {
-            if (freeStreams.isEmpty()) {
+            //if (freeStreams.isEmpty()) {
+            if(true){
                 // Create a new stream if none is available;
                 //return createStream();
                 return createStreamDifferentDevice();
@@ -467,10 +469,15 @@ public class GrCUDAStreamManager {
      * By default, use the same stream as the parent computation;
      */
     private static class DefaultRetrieveParentStream extends RetrieveParentStream {
+        private final RetrieveNewStream retrieveNewStream;
 
+        public DefaultRetrieveParentStream(RetrieveNewStream retrieveNewStream){
+            this.retrieveNewStream = retrieveNewStream;
+        }
         @Override
         public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
-            return vertex.getParentComputations().get(0).getStream();
+            return this.retrieveNewStream.retrieve();
+            //return vertex.getParentComputations().get(0).getStream();
         }
     }
 
@@ -494,6 +501,7 @@ public class GrCUDAStreamManager {
 
         @Override
         public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+
             // Keep only parent vertices for which we haven't reused the stream yet;
             List<ExecutionDAG.DAGVertex> availableParents = vertex.getParentVertices().stream()
                     .filter(v -> !reusedComputations.contains(v))

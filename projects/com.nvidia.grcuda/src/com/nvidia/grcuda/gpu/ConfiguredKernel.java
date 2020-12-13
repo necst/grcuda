@@ -70,8 +70,10 @@ public class ConfiguredKernel implements TruffleObject {
             // If using a manually specified stream, do not schedule it automatically, but execute it immediately;
             if (!config.useCustomStream()) {
                 new KernelExecution(this, args).schedule();
+                
             } else {
                 kernel.getGrCUDAExecutionContext().getCudaRuntime().cuLaunchKernel(kernel, config, args, config.getStream());
+
             }
         }
         return this;

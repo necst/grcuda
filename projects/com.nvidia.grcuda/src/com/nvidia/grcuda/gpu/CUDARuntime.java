@@ -79,6 +79,8 @@ public final class CUDARuntime {
     private final GrCUDAContext context;
     private final NVRuntimeCompiler nvrtc;
 
+    private final int numDevices;
+
     /**
      * Users can manually create streams that are not managed directly by a {@link com.nvidia.grcuda.gpu.stream.GrCUDAStreamManager}.
      * We keep track of how many of these streams have been created;
@@ -139,7 +141,13 @@ public final class CUDARuntime {
 
         nvrtc = new NVRuntimeCompiler(this);
         context.addDisposable(this::shutdown);
-
+        //set number of GPUs
+        numDevices = cudaGetDeviceCount();
+        // init modules map for each device
+        for(int i = 0;i<numDevices; i++){
+            HashMap<String, CUModule> modules = new HashMap<String, CUModule>();
+            loadedModules.add(modules);
+        }
         // Check if the GPU available in the system has Compute Capability >= 6.0 (Pascal architecture)
         architectureIsPascalOrNewer = cudaDeviceGetAttribute(CUDADeviceAttribute.COMPUTE_CAPABILITY_MAJOR, 0) >= 6;
 
@@ -174,7 +182,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public GPUPointer cudaMalloc(long numBytes) {
-        System.out.println("cudaMalloc device:" + cudaGetDevice());
 
         try (UnsafeHelper.PointerObject outPointer = UnsafeHelper.createPointerObject()) {
             Object callable = CUDARuntimeFunction.CUDA_MALLOC.getSymbol(this);
@@ -189,7 +196,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public LittleEndianNativeArrayView cudaMallocManaged(long numBytes) {
-        System.out.println("cudaMallocManaged device:" + cudaGetDevice());
 
         final int cudaMemAttachGlobal = 0x01;
         try (UnsafeHelper.PointerObject outPointer = UnsafeHelper.createPointerObject()) {
@@ -205,7 +211,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaFree(LittleEndianNativeArrayView memory) {
-        System.out.println("cudaFree device:" + cudaGetDevice());
 
         try {
             Object callable = CUDARuntimeFunction.CUDA_FREE.getSymbol(this);
@@ -218,7 +223,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaFree(GPUPointer pointer) {
-        System.out.println("cudaFree device:" + cudaGetDevice());
 
         try {
             Object callable = CUDARuntimeFunction.CUDA_FREE.getSymbol(this);
@@ -231,8 +235,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaDeviceSynchronize() {
-        System.out.println("cudaDeviceSynchronize device:" + cudaGetDevice());
-
         try {
             Object callable = CUDARuntimeFunction.CUDA_DEVICESYNCHRONIZE.getSymbol(this);
             Object result = INTEROP.execute(callable);
@@ -244,7 +246,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaMemcpy(long destPointer, long fromPointer, long numBytesToCopy) {
-        System.out.println("cudaMemcpy device:" + cudaGetDevice());
 
         try {
             Object callable = CUDARuntimeFunction.CUDA_MEMCPY.getSymbol(this);
@@ -263,7 +264,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaMemcpy(long destPointer, long fromPointer, long numBytesToCopy, CUDAStream stream) {
-        System.out.println("cudaMemcpy device:" + cudaGetDevice());
 
         try {
             Object callable = CUDARuntimeFunction.CUDA_MEMCPYASYNC.getSymbol(this);
@@ -298,7 +298,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaDeviceReset() {
-        System.out.println("cudaDeviceReset device:" + cudaGetDevice());
 
         try {
             Object callable = CUDARuntimeFunction.CUDA_DEVICERESET.getSymbol(this);
@@ -323,10 +322,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaSetDevice(int device) {
-        System.out.println("cudaSetDevice device: " + cudaGetDevice());
-
-        // StackTraceElement[] ste = new Throwable().getStackTrace();
-        // System.out.println(ste[1].getClassName()+"#"+ste[1].getMethodName());
 
         try {
             Object callable = CUDARuntimeFunction.CUDA_SETDEVICE.getSymbol(this);
@@ -380,14 +375,12 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public CUDAStream cudaStreamCreate(int streamId) {
-        cudaSetDevice(1);
-        System.out.println("cudaStreamCreate device:" + cudaGetDevice());
         try (UnsafeHelper.PointerObject streamPointer = UnsafeHelper.createPointerObject()) {
             Object callable = CUDARuntimeFunction.CUDA_STREAMCREATE.getSymbol(this);
             Object result = INTEROP.execute(callable, streamPointer.getAddress());
             checkCUDAReturnCode(result, "cudaStreamCreate");
             //return new CUDAStream(streamPointer.getValueOfPointer(), streamId, cudaGetDevice());
-            return new CUDAStream(streamPointer.getValueOfPointer(), streamId, 1);
+            return new CUDAStream(streamPointer.getValueOfPointer(), streamId, cudaGetDevice());
         } catch (InteropException e) {
             throw new GrCUDAException(e);
         }
@@ -395,7 +388,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaStreamSynchronize(CUDAStream stream) {
-        System.out.println("cudaStreamSynchronize device:" + cudaGetDevice());
 
         try {
             Object callable = CUDARuntimeFunction.CUDA_STREAMSYNCHRONIZE.getSymbol(this);
@@ -408,7 +400,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaStreamDestroy(CUDAStream stream) {
-        System.out.println("cudaStreamDestroy device:" + cudaGetDevice());
 
         try {
             Object callable = CUDARuntimeFunction.CUDA_STREAMDESTROY.getSymbol(this);
@@ -426,14 +417,13 @@ public final class CUDARuntime {
      */
     @TruffleBoundary
     public void cudaStreamAttachMemAsync(CUDAStream stream, AbstractArray array) {
-        System.out.println("cudaStreamAttachMemAsync device:" + cudaGetDevice());
 
         final int MEM_ATTACH_SINGLE = 0x04;
         final int MEM_ATTACH_GLOBAL = 0x01;
         try {
             Object callable = CUDARuntimeFunction.CUDA_STREAMATTACHMEMASYNC.getSymbol(this);
             int flag = stream.isDefaultStream() ? MEM_ATTACH_GLOBAL : MEM_ATTACH_SINGLE;
-//            System.out.println("\t* attach array=" + System.identityHashCode(array) + " to " + stream + "; flag=" + flag);
+            //System.out.println("\t* attach array=" + System.identityHashCode(array) + " to " + stream + "; flag=" + flag);
 
             // Book-keeping of the stream attachment within the array;
             array.setStreamMapping(stream);
@@ -452,7 +442,6 @@ public final class CUDARuntime {
      */
     @TruffleBoundary
     public void cudaStreamAttachMem(CUDAStream stream, AbstractArray array) {
-        System.out.println("cudaStreamAttachMem device:" + cudaGetDevice());
 
         cudaStreamAttachMemAsync(stream, array);
         cudaStreamSynchronize(stream);
@@ -460,7 +449,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaMemPrefetchAsync(AbstractArray array, CUDAStream stream) {
-        System.out.println("cudaMemPrefetchAsync device:" + cudaGetDevice());
 
         try {
             Object callable = CUDARuntimeFunction.CUDA_MEMPREFETCHASYNC.getSymbol(this);
@@ -473,7 +461,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public ArrayList<GPUPointer> getInnerCudaContext() {
-        System.out.println("getInnerCudaContext device:" + cudaGetDevice());
 
         if (this.innerCudaContext == null) {
             assertCUDAInitialized();
@@ -494,7 +481,6 @@ public final class CUDARuntime {
      */
     @TruffleBoundary
     public CUDAEvent cudaEventCreate() {
-        System.out.println("cudaEventCreate device:" + cudaGetDevice());
         try (UnsafeHelper.PointerObject eventPointer = UnsafeHelper.createPointerObject()) {
             Object callable = CUDARuntimeFunction.CUDA_EVENTCREATE.getSymbol(this);
             Object result = INTEROP.execute(callable, eventPointer.getAddress());
@@ -513,7 +499,6 @@ public final class CUDARuntime {
      */
     @TruffleBoundary
     public void cudaEventDestroy(CUDAEvent event) {
-        System.out.println("cudaEventDestroy device:" + cudaGetDevice());
 
         if (!event.isAlive()) {
             throw new RuntimeException("CUDA event=" + event + " has already been destroyed");
@@ -536,7 +521,6 @@ public final class CUDARuntime {
      */
     @TruffleBoundary
     public void cudaEventRecord(CUDAEvent event, CUDAStream stream) {
-        System.out.println("cudaEventRecord device:" + cudaGetDevice());
 
         if (!event.isAlive()) {
             throw new RuntimeException("CUDA event=" + event + " has already been destroyed");
@@ -560,7 +544,6 @@ public final class CUDARuntime {
      */
     @TruffleBoundary
     public void cudaStreamWaitEvent(CUDAStream stream, CUDAEvent event) {
-        System.out.println("cudaStreamWaitEvent device:" + cudaGetDevice());
 
         if (!event.isAlive()) {
             throw new RuntimeException("CUDA event=" + event + " has already been destroyed");
@@ -1080,7 +1063,7 @@ public final class CUDARuntime {
         }
     }
 
-    private HashMap<String, CUModule> loadedModules = new HashMap<>();
+    private ArrayList<HashMap<String, CUModule>> loadedModules = new ArrayList<HashMap<String, CUModule>>();
 
 //    @TruffleBoundary
 //    public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String signature) {
@@ -1103,37 +1086,66 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature) {
-        System.out.println("loadKernel device:" + cudaGetDevice());
 
-        CUModule module = loadedModules.get(cubinFile);
-        if (module == null) {
-            // load module as it is not yet loaded
-            module = cuModuleLoad(cubinFile);
-            loadedModules.put(cubinFile, module);
+        ArrayList<Long> functionHandles = new ArrayList<>();
+        ArrayList<CUModule> modules = new ArrayList<>();
+        int currentDevice = cudaGetDevice();
+
+        for(int i = 0; i<numDevices; i++){
+            CUModule module = loadedModules.get(i).get(cubinFile);
+
+            cudaSetDevice(i);
+
+            if(module == null){
+                module = cuModuleLoad(cubinFile);
+                loadedModules.get(i).put(cubinFile, module);
+            }else{
+                
+            }
+            modules.add(module);
+
+            long kernelFunction = cuModuleGetFunction(module, symbolName);
+            functionHandles.add(kernelFunction);
         }
-        long kernelFunction = cuModuleGetFunction(module, symbolName);
-        return new Kernel(grCUDAExecutionContext, kernelName, symbolName, kernelFunction, signature, module);
+        cudaSetDevice(currentDevice);
+        
+        return new Kernel(grCUDAExecutionContext, kernelName, symbolName, functionHandles, signature, modules);
     }
 
     @TruffleBoundary
     public Kernel buildKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String code, String kernelName, String signature) {
-        System.out.println("buildKernel device:" + cudaGetDevice());
-
+        //System.out.println("buildKernel device:" + cudaGetDevice());
         String moduleName = "truffle" + context.getNextModuleId();
         PTXKernel ptx = nvrtc.compileKernel(code, kernelName, moduleName, "--std=c++14");
-        CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
-        loadedModules.put(moduleName, module);
-        long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
-        return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), kernelFunctionHandle,
-                        signature, module, ptx.getPtxSource());
+
+        ArrayList<Long> functionHandles = new ArrayList<>();
+        ArrayList<CUModule> modules = new ArrayList<>();
+        int currentDevice = cudaGetDevice();
+
+        for(int i = 0; i<numDevices; i++){
+
+            cudaSetDevice(i);
+            CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
+            long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
+            functionHandles.add(kernelFunctionHandle);
+            modules.add(module);
+
+            loadedModules.get(i).put(moduleName, module);
+            
+        }
+        cudaSetDevice(currentDevice);
+        
+        return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), functionHandles,
+                        signature, modules, ptx.getPtxSource());
     }
+
+
 
     @TruffleBoundary
     public CUModule cuModuleLoad(String cubinName) {
-        System.out.println("cuModuleLoad device:" + cudaGetDevice());
 
         assertCUDAInitialized();
-        if (loadedModules.containsKey(cubinName)) {
+        if (loadedModules.get(cudaGetDevice()).containsKey(cubinName)) {
             throw new GrCUDAException("A module for " + cubinName + " was already loaded.");
         }
         try (UnsafeHelper.Integer64Object modulePtr = UnsafeHelper.createInteger64Object()) {
@@ -1148,10 +1160,9 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public CUModule cuModuleLoadData(String ptx, String moduleName) {
-        System.out.println("cuModuleLoadData device:" + cudaGetDevice());
 
         assertCUDAInitialized();
-        if (loadedModules.containsKey(moduleName)) {
+        if (loadedModules.get(cudaGetDevice()).containsKey(moduleName)) {
             throw new GrCUDAException("A module for " + moduleName + " was already loaded.");
         }
         try (UnsafeHelper.Integer64Object modulePtr = UnsafeHelper.createInteger64Object()) {
@@ -1167,7 +1178,7 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cuModuleUnload(CUModule module) {
-        System.out.println("cuModuleUnload device:" + cudaGetDevice());
+        //System.out.println("cuModuleUnload device:" + cudaGetDevice());
 
         try {
             Object callable = CUDADriverFunction.CU_MODULEUNLOAD.getSymbol(this);
@@ -1187,7 +1198,6 @@ public final class CUDARuntime {
      * @return native CUfunction function handle
      */
     public long cuModuleGetFunction(CUModule kernelModule, String kernelName) {
-        System.out.println("cuModuleGetFunction device:" + cudaGetDevice());
 
         try (UnsafeHelper.Integer64Object functionPtr = UnsafeHelper.createInteger64Object()) {
             Object callable = CUDADriverFunction.CU_MODULEGETFUNCTION.getSymbol(this);
@@ -1202,7 +1212,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cuCtxSynchronize() {
-        System.out.println("cuCtxSynchronize device:" + cudaGetDevice());
 
         assertCUDAInitialized();
         try {
@@ -1221,18 +1230,16 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cuLaunchKernel(Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream) {
-        System.out.println("cuLaunchKernel device:" + cudaGetDevice());
+        System.out.println("cuLaunchKernel device:" + cudaGetDevice() + " and the stream is in device: "+stream.getStreamDeviceId() + "stream id  is: "+ stream.getStreamNumber());
 
         try {
-            cudaSetDevice(stream.getStreamDeviceId());
-            System.out.println("Stream is assigned to device cuLauchKernel: " + stream.getStreamDeviceId());
-            System.out.println("current Device in cuLauchKernel is: " + cudaGetDevice());
-            assert stream.getStreamDeviceId() == cudaGetDevice();
+
             Object callable = CUDADriverFunction.CU_LAUNCHKERNEL.getSymbol(this);
             Dim3 gridSize = config.getGridSize();
             Dim3 blockSize = config.getBlockSize();
             Object result = INTEROP.execute(callable,
-                            kernel.getKernelFunctionHandle(),
+                            //kernel.getKernelFunctionHandle(stream.getStreamDeviceId()),
+                            kernel.getKernelFunctionHandle(cudaGetDevice()),
                             gridSize.getX(),
                             gridSize.getY(),
                             gridSize.getZ(),
@@ -1302,7 +1309,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     private long cuCtxCreate(int flags, int cudevice) {
-        System.out.println("cuCtxCreate device:" + cudaGetDevice());
 
         try (UnsafeHelper.PointerObject pctx = UnsafeHelper.createPointerObject()) {
             Object callable = CUDADriverFunction.CU_CTXCREATE.getSymbol(this);
@@ -1316,7 +1322,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     private long cuDevicePrimaryCtxRetain(int cudevice) {
-        System.out.println("cuDevicePrimaryCtxRetain device:" + cudaGetDevice());
 
         try (UnsafeHelper.PointerObject pctx = UnsafeHelper.createPointerObject()) {
             Object callable = CUDADriverFunction.CU_DEVICEPRIMARYCTXRETAIN.getSymbol(this);
@@ -1330,7 +1335,7 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     private void cuCtxDestroy(long ctx) {
-        System.out.println("cuCtxDestroy device:" + cudaGetDevice());
+        //System.out.println("cuCtxDestroy device:" + cudaGetDevice());
 
         try {
             Object callable = CUDADriverFunction.CU_CTXCREATE.getSymbol(this);
@@ -1343,7 +1348,7 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     private long cuCtxGetCurrent() {
-        System.out.println("cuCtxGetCurrent device:" + cudaGetDevice());
+        //System.out.println("cuCtxGetCurrent device:" + cudaGetDevice());
 
         try (UnsafeHelper.PointerObject ctxPointer = UnsafeHelper.createPointerObject()) {
             Object callable = CUDADriverFunction.CU_CTXGETCURRENT.getSymbol(this);
@@ -1357,7 +1362,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cuCtxSetCurrent(GPUPointer ctxPointer) {
-        System.out.println("cuCtxSetCurrent device:" + cudaGetDevice());
 
         try {
             Object callable = CUDADriverFunction.CU_CTXSETCURRENT.getSymbol(this);
@@ -1371,9 +1375,9 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     private void assertCUDAInitialized() {
-        System.out.println("assertCUDAInitialized device: "+cudaGetDevice());
 
         if (!context.isCUDAInitialized()) {
+            int currentDevice = cudaGetDevice();
             int numDevices = cudaGetDeviceCount();
             for(int i = 0; i < numDevices; i++){
                 cudaSetDevice(i);
@@ -1382,8 +1386,8 @@ public final class CUDARuntime {
                 cudaDeviceSynchronize();
                 this.innerCudaContext.add(initializeInnerCudaContext(i));
             }
-            
-            cudaSetDevice(1);
+
+            cudaSetDevice(currentDevice);
 
             context.setCUDAInitialized();
 
@@ -1410,14 +1414,17 @@ public final class CUDARuntime {
 
     private void shutdown() {
         // unload all modules
-        for (CUModule module : loadedModules.values()) {
-            try {
-                module.close();
-            } catch (Exception e) {
-                /* ignore exception */
+        for(int i = 0; i<numDevices; i++){
+            for (CUModule module : loadedModules.get(i).values()) {
+                try {
+                    module.close();
+                } catch (Exception e) {
+                    /* ignore exception */
+                }
             }
+            loadedModules.get(i).clear();
         }
-        loadedModules.clear();
+
     }
 
     public enum CUDADriverFunction {
