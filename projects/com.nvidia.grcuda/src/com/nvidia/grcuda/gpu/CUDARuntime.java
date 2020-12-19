@@ -379,7 +379,6 @@ public final class CUDARuntime {
             Object callable = CUDARuntimeFunction.CUDA_STREAMCREATE.getSymbol(this);
             Object result = INTEROP.execute(callable, streamPointer.getAddress());
             checkCUDAReturnCode(result, "cudaStreamCreate");
-            //return new CUDAStream(streamPointer.getValueOfPointer(), streamId, cudaGetDevice());
             return new CUDAStream(streamPointer.getValueOfPointer(), streamId, cudaGetDevice());
         } catch (InteropException e) {
             throw new GrCUDAException(e);

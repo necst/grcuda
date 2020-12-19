@@ -20,17 +20,18 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
 
     GrCUDAStreamManagerMock(CUDARuntime runtime,
                             RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
-                            RetrieveParentStreamPolicyEnum parentStreamPolicyEnum) {
-        super(runtime, retrieveStreamPolicy, parentStreamPolicyEnum);
+                            RetrieveParentStreamPolicyEnum parentStreamPolicyEnum
+                            ) {
+        super(runtime, retrieveStreamPolicy, parentStreamPolicyEnum,null);
     }
 
     GrCUDAStreamManagerMock(CUDARuntime runtime,
                             RetrieveNewStreamPolicyEnum retrieveStreamPolicy) {
-        super(runtime, retrieveStreamPolicy, RetrieveParentStreamPolicyEnum.DEFAULT);
+        super(runtime, retrieveStreamPolicy, RetrieveParentStreamPolicyEnum.DEFAULT, null);
     }
 
     GrCUDAStreamManagerMock(CUDARuntime runtime) {
-        super(runtime, RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveParentStreamPolicyEnum.DEFAULT);
+        super(runtime, RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveParentStreamPolicyEnum.DEFAULT, null);
     }
 
     int numStreams = 0;

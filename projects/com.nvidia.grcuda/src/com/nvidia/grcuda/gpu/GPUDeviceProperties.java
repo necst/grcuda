@@ -59,6 +59,8 @@ public class GPUDeviceProperties implements TruffleObject {
         this.runtime = runtime;
     }
 
+    
+
     public Long getFreeDeviceMemory(){
         return runtime.cudaMemGetInfo().getFreeBytes();
     }

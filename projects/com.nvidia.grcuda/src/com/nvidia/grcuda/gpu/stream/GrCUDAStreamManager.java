@@ -42,6 +42,7 @@ public class GrCUDAStreamManager {
     private final RetrieveNewStream retrieveNewStream;
     private final RetrieveParentStream retrieveParentStream;
 
+    private final static int DEFAULT_DEVICE = 0;
     private int deviceId = 0;
 
     public GrCUDAStreamManager(CUDARuntime runtime) {
@@ -62,57 +63,37 @@ public class GrCUDAStreamManager {
             case FIFO:
                 this.retrieveNewStream = new FifoRetrieveStream();
                 break;
+            case MULTI_FIFO:
+                this.retrieveNewStream = new MultiFifoRetriveStream();
+                break;
             case ALWAYS_NEW:
                 this.retrieveNewStream = new AlwaysNewRetrieveStream();
+                break;
+            case MULTI_ALWAYS_NEW:
+                this.retrieveNewStream = new MultiAlwaysNewRetriveStream();
                 break;
             default:
                 this.retrieveNewStream = new FifoRetrieveStream();
         }
         // Get how streams are retrieved for computations with parents;
         switch(retrieveParentStreamPolicyEnum) {
+            case MULTI_DISJOINT:
+                this.retrieveParentStream = new MultiDisjointRetrieveParentStream(this.retrieveNewStream);
+                break;
+            case MULTI_DEFAULT:
+                this.retrieveParentStream = new MultiDefaultRetrieveParentStream();
+                break;
             case DISJOINT:
                 this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
                 break;
             case DEFAULT:
-                this.retrieveParentStream = new DefaultRetrieveParentStream(this.retrieveNewStream);
+                this.retrieveParentStream = new DefaultRetrieveParentStream();
                 break;
             default:
-                this.retrieveParentStream = new DefaultRetrieveParentStream(this.retrieveNewStream);
+                this.retrieveParentStream = new DefaultRetrieveParentStream();
         }
     }
 
-    /**
-     *Without DeviceManager
-     */
-    public GrCUDAStreamManager(
-            CUDARuntime runtime,
-            RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
-            RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
-        this.runtime = runtime;
-        this.devicesManager = null;
-        // Get how streams are retrieved for computations without parents;
-        switch(retrieveNewStreamPolicyEnum) {
-            case FIFO:
-                this.retrieveNewStream = new FifoRetrieveStream();
-                break;
-            case ALWAYS_NEW:
-                this.retrieveNewStream = new AlwaysNewRetrieveStream();
-                break;
-            default:
-                this.retrieveNewStream = new FifoRetrieveStream();
-        }
-        // Get how streams are retrieved for computations with parents;
-        switch(retrieveParentStreamPolicyEnum) {
-            case DISJOINT:
-                this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
-                break;
-            case DEFAULT:
-                this.retrieveParentStream = new DefaultRetrieveParentStream(this.retrieveNewStream);
-                break;
-            default:
-                this.retrieveParentStream = new DefaultRetrieveParentStream(this.retrieveNewStream);
-        }
-    }
 
     private int cheapestDeviceForStream(ExecutionDAG.DAGVertex vertex){
         int parentDeviceId = vertex.getParentComputations().get(0).getStream().getStreamDeviceId();
@@ -136,7 +117,7 @@ public class GrCUDAStreamManager {
             CUDAStream stream;
             if (vertex.isStart()) {
                 // Else, if the computation doesn't have parents, provide a new stream to it;
-                stream = retrieveNewStream.retrieve();
+                stream = retrieveNewStream.retrieve(DEFAULT_DEVICE);
             } else {
                 // Else, compute the streams used by the parent computations.
                 stream = this.retrieveParentStream.retrieve(vertex);
@@ -317,6 +298,22 @@ public class GrCUDAStreamManager {
         streams.add(newStream);
         return newStream;
     }
+    /**
+     * Create a new {@link CUDAStream} associated to the deviceId and add it to this manager, then return it;
+     * @param deviceId
+     * @return {@link CUDAStream}
+     */
+    public CUDAStream createStream(int deviceId) {
+        runtime.cudaSetDevice(deviceId);
+        CUDAStream newStream = runtime.cudaStreamCreate(streams.size());
+        streams.add(newStream);
+
+        assert deviceId == newStream.getStreamDeviceId();
+
+        return newStream;
+    }
+
+
 
     public CUDAStream createStreamDifferentDevice() {
         int deviceId = cheapestDeviceForStream();
@@ -414,9 +411,21 @@ public class GrCUDAStreamManager {
     private class AlwaysNewRetrieveStream extends RetrieveNewStream {
 
         @Override
-        public CUDAStream retrieve() {
+        public CUDAStream retrieve(int deviceId) {
 
             return createStream();
+        }
+    }
+
+    /**
+     * By default, create a new stream every time with respect to the device;
+     */
+    private class MultiAlwaysNewRetriveStream extends RetrieveNewStream {
+
+        @Override
+        public CUDAStream retrieve(int deviceId) {
+
+            return createStream(deviceId);
         }
     }
 
@@ -450,16 +459,49 @@ public class GrCUDAStreamManager {
         }
 
         @Override
-        CUDAStream retrieve() {
-            //if (freeStreams.isEmpty()) {
-            if(true){
+        CUDAStream retrieve(int deviceId) {
+            if (freeStreams.isEmpty()) {
                 // Create a new stream if none is available;
-                //return createStream();
-                return createStreamDifferentDevice();
+                return createStream();
             } else {
                 // Get the first stream available, and remove it from the list of free streams;
                 CUDAStream stream = freeStreams.poll();
                 uniqueFreeStreams.remove(stream);
+                return stream;
+            }
+        }
+    }
+    /**
+     * Keep a queue of free (currently not utilized) streams for each device, and retrieve the oldest one added to the queue with respect to the device;
+     */
+    private class MultiFifoRetriveStream extends RetrieveNewStream{
+        /**
+         * Keep a queue of free streams;
+         */
+        private final Queue<CUDAStream> freeStreams = new ArrayDeque<>();
+        /**
+         * Ensure that streams in the queue are always unique;
+         */
+        private final Set<CUDAStream> uniqueFreeStreams = new HashSet<>();
+
+        @Override
+        void update(CUDAStream stream) {
+            devicesManager.updateStreams(stream);
+        }
+
+        @Override
+        void update(Collection<CUDAStream> streams) {
+            devicesManager.updateStreams(streams);
+        }
+
+        @Override
+        CUDAStream retrieve(int deviceId) {
+            if (freeStreams.isEmpty()) {
+                // Create a new stream if none is available;
+                return createStream(deviceId);
+            } else {
+                // Get the first stream available, and remove it from the list of free streams;
+                CUDAStream stream = devicesManager.retriveStream(deviceId);
                 return stream;
             }
         }
@@ -469,15 +511,10 @@ public class GrCUDAStreamManager {
      * By default, use the same stream as the parent computation;
      */
     private static class DefaultRetrieveParentStream extends RetrieveParentStream {
-        private final RetrieveNewStream retrieveNewStream;
 
-        public DefaultRetrieveParentStream(RetrieveNewStream retrieveNewStream){
-            this.retrieveNewStream = retrieveNewStream;
-        }
         @Override
         public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
-            return this.retrieveNewStream.retrieve();
-            //return vertex.getParentComputations().get(0).getStream();
+            return vertex.getParentComputations().get(0).getStream();
         }
     }
 
@@ -515,7 +552,7 @@ public class GrCUDAStreamManager {
             } else {
                 // If no parent stream can be reused, provide a new stream to this computation
                 //   (or possibly a free one, depending on the policy);
-                return retrieveNewStream.retrieve();
+                return retrieveNewStream.retrieve(DEFAULT_DEVICE);
             }
         }
     }

@@ -28,8 +28,14 @@
  */
 package com.nvidia.grcuda.gpu;
 
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Queue;
+import java.util.Set;
+
 import com.nvidia.grcuda.MemberSet;
 import com.nvidia.grcuda.NoneValue;
+import com.nvidia.grcuda.gpu.stream.CUDAStream;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Cached.Shared;
@@ -57,6 +63,17 @@ public class Device implements TruffleObject {
     private final GPUDeviceProperties properties;
     private final CUDARuntime runtime;
 
+    /**
+     * Keep a queue of free streams;
+     */
+    private final Queue<CUDAStream> freeStreams = new ArrayDeque<>();
+
+    /**
+     * Ensure that streams in the queue are always unique;
+     */
+    private final Set<CUDAStream> uniqueFreeStreams = new HashSet<>();
+
+
     public Device(int deviceId, CUDARuntime runtime) {
         this.deviceId = deviceId;
         this.runtime = runtime;
@@ -65,6 +82,25 @@ public class Device implements TruffleObject {
 
     public GPUDeviceProperties getProperties() {
         return properties;
+    }
+
+   public CUDAStream getFreeStream(){
+        CUDAStream stream = freeStreams.poll();
+        uniqueFreeStreams.remove(stream);
+        return stream;
+   }
+
+    public int numFreeStreams(){
+        return freeStreams.size();
+    }
+
+
+
+    public void updateStreams(CUDAStream stream){
+        if (!uniqueFreeStreams.contains(stream)) {
+            freeStreams.add(stream);
+            uniqueFreeStreams.add(stream);
+        }
     }
 
     @Override
