@@ -1230,7 +1230,7 @@ public final class CUDARuntime {
     @TruffleBoundary
     public void cuLaunchKernel(Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream) {
         System.out.println("cuLaunchKernel device:" + cudaGetDevice() + " and the stream is in device: "+stream.getStreamDeviceId() + "stream id  is: "+ stream.getStreamNumber());
-
+        //assert stream.getStreamDeviceId() == cudaGetDevice();
         try {
 
             Object callable = CUDADriverFunction.CU_LAUNCHKERNEL.getSymbol(this);

@@ -13,6 +13,8 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -36,17 +38,19 @@ public class ExecutionWithMultipleGPU {
     public static Collection<Object[]> data() {
 
         return ComplexExecutionDAGTest.crossProduct(Arrays.asList(new Object[][]{
-                {"sync", "default"},
-                {true, false}
+                {"default"},
+                {false},
+                {"multi_disjoint"}
         }));
     }
 
     private final String policy;
     private final boolean inputPrefetch;
-
-    public ExecutionWithMultipleGPU(String policy, boolean inputPrefetch) {
+    private final String streamPolicy;
+    public ExecutionWithMultipleGPU(String policy, boolean inputPrefetch, String streamPolicy) {
         this.policy = policy;
         this.inputPrefetch = inputPrefetch;
+        this.streamPolicy = streamPolicy;
     }
 
     private static final int NUM_THREADS_PER_BLOCK = 32;
@@ -127,8 +131,10 @@ public class ExecutionWithMultipleGPU {
     @Test
     public void dependency2KernelsSimpleTest() {
 
-        try (Context context = Context.newBuilder().option("grcuda.ExecutionPolicy", this.policy)
-                .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
+        Map<String,String> policy = new HashMap<>();
+        policy.put("grcuda.RetrieveParentStreamPolicy", String.valueOf(this.streamPolicy));
+        policy.put("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch));
+        try (Context context = Context.newBuilder().option("grcuda.ExecutionPolicy", this.policy).options(policy).allowAllAccess(true).build()) {
 
 
             final int numElements = 10;
@@ -136,14 +142,6 @@ public class ExecutionWithMultipleGPU {
             Value deviceArrayConstructor = context.eval("grcuda", "DeviceArray");
             Value x = deviceArrayConstructor.execute("float", numElements);
             Value y = deviceArrayConstructor.execute("float", numElements);
-
-            // Get device information
-            Value devices = context.eval("grcuda", "getdevices()");
-            Value firstDevice = devices.getArrayElement(0);
-            Value secondDevice = devices.getArrayElement(1);
-
-            // Set to device 0
-            firstDevice.invokeMember("setCurrent");
 
             // Build kernel on device 0
             Value firstDevice_buildkernel = context.eval("grcuda", "buildkernel");
@@ -169,26 +167,13 @@ public class ExecutionWithMultipleGPU {
 //            assertEquals(16.0, y.getArrayElement(0).asFloat(), 0.1);
             context.eval("grcuda","cudaDeviceSynchronize");
 
-            secondDevice.invokeMember("setCurrent");
+            // Perform the computation;
             firstconfiguredSquareKernel.execute(x, numElements);
             firstconfiguredSquareKernel.execute(y, numElements);
-            Value secondDevice_buildKernel = context.eval("grcuda", "buildkernel");
-            Value secondDevice_squareKernel = secondDevice_buildKernel.execute(SQUARE_KERNEL, "square", "pointer, sint32");
-
-//                    for (int i = 0; i < numElements; ++i) {
-//                        x.setArrayElement(i, 2.0);
-//                        y.setArrayElement(i, 4.0);
-//                    }
-
-            Value configuredSquareKernel = secondDevice_squareKernel.execute(numBlocks, NUM_THREADS_PER_BLOCK);
-
-            // Perform the computation;
-            configuredSquareKernel.execute(x, numElements);
-            configuredSquareKernel.execute(y, numElements);
 
 //                    // Verify the output;
-//                    assertEquals(16.0, x.getArrayElement(0).asFloat(), 0.1);
-//                    assertEquals(256.0, y.getArrayElement(0).asFloat(), 0.1);
+//            assertEquals(16.0, x.getArrayElement(0).asFloat(), 0.1);
+//            assertEquals(256.0, y.getArrayElement(0).asFloat(), 0.1);
 
         }
     }

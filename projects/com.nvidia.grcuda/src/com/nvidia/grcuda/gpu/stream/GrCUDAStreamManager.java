@@ -43,7 +43,7 @@ public class GrCUDAStreamManager {
     private final RetrieveParentStream retrieveParentStream;
 
     private final static int DEFAULT_DEVICE = 0;
-    private int deviceId = 0;
+    private int deviceID = 0;
 
     public GrCUDAStreamManager(CUDARuntime runtime) {
         this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum(), new GrCUDADevicesManager(runtime));
@@ -100,8 +100,8 @@ public class GrCUDAStreamManager {
         return parentDeviceId;
     }
     private int cheapestDeviceForStream(){
-        int val = deviceId%2;
-        deviceId++;
+        int val = deviceID%2;
+        deviceID++;
         return val;
     }
 
@@ -415,6 +415,7 @@ public class GrCUDAStreamManager {
 
             return createStream();
         }
+
     }
 
     /**
@@ -427,6 +428,7 @@ public class GrCUDAStreamManager {
 
             return createStream(deviceId);
         }
+
     }
 
     /**
@@ -498,9 +500,13 @@ public class GrCUDAStreamManager {
         CUDAStream retrieve(int deviceId) {
             if (freeStreams.isEmpty()) {
                 // Create a new stream if none is available;
+                System.out.println("line 503");
+
                 return createStream(deviceId);
             } else {
                 // Get the first stream available, and remove it from the list of free streams;
+                System.out.println("line 507");
+
                 CUDAStream stream = devicesManager.retriveStream(deviceId);
                 return stream;
             }
@@ -517,7 +523,17 @@ public class GrCUDAStreamManager {
             return vertex.getParentComputations().get(0).getStream();
         }
     }
+    
+    /**
+     * By default, use the same stream as the parent computation;
+     */
+    private static class MultiDefaultRetrieveParentStream extends RetrieveParentStream {
 
+        @Override
+        public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+            return vertex.getParentComputations().get(0).getStream();
+        }
+    }
     /**
      * If a vertex has more than one children, each children is independent (otherwise the dependency would be added
      * from one children to the other, and not from the actual parent).
@@ -553,6 +569,58 @@ public class GrCUDAStreamManager {
                 // If no parent stream can be reused, provide a new stream to this computation
                 //   (or possibly a free one, depending on the policy);
                 return retrieveNewStream.retrieve(DEFAULT_DEVICE);
+            }
+        }
+    }
+
+    
+    //TODO: not modified yet
+    /**
+     * If a vertex has more than one children, each children is independent (otherwise the dependency would be added
+     * from one children to the other, and not from the actual parent).
+     * As such, children can be executed on different streams. In practice, this situation happens when children
+     * depends on disjoint arguments subsets of the parent kernel, e.g. K1(X,Y), K2(X), K3(Y).
+     * This policy re-uses the parent(s) stream(s) when possible,
+     * and computes other streams using the current {@link RetrieveNewStream};
+     */
+    private static class MultiDisjointRetrieveParentStream extends RetrieveParentStream {
+        private final RetrieveNewStream retrieveNewStream;
+        int devID = 0;
+        // Keep track of computations for which we have already re-used the stream;
+        private final Set<ExecutionDAG.DAGVertex> reusedComputations = new HashSet<>();
+
+        public MultiDisjointRetrieveParentStream(RetrieveNewStream retrieveNewStream) {
+            this.retrieveNewStream = retrieveNewStream;
+        }
+
+        @Override
+        public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+
+            // Keep only parent vertices for which we haven't reused the stream yet;
+            List<ExecutionDAG.DAGVertex> availableParents = vertex.getParentVertices().stream()
+                    .filter(v -> !reusedComputations.contains(v))
+                    .collect(Collectors.toList());
+            // If there is at least one stream that can be re-used, take it;
+            if (!availableParents.isEmpty()) {
+                // The computation cannot be considered again;
+                reusedComputations.add(availableParents.get(0));
+                // Return the stream associated to this computation;
+                //return availableParents.get(0).getComputation().getStream();
+                int id = devID%2;
+                ++devID;
+                System.out.println("line 608");
+                return retrieveNewStream.retrieve(id);
+            } else {
+                // If no parent stream can be reused, provide a new stream to this computation in the same device of the parent
+                //   (or possibly a free one, depending on the policy);
+
+                //return retrieveNewStream.retrieve(vertex.getComputation().getStream().getStreamDeviceId());
+                
+                int id = devID%2;
+                ++devID;
+                System.out.println("line 618");
+
+                return retrieveNewStream.retrieve(id);
             }
         }
     }
