@@ -2,6 +2,7 @@ package com.nvidia.grcuda.gpu;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 import com.nvidia.grcuda.gpu.stream.CUDAStream;
 
@@ -89,6 +90,26 @@ public class GrCUDADevicesManager {
         Device device = devices.get(deviceId);
         return device.getFreeStream();
 
+    }
+
+    /**
+     * Find the device with the lowest number of Stream on it and returns it
+     * @return 
+     */
+    public int findCheapestDevice(){
+        int min = devices.get(0).numActiveStream();
+        int deviceId = 0;
+        for(int i = 0; i<numberOfGPUs; i++){
+            if(devices.get(i).numActiveStream() < min){
+                min = devices.get(i).numActiveStream();
+                deviceId = i;
+            }
+        }
+        return deviceId;
+    }
+
+    public void addStreamCount(int deviceId){
+        devices.get(deviceId).increaseStreamCount();
     }
 
     public int getCurrentDeviceId(){

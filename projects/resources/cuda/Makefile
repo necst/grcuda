@@ -1,6 +1,6 @@
 # Use NVCC;
 CXX=nvcc
-FLAGS = -std=c++11 -O3 -arch=sm_70
+FLAGS = -std=c++11 -O3 -arch=sm_50
 
 # Use Clang;
 # CXX=$(CLANG_DIR)/clang++

@@ -94,6 +94,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
                     }
                 } else if (!array.getStreamMapping().equals(this.getStream())) {
                     // Attach the array to the stream if the array isn't already attached to this stream;
+                    
                     grCUDAExecutionContext.getCudaRuntime().cudaStreamAttachMemAsync(this.getStream(), array);
                 }
             }

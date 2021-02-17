@@ -72,30 +72,54 @@ public class Device implements TruffleObject {
      * Ensure that streams in the queue are always unique;
      */
     private final Set<CUDAStream> uniqueFreeStreams = new HashSet<>();
-
-
+    /**
+     * Keeps count of the number of streams on the device;
+     */
+    private int numOfStreams;
     public Device(int deviceId, CUDARuntime runtime) {
         this.deviceId = deviceId;
         this.runtime = runtime;
         this.properties = new GPUDeviceProperties(deviceId, runtime);
+        this.numOfStreams = 0;
     }
 
     public GPUDeviceProperties getProperties() {
         return properties;
     }
 
-   public CUDAStream getFreeStream(){
+    public CUDAStream getFreeStream(){
         CUDAStream stream = freeStreams.poll();
         uniqueFreeStreams.remove(stream);
         return stream;
-   }
+    }
 
+    public int getDeviceId(){
+        return this.deviceId;
+    }
     public int numFreeStreams(){
         return freeStreams.size();
     }
 
+    /**
+     * increase the count of numOfStreams, keeping track of the actual number of stream on the current device
+     */
+    public void increaseStreamCount(){
+        this.numOfStreams++;
+    }
+
+    public int getStreamCount(){
+        return this.numOfStreams;
+    }
+
+    public int numActiveStream(){
+        return this.numOfStreams - freeStreams.size();
+    }
 
 
+    /**
+     * Update the collection of free streams with a new one
+     * @param stream
+     */
     public void updateStreams(CUDAStream stream){
         if (!uniqueFreeStreams.contains(stream)) {
             freeStreams.add(stream);

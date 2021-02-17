@@ -5,7 +5,6 @@ import com.nvidia.grcuda.gpu.CUDARuntime;
 import com.nvidia.grcuda.gpu.GrCUDADevicesManager;
 import com.nvidia.grcuda.gpu.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
-import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -43,7 +42,8 @@ public class GrCUDAStreamManager {
     private final RetrieveParentStream retrieveParentStream;
 
     private final static int DEFAULT_DEVICE = 0;
-    private int deviceID = 0;
+
+    private final RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum;
 
     public GrCUDAStreamManager(CUDARuntime runtime) {
         this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum(), new GrCUDADevicesManager(runtime));
@@ -57,7 +57,7 @@ public class GrCUDAStreamManager {
             RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager) {
         this.runtime = runtime;
         this.devicesManager = devicesManager;
-
+        this.retrieveNewStreamPolicyEnum = retrieveNewStreamPolicyEnum;
         // Get how streams are retrieved for computations without parents;
         switch(retrieveNewStreamPolicyEnum) {
             case FIFO:
@@ -92,18 +92,9 @@ public class GrCUDAStreamManager {
             default:
                 this.retrieveParentStream = new DefaultRetrieveParentStream();
         }
+
     }
 
-
-    private int cheapestDeviceForStream(ExecutionDAG.DAGVertex vertex){
-        int parentDeviceId = vertex.getParentComputations().get(0).getStream().getStreamDeviceId();
-        return parentDeviceId;
-    }
-    private int cheapestDeviceForStream(){
-        int val = deviceID%2;
-        deviceID++;
-        return val;
-    }
 
 
     /**
@@ -115,13 +106,25 @@ public class GrCUDAStreamManager {
         // If the computation cannot use customized streams, return immediately;
         if (vertex.getComputation().canUseStream()) {
             CUDAStream stream;
-            if (vertex.isStart()) {
-                // Else, if the computation doesn't have parents, provide a new stream to it;
-                stream = retrieveNewStream.retrieve(DEFAULT_DEVICE);
-            } else {
-                // Else, compute the streams used by the parent computations.
-                stream = this.retrieveParentStream.retrieve(vertex);
+            if(this.retrieveNewStreamPolicyEnum == RetrieveNewStreamPolicyEnum.MULTI_FIFO){
+                if (vertex.isStart()) {
+                    // Else, if the computation doesn't have parents, provide a new stream to it;
+                    int cheapestDevice = devicesManager.findCheapestDevice();
+                    stream = retrieveNewStream.retrieve(cheapestDevice);
+                } else {
+                    // Else, compute the streams used by the parent computations.
+                    stream = this.retrieveParentStream.retrieve(vertex);
+                }
+            }else{
+                if (vertex.isStart()) {
+                    // Else, if the computation doesn't have parents, provide a new stream to it;
+                    stream = retrieveNewStream.retrieve(DEFAULT_DEVICE);
+                } else {
+                    // Else, compute the streams used by the parent computations.
+                    stream = this.retrieveParentStream.retrieve(vertex);
+                }
             }
+
             // Set the stream;
             vertex.getComputation().setStream(stream);
             // Update the computation counter;
@@ -134,6 +137,9 @@ public class GrCUDAStreamManager {
             vertex.getComputation().associateArraysToStream();
         }
     }
+
+
+
 
     /**
      * Associate a new {@link CUDAEvent} to this computation, if the computation is done on a {@link CUDAStream}.
@@ -163,7 +169,6 @@ public class GrCUDAStreamManager {
                     // If we require synchronization on the default stream, perform it in a specialized way;
                     if (stream.isDefaultStream()) {
 //                        System.out.println("--\tsync stream " + stream + " by " + vertex.getComputation());
-                        System.out.println("default stream");
                         // Synchronize the device;
                         syncDevice();
                         // All computations are now finished;
@@ -307,6 +312,7 @@ public class GrCUDAStreamManager {
         runtime.cudaSetDevice(deviceId);
         CUDAStream newStream = runtime.cudaStreamCreate(streams.size());
         streams.add(newStream);
+        devicesManager.addStreamCount(deviceId);
 
         assert deviceId == newStream.getStreamDeviceId();
 
@@ -316,9 +322,6 @@ public class GrCUDAStreamManager {
 
 
     public CUDAStream createStreamDifferentDevice() {
-        int deviceId = cheapestDeviceForStream();
-        //devicesManager.setDevice(deviceId);
-        //runtime.cudaSetDevice(0);
         CUDAStream newStream = runtime.cudaStreamCreate(streams.size());
         System.out.println("Stream in GrCudaStreamManager is assigned to device: " + newStream.getStreamDeviceId());
         streams.add(newStream);
@@ -454,8 +457,8 @@ public class GrCUDAStreamManager {
         }
 
         @Override
-        void update(Collection<CUDAStream> streams) {
-            Set<CUDAStream> newStreams = streams.stream().filter(s -> !freeStreams.contains(s)).collect(Collectors.toSet());
+        void update(Collection<CUDAStream> streamsCollection) {
+            Set<CUDAStream> newStreams = streamsCollection.stream().filter(s -> !freeStreams.contains(s)).collect(Collectors.toSet());
             freeStreams.addAll(newStreams);
             uniqueFreeStreams.addAll(newStreams);
         }
@@ -480,11 +483,6 @@ public class GrCUDAStreamManager {
         /**
          * Keep a queue of free streams;
          */
-        private final Queue<CUDAStream> freeStreams = new ArrayDeque<>();
-        /**
-         * Ensure that streams in the queue are always unique;
-         */
-        private final Set<CUDAStream> uniqueFreeStreams = new HashSet<>();
 
         @Override
         void update(CUDAStream stream) {
@@ -492,20 +490,18 @@ public class GrCUDAStreamManager {
         }
 
         @Override
-        void update(Collection<CUDAStream> streams) {
-            devicesManager.updateStreams(streams);
+        void update(Collection<CUDAStream> streamsCollection) {
+            devicesManager.updateStreams(streamsCollection);
         }
 
         @Override
         CUDAStream retrieve(int deviceId) {
-            if (freeStreams.isEmpty()) {
+            if (!devicesManager.availableStreams(deviceId)) {
                 // Create a new stream if none is available;
-                System.out.println("line 503");
-
-                return createStream(deviceId);
+                System.out.println("line 501 "+deviceId);
+                return createStream(1);
             } else {
                 // Get the first stream available, and remove it from the list of free streams;
-                System.out.println("line 507");
 
                 CUDAStream stream = devicesManager.retriveStream(deviceId);
                 return stream;
@@ -574,7 +570,6 @@ public class GrCUDAStreamManager {
     }
 
     
-    //TODO: not modified yet
     /**
      * If a vertex has more than one children, each children is independent (otherwise the dependency would be added
      * from one children to the other, and not from the actual parent).
@@ -585,7 +580,6 @@ public class GrCUDAStreamManager {
      */
     private static class MultiDisjointRetrieveParentStream extends RetrieveParentStream {
         private final RetrieveNewStream retrieveNewStream;
-        int devID = 0;
         // Keep track of computations for which we have already re-used the stream;
         private final Set<ExecutionDAG.DAGVertex> reusedComputations = new HashSet<>();
 
@@ -605,22 +599,14 @@ public class GrCUDAStreamManager {
                 // The computation cannot be considered again;
                 reusedComputations.add(availableParents.get(0));
                 // Return the stream associated to this computation;
-                //return availableParents.get(0).getComputation().getStream();
-                int id = devID%2;
-                ++devID;
-                System.out.println("line 608");
-                return retrieveNewStream.retrieve(id);
+                System.out.println("line 602 " + availableParents.get(0).getComputation().getStream().getStreamDeviceId());
+                return availableParents.get(0).getComputation().getStream();
+
             } else {
                 // If no parent stream can be reused, provide a new stream to this computation in the same device of the parent
                 //   (or possibly a free one, depending on the policy);
-
-                //return retrieveNewStream.retrieve(vertex.getComputation().getStream().getStreamDeviceId());
-                
-                int id = devID%2;
-                ++devID;
-                System.out.println("line 618");
-
-                return retrieveNewStream.retrieve(id);
+                System.out.println("line 608 " + vertex.getComputation().getStream().getStreamDeviceId());
+                return retrieveNewStream.retrieve(vertex.getComputation().getStream().getStreamDeviceId());
             }
         }
     }

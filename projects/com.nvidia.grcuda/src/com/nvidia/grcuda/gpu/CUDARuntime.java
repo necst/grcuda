@@ -246,7 +246,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaMemcpy(long destPointer, long fromPointer, long numBytesToCopy) {
-
         try {
             Object callable = CUDARuntimeFunction.CUDA_MEMCPY.getSymbol(this);
             if (numBytesToCopy < 0) {
@@ -451,7 +450,8 @@ public final class CUDARuntime {
 
         try {
             Object callable = CUDARuntimeFunction.CUDA_MEMPREFETCHASYNC.getSymbol(this);
-            Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(), 0, stream.getRawPointer());
+            //Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(), 0, stream.getRawPointer());
+            Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(), stream.getStreamDeviceId(), stream.getRawPointer());
             checkCUDAReturnCode(result, "cudaMemPrefetchAsync");
         } catch (InteropException e) {
             throw new GrCUDAException(e);
@@ -1229,8 +1229,10 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cuLaunchKernel(Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream) {
-        System.out.println("cuLaunchKernel device:" + cudaGetDevice() + " and the stream is in device: "+stream.getStreamDeviceId() + "stream id  is: "+ stream.getStreamNumber());
-        //assert stream.getStreamDeviceId() == cudaGetDevice();
+        cudaSetDevice(stream.getStreamDeviceId());
+        assert stream.getStreamDeviceId() == cudaGetDevice();
+        // System.out.println("cuLaunchKernel device:" + cudaGetDevice() + " and the stream is in device: "+stream.getStreamDeviceId() + "stream id  is: "+ stream.getStreamNumber());
+        //System.out.println("launch kernel "+kernel.toString()+" on device : "+ cudaGetDevice());
         try {
 
             Object callable = CUDADriverFunction.CU_LAUNCHKERNEL.getSymbol(this);

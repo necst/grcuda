@@ -25,7 +25,7 @@ cndGPUMulti(double d) {
 }
 extern "C" __global__ void
 bsMulti(const double *x, double *y, int N, double R, double V, double T, double K) {
-
+    
     double sqrtT = 1.0 / rsqrt(T);
     for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N;
          i += blockDim.x * gridDim.x) {
