@@ -97,11 +97,23 @@ void Benchmark11::execute_sync(int iter)
 
 void Benchmark11::execute_async(int iter)
 {
+    cudaEvent_t start, stop;
+
+
     cudaSetDevice(0);            // Set device 0 as current
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
     cudaStreamAttachMemAsync(s1, x, sizeof(float) * N);
     cudaStreamAttachMemAsync(s1, x1, sizeof(float) * N);
-    squareMulti<<<num_blocks, block_size_1d, 0, s1>>>(x, x1, N);
 
+    cudaEventRecord(start);
+    squareMulti<<<num_blocks, block_size_1d, 0, s1>>>(x, x1, N);
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    printf("execution time of kernel: %.1f \n", milliseconds);
 
     cudaSetDevice(1);            // Set device 1 as current
     cudaStreamAttachMemAsync(s2, y, sizeof(float) * N);

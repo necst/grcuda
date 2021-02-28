@@ -105,6 +105,7 @@ public class GrCUDAStreamManager {
     public void assignStream(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
         if (vertex.getComputation().canUseStream()) {
+            System.out.println(vertex.getComputation().toString());
             CUDAStream stream;
             if(this.retrieveNewStreamPolicyEnum == RetrieveNewStreamPolicyEnum.MULTI_FIFO){
                 if (vertex.isStart()) {
@@ -499,7 +500,7 @@ public class GrCUDAStreamManager {
             if (!devicesManager.availableStreams(deviceId)) {
                 // Create a new stream if none is available;
                 System.out.println("line 501 "+deviceId);
-                return createStream(1);
+                return createStream(deviceId);
             } else {
                 // Get the first stream available, and remove it from the list of free streams;
 
