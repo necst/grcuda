@@ -46,6 +46,7 @@ enum BenchmarkEnum {
     B17,
     B18,
     B20,
+    Jacobi,
     ERR
 };
 
@@ -90,6 +91,8 @@ inline BenchmarkEnum get_benchmark(std::string benchmark) {
         return BenchmarkEnum::B18;
     else if (benchmark == "b20")
         return BenchmarkEnum::B20;
+    else if (benchmark == "Jacobi")
+        return BenchmarkEnum::Jacobi;
     else
         return BenchmarkEnum::ERR;
 }
@@ -117,7 +120,7 @@ struct Options {
 
     Options(int argc, char *argv[]) {
         map_init(policy_map)(Policy::Sync, "sync")(Policy::Async, "default")(Policy::CudaGraph, "cudagraph")(Policy::CudaGraphAsync, "cudagraphmanual")(Policy::CudaGraphSingle, "cudagraphsingle");
-        map_init(benchmark_map)(BenchmarkEnum::B1, "b1")(BenchmarkEnum::B5, "b5")(BenchmarkEnum::B6, "b6")(BenchmarkEnum::B7, "b7")(BenchmarkEnum::B8, "b8")(BenchmarkEnum::B10, "b10")(BenchmarkEnum::B11, "b11")(BenchmarkEnum::B15, "b15")(BenchmarkEnum::B16, "b16")(BenchmarkEnum::B17, "b17")(BenchmarkEnum::B18, "b18")(BenchmarkEnum::B20, "b20");
+        map_init(benchmark_map)(BenchmarkEnum::B1, "b1")(BenchmarkEnum::B5, "b5")(BenchmarkEnum::B6, "b6")(BenchmarkEnum::B7, "b7")(BenchmarkEnum::B8, "b8")(BenchmarkEnum::B10, "b10")(BenchmarkEnum::B11, "b11")(BenchmarkEnum::B15, "b15")(BenchmarkEnum::B16, "b16")(BenchmarkEnum::B17, "b17")(BenchmarkEnum::B18, "b18")(BenchmarkEnum::B20, "b20")(BenchmarkEnum::Jacobi, "Jacobi");
 
         int opt;
         static struct option long_options[] = {{"debug", no_argument, 0, 'd'},

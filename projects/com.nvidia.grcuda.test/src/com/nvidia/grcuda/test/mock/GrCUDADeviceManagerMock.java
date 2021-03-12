@@ -5,7 +5,7 @@ import com.nvidia.grcuda.gpu.GrCUDADevicesManager;
 
 public class GrCUDADeviceManagerMock extends GrCUDADevicesManager {
     public GrCUDADeviceManagerMock(CUDARuntime runtime) {
-        super(runtime);
+        super(runtime,2);
     }
 
 }

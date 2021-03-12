@@ -66,6 +66,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class GrCUDAContext {
 
+    public static final Integer DEFAULT_NUMBER_GPUs = 1;
     public static final ExecutionPolicyEnum DEFAULT_EXECUTION_POLICY = ExecutionPolicyEnum.DEFAULT;
     public static final DependencyPolicyEnum DEFAULT_DEPENDENCY_POLICY = DependencyPolicyEnum.DEFAULT;
     public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.MULTI_FIFO;
@@ -84,19 +85,21 @@ public final class GrCUDAContext {
     private final RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum;
     private final boolean forceStreamAttach;
     private final boolean inputPrefetch;
-
+    private final int numberOfGPUs;
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
     private final ConcurrentHashMap<Class<?>, CallTarget> uncachedMapCallTargets = new ConcurrentHashMap<>();
 
     public GrCUDAContext(Env env) {
         this.env = env;
 
-
         // Retrieve if we should force array stream attachment;
         forceStreamAttach = env.getOptions().get(GrCUDAOptions.ForceStreamAttach);
 
         // Retrieve if we should prefetch input data to GPU;
         inputPrefetch = env.getOptions().get(GrCUDAOptions.InputPrefetch);
+
+        // Retrieve the number of GPUs to be used;
+        numberOfGPUs = Integer.parseInt(env.getOptions().get(GrCUDAOptions.NumberOfGPUs));
 
         // Retrieve the stream retrieval policy;
         retrieveNewStreamPolicy = parseRetrieveStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveNewStreamPolicy));
@@ -201,6 +204,10 @@ public final class GrCUDAContext {
 
     public RetrieveNewStreamPolicyEnum getRetrieveNewStreamPolicy() {
         return retrieveNewStreamPolicy;
+    }
+
+    public int getNumberOfGPUs(){
+        return this.numberOfGPUs;
     }
     
     public RetrieveParentStreamPolicyEnum getRetrieveParentStreamPolicyEnum() {

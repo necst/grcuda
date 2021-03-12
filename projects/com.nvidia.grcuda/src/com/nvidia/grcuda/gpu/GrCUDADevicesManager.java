@@ -13,9 +13,18 @@ public class GrCUDADevicesManager {
     private final Integer numberOfGPUs;
     private Integer currentDeviceId;
 
-    public GrCUDADevicesManager(CUDARuntime runtime){
+    public GrCUDADevicesManager(CUDARuntime runtime, int device_number){
         this.runtime = runtime;
-        this.numberOfGPUs = runtime.cudaGetDeviceCount();
+        
+        int deviceNumberInSystem = runtime.cudaGetDeviceCount();
+        if(device_number < deviceNumberInSystem){
+            this.numberOfGPUs = device_number;
+        }else{
+            this.numberOfGPUs = deviceNumberInSystem;
+        }
+
+        System.out.println("number of GPUs in GrCUDADeviceManager "+this.numberOfGPUs.toString());
+
         this.currentDeviceId = runtime.cudaGetDevice();
         initDevices();
 

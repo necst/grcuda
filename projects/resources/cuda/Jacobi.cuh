@@ -1,7 +1,8 @@
 #pragma once
 #include "benchmark.cuh"
 
-class Jacobi : public Benchmark {
+class Jacobi : public Benchmark 
+{
    public:
     Jacobi(Options &options) : Benchmark(options) {}
     void alloc();
@@ -27,7 +28,6 @@ class Jacobi : public Benchmark {
     float t;
 
 
-    float *x, *y, *x1, *y1, *res;
     cudaStream_t s1, s2;
     cudaGraph_t graph;
     cudaGraphExec_t graphExec;
