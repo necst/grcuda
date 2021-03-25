@@ -39,16 +39,20 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 
 @ExportLibrary(InteropLibrary.class)
-public class ConfiguredKernel implements TruffleObject {
+public class ConfiguredKernel extends ProfilableElement implements TruffleObject {
 
     private final Kernel kernel;
 
     private final KernelConfig config;
 
     public ConfiguredKernel(Kernel kernel, KernelConfig config) {
+        // ConfiguredKernel is a Profilable Element
+        super(true);
         this.kernel = kernel;
         this.config = config;
     }
+
+
 
     @ExportMessage
     boolean isExecutable() {

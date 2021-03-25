@@ -39,6 +39,11 @@ public class KernelExecution extends GrCUDAComputationalElement {
     }
 
     @Override
+    public boolean isProfilable(){
+        return this.configuredKernel.isProfilable();
+    }
+
+    @Override
     public Object execute() {
         grCUDAExecutionContext.getCudaRuntime().cuLaunchKernel(kernel, config, args, this.getStream());
         return NoneValue.get();
@@ -106,7 +111,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
 //        return "KernelExecution(" + configuredKernel.toString() + "; args=[" +
 //                Arrays.stream(args.getOriginalArgs()).map(a -> Integer.toString(System.identityHashCode(a))).collect(Collectors.joining(", ")) +
 //                "]" + "; stream=" + this.getStream() + ")";
-        String event = this.getEvent().isPresent() ? Long.toString(this.getEvent().get().getEventNumber()) : "NULL";
+        String event = this.getEventStop().isPresent() ? Long.toString(this.getEventStop().get().getEventNumber()) : "NULL";
         return "kernel=" + kernel.getKernelName() + "; args=[" +
                 Arrays.stream(args.getOriginalArgs()).map(a -> Integer.toString(System.identityHashCode(a))).collect(Collectors.joining(", ")) +
                 "]" + "; stream=" + this.getStream().getStreamNumber() + "; event=" + event;

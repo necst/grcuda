@@ -98,34 +98,67 @@ void Benchmark11::execute_sync(int iter)
 void Benchmark11::execute_async(int iter)
 {
     cudaEvent_t start, stop;
-
+    cudaEvent_t start_2, stop_2;
 
     cudaSetDevice(0);            // Set device 0 as current
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
 
     cudaStreamAttachMemAsync(s1, x, sizeof(float) * N);
     cudaStreamAttachMemAsync(s1, x1, sizeof(float) * N);
 
-    squareMulti<<<num_blocks, block_size_1d, 0, s1>>>(x, x1, N);
 
+    cudaEventRecord(start,s1);
+    squareMulti<<<num_blocks, block_size_1d, 0, s1>>>(x, x1, N);
+    cudaEventRecord(stop,s1);
+
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+    float seconds = milliseconds / 1000;
+    printf("time for kernel 1: %f\n",seconds);
 
     cudaSetDevice(1);            // Set device 1 as current
+
+
+    cudaEventCreate(&start_2);
+    cudaEventCreate(&stop_2);
+
     cudaStreamAttachMemAsync(s2, y, sizeof(float) * N);
     cudaStreamAttachMemAsync(s2, y1, sizeof(float) * N);
 
+    cudaEventRecord(start_2,s2);
     squareMulti<<<num_blocks, block_size_1d, 0, s2>>>(y, y1, N);
+    cudaEventRecord(stop_2,s2);
+    // // Stream 1 waits stream 2;
+    // cudaEvent_t e1;
+    // cudaEventCreate(&e1);
+    // cudaEventRecord(e1, s2);
+    // cudaStreamWaitEvent(s1, e1, 0);
+    // cudaSetDevice(0);
 
-    // Stream 1 waits stream 2;
-    cudaEvent_t e1;
-    cudaEventCreate(&e1);
-    cudaEventRecord(e1, s2);
-    cudaStreamWaitEvent(s1, e1, 0);
-    cudaSetDevice(0);
-
-    cudaStreamAttachMemAsync(s1, y1, sizeof(float) * N);
-    reduceMulti<<<num_blocks, block_size_1d, 0, s1>>>(x1, y1, res, N);
+    // cudaStreamAttachMemAsync(s1, y1, sizeof(float) * N);
+    // reduceMulti<<<num_blocks, block_size_1d, 0, s1>>>(x1, y1, res, N);
 
 
     cudaStreamSynchronize(s1);
+
+    cudaStreamSynchronize(s2);
+
+    cudaEventSynchronize(stop_2);
+    float milliseconds_2 = 0;
+    cudaEventElapsedTime(&milliseconds_2, start_2, stop_2);
+    cudaEventDestroy(start_2);
+    cudaEventDestroy(stop_2);
+    float seconds_2 = milliseconds_2 / 1000;
+
+
+    printf("time for kernel 2: %f\n",seconds_2);
+
+
 
 
 }

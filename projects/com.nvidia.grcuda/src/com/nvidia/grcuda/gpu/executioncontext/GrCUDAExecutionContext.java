@@ -55,12 +55,15 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
         
         // Prefetching;
         arrayPrefetcher.prefetchToGpu(vertex);
-        
+
+        // Associate a CUDA event to the starting phase of the computation in order to get the Elapsed time from start to the end
+        streamManager.assignEventStart(vertex);
+
         // Start the computation;
         Object result = executeComputationSync(vertex);
 
         // Associate a CUDA event to this computation, if performed asynchronously;
-        streamManager.assignEvent(vertex);
+        streamManager.assignEventStop(vertex);
 //        System.out.println("-- running " + vertex.getComputation());
 
         return result;
