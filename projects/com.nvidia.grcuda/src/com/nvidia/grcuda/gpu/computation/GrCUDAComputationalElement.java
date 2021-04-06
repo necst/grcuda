@@ -93,6 +93,23 @@ public abstract class GrCUDAComputationalElement {
         return false;
     }
 
+
+    /**
+     * Set in Profilable Element the elapsed time between start event of the computation and the end event
+     * 
+     * @param deviceId
+     * @param time
+     * 
+     */
+    public void setExecutionTime(int deviceId, float time){ }
+
+    /**
+     * Get execution time of the computation on the device deviceId,
+     * if computation has not yet been executed on the device then it returns null.
+     * @param deviceId
+     * @return execution time
+     */
+    public float getExecutionTimeOnDevice(int deviceId){ return 0;}
     /**
      * Return if this computation could lead to dependencies with future computations.
      * If not, this usually means that all of its arguments have already been superseded by other computations,

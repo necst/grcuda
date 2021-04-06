@@ -41,7 +41,7 @@ public class GrCUDAStreamManager {
 
 
     private final StreamPolicy streamPolicy;
-    
+    private final boolean timeComputation;    
     
     public GrCUDAStreamManager(CUDARuntime runtime) {
         this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum(), new GrCUDADevicesManager(runtime, runtime.getContext().getNumberOfGPUs()));
@@ -56,7 +56,7 @@ public class GrCUDAStreamManager {
         this.runtime = runtime;
         this.devicesManager = devicesManager;
         this.streamPolicy = new StreamPolicy(retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, devicesManager, runtime);
-
+        this.timeComputation = runtime.getContext().isTimeComputation();
     }
 
 
@@ -101,9 +101,11 @@ public class GrCUDAStreamManager {
     public void assignEventStart(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
 
-        runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
+        
 
-        if (vertex.getComputation().canUseStream()) {
+        if (vertex.getComputation().canUseStream() && this.timeComputation && vertex.getComputation().isProfilable()) {
+            // cudaEventRecord is sensitive to the ctx of the device that is currently set, so we call cudaSetDevice
+            runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
             CUDAEvent event = runtime.cudaEventCreate();
             runtime.cudaEventRecord(event, vertex.getComputation().getStream());
             vertex.getComputation().setEventStart(event);
@@ -226,9 +228,13 @@ public class GrCUDAStreamManager {
         // Destroy the event associated to this computation;
 
         if (computation.getEventStop().isPresent()) {
-            Float time = (float) 0.0;
-            runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
-            runtime.cudaEventElapsedTime(time, computation.getEventStart().get(), computation.getEventStop().get());
+            float timeMilliseconds;
+            if(this.timeComputation && computation.isProfilable()){
+                runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
+                timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());
+                System.out.println("print time elapsed in streamManager : "+timeMilliseconds);
+                computation.setExecutionTime(computation.getStream().getStreamDeviceId(), timeMilliseconds);
+            }
             runtime.cudaEventDestroy(computation.getEventStop().get());
         } else {
             System.out.println("\t* WARNING: missing event to destroy for computation=" + computation);

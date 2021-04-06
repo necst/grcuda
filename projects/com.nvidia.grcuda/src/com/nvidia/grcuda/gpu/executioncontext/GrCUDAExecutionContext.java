@@ -50,6 +50,7 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
         // Add the new computation to the DAG
         ExecutionDAG.DAGVertex vertex = dag.append(computation);
 
+
         // Compute the stream where the computation will be done, if the computation can be performed asynchronously;
         streamManager.assignStream(vertex);
         

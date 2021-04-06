@@ -103,9 +103,9 @@ public class GrCUDADevicesManager {
 
     /**
      * Find the device with the lowest number of Stream on it and returns it
-     * @return 
+     * @return deviceId 
      */
-    public int findCheapestDevice(){
+    public int deviceWithLessActiveStream(){
         int min = devices.get(0).numActiveStream();
         int deviceId = 0;
         for(int i = 0; i<numberOfGPUs; i++){

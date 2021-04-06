@@ -86,6 +86,7 @@ public final class GrCUDAContext {
     private final boolean forceStreamAttach;
     private final boolean inputPrefetch;
     private final int numberOfGPUs;
+    private final boolean timeComputation;
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
     private final ConcurrentHashMap<Class<?>, CallTarget> uncachedMapCallTargets = new ConcurrentHashMap<>();
 
@@ -100,6 +101,9 @@ public final class GrCUDAContext {
 
         // Retrieve the number of GPUs to be used;
         numberOfGPUs = Integer.parseInt(env.getOptions().get(GrCUDAOptions.NumberOfGPUs));
+
+        // Retrieve if we should time the computation;
+        timeComputation = env.getOptions().get(GrCUDAOptions.TimeComputation);
 
         // Retrieve the stream retrieval policy;
         retrieveNewStreamPolicy = parseRetrieveStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveNewStreamPolicy));
@@ -218,6 +222,10 @@ public final class GrCUDAContext {
         return forceStreamAttach;
     }
 
+    public boolean isTimeComputation(){
+        return this.timeComputation;
+    }
+
     /**
      * Compute the maximum number of concurrent threads that can be spawned by GrCUDA.
      * This value is usually smaller or equal than the number of logical CPU threads available on the machine.
@@ -277,6 +285,8 @@ public final class GrCUDAContext {
     @TruffleBoundary
     private static RetrieveParentStreamPolicyEnum parseParentStreamPolicy(String policyString) {
         switch(policyString) {
+            case "lesstime":
+                return RetrieveParentStreamPolicyEnum.LESSTIME;
             case "disjoint":
                 return RetrieveParentStreamPolicyEnum.DISJOINT;
             case "default":

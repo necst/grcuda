@@ -338,8 +338,9 @@ The automatic DAG scheduling of GrCUDA supports different settings that can be u
 `with_const` considers read-only parameter, while `default` assumes that all arguments can be modified in a computation
 * `RetrieveNewStreamPolicy`: choose how streams for new GrCUDA computations are created;
  `fifo` (the default) reuses free streams whenever possible, while `always_new` creates new streams every time a computation should use a stream different from its parent
-* `NumberOfGPUs`: choose how many GPUs to use during computation;
-* `RetrieveParentStreamPolicy`: choose how streams for new GrCUDA computations are obtained from parent computations;
+* `--grcuda.TimeComputation`: Enable time computation to get execution time of the kernels, default is true;
+* `--grcuda.NumberOfGPUs`: choose how many GPUs to use during computation, default use 1 GPU;
+* `--grcuda.RetrieveParentStreamPolicy`: choose how streams for new GrCUDA computations are obtained from parent computations;
 `default` simply reuse the stream of one of the parent computations, while `disjoint` allows parallel scheduling of multiple child computations as long as their arguments are disjoint
 * `--grcuda.InputPrefetch`: if present, prefetch the data on GPUs with architecture starting from Pascal. In most cases, it improves performance.
 * `--grcuda.ForceStreamAttach`: if present, force association between arrays and CUDA streams. True by default on architectures older than Pascal, to allow concurrent CPU/GPU computation. On architectures starting from Pascal, it can improve performance.

@@ -44,6 +44,16 @@ public class KernelExecution extends GrCUDAComputationalElement {
     }
 
     @Override
+    public void setExecutionTime(int deviceId, float time) {
+        this.configuredKernel.addExecutionTime(deviceId, time);
+    }
+
+    @Override
+    public float getExecutionTimeOnDevice(int deviceId){
+        return this.configuredKernel.getExecutionTimeOnDevice(deviceId);
+    }
+
+    @Override
     public Object execute() {
         grCUDAExecutionContext.getCudaRuntime().cuLaunchKernel(kernel, config, args, this.getStream());
         return NoneValue.get();
