@@ -69,8 +69,6 @@ public class GrCUDAStreamManager {
     public void assignStream(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
         if (vertex.getComputation().canUseStream()) {
-            //System.out.println(vertex.getComputation().toString());
-            System.out.println("is profilable: " + vertex.getComputation().isProfilable());
             CUDAStream stream = this.streamPolicy.getStream(vertex);
             
             if(!streams.contains(stream)){
@@ -232,7 +230,7 @@ public class GrCUDAStreamManager {
             if(this.timeComputation && computation.isProfilable()){
                 runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
                 timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());
-                System.out.println("print time elapsed in streamManager : "+timeMilliseconds);
+                //System.out.println("print time elapsed in streamManager : "+timeMilliseconds);
                 computation.setExecutionTime(computation.getStream().getStreamDeviceId(), timeMilliseconds);
             }
             runtime.cudaEventDestroy(computation.getEventStop().get());

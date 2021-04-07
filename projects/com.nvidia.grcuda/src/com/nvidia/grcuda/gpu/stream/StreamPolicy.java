@@ -105,7 +105,7 @@ public class StreamPolicy {
 
         @Override
         public CUDAStream retrieve(int deviceId) {
-            System.out.println("always new retrive called");
+            //System.out.println("always new retrive called");
             return createStream(deviceId);
         }
 
@@ -133,11 +133,11 @@ public class StreamPolicy {
         CUDAStream retrieve(int deviceId) {
             if (!devicesManager.availableStreams(deviceId)) {
                 // Create a new stream if none is available;
-                System.out.println("line 137 "+deviceId);
+                //System.out.println("line 137 "+deviceId);
                 return createStream(deviceId);
             } else {
                 // Get the first stream available, and remove it from the list of free streams;
-                System.out.println("line 141 "+deviceId);
+                //System.out.println("line 141 "+deviceId);
                 CUDAStream stream = devicesManager.retriveStream(deviceId);
                 return stream;
             }
@@ -162,11 +162,11 @@ public class StreamPolicy {
             int cheapestDevice = devicesManager.deviceWithLessActiveStream();
             if (!devicesManager.availableStreams(deviceId)) {
                 // Create a new stream if none is available;
-                System.out.println("line 137 "+deviceId);
+                //System.out.println("line 137 "+deviceId);
                 return createStream(deviceId);
             } else {
                 // Get the first stream available, and remove it from the list of free streams;
-                System.out.println("line 141 "+deviceId);
+                //System.out.println("line 141 "+deviceId);
                 CUDAStream stream = devicesManager.retriveStream(deviceId);
                 return stream;
             }
@@ -216,13 +216,13 @@ public class StreamPolicy {
                 // The computation cannot be considered again;
                 reusedComputations.add(availableParents.get(0));
                 // Return the stream associated to this computation;
-                System.out.println("line 190 " + availableParents.get(0).getComputation().getStream().getStreamDeviceId());
+                //System.out.println("line 190 " + availableParents.get(0).getComputation().getStream().getStreamDeviceId());
                 return availableParents.get(0).getComputation().getStream();
 
             } else {
                 // If no parent stream can be reused, provide a new stream to this computation in the same device of the parent
                 //   (or possibly a free one, depending on the policy);
-                System.out.println("line 196 " + vertex.getComputation().getStream().getStreamDeviceId());
+                //System.out.println("line 196 " + vertex.getComputation().getStream().getStreamDeviceId());
                 return retrieveNewStream.retrieve(vertex.getComputation().getStream().getStreamDeviceId());
             }
         }
@@ -256,7 +256,7 @@ public class StreamPolicy {
                 // The computation cannot be considered again;
                 reusedComputations.add(availableParentsStream.get(0));
                 // Return the stream associated to this computation;
-                System.out.println("line 183 " + availableParentsStream.get(0).getComputation().getStream().getStreamDeviceId());
+                //System.out.println("line 183 " + availableParentsStream.get(0).getComputation().getStream().getStreamDeviceId());
                 return availableParentsStream.get(0).getComputation().getStream();
 
             }else{
