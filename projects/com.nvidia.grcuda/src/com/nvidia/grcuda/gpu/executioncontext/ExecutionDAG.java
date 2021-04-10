@@ -206,7 +206,7 @@ public class ExecutionDAG implements TruffleObject {
             return computation;
         }
 
-        int getId() {
+        public int getId() {
             return id;
         }
 

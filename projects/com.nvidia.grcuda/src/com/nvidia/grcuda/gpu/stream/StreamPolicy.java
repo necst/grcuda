@@ -20,6 +20,8 @@ public class StreamPolicy {
     private final GrCUDADevicesManager devicesManager;
     private final CUDARuntime runtime;
     private int streamCount;
+    private List<String> taskGraph;
+
 
     public StreamPolicy(RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum, RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager, CUDARuntime runtime){
         this.devicesManager = devicesManager;
@@ -51,6 +53,7 @@ public class StreamPolicy {
                 this.retrieveParentStream = new DefaultRetrieveParentStream();
         }
         this.streamCount = 0;
+        this.taskGraph = new ArrayList<>();
     }
     /**
      * Create a new {@link CUDAStream} associated to the deviceId and add it to this manager, then return it;
@@ -69,9 +72,9 @@ public class StreamPolicy {
     public void updateStreamCount(){
         this.streamCount++;
     }
-    
 
-    
+
+
     public CUDAStream getStream(ExecutionDAG.DAGVertex vertex){
         CUDAStream stream;
 
@@ -83,6 +86,13 @@ public class StreamPolicy {
             // Else, compute the streams used by the parent computations.
             stream = this.retrieveParentStream.retrieve(vertex);
         }
+        StringBuilder children = new StringBuilder();
+        for(ExecutionDAG.DAGVertex child : vertex.getChildVertices()){
+            children.append(".");
+            children.append(child.getId());
+        }
+        System.out.println(stream.getStreamDeviceId() + "." + vertex.getId() + children.toString());
+
         return stream;
     }
 
