@@ -86,12 +86,12 @@ public class StreamPolicy {
             // Else, compute the streams used by the parent computations.
             stream = this.retrieveParentStream.retrieve(vertex);
         }
-        StringBuilder children = new StringBuilder();
-        for(ExecutionDAG.DAGVertex child : vertex.getParentVertices()){
-            children.append(".");
-            children.append(child.getId());
-        }
-        System.out.println(stream.getStreamDeviceId() + "." + vertex.getId() + "." + children.toString());
+        // StringBuilder children = new StringBuilder();
+        // for(ExecutionDAG.DAGVertex child : vertex.getParentVertices()){
+        //     children.append(".");
+        //     children.append(child.getId());
+        // }
+        // System.out.println(stream.getStreamDeviceId() + "." + vertex.getId() + "." + children.toString());
 
         return stream;
     }
