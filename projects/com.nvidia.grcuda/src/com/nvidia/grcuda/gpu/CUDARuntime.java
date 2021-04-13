@@ -425,7 +425,7 @@ public final class CUDARuntime {
 
             // Book-keeping of the stream attachment within the array;
             array.setStreamMapping(stream);
-
+            array.setArrayLocation(stream.getStreamDeviceId());
             Object result = INTEROP.execute(callable, stream.getRawPointer(), array.getPointer(), array.getSizeBytes(), flag);
             checkCUDAReturnCode(result, "cudaStreamAttachMemAsync");
         } catch (InteropException e) {

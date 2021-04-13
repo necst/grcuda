@@ -1,5 +1,6 @@
 package com.nvidia.grcuda.gpu.stream;
 
+import com.nvidia.grcuda.array.AbstractArray;
 import com.nvidia.grcuda.gpu.CUDARuntime;
 import com.nvidia.grcuda.gpu.GrCUDADevicesManager;
 import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
@@ -20,8 +21,7 @@ public class StreamPolicy {
     private final GrCUDADevicesManager devicesManager;
     private final CUDARuntime runtime;
     private int streamCount;
-    private List<String> taskGraph;
-
+    private final findCheapestDevice finder;
 
     public StreamPolicy(RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum, RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager, CUDARuntime runtime){
         this.devicesManager = devicesManager;
@@ -53,8 +53,37 @@ public class StreamPolicy {
                 this.retrieveParentStream = new DefaultRetrieveParentStream();
         }
         this.streamCount = 0;
-        this.taskGraph = new ArrayList<>();
+        finder = new findCheapestDevice();
     }
+
+    private class findCheapestDevice{
+        public int getCheapest(ExecutionDAG.DAGVertex vertex){
+            long[] argumentSize = new long[]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
+            for(AbstractArray a : arguments){
+                argumentSize[a.getArrayLocation()] = argumentSize[a.getArrayLocation()] + a.getArraySize();
+            }
+
+            int maxDevice = 0;
+            long max = 0;
+
+            for(int i = 0; i<10;i++){
+                if(argumentSize[i]>max){
+                    max = argumentSize[i];
+                    maxDevice = i;
+                }
+            }
+
+            if(maxDevice == 9){
+                return devicesManager.deviceWithLessActiveStream();
+            }else{
+                return maxDevice;
+            }
+
+
+        }
+    }
+
     /**
      * Create a new {@link CUDAStream} associated to the deviceId and add it to this manager, then return it;
      * @param deviceId
@@ -80,7 +109,9 @@ public class StreamPolicy {
 
         if (vertex.isStart()) {
             // Else, if the computation doesn't have parents, provide a new stream to it;
-            int cheapestDevice = devicesManager.deviceWithLessActiveStream();
+            // int cheapestDevice = devicesManager.deviceWithLessActiveStream();
+            int cheapestDevice = finder.getCheapest(vertex);
+
             stream = retrieveNewStream.retrieve(cheapestDevice);
         } else {
             // Else, compute the streams used by the parent computations.
@@ -92,7 +123,6 @@ public class StreamPolicy {
         //     children.append(child.getId());
         // }
         // System.out.println(stream.getStreamDeviceId() + "." + vertex.getId() + "." + children.toString());
-
         return stream;
     }
 
@@ -120,6 +150,14 @@ public class StreamPolicy {
         }
 
     }
+
+    private class MoveLessRetriveStream extends RetrieveNewStream{
+        @Override
+        public CUDAStream retrieve(int deviceId) {
+            return createStream(deviceId);
+        }
+    }
+
 
     /**
      * Keep a queue of free (currently not utilized) streams for each device, and retrieve the oldest one added to the queue with respect to the device;
@@ -153,6 +191,8 @@ public class StreamPolicy {
             }
         }
     }
+
+
 
 
     private class LessBusyRetriveStream extends RetrieveNewStream{
@@ -254,41 +294,67 @@ public class StreamPolicy {
         }
         @Override
         public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
-            // Keep only parent vertices for which we haven't reused the stream yet;
-            List<ExecutionDAG.DAGVertex> availableParentsStream = vertex.getParentVertices().stream()
-                    .filter(v -> !reusedComputations.contains(v))
-                    .collect(Collectors.toList());
+            // // Keep only parent vertices for which we haven't reused the stream yet;
+            // List<ExecutionDAG.DAGVertex> availableParentsStream = vertex.getParentVertices().stream()
+            //         .filter(v -> !reusedComputations.contains(v))
+            //         .collect(Collectors.toList());
 
             
 
-            // If there is at least one stream that can be re-used, take it;
-            if (!availableParentsStream.isEmpty()) {
-                // The computation cannot be considered again;
-                reusedComputations.add(availableParentsStream.get(0));
-                // Return the stream associated to this computation;
-                //System.out.println("line 183 " + availableParentsStream.get(0).getComputation().getStream().getStreamDeviceId());
-                return availableParentsStream.get(0).getComputation().getStream();
+            // // If there is at least one stream that can be re-used, take it;
+            // if (!availableParentsStream.isEmpty()) {
+            //     // The computation cannot be considered again;
+            //     reusedComputations.add(availableParentsStream.get(0));
+            //     // Return the stream associated to this computation;
+            //     //System.out.println("line 183 " + availableParentsStream.get(0).getComputation().getStream().getStreamDeviceId());
+            //     return availableParentsStream.get(0).getComputation().getStream();
 
-            }else{
-                List<Integer> parentDevice = new ArrayList<>();
-                for(GrCUDAComputationalElement parent : vertex.getParentComputations()){
-                    parentDevice.add(parent.getStream().getStreamDeviceId());
-                }
-                List<Float> executionTimeOnParentDevice = new ArrayList<>();
-                float min = vertex.getComputation().getExecutionTimeOnDevice(parentDevice.get(0));
-                int targetDevice = 0;
+            // }else{
+            //     List<Integer> parentDevice = new ArrayList<>();
+            //     for(GrCUDAComputationalElement parent : vertex.getParentComputations()){
+            //         parentDevice.add(parent.getStream().getStreamDeviceId());
+            //     }
+            //     List<Float> executionTimeOnParentDevice = new ArrayList<>();
+            //     float min = vertex.getComputation().getExecutionTimeOnDevice(parentDevice.get(0));
+            //     int targetDevice = 0;
                 
-                for(int parentDeviceId : parentDevice){
-                    float time = vertex.getComputation().getExecutionTimeOnDevice(parentDeviceId);
-                    if(time<= min){
-                        targetDevice = parentDeviceId;
-                    }
-                    executionTimeOnParentDevice.add(time);
+            //     for(int parentDeviceId : parentDevice){
+            //         float time = vertex.getComputation().getExecutionTimeOnDevice(parentDeviceId);
+            //         if(time<= min){
+            //             targetDevice = parentDeviceId;
+            //         }
+            //         executionTimeOnParentDevice.add(time);
                     
-                }
-                return retrieveNewStream.retrieve(targetDevice);
+            //     }
+            //     return retrieveNewStream.retrieve(targetDevice);
                 
+            // }
+            
+            long[] argumentSize = new long[]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
+            for(AbstractArray a : arguments){
+                argumentSize[a.getArrayLocation()] = argumentSize[a.getArrayLocation()] + a.getArraySize();
             }
+
+            int maxDevice = 0;
+            long max = 0;
+
+            for(int i = 0; i<10;i++){
+                if(argumentSize[i]>max){
+                    max = argumentSize[i];
+                    maxDevice = i;
+                }
+            }
+
+            if(maxDevice == 9){
+                return retrieveNewStream.retrieve(devicesManager.deviceWithLessActiveStream());
+            }else{
+                return retrieveNewStream.retrieve(maxDevice);
+            }
+    
+    
+            
+
         }
     }
 

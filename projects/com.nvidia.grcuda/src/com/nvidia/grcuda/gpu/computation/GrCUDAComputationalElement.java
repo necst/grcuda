@@ -13,6 +13,7 @@ import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 /**
  * Basic class that represents GrCUDA computations,
@@ -231,6 +232,26 @@ public abstract class GrCUDAComputationalElement {
             }
         }
     }
+
+    public List<AbstractArray> getArgumentArray(){
+        List<AbstractArray> arrayLocations = new ArrayList<>();
+        for (ComputationArgumentWithValue o : this.argumentList) {
+            if (o.getArgumentValue() instanceof AbstractArray) {
+                // int location = ((AbstractArray) o.getArgumentValue()).getArrayLocation();
+                // long size = ((AbstractArray) o.getArgumentValue()).getArraySize();
+                // if(location == 9){
+                //     System.out.println("array in CPU of size: " + size);
+                // }else{
+                //     System.out.println("array in GPU:"+location+"of size "+size);
+                // }
+                arrayLocations.add(((AbstractArray) o.getArgumentValue()));
+
+            }
+        }
+        return arrayLocations;
+    }
+
+
 
     /**
      * Computes if the "other" GrCUDAComputationalElement has dependencies w.r.t. this kernel,

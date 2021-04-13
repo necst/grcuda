@@ -39,7 +39,6 @@ public abstract class AbstractArray implements TruffleObject {
 
     protected static final MemberSet PUBLIC_MEMBERS = new MemberSet(COPY_FROM, COPY_TO, FREE, IS_MEMORY_FREED);
     protected static final MemberSet MEMBERS = new MemberSet(POINTER, COPY_FROM, COPY_TO, FREE, IS_MEMORY_FREED);
-    protected static final CoherenceState coherenceState = new CoherenceState();
     /**
      * Reference to the underlying CUDA runtime that manages the array memory.
      */
@@ -71,6 +70,8 @@ public abstract class AbstractArray implements TruffleObject {
 
     /** Flag set when underlying off-heap memory has been freed. */
     protected boolean arrayFreed = false;
+
+    private int arrayLocation = 9;
 
     public Type getElementType() {
         return elementType;
@@ -109,6 +110,14 @@ public abstract class AbstractArray implements TruffleObject {
 
     public void setStreamMapping(CUDAStream streamMapping) {
         this.streamMapping = streamMapping;
+    }
+    
+    public int getArrayLocation(){
+        return this.arrayLocation;
+    }
+
+    public void setArrayLocation(int deviceId){
+        this.arrayLocation = deviceId;
     }
 
     public boolean isLastComputationArrayAccess() { return isLastComputationArrayAccess; }
