@@ -21,7 +21,8 @@ public class StreamPolicy {
     private final GrCUDADevicesManager devicesManager;
     private final CUDARuntime runtime;
     private int streamCount;
-    private final findCheapestDevice finder;
+    private final ChooseDeviceHeuristic finder;
+    private final StartingVertexPolicy startingVertexPolicy;
 
     public StreamPolicy(RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum, RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager, CUDARuntime runtime){
         this.devicesManager = devicesManager;
@@ -33,8 +34,6 @@ public class StreamPolicy {
             case ALWAYS_NEW:
                 this.retrieveNewStream = new AlwaysNewRetrieveStream();
                 break;
-            // case ON_CHEAPEST_DEVICE:
-            //     this.retrieveNewStream = new OnCheapestDeviceRetriveStream();
             default:
                 this.retrieveNewStream = new FifoRetrieveStream();
         }
@@ -53,36 +52,11 @@ public class StreamPolicy {
                 this.retrieveParentStream = new DefaultRetrieveParentStream();
         }
         this.streamCount = 0;
-        finder = new findCheapestDevice();
+        finder = new ChooseDeviceHeuristic();
+        startingVertexPolicy = new StartingVertexPolicy();
     }
 
-    private class findCheapestDevice{
-        public int getCheapest(ExecutionDAG.DAGVertex vertex){
-            long[] argumentSize = new long[]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
-            for(AbstractArray a : arguments){
-                argumentSize[a.getArrayLocation()] = argumentSize[a.getArrayLocation()] + a.getArraySize();
-            }
 
-            int maxDevice = 0;
-            long max = 0;
-
-            for(int i = 0; i<10;i++){
-                if(argumentSize[i]>max){
-                    max = argumentSize[i];
-                    maxDevice = i;
-                }
-            }
-
-            if(maxDevice == 9){
-                return devicesManager.deviceWithLessActiveStream();
-            }else{
-                return maxDevice;
-            }
-
-
-        }
-    }
 
     /**
      * Create a new {@link CUDAStream} associated to the deviceId and add it to this manager, then return it;
@@ -104,26 +78,36 @@ public class StreamPolicy {
 
 
 
+    /**
+     * retrieve a stream or creates a new one based on the policy that were selected and returns it.
+     * @param vertex
+     * @return CUDAStream
+     */
     public CUDAStream getStream(ExecutionDAG.DAGVertex vertex){
         CUDAStream stream;
 
         if (vertex.isStart()) {
             // Else, if the computation doesn't have parents, provide a new stream to it;
-            // int cheapestDevice = devicesManager.deviceWithLessActiveStream();
-            int cheapestDevice = finder.getCheapest(vertex);
-
-            stream = retrieveNewStream.retrieve(cheapestDevice);
+            stream = startingVertexPolicy.getStream(vertex);
         } else {
             // Else, compute the streams used by the parent computations.
             stream = this.retrieveParentStream.retrieve(vertex);
         }
-        // StringBuilder children = new StringBuilder();
-        // for(ExecutionDAG.DAGVertex child : vertex.getParentVertices()){
-        //     children.append(".");
-        //     children.append(child.getId());
-        // }
-        // System.out.println(stream.getStreamDeviceId() + "." + vertex.getId() + "." + children.toString());
+
         return stream;
+    }
+
+    /**
+     * Prints partial graph given the vertex
+     * @param vertex
+     */
+    private void printDAG(ExecutionDAG.DAGVertex vertex, CUDAStream stream){
+        StringBuilder children = new StringBuilder();
+        for(ExecutionDAG.DAGVertex child : vertex.getParentVertices()){
+            children.append(".");
+            children.append(child.getId());
+        }
+        System.out.println(stream.getStreamDeviceId() + "." + vertex.getId() + "." + children.toString());
     }
 
     public void cleanup(){
@@ -145,19 +129,10 @@ public class StreamPolicy {
 
         @Override
         public CUDAStream retrieve(int deviceId) {
-            //System.out.println("always new retrive called");
             return createStream(deviceId);
         }
 
     }
-
-    private class MoveLessRetriveStream extends RetrieveNewStream{
-        @Override
-        public CUDAStream retrieve(int deviceId) {
-            return createStream(deviceId);
-        }
-    }
-
 
     /**
      * Keep a queue of free (currently not utilized) streams for each device, and retrieve the oldest one added to the queue with respect to the device;
@@ -192,37 +167,6 @@ public class StreamPolicy {
         }
     }
 
-
-
-
-    private class LessBusyRetriveStream extends RetrieveNewStream{
-
-        @Override
-        void update(CUDAStream stream) {
-            devicesManager.updateStreams(stream);
-        }
-
-        @Override
-        void update(Collection<CUDAStream> streamsCollection) {
-            devicesManager.updateStreams(streamsCollection);
-        }
-
-        @Override
-        CUDAStream retrieve(int deviceId) {
-            int cheapestDevice = devicesManager.deviceWithLessActiveStream();
-            if (!devicesManager.availableStreams(deviceId)) {
-                // Create a new stream if none is available;
-                //System.out.println("line 137 "+deviceId);
-                return createStream(deviceId);
-            } else {
-                // Get the first stream available, and remove it from the list of free streams;
-                //System.out.println("line 141 "+deviceId);
-                CUDAStream stream = devicesManager.retriveStream(deviceId);
-                return stream;
-            }
-        }
-
-    }
 
 
     /**
@@ -266,13 +210,11 @@ public class StreamPolicy {
                 // The computation cannot be considered again;
                 reusedComputations.add(availableParents.get(0));
                 // Return the stream associated to this computation;
-                //System.out.println("line 190 " + availableParents.get(0).getComputation().getStream().getStreamDeviceId());
                 return availableParents.get(0).getComputation().getStream();
 
             } else {
                 // If no parent stream can be reused, provide a new stream to this computation in the same device of the parent
                 //   (or possibly a free one, depending on the policy);
-                //System.out.println("line 196 " + vertex.getComputation().getStream().getStreamDeviceId());
                 return retrieveNewStream.retrieve(vertex.getComputation().getStream().getStreamDeviceId());
             }
         }
@@ -294,67 +236,65 @@ public class StreamPolicy {
         }
         @Override
         public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
-            // // Keep only parent vertices for which we haven't reused the stream yet;
-            // List<ExecutionDAG.DAGVertex> availableParentsStream = vertex.getParentVertices().stream()
-            //         .filter(v -> !reusedComputations.contains(v))
-            //         .collect(Collectors.toList());
+             // Keep only parent vertices for which we haven't reused the stream yet;
+             List<ExecutionDAG.DAGVertex> availableParentsStream = vertex.getParentVertices().stream()
+                     .filter(v -> !reusedComputations.contains(v))
+                     .collect(Collectors.toList());
 
+             // If there is at least one stream that can be re-used, take it;
+             if (!availableParentsStream.isEmpty()) {
+                 // The computation cannot be considered again;
+                 reusedComputations.add(availableParentsStream.get(0));
+                 // Return the stream associated to this computation;
+                 return availableParentsStream.get(0).getComputation().getStream();
+
+             }else{
+                return retrieveNewStream.retrieve(finder.deviceMoveLessArgument(vertex));                
+             }
             
+        }
 
-            // // If there is at least one stream that can be re-used, take it;
-            // if (!availableParentsStream.isEmpty()) {
-            //     // The computation cannot be considered again;
-            //     reusedComputations.add(availableParentsStream.get(0));
-            //     // Return the stream associated to this computation;
-            //     //System.out.println("line 183 " + availableParentsStream.get(0).getComputation().getStream().getStreamDeviceId());
-            //     return availableParentsStream.get(0).getComputation().getStream();
 
-            // }else{
-            //     List<Integer> parentDevice = new ArrayList<>();
-            //     for(GrCUDAComputationalElement parent : vertex.getParentComputations()){
-            //         parentDevice.add(parent.getStream().getStreamDeviceId());
-            //     }
-            //     List<Float> executionTimeOnParentDevice = new ArrayList<>();
-            //     float min = vertex.getComputation().getExecutionTimeOnDevice(parentDevice.get(0));
-            //     int targetDevice = 0;
-                
-            //     for(int parentDeviceId : parentDevice){
-            //         float time = vertex.getComputation().getExecutionTimeOnDevice(parentDeviceId);
-            //         if(time<= min){
-            //             targetDevice = parentDeviceId;
-            //         }
-            //         executionTimeOnParentDevice.add(time);
-                    
-            //     }
-            //     return retrieveNewStream.retrieve(targetDevice);
-                
-            // }
-            
+    }
+
+
+    private class StartingVertexPolicy{
+        /**
+         * getStream method for starting vertex with move less argument heuristic
+         * 
+         * @param vertex
+         * @return CUDAStream
+         */
+        public CUDAStream getStream(ExecutionDAG.DAGVertex vertex){
+            int cheapestDevice = finder.deviceMoveLessArgument(vertex);
+            return retrieveNewStream.retrieve(cheapestDevice);
+        }
+    }
+
+    /**
+     * Class containing diffent heuristics to choose the best device where to create a stream for the upcoming computation
+     */
+    private class ChooseDeviceHeuristic{
+        /**
+         * 
+         * @param vertex
+         * @return int
+         */
+        public int deviceMoveLessArgument(ExecutionDAG.DAGVertex vertex){
             long[] argumentSize = new long[]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
             List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
             for(AbstractArray a : arguments){
                 argumentSize[a.getArrayLocation()] = argumentSize[a.getArrayLocation()] + a.getArraySize();
             }
-
-            int maxDevice = 0;
-            long max = 0;
-
-            for(int i = 0; i<10;i++){
-                if(argumentSize[i]>max){
-                    max = argumentSize[i];
-                    maxDevice = i;
-                }
+            int maxAt = 0;
+            for (int i = 0; i < argumentSize.length; i++) {
+                maxAt = argumentSize[i] > argumentSize[maxAt] ? i : maxAt;
             }
-
-            if(maxDevice == 9){
-                return retrieveNewStream.retrieve(devicesManager.deviceWithLessActiveStream());
+            if(maxAt == 9){
+                return devicesManager.deviceWithLessActiveStream();
             }else{
-                return retrieveNewStream.retrieve(maxDevice);
+                return maxAt;
             }
-    
-    
-            
-
         }
     }
 

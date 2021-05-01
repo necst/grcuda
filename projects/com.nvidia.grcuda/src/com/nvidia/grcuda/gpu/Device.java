@@ -50,6 +50,8 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
+import org.antlr.v4.runtime.tree.pattern.RuleTagToken;
+
 @ExportLibrary(InteropLibrary.class)
 public class Device implements TruffleObject {
 
@@ -77,9 +79,13 @@ public class Device implements TruffleObject {
      */
     private int numOfStreams;
     public Device(int deviceId, CUDARuntime runtime) {
+        this(deviceId, runtime, new GPUDeviceProperties(deviceId, runtime));
+    }
+
+    public Device(int deviceId, CUDARuntime runtime, GPUDeviceProperties properties){
         this.deviceId = deviceId;
         this.runtime = runtime;
-        this.properties = new GPUDeviceProperties(deviceId, runtime);
+        this.properties = properties;
         this.numOfStreams = 0;
     }
 

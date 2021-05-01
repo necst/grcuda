@@ -33,15 +33,10 @@ public class GrCUDAStreamManager {
      * Track the active computations each stream has, excluding the default stream;
      */
     protected final Map<CUDAStream, Set<ExecutionDAG.DAGVertex>> activeComputationsPerStream = new HashMap<>();
-    /**
-     * Device manager in order to track the device which is currently used
-     */
-    protected final GrCUDADevicesManager devicesManager;
 
 
 
     private final StreamPolicy streamPolicy;
-    private final boolean timeComputation;    
     
     public GrCUDAStreamManager(CUDARuntime runtime) {
         this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum(), new GrCUDADevicesManager(runtime, runtime.getContext().getNumberOfGPUs()));
@@ -53,10 +48,12 @@ public class GrCUDAStreamManager {
             CUDARuntime runtime,
             RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
             RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager) {
+        this(new StreamPolicy(retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, devicesManager, runtime), runtime);
+    }
+
+    public GrCUDAStreamManager(StreamPolicy streamPolicy, CUDARuntime runtime){
+        this.streamPolicy = streamPolicy;
         this.runtime = runtime;
-        this.devicesManager = devicesManager;
-        this.streamPolicy = new StreamPolicy(retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, devicesManager, runtime);
-        this.timeComputation = runtime.getContext().isTimeComputation();
     }
 
 
@@ -98,10 +95,7 @@ public class GrCUDAStreamManager {
      */
     public void assignEventStart(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
-
-        
-
-        if (vertex.getComputation().canUseStream() && this.timeComputation && vertex.getComputation().isProfilable()) {
+        if (vertex.getComputation().canUseStream() && runtime.getContext().isTimeComputation() && vertex.getComputation().isProfilable()) {
             // cudaEventRecord is sensitive to the ctx of the device that is currently set, so we call cudaSetDevice
             runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
             CUDAEvent event = runtime.cudaEventCreate();
@@ -227,7 +221,8 @@ public class GrCUDAStreamManager {
 
         if (computation.getEventStop().isPresent()) {
             float timeMilliseconds;
-            if(this.timeComputation && computation.isProfilable()){
+            boolean timeComputation = runtime.getContext().isTimeComputation();
+            if(timeComputation && computation.isProfilable()){
                 runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
                 timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());
                 //System.out.println("print time elapsed in streamManager : "+timeMilliseconds);

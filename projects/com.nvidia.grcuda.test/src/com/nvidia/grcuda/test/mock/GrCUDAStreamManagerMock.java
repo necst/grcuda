@@ -3,11 +3,13 @@ package com.nvidia.grcuda.test.mock;
 import com.nvidia.grcuda.CUDAEvent;
 import com.nvidia.grcuda.gpu.CUDARuntime;
 import com.nvidia.grcuda.gpu.executioncontext.ExecutionDAG;
+import com.nvidia.grcuda.gpu.executioncontext.ExecutionDAG.DAGVertex;
 import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.gpu.stream.CUDAStream;
 import com.nvidia.grcuda.gpu.stream.GrCUDAStreamManager;
 import com.nvidia.grcuda.gpu.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.gpu.stream.RetrieveParentStreamPolicyEnum;
+
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,17 +24,21 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
                             RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
                             RetrieveParentStreamPolicyEnum parentStreamPolicyEnum
                             ) {
-        super(runtime, retrieveStreamPolicy, parentStreamPolicyEnum,null);
+        super(new StreamPolicyMock(retrieveStreamPolicy, parentStreamPolicyEnum, new GrCUDADeviceManagerMock(2),runtime),runtime);
+
     }
 
     GrCUDAStreamManagerMock(CUDARuntime runtime,
                             RetrieveNewStreamPolicyEnum retrieveStreamPolicy) {
-        super(runtime, retrieveStreamPolicy, RetrieveParentStreamPolicyEnum.DEFAULT, null);
+        super(new StreamPolicyMock(retrieveStreamPolicy, RetrieveParentStreamPolicyEnum.DEFAULT, new GrCUDADeviceManagerMock(2),runtime),runtime);
+
     }
 
     GrCUDAStreamManagerMock(CUDARuntime runtime) {
-        super(runtime, RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveParentStreamPolicyEnum.DEFAULT, null);
+        super(new StreamPolicyMock(RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveParentStreamPolicyEnum.DEFAULT, new GrCUDADeviceManagerMock(2),runtime),runtime);
     }
+
+
 
     int numStreams = 0;
 
@@ -42,6 +48,9 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
         streams.add(newStream);
         return newStream;
     }
+
+    @Override
+    public void assignEventStart(DAGVertex vertex) { }
 
     @Override
     public void assignEventStop(ExecutionDAG.DAGVertex vertex) { }

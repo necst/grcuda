@@ -9,38 +9,42 @@ import com.nvidia.grcuda.gpu.stream.CUDAStream;
 public class GrCUDADevicesManager {
 
     private final CUDARuntime runtime;
-    private final ArrayList<Device> devices = new ArrayList<>();
+    private final DeviceList deviceList;
     private final Integer numberOfGPUs;
     private Integer currentDeviceId;
 
+
+    /**
+     * Init the GrCUDADevicesManager class
+     * @param runtime
+     * @param device_number
+     */
     public GrCUDADevicesManager(CUDARuntime runtime, int device_number){
+        this(runtime, device_number,runtime.cudaGetDevice(), new DeviceList(device_number,runtime));
+    }
+
+
+    public GrCUDADevicesManager(CUDARuntime runtime, int device_number, int currentDeviceId, DeviceList deviceList){
         this.runtime = runtime;
-        
+        this.numberOfGPUs = device_number;
+        this.currentDeviceId = currentDeviceId;
+        this.deviceList = deviceList;
+    }
+
+    /**
+     * check the number of GPUs in the system and check that device_number < cudaGetDeviceCount(). If the device_number is greater than the number of
+     * devices in the system, the maximum number of devices is set.
+     * @param device_number
+     * @return
+     */
+    private int initNumOfDevices(int device_number){
         int deviceNumberInSystem = runtime.cudaGetDeviceCount();
         if(device_number < deviceNumberInSystem){
-            this.numberOfGPUs = device_number;
+            return device_number;
         }else{
-            this.numberOfGPUs = deviceNumberInSystem;
+            return deviceNumberInSystem;
         }
-
-        System.out.println("number of GPUs in GrCUDADeviceManager "+this.numberOfGPUs.toString());
-
-        this.currentDeviceId = runtime.cudaGetDevice();
-        initDevices();
-
     }
-
-
-
-    private void initDevices(){
-        for(int i = 0; i<numberOfGPUs;i++) {
-            //set the device in order to determine the deviceId
-            runtime.cudaSetDevice(i);
-            devices.add(new Device(i, runtime));
-        }
-        runtime.cudaSetDevice(0);
-    }
-
 
     /**
      * Check if there are available streams on the selected device
@@ -49,7 +53,7 @@ public class GrCUDADevicesManager {
      * @return boolean
      */
     public boolean availableStreams(int deviceId){
-        if(devices.get(deviceId).numFreeStreams()!=0){
+        if(deviceList.getDevice(deviceId).numFreeStreams()!=0){
             return true;
         }else{
             return false;
@@ -63,7 +67,7 @@ public class GrCUDADevicesManager {
      */
     public boolean availableStreams(){
         int deviceId = runtime.cudaGetDevice();
-        if(devices.get(deviceId).numFreeStreams()!=0){
+        if(deviceList.getDevice(deviceId).numFreeStreams()!=0){
             return true;
         }else{
             return false;
@@ -76,7 +80,7 @@ public class GrCUDADevicesManager {
      * @param stream
      */
     public void updateStreams(CUDAStream stream){
-        Device device = devices.get(stream.getStreamDeviceId());
+        Device device = deviceList.getDevice(stream.getStreamDeviceId());
         device.updateStreams(stream);
     }
 
@@ -96,7 +100,7 @@ public class GrCUDADevicesManager {
      * @return {@link CUDAStream}
      */
     public CUDAStream retriveStream(int deviceId){
-        Device device = devices.get(deviceId);
+        Device device = deviceList.getDevice(deviceId);
         return device.getFreeStream();
 
     }
@@ -106,11 +110,11 @@ public class GrCUDADevicesManager {
      * @return deviceId 
      */
     public int deviceWithLessActiveStream(){
-        int min = devices.get(0).numActiveStream();
+        int min = deviceList.getDevice(0).numActiveStream();
         int deviceId = 0;
         for(int i = 0; i<numberOfGPUs; i++){
-            if(devices.get(i).numActiveStream() < min){
-                min = devices.get(i).numActiveStream();
+            if(deviceList.getDevice(i).numActiveStream() < min){
+                min = deviceList.getDevice(i).numActiveStream();
                 deviceId = i;
             }
         }
@@ -118,7 +122,7 @@ public class GrCUDADevicesManager {
     }
 
     public void addStreamCount(int deviceId){
-        devices.get(deviceId).increaseStreamCount();
+        deviceList.getDevice(deviceId).increaseStreamCount();
     }
 
     public int getCurrentDeviceId(){

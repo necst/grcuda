@@ -28,6 +28,7 @@
  */
 package com.nvidia.grcuda.gpu;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -39,17 +40,20 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 
 @ExportLibrary(InteropLibrary.class)
-public final class DeviceList implements TruffleObject, Iterable<Device> {
-
+public class DeviceList implements TruffleObject, Iterable<Device> {
+    
     private final Device[] devices;
-
     public DeviceList(int numDevices, CUDARuntime runtime) {
         devices = new Device[numDevices];
         for (int deviceOrdinal = 0; deviceOrdinal < numDevices; ++deviceOrdinal) {
             devices[deviceOrdinal] = new Device(deviceOrdinal, runtime);
         }
+
     }
 
+    public DeviceList(int numDevices){
+        devices = null;
+    }
     // Java API
 
     public Iterator<Device> iterator() {
