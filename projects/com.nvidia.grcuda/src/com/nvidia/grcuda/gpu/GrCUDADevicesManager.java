@@ -121,6 +121,14 @@ public class GrCUDADevicesManager {
         return deviceId;
     }
 
+    public int[] devicesActiveStreams(){
+        int[] activeStream = new int[deviceList.size()];
+        for(int i = 0; i<deviceList.size(); i++){
+            activeStream[i] = deviceList.getDevice(i).numActiveStream();
+        }
+        return activeStream;
+    }
+
     public void addStreamCount(int deviceId){
         deviceList.getDevice(deviceId).increaseStreamCount();
     }

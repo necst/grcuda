@@ -56,6 +56,9 @@ public class GrCUDAStreamManager {
         this.runtime = runtime;
     }
 
+    public GrCUDADevicesManager getDevicesManager(){
+        return this.streamPolicy.getDevicesManager();
+    }
 
 
     /**

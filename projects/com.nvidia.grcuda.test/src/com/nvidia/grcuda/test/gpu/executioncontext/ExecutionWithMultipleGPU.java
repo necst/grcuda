@@ -40,7 +40,7 @@ public class ExecutionWithMultipleGPU {
         return ComplexExecutionDAGTest.crossProduct(Arrays.asList(new Object[][]{
                 {"default"},
                 {false},
-                {"multi_disjoint"}
+                {"dijoint"}
         }));
     }
 
@@ -122,7 +122,6 @@ public class ExecutionWithMultipleGPU {
 
             // Perform the computation;
             configuredSquareKernel.execute(x, numElements);
-
             // Verify the output;
             assertEquals(4.0, x.getArrayElement(1).asFloat(), 0.1);
         }
@@ -210,6 +209,7 @@ public class ExecutionWithMultipleGPU {
 
             // Perform the computation;
             configuredK2.execute(y, numElements);
+            System.out.println(configuredK0.getArraySize());
 
 //          // Verify the output;
             assertEquals(4.0, x.getArrayElement(0).asFloat(), 0.1);

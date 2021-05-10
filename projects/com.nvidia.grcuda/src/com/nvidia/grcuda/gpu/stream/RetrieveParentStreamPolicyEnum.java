@@ -3,9 +3,7 @@ package com.nvidia.grcuda.gpu.stream;
 public enum RetrieveParentStreamPolicyEnum {
     DEFAULT("default"),
     DISJOINT("disjoint"),
-    LESSTIME("lesstime"),
-    MULTI_DISJOINT("multi_disjoint"),
-    MULTI_DEFAULT("multi_default");
+    LESSTIME("lesstime");
 
     private final String name;
 

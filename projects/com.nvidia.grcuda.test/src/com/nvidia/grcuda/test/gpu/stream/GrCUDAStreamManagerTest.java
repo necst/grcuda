@@ -418,4 +418,44 @@ public class GrCUDAStreamManagerTest {
             assertEquals(0, dag.getVertices().get(0).getComputation().getStream().getStreamNumber());
         }
     }
+
+    @Test
+    public void moveLessArgumentSimple() throws UnsupportedTypeException{
+        GrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                                                .setRetrieveNewStreamPolicy(RetrieveNewStreamPolicyEnum.FIFO)
+                                                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.LESSTIME)
+                                                .build();
+        
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
+        new KernelExecutionMock(context,
+                Arrays.asList(new ArgumentMock(1),
+                        new ArgumentMock(2),
+                        new ArgumentMock(3))).schedule();
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(3))).schedule();
+
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
+        System.out.println("Test number of active stream per device: "+context.getStreamManager().getDevicesManager().devicesActiveStreams()[0]+" "+context.getStreamManager().getDevicesManager().devicesActiveStreams()[1]);
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(5))).schedule();
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
+        System.out.println("Test number of active stream per device: "+context.getStreamManager().getDevicesManager().devicesActiveStreams()[0]+ " "+context.getStreamManager().getDevicesManager().devicesActiveStreams()[1]);
+
+        ExecutionDAG dag = context.getDag();
+        
+        // Check that kernels have been given the right stream;
+        // assertEquals(2, context.getStreamManager().getNumberOfStreams());
+        // assertEquals(0, dag.getVertices().get(0).getComputation().getStream().getStreamNumber());
+        // assertEquals(1, dag.getVertices().get(1).getComputation().getStream().getStreamNumber());
+        // assertEquals(0, dag.getVertices().get(2).getComputation().getStream().getStreamNumber());
+        // assertEquals(0, dag.getVertices().get(3).getComputation().getStream().getStreamNumber());
+        // assertEquals(3, context.getStreamManager().getNumActiveComputationsOnStream(dag.getVertices().get(0).getComputation().getStream()));
+        // assertEquals(1, context.getStreamManager().getNumActiveComputationsOnStream(dag.getVertices().get(1).getComputation().getStream()));        
+            
+    }
+
 }

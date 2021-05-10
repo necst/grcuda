@@ -69,8 +69,8 @@ public final class GrCUDAContext {
     public static final Integer DEFAULT_NUMBER_GPUs = 1;
     public static final ExecutionPolicyEnum DEFAULT_EXECUTION_POLICY = ExecutionPolicyEnum.DEFAULT;
     public static final DependencyPolicyEnum DEFAULT_DEPENDENCY_POLICY = DependencyPolicyEnum.DEFAULT;
-    public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.MULTI_FIFO;
-    public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.MULTI_DISJOINT;
+    public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.FIFO;
+    public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.LESSTIME;
     public static final boolean DEFAULT_FORCE_STREAM_ATTACH = false;
 
     private static final String ROOT_NAMESPACE = "CU";
@@ -273,10 +273,6 @@ public final class GrCUDAContext {
                 return RetrieveNewStreamPolicyEnum.FIFO;
             case "always-new":
                 return RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
-            case "multi_fifo":
-                return RetrieveNewStreamPolicyEnum.MULTI_FIFO;
-            case "multi_always_new":
-                return RetrieveNewStreamPolicyEnum.MULTI_ALWAYS_NEW;
             default:
                 System.out.println("Warning: unknown new stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY);
                 return GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY;
@@ -291,10 +287,6 @@ public final class GrCUDAContext {
                 return RetrieveParentStreamPolicyEnum.DISJOINT;
             case "default":
                 return RetrieveParentStreamPolicyEnum.DEFAULT;
-            case "multi_disjoint":
-                return RetrieveParentStreamPolicyEnum.MULTI_DISJOINT;
-            case "multi_default":
-                return RetrieveParentStreamPolicyEnum.MULTI_DEFAULT;
             default:
                 System.out.println("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY);
                 return GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY;

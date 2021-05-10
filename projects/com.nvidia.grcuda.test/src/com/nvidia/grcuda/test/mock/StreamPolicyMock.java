@@ -18,10 +18,9 @@ public class StreamPolicyMock extends StreamPolicy{
 
     @Override
     public CUDAStream createStream(int deviceId) {
-        CUDAStream newStream = new CUDAStream(0, this.streamCount++);
+        CUDAStream newStream = new CUDAStream(0, this.streamCount++, deviceId);
 
         devicesManager.addStreamCount(deviceId);
-        assert deviceId == newStream.getStreamDeviceId();
         return newStream;
     }
 
