@@ -67,10 +67,11 @@ public class StreamPolicy {
             for(AbstractArray a : arguments){
                 argumentSize[a.getArrayLocation()] = argumentSize[a.getArrayLocation()] + a.getArraySize();
             }
-
+            //System.out.println("argument for vertex: "+vertex.getId());
             int maxAt = 0;
             for (int i = 0; i < argumentSize.length; i++) {
                 maxAt = argumentSize[i] > argumentSize[maxAt] ? i : maxAt;
+                //System.out.println("argument size : "+argumentSize[i]+" device id: "+ i);
             }
 
             if(maxAt == 9){
@@ -282,22 +283,24 @@ public class StreamPolicy {
         }
         @Override
         public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
-             // Keep only parent vertices for which we haven't reused the stream yet;
-             List<ExecutionDAG.DAGVertex> availableParentsStream = vertex.getParentVertices().stream()
-                     .filter(v -> !reusedComputations.contains(v))
-                     .collect(Collectors.toList());
+            // Keep only parent vertices for which we haven't reused the stream yet;
+            List<ExecutionDAG.DAGVertex> availableParentsStream = vertex.getParentVertices().stream()
+                    .filter(v -> !reusedComputations.contains(v))
+                    .collect(Collectors.toList());
 
-             // If there is at least one stream that can be re-used, take it;
-             if (!availableParentsStream.isEmpty()) {
-                 // The computation cannot be considered again;
-                 reusedComputations.add(availableParentsStream.get(0));
-                 // Return the stream associated to this computation;
-                 return availableParentsStream.get(0).getComputation().getStream();
+            // If there is at least one stream that can be re-used, take it;
+            if (!availableParentsStream.isEmpty()) {
+                // The computation cannot be considered again;
+                reusedComputations.add(availableParentsStream.get(0));
+                // Return the stream associated to this computation;
+                return availableParentsStream.get(0).getComputation().getStream();
 
-             }else{
-                 return retrieveNewStream.retrieve(finder.deviceMoveLessArgument(vertex));
-             }
+            }else{
+                return retrieveNewStream.retrieve(finder.deviceMoveLessArgument(vertex));
+            }
+            //return retrieveNewStream.retrieve(finder.deviceMoveLessArgument(vertex));
         }
+
     }
     /**
      * Handle the assignment of the stream if the vertex considered is a starting vertex,

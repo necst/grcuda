@@ -2,8 +2,10 @@ package com.nvidia.grcuda.gpu;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.stream.IntStream;
 
+import com.nvidia.grcuda.gpu.CUDARuntime.CUDADeviceAttribute;
 import com.nvidia.grcuda.gpu.stream.CUDAStream;
 
 public class GrCUDADevicesManager {
@@ -29,6 +31,10 @@ public class GrCUDADevicesManager {
         this.numberOfGPUs = device_number;
         this.currentDeviceId = currentDeviceId;
         this.deviceList = deviceList;
+        for(int i = 0; i<this.numberOfGPUs; i++){
+            System.out.println("device cudaDevAttrConcurrentManagedAccess "+runtime.cudaDeviceGetAttribute(CUDADeviceAttribute.CONCURRENT_MANAGED_ACCESS, i));
+        }
+        
     }
 
     /**
