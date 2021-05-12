@@ -209,6 +209,66 @@ public final class CUDARuntime {
         }
     }
 
+    /**
+     * Queries if a device may directly access a peer device's memory. 
+     * @param device Device from which allocations on peerDevice are to be directly accessed. 
+     * @param peerDevice Device on which the allocations to be directly accessed by device reside.
+     * @return canAccessPeer a value of 1 if device device is capable of directly accessing memory from peerDevice and 0 otherwise. 
+     * If direct access of peerDevice from device is possible, then access may be enabled by calling cudaDeviceEnablePeerAccess(). 
+     */
+    @TruffleBoundary
+    public int cudaDeviceCanAccessPeer(int device, int peerDevice) {
+
+        try(UnsafeHelper.Integer32Object canAccessPeer = UnsafeHelper.createInteger32Object()) {
+            Object callable = CUDARuntimeFunction.CUDA_DEVICE_CAN_ACCESS_PEER.getSymbol(this);
+            Object result = INTEROP.execute(callable, canAccessPeer.getAddress(), device, peerDevice);
+            checkCUDAReturnCode(result, "cudaDeviceCanAccessPeer");
+            return canAccessPeer.getValue();
+        } catch (InteropException e) {
+            throw new GrCUDAException(e);
+        }
+    }
+
+    /**
+     * Disables direct access to memory allocations on a peer device. 
+     * @param device Peer device to disable direct access to.
+     * @return
+     */
+
+    @TruffleBoundary
+    public void cudaDeviceDisablePeerAccess(int device) {
+
+        try{
+            Object callable = CUDARuntimeFunction.CUDA_DEVICE_DISABLE_PEER_ACCESS.getSymbol(this);
+            Object result = INTEROP.execute(callable, device);
+            checkCUDAReturnCode(result, "cudaDeviceDisablePeerAccess");
+        } catch (InteropException e) {
+            throw new GrCUDAException(e);
+        }
+    }
+
+    /**
+     * Enables direct access to memory allocations on a peer device. 
+     * flag Reserved for future use and must be set to 0.
+     * @param peerDevice Peer device to enable direct access to from the current device 
+     * @return
+     */
+
+    @TruffleBoundary
+    public void cudaDeviceEnablePeerAccess(int peerDevice) {
+        final int flag = 0;
+        try{
+
+            Object callable = CUDARuntimeFunction.CUDA_DEVICE_ENABLE_PEER_ACCESS.getSymbol(this);
+            Object result = INTEROP.execute(callable, peerDevice, flag);
+            checkCUDAReturnCode(result, "cudaDeviceEnablePeerAccess");
+        } catch (InteropException e) {
+            throw new GrCUDAException(e);
+        }
+    }
+
+
+
     @TruffleBoundary
     public void cudaFree(LittleEndianNativeArrayView memory) {
 
@@ -766,6 +826,45 @@ public final class CUDARuntime {
                     long addressAllocatedMemory = outPointer.getValueOfPointer();
                     return new GPUPointer(addressAllocatedMemory);
                 }
+            }
+        },
+        //cudaDeviceCanAccessPeer
+        CUDA_DEVICE_CAN_ACCESS_PEER("cudaDeviceCanAccessPeer","(pointer,sint32,sint32):sint32"){
+            @Override
+            @TruffleBoundary
+            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
+                checkArgumentLength(args, 3);
+
+                Object canAccessPeerPointer = args[0];
+                int device = expectInt(args[1]);
+                int peerDevice = expectInt(args[2]);
+
+                try (UnsafeHelper.Integer32Object value = UnsafeHelper.createInteger32Object()) {
+                    callSymbol(cudaRuntime, value.getAddress(), device, peerDevice );   
+                    return NoneValue.get();                 
+                }
+
+            }
+        },
+        CUDA_DEVICE_DISABLE_PEER_ACCESS("cudaDeviceDisablePeerAccess","(sint32):sint32"){
+            @Override
+            @TruffleBoundary
+            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
+                checkArgumentLength(args, 1);
+                int device = expectInt(args[0]);
+                callSymbol(cudaRuntime, device);   
+                return NoneValue.get();                 
+            }
+        },
+        //cudaDeviceEnablePeerAccess
+        CUDA_DEVICE_ENABLE_PEER_ACCESS("cudaDeviceEnablePeerAccess","(sint32, uint32):sint32"){
+            @Override
+            @TruffleBoundary
+            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
+                int peerDevice = expectInt(args[0]);
+                final int flag = 0;
+                callSymbol(cudaRuntime, peerDevice, flag);   
+                return NoneValue.get();                 
             }
         },
         CUDA_SETDEVICE("cudaSetDevice", "(sint32): sint32") {
