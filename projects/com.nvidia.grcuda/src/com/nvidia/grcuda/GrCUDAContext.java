@@ -70,7 +70,7 @@ public final class GrCUDAContext {
     public static final ExecutionPolicyEnum DEFAULT_EXECUTION_POLICY = ExecutionPolicyEnum.DEFAULT;
     public static final DependencyPolicyEnum DEFAULT_DEPENDENCY_POLICY = DependencyPolicyEnum.DEFAULT;
     public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.FIFO;
-    public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.LESSTIME;
+    public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.MORE_ARGUMENT;
     public static final boolean DEFAULT_FORCE_STREAM_ATTACH = false;
 
     private static final String ROOT_NAMESPACE = "CU";
@@ -281,8 +281,10 @@ public final class GrCUDAContext {
     @TruffleBoundary
     private static RetrieveParentStreamPolicyEnum parseParentStreamPolicy(String policyString) {
         switch(policyString) {
-            case "lesstime":
-                return RetrieveParentStreamPolicyEnum.LESSTIME;
+            case "more_argument":
+                return RetrieveParentStreamPolicyEnum.MORE_ARGUMENT;
+            case "disjoint_more_argument":
+                return RetrieveParentStreamPolicyEnum.DISJOINT_MORE_ARGUMENT;
             case "disjoint":
                 return RetrieveParentStreamPolicyEnum.DISJOINT;
             case "default":

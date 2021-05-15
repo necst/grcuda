@@ -39,8 +39,11 @@ public class StreamPolicy {
         }
         // Get how streams are retrieved for computations with parents;
         switch(retrieveParentStreamPolicyEnum) {
-            case LESSTIME:
-                this.retrieveParentStream = new DisjointLessBusyRetrieveParentStream(this.retrieveNewStream);
+            case MORE_ARGUMENT:
+                this.retrieveParentStream = new MoreArgumentRetrieveParentStream(this.retrieveNewStream);
+                break;
+            case DISJOINT_MORE_ARGUMENT:
+                this.retrieveParentStream = new DisjointOrMoreArgumentRetrieveParentStream(this.retrieveNewStream);
                 break;
             case DISJOINT:
                 this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
@@ -62,7 +65,7 @@ public class StreamPolicy {
 
     private class ChooseDeviceHeuristic{
         public int deviceMoveLessArgument(ExecutionDAG.DAGVertex vertex){
-            long[] argumentSize = new long[]{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            long[] argumentSize = new long[devicesManager.getNumberOfGPUs()+1];
             List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
             for(AbstractArray a : arguments){
                 argumentSize[a.getArrayLocation()] = argumentSize[a.getArrayLocation()] + a.getArraySize();
@@ -74,7 +77,7 @@ public class StreamPolicy {
                 //System.out.println("argument size : "+argumentSize[i]+" device id: "+ i);
             }
 
-            if(maxAt == 9){
+            if(maxAt == argumentSize.length-1){
                 return devicesManager.deviceWithLessActiveStream();
             }else{
                 return maxAt;
@@ -273,12 +276,12 @@ public class StreamPolicy {
      * to the child, if the stream of the parent is not available then a new stream is created on the device with the fewest active
      * streams and it is assigned to the child.
      */
-    private class DisjointLessBusyRetrieveParentStream extends RetrieveParentStream {
+    private class DisjointOrMoreArgumentRetrieveParentStream extends RetrieveParentStream {
         private final RetrieveNewStream retrieveNewStream;
         // Keep track of computations for which we have already re-used the stream;
         private final Set<ExecutionDAG.DAGVertex> reusedComputations = new HashSet<>();
 
-        public DisjointLessBusyRetrieveParentStream(RetrieveNewStream retrieveNewStream) {
+        public DisjointOrMoreArgumentRetrieveParentStream(RetrieveNewStream retrieveNewStream) {
             this.retrieveNewStream = retrieveNewStream;
         }
         @Override
@@ -302,6 +305,40 @@ public class StreamPolicy {
         }
 
     }
+
+
+    private class MoreArgumentRetrieveParentStream extends RetrieveParentStream {
+        private final RetrieveNewStream retrieveNewStream;
+        // Keep track of computations for which we have already re-used the stream;
+        
+        private final Set<ExecutionDAG.DAGVertex> reusedComputations = new HashSet<>();
+
+        public MoreArgumentRetrieveParentStream(RetrieveNewStream retrieveNewStream) {
+            this.retrieveNewStream = retrieveNewStream;
+        }
+        @Override
+        public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+            // Keep only parent vertices for which we haven't reused the stream yet;
+            List<ExecutionDAG.DAGVertex> availableParentsStream = vertex.getParentVertices().stream()
+            .filter(v -> !reusedComputations.contains(v))
+            .collect(Collectors.toList());
+            int chosenDevice = finder.deviceMoveLessArgument(vertex);
+
+            if (!availableParentsStream.isEmpty()) {
+                for(ExecutionDAG.DAGVertex v : availableParentsStream){
+                    if(v.getComputation().getStream().getStreamDeviceId() == chosenDevice){       
+                        reusedComputations.add(v);
+                        return v.getComputation().getStream();
+                    }
+                }
+            }
+
+            return retrieveNewStream.retrieve(finder.deviceMoveLessArgument(vertex));
+            
+        }
+
+    }
+
     /**
      * Handle the assignment of the stream if the vertex considered is a starting vertex,
      * which is to say that it has no parent computation. It is possible to consider various kind of heuristics can be
