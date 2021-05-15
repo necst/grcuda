@@ -65,10 +65,17 @@ public class StreamPolicy {
 
     private class ChooseDeviceHeuristic{
         public int deviceMoveLessArgument(ExecutionDAG.DAGVertex vertex){
+            
             long[] argumentSize = new long[devicesManager.getNumberOfGPUs()+1];
             List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
+
             for(AbstractArray a : arguments){
-                argumentSize[a.getArrayLocation()] = argumentSize[a.getArrayLocation()] + a.getArraySize();
+                if(a.getArrayLocation() == -1){
+                    // last position of the array represents the CPU
+                    argumentSize[devicesManager.getNumberOfGPUs()] = argumentSize[devicesManager.getNumberOfGPUs()] + a.getArraySize();
+                }else{
+                    argumentSize[a.getArrayLocation()] = argumentSize[a.getArrayLocation()] + a.getArraySize();
+                }
             }
             //System.out.println("argument for vertex: "+vertex.getId());
             int maxAt = 0;
@@ -334,7 +341,7 @@ public class StreamPolicy {
             }
 
             return retrieveNewStream.retrieve(finder.deviceMoveLessArgument(vertex));
-            
+
         }
 
     }

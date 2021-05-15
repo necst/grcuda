@@ -71,7 +71,10 @@ public abstract class AbstractArray implements TruffleObject {
     /** Flag set when underlying off-heap memory has been freed. */
     protected boolean arrayFreed = false;
 
-    private int arrayLocation = 9;
+    /**
+     * arrayLocation default location is -1 which represents CPU
+     */
+    private int arrayLocation = -1;
 
     public Type getElementType() {
         return elementType;
