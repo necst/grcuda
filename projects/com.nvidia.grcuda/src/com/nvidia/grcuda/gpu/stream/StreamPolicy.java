@@ -124,6 +124,7 @@ public class StreamPolicy {
             stream = this.retrieveParentStream.retrieve(vertex);
         }
         //printPartialGraph(vertex, stream);
+        System.out.println("stream on device: "+stream.getStreamDeviceId());
         return stream;
     }
 
