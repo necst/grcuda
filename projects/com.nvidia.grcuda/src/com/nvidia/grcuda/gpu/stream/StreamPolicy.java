@@ -39,11 +39,11 @@ public class StreamPolicy {
         }
         // Get how streams are retrieved for computations with parents;
         switch(retrieveParentStreamPolicyEnum) {
-            case MORE_ARGUMENT:
-                this.retrieveParentStream = new MoreArgumentRetrieveParentStream(this.retrieveNewStream);
+            case DATA_AWARE:
+                this.retrieveParentStream = new DataAwareRetrieveParentStream(this.retrieveNewStream);
                 break;
-            case DISJOINT_MORE_ARGUMENT:
-                this.retrieveParentStream = new DisjointOrMoreArgumentRetrieveParentStream(this.retrieveNewStream);
+            case DISJOINT_DATA_AWARE:
+                this.retrieveParentStream = new DisjointDataAwareRetrieveParentStream(this.retrieveNewStream);
                 break;
             case DISJOINT:
                 this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
@@ -91,6 +91,7 @@ public class StreamPolicy {
                 // return devicesManager.deviceWithLessActiveStream();
             }
         }
+
     }
 
     /**
@@ -284,12 +285,12 @@ public class StreamPolicy {
      * to the child, if the stream of the parent is not available then a new stream is created on the device with the fewest active
      * streams and it is assigned to the child.
      */
-    private class DisjointOrMoreArgumentRetrieveParentStream extends RetrieveParentStream {
+    private class DisjointDataAwareRetrieveParentStream extends RetrieveParentStream {
         private final RetrieveNewStream retrieveNewStream;
         // Keep track of computations for which we have already re-used the stream;
         private final Set<ExecutionDAG.DAGVertex> reusedComputations = new HashSet<>();
 
-        public DisjointOrMoreArgumentRetrieveParentStream(RetrieveNewStream retrieveNewStream) {
+        public DisjointDataAwareRetrieveParentStream(RetrieveNewStream retrieveNewStream) {
             this.retrieveNewStream = retrieveNewStream;
         }
         @Override
@@ -315,13 +316,13 @@ public class StreamPolicy {
     }
 
 
-    private class MoreArgumentRetrieveParentStream extends RetrieveParentStream {
+    private class DataAwareRetrieveParentStream extends RetrieveParentStream {
         private final RetrieveNewStream retrieveNewStream;
         // Keep track of computations for which we have already re-used the stream;
         
         private final Set<ExecutionDAG.DAGVertex> reusedComputations = new HashSet<>();
 
-        public MoreArgumentRetrieveParentStream(RetrieveNewStream retrieveNewStream) {
+        public DataAwareRetrieveParentStream(RetrieveNewStream retrieveNewStream) {
             this.retrieveNewStream = retrieveNewStream;
         }
         @Override

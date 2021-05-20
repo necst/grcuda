@@ -3,8 +3,8 @@ package com.nvidia.grcuda.gpu.stream;
 public enum RetrieveParentStreamPolicyEnum {
     DEFAULT("default"),
     DISJOINT("disjoint"),
-    MORE_ARGUMENT("more_argument"),
-    DISJOINT_MORE_ARGUMENT("disjoint_more_argument");
+    DATA_AWARE("data_aware"),
+    DISJOINT_DATA_AWARE("disjoint_data_aware");
 
     private final String name;
 
