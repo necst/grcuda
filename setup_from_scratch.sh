@@ -9,7 +9,12 @@ sudo apt install unzip -y
 # clone repositories (GraalVM, MX, GrCUDA);
 git clone https://github.com/oracle/graal.git
 git clone https://github.com/graalvm/mx.git
-git clone https://github.com/AlbertoParravicini/grcuda.git
+git clone git@github.com:AlbertoParravicini/grcuda.git
+
+# Checkout commit of GraalVM corresponding to the release;
+cd graal
+git checkout 192eaf62331679907449ee60dad9d6d6661a3dc8
+cd ..
 
 # download the GraalVM release build (21.1.0) and the corresponding JVM;
 wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.1.0/graalvm-ce-java11-linux-amd64-21.1.0.tar.gz
@@ -63,3 +68,5 @@ graalpython -m ginstall install numpy
 
 # reboot the machine to load the Nvidia drivers;
 sudo reboot
+
+>>>>>>> master:setup_machine_from_scratch.sh
