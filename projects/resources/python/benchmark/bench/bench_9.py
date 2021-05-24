@@ -345,7 +345,6 @@ class Benchmark9(Benchmark):
         start = 0
         alpha = 0
         self.t1[0] = 0
-        print("Initialization phase")
         # Initialization phase;
         # r = b - A * x
         self.execute_phase("spmv_init", self.spmv_full_kernel(num_blocks_spmv, self.block_size, 4 * self.block_size),
@@ -354,7 +353,6 @@ class Benchmark9(Benchmark):
         self.execute_phase("cpy_init", self.cpy_kernel(self.num_blocks_size, self.block_size), self.p, self.r, self.size)
         # t1 = r^t * r
         self.execute_phase("norm_init", self.norm_kernel(self.num_blocks_size, self.block_size), self.r, self.t1, self.size)
-        print("start loop")
         for i in range(self.num_iterations):
             # t2 = p^t * A * p
             self.execute_phase(f"spmv_{i}", self.spmv_kernel(num_blocks_spmv, self.block_size, 4 * self.block_size),
@@ -362,30 +360,18 @@ class Benchmark9(Benchmark):
             self.t2[0] = 0
             self.execute_phase(f"dp_{i}", self.dp_kernel(self.num_blocks_size, self.block_size), self.p, self.y, self.t2, self.size)
             
-            print("before computing indices")
             if self.time_phases:
                 start = System.nanoTime()
-
-            print(self.t2[0])
-            print(self.t1[0])
-            if(self.t1 == None):
-                print("t1 none")
             
-            
-            print("after start timing")
             alpha = self.t1[0] / self.t2[0]
-            print("after alpha")
             old_r_norm_squared = self.t1[0]
-            print("after old_r_norm_squared")
             self.t1[0] = 0
-            print("after t1")
             self.row_cnt_1[0] = 0.0
             self.row_cnt_2[0] = 0.0
             if self.time_phases:
                 end = System.nanoTime()
                 self.benchmark.add_phase({"name": f"alpha_{i}", "time_sec": (end - start) / 1_000_000_000})
 
-            print("after compiting indices")
             # Update x: x = x + alpha * p
             self.execute_phase(f"saxpy_x_{i}", self.saxpy_kernel(self.num_blocks_size, self.block_size),
                                self.x, self.x, self.p, alpha, self.size)
