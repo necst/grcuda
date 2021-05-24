@@ -33,7 +33,7 @@ __global__ void reduce(float *a, int size, int index){
 
         for(i=start+1;i<end;i++){
                  // a[i]=a[i]-(a[start]*a[(index*size)+i]);
-		 a[i]=a[i]-(a[start]*a[(index*size)+(index+(i-start))]);
+		 	a[i]=a[i]-(a[start]*a[(index*size)+(index+(i-start))]);
         }
 
 }
@@ -52,6 +52,7 @@ void LU_decomposition::execute_sync(int iter){
 
 }
 void LU_decomposition::execute_async(int iter){
+
 
 }
 void LU_decomposition::execute_cudagraph(int iter){

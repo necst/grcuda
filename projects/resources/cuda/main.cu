@@ -16,7 +16,7 @@
 #include "b17.cuh"
 #include "b18.cuh"
 #include "b20.cuh"
-#include "Jacobi.cuh"
+
 
 
 int main(int argc, char *argv[])
@@ -65,9 +65,6 @@ int main(int argc, char *argv[])
         break;
     case BenchmarkEnum::B20:
         b = new Benchmark20(options);
-        break;
-    case BenchmarkEnum::Jacobi:
-        //b = new Jacobi(options);
         break;
     default:
         break;

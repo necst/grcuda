@@ -423,7 +423,7 @@ public class GrCUDAStreamManagerTest {
     public void moveLessArgumentSimple() throws UnsupportedTypeException{
         GrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                                                 .setRetrieveNewStreamPolicy(RetrieveNewStreamPolicyEnum.FIFO)
-                                                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MORE_ARGUMENT)
+                                                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DATA_AWARE)
                                                 .build();
         
         new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
