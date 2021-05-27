@@ -6,8 +6,8 @@
 #define ITERATION_LIMIT 333
 #define EPSILON 0.0000001
 #define NUM_OF_THREADS 4
-#define N 100
-#define IT 3
+#define N 10
+#define IT 5
 bool check_diagoanally_dominant_sequential(float** matrix, int matrix_size);
 bool check_diagoanally_dominant_parallel(float** matrix, int matrix_size);
 void solve_jacobi_sequential(float* matrix, int matrix_size, float* right_hand_side);
@@ -147,7 +147,7 @@ void solve_jacobi_sequential(float* matrix, int n, float* right_hand_side) {
 			//printf("i: %d, x : %f\n", i,last_iteration[i]);
 			for (int j = 0; j < n; j++) {
 				if (i != j) {
-					sigma_value += matrix[i+j*n] * last_iteration[j];
+					sigma_value += matrix[j+i*n] * last_iteration[j];
 					//printf("sigma_value %f\n",sigma_value);
 				}
 			}
