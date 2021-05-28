@@ -3,7 +3,7 @@
 #include <iostream>
 
 #define N 10000
-#define IT 500
+#define IT 50
 
 __global__ void JacobiIteration(int n, float *a, float *b, float *x, float*x_result){
     for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x){
@@ -132,23 +132,33 @@ int main(){
 
     // printf("\n");
 
+    float *a_d, *b_d, *x_d, *x_result_d,*sigma_d;
+
+    // alloc
+    cudaMallocManaged(&a_d, N*N*sizeof(float));
+    cudaMallocManaged(&b_d, N*sizeof(float));
+    cudaMallocManaged(&x_d, N*sizeof(float));
+    cudaMallocManaged(&x_result_d, N*sizeof(float));
+    cudaMallocManaged(&sigma_d, N*sizeof(float));
+
+
     for (int i = 0; i < N; i++ )
     {
-        sigma[i] = 0;
+        sigma_d[i] = 0;
     }
 
     for (int i = 0; i < N; i++ )
     {
-        b[i] = 3.0;
+        b_d[i] = 3.0;
     }
-    b[N-1] = ( float ) ( N + 1 );
+    b_d[N-1] = ( float ) ( N + 1 );
 
     for ( int i = 0; i < N; i++ )
     {
-      x[i] = 0.0;
+        x_d[i] = 0.0;
     }
 
-    initAMatrix<<<32, 32>>>(N, a);
+    initAMatrix<<<32, 32>>>(N, a_d);
 
 
     cudaEventCreate(&start);
@@ -157,15 +167,15 @@ int main(){
 
 
     for ( int it = 0; it < IT; it++ ){  
-        JacobiIterationDistributed<<<896, 32>>>(N, a, x, sigma);
+        JacobiIterationDistributed<<<896, 32>>>(N, a_d, x_d, sigma_d);
         cudaDeviceSynchronize();
-        JacobiIterationDistributedResult<<<896, 32>>>(N, a, b, x_result, sigma);
+        JacobiIterationDistributedResult<<<896, 32>>>(N, a_d, b_d, x_result_d, sigma_d);
         cudaDeviceSynchronize();
-        swap(x, x_result);
+        swap(x_d, x_result_d);
     }
 
     cudaEventRecord(stop, 0);
-    cudaEventSynchronize (stop );
+    cudaEventSynchronize (stop);
 
     cudaEventElapsedTime(&elapsed, start, stop); 
     cudaEventDestroy(start);
@@ -174,10 +184,11 @@ int main(){
     printf("execution time: %f \n", elapsed);
     
     printf("-------------------------------------------------------\n");
-    // for(int i = 0; i < N; i++){
-    //     printf("%f ",x[i]);
-    // }
-    // printf("\n");
+    for(int i = 0; i < N; i++){
+        if(x[i]!=x_d[i])
+            printf("error \n");
+    }
+    printf("\n");
 
     return 0;
 }
