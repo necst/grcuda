@@ -13,6 +13,8 @@ FILES=main.cu benchmark.cu b1.cu b5.cu b6.cu b7.cu b8.cu b10.cu b11.cu b15.cu b1
 
 data_transfer: data_transfer.cu
 	$(CXX) -o data_transfer data_transfer.cu $(FLAG_NVML)
+LU: LU_v2.cu
+	$(CXX) -o LU LU_v2.cu
 
 full:
 	$(CXX) $(FILES) $(FLAGS) -o $(BIN_FOLDER)/b;

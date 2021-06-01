@@ -9,6 +9,7 @@ void LU_sequential(float U[M][M], float L[M][M]){
             L[j][k] = U[j][k]/U[k][k];
             for(int v = k; v<M;v++){
                 U[j][v] -= L[j][k]*U[k][v];
+
                 number++;
             }
         }
@@ -16,7 +17,7 @@ void LU_sequential(float U[M][M], float L[M][M]){
     printf("n sequential: %d\n", number);
     for(int i = 0;i<M;i++){
         for(int j = 0; j<M;j++){
-            printf("%f ",L[i][j]);
+            printf("%f ",U[i][j]);
         }
         printf("\n");
     }
@@ -24,10 +25,12 @@ void LU_sequential(float U[M][M], float L[M][M]){
 // call the inner loop M times
 __global__ void LU_parallel(int k,int n, float*U, float*L){
     for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x){
-        int v = i/(M-k);
-        L[(k+1)*M + v] = U[(k+1)*M + k]/U[k*M + k];
-        U[(k+1)*M + v] -= L[(k+1)*M + v]*U[k*M + v];
-        printf(" %f\n",L[(k+1)*M + v]);
+        int v = i%M + k;
+        int j = i/M + 1 + k;
+        if((v-k) == 0){
+            L[j*M + k] = U[j*M + k]/U[k*M + k];
+        }
+        U[j*M + v] -= L[j*M + k]*U[k*M + v];
     }
 }
 
@@ -57,6 +60,7 @@ int main(){
     for(int i = 0; i<M*M; i++){
         printf(" %f", U_d[i]);
     }
+    printf("\n");
     int i, j;
     for(int o = 0; o<M*M; o++){
         i = o/M;
@@ -69,22 +73,28 @@ int main(){
         }
     }
 
+
+
     for( int k = 0; k < M; k++){
-        LU_parallel<<<32,32>>>(k+1, (M-(k+1))*(M-k), U_d, L_d);
+        LU_parallel<<<32,32>>>(k, (M-(k+1))*(M-k), U_d, L_d);
         cudaDeviceSynchronize();
+    }
+    for(int i = 0; i<M;i++){
+        for(int j = 0; j<M;j++){
+            printf("%f ", U_d[i*M+j]);
+        }
+        printf("\n");
     }
 
 
-
     printf("n calculated: %d\n",n);
-    // LU_sequential(U, L);
-    // for(int i = 0; i<M;i++){
-    //     for(int j = 0; j<M;j++){
-    //         U_d[i*M + j] = U_h[i][j];
-    //         L_d[i*M+j] = L_h[i][j];
-
-    //         printf("%d , %d ", L[i][j], L_d[i*M+j]);
-    //     }
-    // }
+    LU_sequential(U, L);
+    for(int i = 0; i<M;i++){
+        for(int j = 0; j<M;j++){
+            if(L[i][j] != L_d[i*M+j]){
+                printf("%f , %f ", L[i][j], L_d[i*M+j]);
+            }
+        }
+    }
     return 0;
 }
