@@ -355,9 +355,13 @@ public class StreamPolicy {
      * */
     private class StartingVertexPolicy{
 
+        // public CUDAStream getStream(ExecutionDAG.DAGVertex vertex){
+        //     int cheapestDevice = finder.deviceMoveLessArgument(vertex);
+        //     return retrieveNewStream.retrieve(cheapestDevice);
+        // }
+
         public CUDAStream getStream(ExecutionDAG.DAGVertex vertex){
-            int cheapestDevice = finder.deviceMoveLessArgument(vertex);
-            return retrieveNewStream.retrieve(cheapestDevice);
+            return retrieveNewStream.retrieve(devicesManager.deviceWithLessActiveStream());
         }
     }
 

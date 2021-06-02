@@ -17,8 +17,7 @@ class Benchmark16 : public Benchmark {
    private:
     int num_features = 200;
     int num_classes = 10;
-    int *x0;
-    int *x1;
+    int *x;
     float *z;
     float *nb_feat_log_prob, *nb_class_log_prior, *ridge_coeff, *ridge_intercept, *nb_amax, *nb_l, *r1, *r2;
     int *r;

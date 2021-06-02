@@ -303,6 +303,15 @@ void Benchmark17::execute_async(int iter) {
         cudaEvent_t e2;
         cudaEventCreate(&e2);
 
+
+        if (pascalGpu && do_prefetch) {
+            cudaMemPrefetchAsync(auth1, N * sizeof(float), 1, s2);
+            cudaMemPrefetchAsync(auth2, N * sizeof(float), 0, s1);
+            cudaMemPrefetchAsync(hub1, N * sizeof(float), 0, s1);
+            cudaMemPrefetchAsync(hub2, N * sizeof(float), 1, s2);
+            cudaMemPrefetchAsync(auth_norm, sizeof(float), 0, s1);
+            cudaMemPrefetchAsync(hub_norm, sizeof(float), 1, s2);
+        }
         int nb = ceil(N / ((float)block_size_1d));
         cudaSetDevice(0);
         // spmv<<<nb, block_size_1d, 0, s1>>>(ptr2, idx2, val2, hub1, auth2, N, nnz);
@@ -323,11 +332,18 @@ void Benchmark17::execute_async(int iter) {
         cudaSetDevice(0);
         err = cudaStreamWaitEvent(s1, e2, 0);
         cudaStreamAttachMemAsync(s1, auth1, 0);
+
+        if (pascalGpu && do_prefetch) {
+            cudaMemPrefetchAsync(auth1, N * sizeof(float), 1, s1);
+        }
         divide_multi<<<num_blocks, block_size_1d, 0, s1>>>(auth2, auth1, auth_norm, N);
         // Stream 2 waits stream 1;
         cudaSetDevice(1);
         err = cudaStreamWaitEvent(s2, e1, 0);
         cudaStreamAttachMemAsync(s2, hub1, 0);
+        if (pascalGpu && do_prefetch) {
+            cudaMemPrefetchAsync(hub1, N * sizeof(float), 1, s2);
+        }
         divide_multi<<<num_blocks, block_size_1d, 0, s2>>>(hub2, hub1, hub_norm, N);
 
         cudaSetDevice(0);

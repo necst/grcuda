@@ -260,6 +260,14 @@ void Benchmark6::execute_async(int iter) {
         cudaMemPrefetchAsync(r1, sizeof(float) * N * num_classes, 0, s2);
         cudaMemPrefetchAsync(r2, sizeof(float) * N * num_classes, 0, s1);
         cudaMemPrefetchAsync(r, sizeof(int) * N, 0, s1);
+
+        // cudaMemPrefetchAsync(nb_l, sizeof(float) * N, 0, s2);
+        // cudaMemPrefetchAsync(nb_amax, sizeof(float) * N, 0, s2);
+        // cudaMemPrefetchAsync(ridge_intercept, sizeof(float) * num_classes, 0, s1);
+        // cudaMemPrefetchAsync(ridge_coeff,  sizeof(float) * num_classes * num_features, 0, s1);
+        // cudaMemPrefetchAsync(nb_feat_log_prob, sizeof(float) * num_classes * num_features, 0, s2);
+        // cudaMemPrefetchAsync(z, sizeof(float) * N * num_features, 0, s1);
+        // cudaMemPrefetchAsync(x, sizeof(int) * N * num_features, 0, s2);
     }
 
     rr_1<<<num_blocks, block_size_1d, 0, s1>>>(x, z, N, num_features);

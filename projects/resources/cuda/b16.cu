@@ -151,7 +151,7 @@ void Benchmark16::alloc() {
 
 
     cudaSetDevice(0);            // Set device 0 as current
-    err = cudaMallocManaged(&x0, sizeof(int) * N * num_features);
+    err = cudaMallocManaged(&x, sizeof(int) * N * num_features);
     err = cudaMallocManaged(&z, sizeof(float) * N * num_features);
     err = cudaMallocManaged(&ridge_coeff, sizeof(float) * num_classes * num_features);
     err = cudaMallocManaged(&r2, sizeof(float) * N * num_classes);
@@ -163,7 +163,6 @@ void Benchmark16::alloc() {
 
     cudaSetDevice(1);            // Set device 1 as current
     err = cudaMallocManaged(&nb_feat_log_prob, sizeof(float) * num_classes * num_features);
-    err = cudaMallocManaged(&x1, sizeof(int) * N * num_features);//
     err = cudaMallocManaged(&nb_amax, sizeof(float) * N);
     err = cudaMallocManaged(&r1, sizeof(float) * N * num_classes);
     err = cudaMallocManaged(&nb_l, sizeof(float) * N);
@@ -188,7 +187,7 @@ void Benchmark16::init() {
 
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < num_features; j++) {
-            x0[i * num_features + j] = rand() % max_occurrence_of_ngram;
+            x[i * num_features + j] = rand() % max_occurrence_of_ngram;
 
         }
         for (int j = 0; j < num_classes; j++) {
@@ -207,10 +206,10 @@ void Benchmark16::init() {
         ridge_intercept[i] = (float)(rand()) / (float)(RAND_MAX);
     }
     for (int i = 0; i < N; i++) {
-        for (int j = 0; j < num_features; j++) {
-            x1[i * num_features + j] = rand() % max_occurrence_of_ngram;
+        // for (int j = 0; j < num_features; j++) {
+        //     x1[i * num_features + j] = rand() % max_occurrence_of_ngram;
 
-        }
+        // }
         for (int j = 0; j < num_classes; j++) {
             r2[i * num_classes + j] = 0;
         }
@@ -275,9 +274,12 @@ void Benchmark16::execute_async(int iter) {
     cudaStreamAttachMemAsync(s1, ridge_coeff, 0);
     cudaStreamAttachMemAsync(s1, r2, 0);
     cudaStreamAttachMemAsync(s1, ridge_intercept, 0);
-
+    if (do_prefetch && pascalGpu) {
+        cudaMemPrefetchAsync(r2, sizeof(float) * N * num_classes, 0, s1);
+        cudaMemPrefetchAsync(r, sizeof(int) * N, 0, s1);
+    }
     //changes in z
-    rr_1_multi<<<num_blocks, block_size_1d, 0, s1>>>(x0, z, N, num_features);
+    rr_1_multi<<<num_blocks, block_size_1d, 0, s1>>>(x, z, N, num_features);
     //changes in r2
     rr_2_multi<<<num_blocks, block_size_1d, 0, s1>>>(z, ridge_coeff, r2, N, num_features, num_classes);
     //changes r2
@@ -291,10 +293,12 @@ void Benchmark16::execute_async(int iter) {
     cudaStreamAttachMemAsync(s2, r1, 0);
     cudaStreamAttachMemAsync(s2, nb_amax, 0);
     cudaStreamAttachMemAsync(s2, nb_l, 0);
-
+    if (do_prefetch && pascalGpu) {
+        cudaMemPrefetchAsync(r1, sizeof(float) * N * num_classes, 0, s2);
+    }
 
     //changes in r1
-    nb_1_multi<<<num_blocks, block_size_1d, 0, s2>>>(x1, nb_feat_log_prob, r1, N, num_features, num_classes);
+    nb_1_multi<<<num_blocks, block_size_1d, 0, s2>>>(x, nb_feat_log_prob, r1, N, num_features, num_classes);
     //changes in nb_max
     nb_2_multi<<<num_blocks, block_size_1d, 0, s2>>>(r1, nb_amax, N, num_classes);
     //changes nb_l

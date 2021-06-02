@@ -262,6 +262,11 @@ void Benchmark20::execute_async(int iter) {
     cudaStreamAttachMemAsync(s2, kernel_3, 0);
     cudaStreamAttachMemAsync(s2, kernel_4, 0);
 
+    if (do_prefetch && pascalGpu) {
+        cudaMemPrefetchAsync(x, sizeof(float) * x_len, 0, s1);
+        cudaMemPrefetchAsync(y, sizeof(float) * x_len, 1, s2);
+    }
+
     dim3 block_size_2d_dim(block_size_2d, block_size_2d);
     dim3 grid_size(num_blocks, num_blocks);
     dim3 grid_size_2(num_blocks / 2, num_blocks / 2);

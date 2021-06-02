@@ -349,6 +349,9 @@ void Benchmark18::execute_async(int iter) {
     cudaSetDevice(0);            // Set device 0 as current
 
     cudaStreamAttachMemAsync(s1, image2, 0);
+    if (pascalGpu && do_prefetch) {
+        cudaMemPrefetchAsync(image3, N * N * sizeof(float), 0, s1);
+    }
     combine_multi<<<num_blocks, block_size_1d, 0, s1>>>(image2, blurred_small, mask_small, image3, N * N);
 
     // Extra
