@@ -58,10 +58,11 @@ void Benchmark11::alloc()
     err = cudaMallocManaged(&x, sizeof(float) * N);
     err = cudaMallocManaged(&x1, sizeof(float) * N);
     err = cudaStreamCreate(&s1);
-    cudaSetDevice(1);            // Set device 1 as current
+          // Set device 1 as current
     err = cudaMallocManaged(&y, sizeof(float) * N);
     err = cudaMallocManaged(&y1, sizeof(float) * N);
     err = cudaMallocManaged(&res, sizeof(float));
+    cudaSetDevice(1);  
     err = cudaStreamCreate(&s2);
 }
 
@@ -86,10 +87,13 @@ void Benchmark11::reset()
 
 void Benchmark11::execute_sync(int iter)
 {
+    cudaSetDevice(0); 
     squareMulti<<<num_blocks, block_size_1d>>>(x, x1, N);
     err = cudaDeviceSynchronize();
+    cudaSetDevice(1); 
     squareMulti<<<num_blocks, block_size_1d>>>(y, y1, N);
     err = cudaDeviceSynchronize();
+    cudaSetDevice(0); 
     reduceMulti<<<num_blocks, block_size_1d>>>(x1, y1, res, N);
     err = cudaDeviceSynchronize();
 }
@@ -98,7 +102,6 @@ void Benchmark11::execute_sync(int iter)
 void Benchmark11::execute_async(int iter)
 {
 
-
     if (pascalGpu && do_prefetch) {
         cudaMemPrefetchAsync(x, sizeof(float) * N, 0, s1);
         cudaMemPrefetchAsync(x1, sizeof(float) * N, 0, s1);
@@ -106,17 +109,18 @@ void Benchmark11::execute_async(int iter)
         cudaMemPrefetchAsync(y1, sizeof(float) * N, 1, s2);
         cudaMemPrefetchAsync(res, sizeof(float), 0, s1);
     }
-
+    cudaStreamAttachMemAsync(s1, x, sizeof(float) * N);
+    cudaStreamAttachMemAsync(s1, x1, sizeof(float) * N);
+    cudaStreamAttachMemAsync(s2, y, sizeof(float) * N);
+    cudaStreamAttachMemAsync(s2, y1, sizeof(float) * N);
     cudaSetDevice(0);            // Set device 0 as current
 
 
-    cudaStreamAttachMemAsync(s1, x, sizeof(float) * N);
-    cudaStreamAttachMemAsync(s1, x1, sizeof(float) * N);
+
     squareMulti<<<num_blocks, block_size_1d, 0, s1>>>(x, x1, N);
 
     cudaSetDevice(1);            // Set device 1 as current
-    cudaStreamAttachMemAsync(s2, y, sizeof(float) * N);
-    cudaStreamAttachMemAsync(s2, y1, sizeof(float) * N);
+
     squareMulti<<<num_blocks, block_size_1d, 0, s2>>>(y, y1, N);
 
     // Stream 1 waits stream 2;
