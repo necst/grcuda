@@ -27,12 +27,22 @@ rm labsjdk-ce-11.0.11+8-jvmci-21.1-b05-linux-amd64.tar.gz
 rm graalvm-ce-java11-linux-amd64-21.1.0.tar.gz
 
 # install CUDA and Nvidia drivers;
-sudo apt install nvidia-cuda-toolkit -y
-sudo apt install ubuntu-drivers-common -y
-sudo ubuntu-drivers autoinstall
 
-# symlink for python;
-sudo ln -s /usr/bin/python3 /usr/bin/python
+# option 1 (more automatic, but possibly outdated);
+# sudo apt install nvidia-cuda-toolkit -y
+# sudo apt install ubuntu-drivers-common -y
+# sudo ubuntu-drivers autoinstall
+# option 2 (from Nvidia's website);
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
+sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
+wget https://developer.download.nvidia.com/compute/cuda/11.3.1/local_installers/cuda-repo-ubuntu2004-11-3-local_11.3.1-465.19.01-1_amd64.deb
+sudo dpkg -i cuda-repo-ubuntu2004-11-3-local_11.3.1-465.19.01-1_amd64.deb
+sudo apt-key add /var/cuda-repo-ubuntu2004-11-3-local/7fa2af80.pub
+sudo apt-get update
+sudo apt-get -y install cuda
+
+# symlink for python (use it with care! some system tools require Python 2.7);
+# sudo ln -s /usr/bin/python3 /usr/bin/python
 
 # update ~/.bashrc with new variables;
 echo '' >> ~/.bashrc
@@ -69,4 +79,3 @@ graalpython -m ginstall install numpy
 # reboot the machine to load the Nvidia drivers;
 sudo reboot
 
->>>>>>> master:setup_machine_from_scratch.sh

@@ -32,15 +32,17 @@ NUM_GPU_TO_SHAPE = {
     8: "BM.GPU3.8",
 }
 
+SSH_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDkAFwfA9p+fEiJMECYGtBFde13EVeCeEUawMaYkzQWdRP3LEwh+D4mqJtKAGJImn0kayYjT/nJg+JHKycZh114GaRvW+VyinjrdXrQSZJC1wcN9+uy3U2V2qSRMthHZxs+xHeAzBZSAQzcCaSuq64XojPfsLzXct0n72Ej4CGeTjo33J5ak0IqCs9qwhIsvm4241c3gO0e17L23EE9sG8lzh+m8FpJyeon+QkLg7yNqhrsL5lqUomSXFZTswvg6J1cFotoa57EzQ44z4uEHG3kMb/Bg4HRCLT4jBwmFmzKQn2R+rkUoC0KxtGuPCrhxjxq7jGJXlg5fN0qMWZRmF0H aparravi@DESKTOP-L90IVGL"
+
 DEFAULT_SETUP_JSON = """
-{
+{{
   "compartmentId": "ocid1.compartment.oc1..aaaaaaaakrrqfga2bqdbv7ruydhh36cbyy46w2m6k4dnbdfw3gyes45qebfq",
   "sourceBootVolumeId": "ocid1.bootvolume.oc1.us-sanjose-1.abzwuljrenfkkaoocnxskfaomh2qn7r4wzazutjsepeplovdv2mm56ahrlva",
-  "sshAuthorizedKeys": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDkAFwfA9p+fEiJMECYGtBFde13EVeCeEUawMaYkzQWdRP3LEwh+D4mqJtKAGJImn0kayYjT/nJg+JHKycZh114GaRvW+VyinjrdXrQSZJC1wcN9+uy3U2V2qSRMthHZxs+xHeAzBZSAQzcCaSuq64XojPfsLzXct0n72Ej4CGeTjo33J5ak0IqCs9qwhIsvm4241c3gO0e17L23EE9sG8lzh+m8FpJyeon+QkLg7yNqhrsL5lqUomSXFZTswvg6J1cFotoa57EzQ44z4uEHG3kMb/Bg4HRCLT4jBwmFmzKQn2R+rkUoC0KxtGuPCrhxjxq7jGJXlg5fN0qMWZRmF0H aparravi@DESKTOP-L90IVGL",
+  "sshAuthorizedKeys": "{}",
   "subnetId": "ocid1.subnet.oc1.us-sanjose-1.aaaaaaaapwj5a3hkbym7yyeqha6chagx23lifuxnwxayfporkhqw2zuemdoq",
   "assignPublicIp": false
-}
-"""
+}}
+""".format(SSH_KEY)
 
 # Temporary directory where data are stored;
 DEFAULT_TEMP_DIR = "tmp_oci_setup"
