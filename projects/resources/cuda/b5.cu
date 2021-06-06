@@ -74,12 +74,7 @@ void Benchmark5::alloc() {
 void Benchmark5::init() {
     for (int j = 0; j < N; j++) {
         tmp_x[j] = 60 - 0.5 + (double)rand() / RAND_MAX;
-        for (int i = 0; i < M; i++) {
-            x[i][j] = tmp_x[j];
-            // y[i][j] = 0;
-        }
     }
-
     s = (cudaStream_t *)malloc(sizeof(cudaStream_t) * M);
     for (int i = 0; i < M; i++) {
         err = cudaStreamCreate(&s[i]);

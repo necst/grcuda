@@ -18,5 +18,6 @@ public:
 
 private:
     float *x, *y, *x1, *y1, *res;
+    float *xd, *yd, *x1d, *y1d, *y1dd, *resd;
     cudaStream_t s1, s2;
 };

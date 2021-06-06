@@ -16,8 +16,10 @@ public:
     std::string print_result(bool short_form = false);
 
 private:
-    int M = 10;
+    int M = 20;
+    int NGPU = 4;
     double **x, **y, *tmp_x;
+    double **yd;
     cudaStream_t *s;
 
 };

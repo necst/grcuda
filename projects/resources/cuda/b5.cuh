@@ -20,7 +20,7 @@ class Benchmark5 : public Benchmark {
     std::string print_result(bool short_form = false);
 
    private:
-    int M = 10;
+    int M = 20;
     double **x, **y, *tmp_x;
     cudaStream_t *s;
     std::vector<cudaGraph_t> graphs;

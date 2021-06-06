@@ -47,57 +47,51 @@ bsMulti(const double *x, double *y, int N, double R, double V, double T, double 
 //////////////////////////////
 
 void Benchmark15::alloc() {
-    x = (double **)malloc(sizeof(double *) * M);
-    y = (double **)malloc(sizeof(double *) * M);
-    tmp_x = (double *)malloc(sizeof(double) * N);
-    // cudaHostRegister(tmp_x, sizeof(double) * N, 0);
+    // Managed memory;
+    // x = (double **)malloc(sizeof(double *) * M);
+    // y = (double **)malloc(sizeof(double *) * M);
+    // tmp_x = (double *)malloc(sizeof(double) * N);
+    // for (int i = 0; i < M; i++) {
+    //     cudaMallocManaged(&x[i], sizeof(double) * N);
+    //     cudaMallocManaged(&y[i], sizeof(double) * N);
+    // }
+    // s = (cudaStream_t *) malloc(sizeof(cudaStream_t) * M);
+    // for (int i = 0; i < M; i++) {
+    //     cudaSetDevice(i % NGPU);
+    //     err = cudaStreamCreate(&s[i]);
+    // }
 
+    // Unmanaged memory;
+    cudaMallocHost(&x, sizeof(double *) * M);
+    cudaMallocHost(&y, sizeof(double *) * M);
+    cudaMallocHost(&yd, sizeof(double *) * M);
+    cudaMallocHost(&tmp_x, sizeof(double) * N);
     for (int i = 0; i < M; i++) {
-        if(i%2 == 0){
-            cudaSetDevice(0);            // Set device 0 as current
-        }else{
-            cudaSetDevice(1);            // Set device 1 as current
-        }
-
-        cudaMallocManaged(&x[i], sizeof(double) * N);
-        cudaMallocManaged(&y[i], sizeof(double) * N);
+        cudaSetDevice(i % NGPU);
+        cudaMalloc(&x[i], sizeof(double) * N);
+        cudaMalloc(&yd[i], sizeof(double) * N);
+        cudaMallocHost(&y[i], sizeof(double) * N);
     }
-
-
+    s = (cudaStream_t *) malloc(sizeof(cudaStream_t) * M);
+    for (int i = 0; i < M; i++) {
+        cudaSetDevice(i % NGPU);
+        err = cudaStreamCreate(&s[i]);
+    }
 }
 
 void Benchmark15::init() {
     for (int j = 0; j < N; j++) {
         tmp_x[j] = 60 - 0.5 + (double)rand() / RAND_MAX;
-        for (int i = 0; i < M; i++) {
-            x[i][j] = tmp_x[j];
-            // y[i][j] = 0;
-        }
-    }
-
-    s = (cudaStream_t *)malloc(sizeof(cudaStream_t) * M);
-    for (int i = 0; i < M; i++) {
-        if(i%2 == 0){
-            cudaSetDevice(0);            // Set device 0 as current
-        }else{
-            cudaSetDevice(1);            // Set device 1 as current
-        }
-        err = cudaStreamCreate(&s[i]);
     }
 }
 
 void Benchmark15::reset() {
     for (int i = 0; i < M; i++) {
-        // memcpy(x[i], y, sizeof(int) * N);
-        // cudaMemcpy(x[i], y, sizeof(double) * N, cudaMemcpyDefault);
-
-        // cudaMemcpyAsync(x[i], y, sizeof(int) * N, cudaMemcpyHostToDevice,
-        // s[i]);
-        for (int j = 0; j < N; j++) {
-            x[i][j] = tmp_x[j];
-        }
+        // Only for managed memory;
+        // for (int j = 0; j < N; j++) {
+        //     x[i][j] = tmp_x[j];
+        // }
     }
-    // cudaMemPrefetchAsync(x[0], sizeof(double) * N, 0, s[0]);
 }
 
 void Benchmark15::execute_sync(int iter) {
@@ -116,45 +110,51 @@ void Benchmark15::execute_async(int iter) {
     double V = 0.3;
     double T = 1.0;
     double K = 60.0;
+    cudaDeviceEnablePeerAccess(0, 0);
+    cudaDeviceEnablePeerAccess(1, 0);
+    cudaDeviceEnablePeerAccess(2, 0);
+    cudaDeviceEnablePeerAccess(3, 0);
+
+    // // Managed memory;
+    // for (int j = 0; j < M; j++) {
+    //     cudaSetDevice(j % NGPU);         
+    //     cudaMemPrefetchAsync(x[j], sizeof(double) * N, j % NGPU, s[j]);
+    //     cudaMemPrefetchAsync(y[j], sizeof(double) * N, j % NGPU, s[j]);
+    //     bsMulti<<<num_blocks, block_size_1d, 0, s[j]>>>(x[j], y[j], N, R, V, T, K);
+    // }
+    // for (int j = 0; j < M; j++) {
+    //     cudaSetDevice(j % NGPU);    
+    //     err = cudaStreamSynchronize(s[j]);
+    // }
+
+    // Unmanaged memory;
     for (int j = 0; j < M; j++) {
-        if(j%2 == 0){
-            cudaSetDevice(0);            // Set device 0 as current
-        }else{
-            cudaSetDevice(1);            // Set device 1 as current
-        }
-        cudaStreamAttachMemAsync(s[j], x[j], sizeof(double) * N);
-        cudaStreamAttachMemAsync(s[j], y[j], sizeof(double) * N);
-        if (pascalGpu && do_prefetch) {
-            cudaMemPrefetchAsync(x[j], sizeof(double) * N, j%2, s[j]);
-            cudaMemPrefetchAsync(y[j], sizeof(double) * N, j%2, s[j]);
-        }
-        // if (j > 0) cudaMemPrefetchAsync(y[j - 1], sizeof(double) * N, cudaCpuDeviceId, s[j - 1]);
-        bsMulti<<<num_blocks, block_size_1d, 0, s[j]>>>(x[j], y[j], N, R, V, T, K);
-        // if (j < M - 1) cudaMemPrefetchAsync(x[j + 1], sizeof(double) * N, 0, s[j + 1]);
+        cudaSetDevice(j % NGPU);         
+        cudaMemcpyAsync(x[j], tmp_x, sizeof(double) * N, cudaMemcpyHostToDevice, s[j]);
+        bsMulti<<<num_blocks, block_size_1d, 0, s[j]>>>(x[j], yd[j], N, R, V, T, K);
     }
-
-    // Last tile;
-    // cudaMemPrefetchAsync(y[M - 1], sizeof(double) * N, cudaCpuDeviceId, s[M - 1]);
-
     for (int j = 0; j < M; j++) {
-        if(j%2 == 0){
-            cudaSetDevice(0);            // Set device 0 as current
-        }else{
-            cudaSetDevice(1);            // Set device 1 as current
-        }
+        cudaSetDevice(j % NGPU);    
         err = cudaStreamSynchronize(s[j]);
     }
 }
 
 void Benchmark15::execute_cudagraph(int iter) {
 }
-
 void Benchmark15::execute_cudagraph_manual(int iter) {
 }
 void Benchmark15::execute_cudagraph_single(int iter) {
 }
+
 std::string
 Benchmark15::print_result(bool short_form) {
+
+    // Only for unmanaged memorY;
+    for (int j = 0; j < M; j++) {
+        cudaSetDevice(j % NGPU);    
+        cudaMemcpy(y[j], yd[j],  sizeof(double) * N, cudaMemcpyDeviceToHost);
+    }
+
     if (short_form) {
         return std::to_string(y[0][0]);
     } else {
