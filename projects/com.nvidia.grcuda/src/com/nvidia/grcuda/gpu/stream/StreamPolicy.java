@@ -45,6 +45,9 @@ public class StreamPolicy {
             case DISJOINT_DATA_AWARE:
                 this.retrieveParentStream = new DisjointDataAwareRetrieveParentStream(this.retrieveNewStream);
                 break;
+            // case DISJOINT_LESS_ACTIVE:
+            //     this.retrieveParentStream = new DisjointOrLessActiveRetrieveParentStream(this.retrieveNewStream);
+            //     break;
             case DISJOINT:
                 this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
                 break;
@@ -278,6 +281,46 @@ public class StreamPolicy {
             }
         }
     }
+
+    /**
+     * If a vertex has more than one children, each children is independent (otherwise the dependency would be added
+     * from one children to the other, and not from the actual parent).
+     * As such, children can be executed on different streams. In practice, this situation happens when children
+     * depends on disjoint arguments subsets of the parent kernel, e.g. K1(X,Y), K2(X), K3(Y).
+     * This policy re-uses the parent(s) stream(s) when possible,
+     * and computes other streams using the current {@link RetrieveNewStream};
+     */
+    // private static class DisjointOrLessActiveRetrieveParentStream extends RetrieveParentStream {
+    //     private final RetrieveNewStream retrieveNewStream;
+    //     // Keep track of computations for which we have already re-used the stream;
+    //     private final Set<ExecutionDAG.DAGVertex> reusedComputations = new HashSet<>();
+
+    //     public DisjointOrLessActiveRetrieveParentStream(RetrieveNewStream retrieveNewStream) {
+    //         this.retrieveNewStream = retrieveNewStream;
+    //     }
+
+    //     @Override
+    //     public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+
+    //         // Keep only parent vertices for which we haven't reused the stream yet;
+    //         List<ExecutionDAG.DAGVertex> availableParents = vertex.getParentVertices().stream()
+    //                 .filter(v -> !reusedComputations.contains(v))
+    //                 .collect(Collectors.toList());
+    //         // If there is at least one stream that can be re-used, take it;
+    //         if (!availableParents.isEmpty()) {
+    //             // The computation cannot be considered again;
+    //             reusedComputations.add(availableParents.get(0));
+    //             // Return the stream associated to this computation;
+    //             return availableParents.get(0).getComputation().getStream();
+
+    //         } else {
+    //             // If no parent stream can be reused, provide a new stream to this computation in the same device of the parent
+    //             //   (or possibly a free one, depending on the policy);
+    //             return retrieveNewStream.retrieve(finder.deviceMoveLessArgument(vertex));
+    //         }
+    //     }
+    // }
+
     /**
      * If a vertex has more than one children, each children is independent (otherwise the dependency would be added
      * from one children to the other, and not from the actual parent).

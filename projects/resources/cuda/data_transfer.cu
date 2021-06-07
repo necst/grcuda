@@ -3,7 +3,7 @@
 #include <nvml.h>
 #include <cuda_runtime.h>
 
-#define N 100000000
+#define N 1000000000
 
 float p2p_copy (size_t size)
 {
@@ -42,6 +42,41 @@ float p2p_copy (size_t size)
 
   return elapsed;
 }
+
+float HToD_copy (size_t size, int deviceID)
+{
+    int *pointer, *d_pointer;
+
+
+    cudaSetDevice (deviceID);
+    cudaMalloc (&d_pointer, size);
+    pointer = (int*)malloc(size);
+
+    cudaEvent_t begin, end;
+    cudaEventCreate (&begin);
+    cudaEventCreate (&end);
+
+    cudaEventRecord (begin);
+
+
+    cudaMemcpyAsync (d_pointer, pointer, size, cudaMemcpyHostToDevice);
+    cudaEventRecord (end);
+    cudaEventSynchronize (end);
+
+    float elapsed;
+    cudaEventElapsedTime (&elapsed, begin, end);
+    elapsed /= 1000;
+
+    cudaSetDevice (deviceID);
+    cudaFree (d_pointer);
+
+    cudaEventDestroy (end);
+    cudaEventDestroy (begin);
+
+    return elapsed;
+}
+
+
 
 void printDeviceAttribute(){
     int attr_val_device_0 = 0;
@@ -170,5 +205,9 @@ int main(){
 
     cudaSetDevice(0);
     linktest();
+
+
+    time_first = HToD_copy(size, 1);
+    printf("time spend HToD %f \n",time_first);
     return 0;
 }

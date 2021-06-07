@@ -122,12 +122,18 @@ void Benchmark15::execute_async(int iter) {
         }else{
             cudaSetDevice(1);            // Set device 1 as current
         }
-        cudaStreamAttachMemAsync(s[j], x[j], sizeof(double) * N);
-        cudaStreamAttachMemAsync(s[j], y[j], sizeof(double) * N);
+        if (!pascalGpu || stream_attach) {
+            cudaStreamAttachMemAsync(s[j], x[j], sizeof(double) * N);
+            cudaStreamAttachMemAsync(s[j], y[j], sizeof(double) * N);
+        }
         if (pascalGpu && do_prefetch) {
             cudaMemPrefetchAsync(x[j], sizeof(double) * N, j%2, s[j]);
             cudaMemPrefetchAsync(y[j], sizeof(double) * N, j%2, s[j]);
         }
+
+        cudaMemAdvise(x[j], sizeof(double) * N, cudaMemAdviseSetAccessedBy,j%2);
+        cudaMemAdvise(y[j], sizeof(double) * N, cudaMemAdviseSetAccessedBy,j%2);
+
         // if (j > 0) cudaMemPrefetchAsync(y[j - 1], sizeof(double) * N, cudaCpuDeviceId, s[j - 1]);
         bsMulti<<<num_blocks, block_size_1d, 0, s[j]>>>(x[j], y[j], N, R, V, T, K);
         // if (j < M - 1) cudaMemPrefetchAsync(x[j + 1], sizeof(double) * N, 0, s[j + 1]);

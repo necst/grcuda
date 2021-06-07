@@ -54,14 +54,16 @@ __global__ void reduceMulti(const float *x, const float *y, float *z, int N)
 
 void Benchmark11::alloc()
 {
-    cudaSetDevice(0);            // Set device 0 as current
+    // cudaSetDevice(0);            // Set device 0 as current
     err = cudaMallocManaged(&x, sizeof(float) * N);
     err = cudaMallocManaged(&x1, sizeof(float) * N);
-    err = cudaStreamCreate(&s1);
+
           // Set device 1 as current
     err = cudaMallocManaged(&y, sizeof(float) * N);
     err = cudaMallocManaged(&y1, sizeof(float) * N);
     err = cudaMallocManaged(&res, sizeof(float));
+    cudaSetDevice(0); 
+    err = cudaStreamCreate(&s1);
     cudaSetDevice(1);  
     err = cudaStreamCreate(&s2);
 }
@@ -102,6 +104,12 @@ void Benchmark11::execute_sync(int iter)
 void Benchmark11::execute_async(int iter)
 {
 
+    if (!pascalGpu || stream_attach) {
+        cudaStreamAttachMemAsync(s1, x, sizeof(float) * N);
+        cudaStreamAttachMemAsync(s1, x1, sizeof(float) * N);
+        cudaStreamAttachMemAsync(s2, y, sizeof(float) * N);
+        cudaStreamAttachMemAsync(s2, y1, sizeof(float) * N);
+    }
     if (pascalGpu && do_prefetch) {
         cudaMemPrefetchAsync(x, sizeof(float) * N, 0, s1);
         cudaMemPrefetchAsync(x1, sizeof(float) * N, 0, s1);
@@ -109,13 +117,13 @@ void Benchmark11::execute_async(int iter)
         cudaMemPrefetchAsync(y1, sizeof(float) * N, 1, s2);
         cudaMemPrefetchAsync(res, sizeof(float), 0, s1);
     }
-    cudaStreamAttachMemAsync(s1, x, sizeof(float) * N);
-    cudaStreamAttachMemAsync(s1, x1, sizeof(float) * N);
-    cudaStreamAttachMemAsync(s2, y, sizeof(float) * N);
-    cudaStreamAttachMemAsync(s2, y1, sizeof(float) * N);
+    cudaMemAdvise(x, sizeof(float) * N, cudaMemAdviseSetReadMostly,0);
+    cudaMemAdvise(x1, sizeof(float) * N, cudaMemAdviseSetAccessedBy,0);
+    cudaMemAdvise(y, sizeof(float) * N, cudaMemAdviseSetReadMostly,1);
+    cudaMemAdvise(y1, sizeof(float) * N, cudaMemAdviseSetAccessedBy,1);
+    cudaMemAdvise(res, sizeof(float) * N, cudaMemAdviseSetAccessedBy,0);
+
     cudaSetDevice(0);            // Set device 0 as current
-
-
 
     squareMulti<<<num_blocks, block_size_1d, 0, s1>>>(x, x1, N);
 
@@ -130,17 +138,17 @@ void Benchmark11::execute_async(int iter)
     cudaStreamWaitEvent(s1, e1, 0);
     cudaSetDevice(0);
 
-    
-    cudaStreamAttachMemAsync(s1, y1, sizeof(float) * N);
+    if (!pascalGpu || stream_attach) {
+        cudaStreamAttachMemAsync(s1, y1, sizeof(float) * N);
+    }
 
     if (pascalGpu && do_prefetch) {
         cudaMemPrefetchAsync(y1, sizeof(float) * N, 0, s1);
     }
+    // cudaMemAdvise(y1, sizeof(float) * N, cudaMemAdviseSetReadMostly, 0);
+    // cudaMemAdvise(x1, sizeof(float) * N, cudaMemAdviseSetReadMostly, 0);
     reduceMulti<<<num_blocks, block_size_1d, 0, s1>>>(x1, y1, res, N);
     cudaStreamSynchronize(s1);
-
-
-
 
 }
 
