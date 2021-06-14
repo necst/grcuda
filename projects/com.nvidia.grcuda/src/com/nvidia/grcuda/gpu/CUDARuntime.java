@@ -210,6 +210,24 @@ public final class CUDARuntime {
     }
 
     /**
+    * Advise about the usage of a given memory range. 
+    * @param array: array to set the advice for 
+    * @param deviceId: Device to apply the advice for
+    * 
+    */
+
+    public void cudaMemAdvise(AbstractArray array, int deviceId) {
+        try{
+            Object callable = CUDARuntimeFunction.CUDA_MEM_ADVISE.getSymbol(this);
+            final long cudaMemAdviseSetPreferredLocation = 3;
+            Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(),cudaMemAdviseSetPreferredLocation, deviceId);
+            checkCUDAReturnCode(result, "cudaMemAdvise");
+        } catch (InteropException e) {
+            throw new GrCUDAException(e);
+        }
+    }
+
+    /**
      * Queries if a device may directly access a peer device's memory. 
      * @param device Device from which allocations on peerDevice are to be directly accessed. 
      * @param peerDevice Device on which the allocations to be directly accessed by device reside.
@@ -724,6 +742,8 @@ public final class CUDARuntime {
     }
 
     public enum CUDARuntimeFunction implements CUDAFunction.Spec, CallSupport {
+
+
         CUDA_DEVICEGETATTRIBUTE("cudaDeviceGetAttribute", "(pointer, sint32, sint32): sint32") {
             @Override
             public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
@@ -812,6 +832,21 @@ public final class CUDARuntime {
                     long addressAllocatedMemory = outPointer.getValueOfPointer();
                     return new GPUPointer(addressAllocatedMemory);
                 }
+            }
+        },
+//cudaMemAdvise ( const void* devPtr, size_t count, cudaMemoryAdvise advice, int  device ) 
+        CUDA_MEM_ADVISE("cudaMemAdvise", "(pointer, uint64, uint64, uint32): sint32") {
+            @Override
+            @TruffleBoundary
+            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
+                
+                Object arrayObj = args[0];
+                long arrayAddr = extractArrayPointer(arrayObj);
+                long numBytes = expectPositiveLong(args[1]);
+                long advise = expectLong(args[2]);
+                int deviceId = expectInt(args[3]);
+                callSymbol(cudaRuntime, arrayAddr, numBytes, advise, deviceId);
+                return NoneValue.get();
             }
         },
         CUDA_MALLOCMANAGED("cudaMallocManaged", "(pointer, uint64, uint32): sint32") {

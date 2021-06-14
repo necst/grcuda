@@ -9,10 +9,6 @@ public class NoneArrayPrefetcher extends AbstractArrayPrefetcher {
         super(runtime);
     }
 
-    /**
-     * This array prefetcher doesn't do anything;
-     * @param computation a computational element whose array inputs can be prefetched from host to GPU
-     */
     @Override
     public void prefetchToGpu(GrCUDAComputationalElement computation) {
     }

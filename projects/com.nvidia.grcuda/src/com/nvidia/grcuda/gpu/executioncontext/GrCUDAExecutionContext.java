@@ -53,10 +53,10 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
 
         // Compute the stream where the computation will be done, if the computation can be performed asynchronously;
         streamManager.assignStream(vertex);
-        
         // Prefetching;
         arrayPrefetcher.prefetchToGpu(vertex);
-
+        // MemAdvise, (TODO not working properly, work only when added to prefetchToGPU, need to investigate):
+        //memAdviser.memAdviseToGpu(vertex);
         // Associate a CUDA event to the starting phase of the computation in order to get the Elapsed time from start to the end
         streamManager.assignEventStart(vertex);
 

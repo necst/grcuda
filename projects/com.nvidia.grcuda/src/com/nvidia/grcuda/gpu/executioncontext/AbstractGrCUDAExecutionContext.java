@@ -14,6 +14,8 @@ import com.nvidia.grcuda.gpu.computation.dependency.WithConstDependencyComputati
 import com.nvidia.grcuda.gpu.computation.prefetch.AbstractArrayPrefetcher;
 import com.nvidia.grcuda.gpu.computation.prefetch.DefaultArrayPrefetcher;
 import com.nvidia.grcuda.gpu.computation.prefetch.NoneArrayPrefetcher;
+import com.nvidia.grcuda.gpu.computation.memAdvise.AbstractMemAdvise;
+import com.nvidia.grcuda.gpu.computation.memAdvise.DefaultMemAdviser;
 import com.nvidia.grcuda.gpu.computation.prefetch.PrefetcherEnum;
 import com.nvidia.grcuda.gpu.computation.prefetch.SyncArrayPrefetcher;
 import com.oracle.truffle.api.TruffleLanguage;
@@ -59,6 +61,8 @@ public abstract class AbstractGrCUDAExecutionContext {
      */
     protected final AbstractArrayPrefetcher arrayPrefetcher;
 
+    protected final AbstractMemAdvise memAdviser;
+
     public AbstractGrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy) {
         this(new CUDARuntime(context, env), dependencyPolicy, PrefetcherEnum.NONE);
     }
@@ -95,6 +99,14 @@ public abstract class AbstractGrCUDAExecutionContext {
                 arrayPrefetcher = new NoneArrayPrefetcher(this.cudaRuntime);
         }
         this.dag = new ExecutionDAG(dependencyPolicy);
+        // switch (memAdvise) {
+        //     case DEFAULT:
+        //         memAdviser = new DefaultMemAdviser(this.cudaRuntime);
+        //         break;
+        //     default:
+        //         memAdviser = new NoneMemAdviser(this.cudaRuntime);
+        // }
+        memAdviser = new DefaultMemAdviser(this.cudaRuntime);
     }
 
     /**
