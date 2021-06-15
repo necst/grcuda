@@ -7,9 +7,9 @@ FLAG_NVML = -lnvidia-ml
 # FLAGS = --cuda-gpu-arch=sm_70 -L/usr/local/cuda/lib64 -lcudart_static -ldl -lrt -pthread -std=c++11 -O3
 
 BIN_FOLDER=bin
-FILES=main.cu benchmark.cu b1.cu b5.cu b6.cu b7.cu b8.cu b10.cu b11.cu b15.cu b16.cu b17.cu b18.cu b20.cu
+FILES=main.cu benchmark.cu b1.cu b5.cu b6.cu b7.cu b8.cu b10.cu b11.cu b15.cu b16.cu b17.cu b18.cu b20.cu b21.cu
 
-.PHONY: full all b1 b5 b6 b7 b8 b10 b11 b15 b16 b17 b18 b20
+.PHONY: full all b1 b5 b6 b7 b8 b10 b11 b15 b16 b17 b18 b20 b21
 
 #data_transfer: data_transfer.cu
 #	$(CXX) -o data_transfer data_transfer.cu $(FLAG_NVML)
@@ -33,6 +33,7 @@ all: \
     b17 \
     b18 \
     b20 \
+	b21 \
 
 b1: b1*
 	$(CXX) old/b1_default.cu $(FLAGS) -o $(BIN_FOLDER)/b1_default;
@@ -75,3 +76,5 @@ b18: b18*
 b20: b20*
 	$(CXX) b20.cu $(FLAGS) -o $(BIN_FOLDER)/b20;
 
+b21: b21*
+	$(CXX) b21.cu $(FLAGS) -o $(BIN_FOLDER)/b21;
