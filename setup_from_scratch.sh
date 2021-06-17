@@ -2,18 +2,24 @@
 sudo apt update
 sudo apt upgrade -y
 # library needed later to run: gu rebuild-images polyglot and setting up graalpython;
-sudo apt install build-essential
+sudo apt install build-essential -y
 sudo apt install lib32z1-dev -y
 sudo apt install unzip -y
+sudo apt-get install -y python-ctypes
 
 # clone repositories (GraalVM, MX, GrCUDA);
 git clone https://github.com/oracle/graal.git
 git clone https://github.com/graalvm/mx.git
-git clone git@github.com:AlbertoParravicini/grcuda.git
+git clone https://github.com/AlbertoParravicini/grcuda.git
 
 # Checkout commit of GraalVM corresponding to the release;
 cd graal
 git checkout 192eaf62331679907449ee60dad9d6d6661a3dc8
+cd ..
+
+# Checkout commit of mx compatible with versions of other tools;
+cd mx
+git checkout dcfdd847c5b808ffd1a519713e0598242f28ecd1
 cd ..
 
 # download the GraalVM release build (21.1.0) and the corresponding JVM;
@@ -57,7 +63,7 @@ echo 'export JAVA_HOME=~/labsjdk-ce-11.0.11-jvmci-21.1-b05' >> ~/.bashrc
 echo 'export GRAAL_HOME=~/graalvm-ce-java11-21.1.0' >> ~/.bashrc
 echo 'export PATH=$GRAAL_HOME/bin:$PATH' >> ~/.bashrc
 echo 'export PATH=$JAVA_HOME/bin:$PATH' >> ~/.bashrc
-echo 'export GRCUDA_HOME=~/Documents/grcuda' >> ~/.bashrc
+echo 'export GRCUDA_HOME=~/grcuda' >> ~/.bashrc
 echo '' >> ~/.bashrc
 echo '##########################################' >> ~/.bashrc
 # reload  ~/.bashrc;
