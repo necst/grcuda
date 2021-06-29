@@ -282,24 +282,28 @@ void Benchmark17::execute_async(int iter) {
         // cudaMemPrefetchAsync(auth_norm, sizeof(float), 0, s1);
         // cudaMemPrefetchAsync(hub_norm, sizeof(float), 0, s2);
         cudaSetDevice(0);
-        cudaStreamAttachMemAsync(s1, ptr2, 0);
-        cudaStreamAttachMemAsync(s1, idx2, 0);
-        cudaStreamAttachMemAsync(s1, val2, 0);
-        cudaStreamAttachMemAsync(s1, hub1, 0);
-        cudaStreamAttachMemAsync(s1, auth2, 0);
-        cudaStreamAttachMemAsync(s1, rowCounter1, 0);
-        cudaStreamAttachMemAsync(s1, auth_norm, 0);
+        if (!pascalGpu || stream_attach) {
+            cudaStreamAttachMemAsync(s1, ptr2, 0);
+            cudaStreamAttachMemAsync(s1, idx2, 0);
+            cudaStreamAttachMemAsync(s1, val2, 0);
+            cudaStreamAttachMemAsync(s1, hub1, 0);
+            cudaStreamAttachMemAsync(s1, auth2, 0);
+            cudaStreamAttachMemAsync(s1, rowCounter1, 0);
+            cudaStreamAttachMemAsync(s1, auth_norm, 0);
+        }
         cudaEvent_t e1;
         cudaEventCreate(&e1);
 
         cudaSetDevice(1);
-        cudaStreamAttachMemAsync(s2, ptr, 0);
-        cudaStreamAttachMemAsync(s2, idx, 0);
-        cudaStreamAttachMemAsync(s2, val, 0);
-        cudaStreamAttachMemAsync(s2, auth1, 0);
-        cudaStreamAttachMemAsync(s2, hub2, 0);
-        cudaStreamAttachMemAsync(s2, rowCounter2, 0);
-        cudaStreamAttachMemAsync(s2, hub_norm, 0);
+        if (!pascalGpu || stream_attach) {
+            cudaStreamAttachMemAsync(s2, ptr, 0);
+            cudaStreamAttachMemAsync(s2, idx, 0);
+            cudaStreamAttachMemAsync(s2, val, 0);
+            cudaStreamAttachMemAsync(s2, auth1, 0);
+            cudaStreamAttachMemAsync(s2, hub2, 0);
+            cudaStreamAttachMemAsync(s2, rowCounter2, 0);
+            cudaStreamAttachMemAsync(s2, hub_norm, 0);
+        }
         cudaEvent_t e2;
         cudaEventCreate(&e2);
 
@@ -331,8 +335,9 @@ void Benchmark17::execute_async(int iter) {
         // Stream 1 waits stream 2;
         cudaSetDevice(0);
         err = cudaStreamWaitEvent(s1, e2, 0);
-        cudaStreamAttachMemAsync(s1, auth1, 0);
-
+        if (!pascalGpu || stream_attach) {
+            cudaStreamAttachMemAsync(s1, auth1, 0);
+        }
         if (pascalGpu && do_prefetch) {
             cudaMemPrefetchAsync(auth1, N * sizeof(float), 1, s1);
         }
@@ -340,7 +345,9 @@ void Benchmark17::execute_async(int iter) {
         // Stream 2 waits stream 1;
         cudaSetDevice(1);
         err = cudaStreamWaitEvent(s2, e1, 0);
-        cudaStreamAttachMemAsync(s2, hub1, 0);
+        if (!pascalGpu || stream_attach) {
+            cudaStreamAttachMemAsync(s2, hub1, 0);
+        }
         if (pascalGpu && do_prefetch) {
             cudaMemPrefetchAsync(hub1, N * sizeof(float), 1, s2);
         }

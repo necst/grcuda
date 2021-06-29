@@ -117,11 +117,7 @@ void Benchmark11::execute_async(int iter)
         cudaMemPrefetchAsync(y1, sizeof(float) * N, 1, s2);
         cudaMemPrefetchAsync(res, sizeof(float), 0, s1);
     }
-    cudaMemAdvise(x, sizeof(float) * N, cudaMemAdviseSetReadMostly,0);
-    cudaMemAdvise(x1, sizeof(float) * N, cudaMemAdviseSetAccessedBy,0);
-    cudaMemAdvise(y, sizeof(float) * N, cudaMemAdviseSetReadMostly,1);
-    cudaMemAdvise(y1, sizeof(float) * N, cudaMemAdviseSetAccessedBy,1);
-    cudaMemAdvise(res, sizeof(float) * N, cudaMemAdviseSetAccessedBy,0);
+
 
     cudaSetDevice(0);            // Set device 0 as current
 

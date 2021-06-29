@@ -270,10 +270,13 @@ void Benchmark16::execute_sync(int iter) {
 
 void Benchmark16::execute_async(int iter) {
     cudaSetDevice(0);            // Set device 0 as current
-    cudaStreamAttachMemAsync(s1, z, 0);
-    cudaStreamAttachMemAsync(s1, ridge_coeff, 0);
-    cudaStreamAttachMemAsync(s1, r2, 0);
-    cudaStreamAttachMemAsync(s1, ridge_intercept, 0);
+
+    if (!pascalGpu || stream_attach) {
+        cudaStreamAttachMemAsync(s1, z, 0);
+        cudaStreamAttachMemAsync(s1, ridge_coeff, 0);
+        cudaStreamAttachMemAsync(s1, r2, 0);
+        cudaStreamAttachMemAsync(s1, ridge_intercept, 0);
+    }
     if (do_prefetch && pascalGpu) {
         cudaMemPrefetchAsync(r2, sizeof(float) * N * num_classes, 0, s1);
         cudaMemPrefetchAsync(r, sizeof(int) * N, 0, s1);
@@ -288,11 +291,12 @@ void Benchmark16::execute_async(int iter) {
     softmax_multi<<<num_blocks, block_size_1d, 0, s1>>>(r2, N, num_classes);
 
     cudaSetDevice(1);            // Set device 0 as current
-
-    cudaStreamAttachMemAsync(s2, nb_feat_log_prob, 0);
-    cudaStreamAttachMemAsync(s2, r1, 0);
-    cudaStreamAttachMemAsync(s2, nb_amax, 0);
-    cudaStreamAttachMemAsync(s2, nb_l, 0);
+    if (!pascalGpu || stream_attach) {
+        cudaStreamAttachMemAsync(s2, nb_feat_log_prob, 0);
+        cudaStreamAttachMemAsync(s2, r1, 0);
+        cudaStreamAttachMemAsync(s2, nb_amax, 0);
+        cudaStreamAttachMemAsync(s2, nb_l, 0);
+    }
     if (do_prefetch && pascalGpu) {
         cudaMemPrefetchAsync(r1, sizeof(float) * N * num_classes, 0, s2);
     }

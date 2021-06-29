@@ -16,5 +16,7 @@ class Benchmark21 : public Benchmark {
 
    private:
     float *a_d, *b_d, *x_d, *x_result_d;
-    cudaStream_t s1, s2;
+    float **result_d;
+    cudaStream_t *s;
+
 };

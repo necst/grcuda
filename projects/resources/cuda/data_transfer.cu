@@ -4,17 +4,18 @@
 #include <cuda_runtime.h>
 
 #define N 1000000000
+#define NGPU 8
 
-float p2p_copy (size_t size)
+float D2D_copy (size_t size, int from, int to)
 {
   int *pointers[2];
 
-  cudaSetDevice (0);
-  cudaDeviceEnablePeerAccess (1, 0);
+  cudaSetDevice (from);
+  cudaDeviceEnablePeerAccess (to, 0);
   cudaMalloc (&pointers[0], size);
 
-  cudaSetDevice (1);
-  cudaDeviceEnablePeerAccess (0, 0);
+  cudaSetDevice (to);
+  cudaDeviceEnablePeerAccess (from, 0);
   cudaMalloc (&pointers[1], size);
 
   cudaEvent_t begin, end;
@@ -30,15 +31,15 @@ float p2p_copy (size_t size)
   cudaEventElapsedTime (&elapsed, begin, end);
   elapsed /= 1000;
 
-  cudaSetDevice (0);
+  cudaSetDevice (from);
   cudaFree (pointers[0]);
 
-  cudaSetDevice (1);
+  cudaSetDevice (to);
   cudaFree (pointers[1]);
 
   cudaEventDestroy (end);
   cudaEventDestroy (begin);
-  cudaSetDevice (0);
+  cudaSetDevice (from);
 
   return elapsed;
 }
@@ -164,7 +165,7 @@ void linktest(){
     const unsigned long long int initial_rx = field.value.ullVal;
 
     // code to measure
-    float time_third = p2p_copy(N);
+    float time_third = D2D_copy(N, 0, 1);
     printf("time spend %f \n",time_third);
 
     field.fieldId = NVML_FI_DEV_NVLINK_THROUGHPUT_DATA_TX;
@@ -183,31 +184,38 @@ void linktest(){
 
 int main(){
     size_t size = N; // 1_000_000_000
-    float time_first = p2p_copy(size);
-    printf("time spend %f \n",time_first);
-
-    linktest();
-
-    printDeviceAttribute();
-    float time_third = p2p_copy(N);
-    printf("time spend %f \n",time_third);
-
-    // disable peer access
-    cudaError_t err;
-    cudaSetDevice(0);
-    err = cudaDeviceDisablePeerAccess(1);
-    printf("err: %s\n", cudaGetErrorString(err));
-
-    cudaSetDevice(1);
-    err = cudaDeviceDisablePeerAccess(0);
-    printf("err: %s\n", cudaGetErrorString(err));
-    printDeviceAttribute();
-
-    cudaSetDevice(0);
-    linktest();
+    // float time_first = p2p_copy(size);
+    // printf("time spend %f \n",time_first);
 
 
-    time_first = HToD_copy(size, 1);
+    for(int i = 0; i<NGPU; i++){
+        for(int j = 0 ; j<NGPU; j++){
+            float time_first = D2D_copy(size, i, j);
+            printf("from: %d, to: %d, time spend %f, transfer rate: %f GB/s \n",i, j, time_first, 1/time_first);
+        }
+    }
+    // linktest();
+
+    // printDeviceAttribute();
+    // float time_third = p2p_copy(N);
+    // printf("time spend %f \n",time_third);
+
+    // // disable peer access
+    // cudaError_t err;
+    // cudaSetDevice(0);
+    // err = cudaDeviceDisablePeerAccess(1);
+    // printf("err: %s\n", cudaGetErrorString(err));
+
+    // cudaSetDevice(1);
+    // err = cudaDeviceDisablePeerAccess(0);
+    // printf("err: %s\n", cudaGetErrorString(err));
+    // printDeviceAttribute();
+
+    // cudaSetDevice(0);
+    // linktest();
+
+
+    float time_first = HToD_copy(size, 1);
     printf("time spend HToD %f \n",time_first);
     return 0;
 }

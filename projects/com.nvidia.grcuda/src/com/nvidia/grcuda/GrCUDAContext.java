@@ -283,6 +283,8 @@ public final class GrCUDAContext {
         switch(policyString) {
             case "data_aware":
                 return RetrieveParentStreamPolicyEnum.DATA_AWARE;
+            case "stream_aware":
+                return RetrieveParentStreamPolicyEnum.STREAM_AWARE;
             case "disjoint_data_aware":
                 return RetrieveParentStreamPolicyEnum.DISJOINT_DATA_AWARE;
             case "disjoint":

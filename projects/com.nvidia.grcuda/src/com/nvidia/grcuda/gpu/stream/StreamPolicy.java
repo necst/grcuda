@@ -42,12 +42,12 @@ public class StreamPolicy {
             case DATA_AWARE:
                 this.retrieveParentStream = new DataAwareRetrieveParentStream(this.retrieveNewStream);
                 break;
+            case STREAM_AWARE:
+                this.retrieveParentStream = new StreamAwareRetrieveParentStream(this.retrieveNewStream);
+                break;
             case DISJOINT_DATA_AWARE:
                 this.retrieveParentStream = new DisjointDataAwareRetrieveParentStream(this.retrieveNewStream);
                 break;
-            // case DISJOINT_LESS_ACTIVE:
-            //     this.retrieveParentStream = new DisjointOrLessActiveRetrieveParentStream(this.retrieveNewStream);
-            //     break;
             case DISJOINT:
                 this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
                 break;
@@ -386,6 +386,23 @@ public class StreamPolicy {
             }
 
             return retrieveNewStream.retrieve(finder.deviceMoveLessArgument(vertex));
+
+        }
+
+    }
+
+
+    private class StreamAwareRetrieveParentStream extends RetrieveParentStream {
+        private final RetrieveNewStream retrieveNewStream;
+        int n = 0;
+        public StreamAwareRetrieveParentStream(RetrieveNewStream retrieveNewStream) {
+            this.retrieveNewStream = retrieveNewStream;
+        }
+
+        @Override
+        public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+            //System.out.println("schedule to "+finder.deviceMoveLessArgument(vertex));
+            return retrieveNewStream.retrieve(devicesManager.deviceWithLessActiveStream());
 
         }
 

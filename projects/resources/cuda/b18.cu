@@ -291,19 +291,20 @@ void Benchmark18::execute_async(int iter) {
     dim3 grid_size_2(nb, nb);
 
     cudaSetDevice(0);            // Set device 0 as current
-
-    cudaStreamAttachMemAsync(s1, blurred_small, 0);
-    cudaStreamAttachMemAsync(s1, mask_small, 0);
-    cudaStreamAttachMemAsync(s3, blurred_unsharpen, 0);
-    cudaStreamAttachMemAsync(s3, image_unsharpen, 0);
-    cudaStreamAttachMemAsync(s1, image3, 0);
+    if (!pascalGpu || stream_attach) {
+        cudaStreamAttachMemAsync(s1, blurred_small, 0);
+        cudaStreamAttachMemAsync(s1, mask_small, 0);
+        cudaStreamAttachMemAsync(s3, blurred_unsharpen, 0);
+        cudaStreamAttachMemAsync(s3, image_unsharpen, 0);
+        cudaStreamAttachMemAsync(s1, image3, 0);
+    }
 
     cudaSetDevice(1);            // Set device 1 as current
-
-    cudaStreamAttachMemAsync(s2, blurred_large, 0);
-    cudaStreamAttachMemAsync(s2, mask_large, 0);
-    cudaStreamAttachMemAsync(s2, image2, 0);
-
+    if (!pascalGpu || stream_attach) {
+        cudaStreamAttachMemAsync(s2, blurred_large, 0);
+        cudaStreamAttachMemAsync(s2, mask_large, 0);
+        cudaStreamAttachMemAsync(s2, image2, 0);
+    }
     cudaSetDevice(0);            // Set device 0 as current
 
     gaussian_blur_multi<<<grid_size_2, block_size_2d_dim, kernel_small_diameter * kernel_small_diameter * sizeof(float), s1>>>(image_gpu0, blurred_small, N, N, kernel_small, kernel_small_diameter);
@@ -347,8 +348,9 @@ void Benchmark18::execute_async(int iter) {
     cudaStreamWaitEvent(s1, e4, 0);
 
     cudaSetDevice(0);            // Set device 0 as current
-
-    cudaStreamAttachMemAsync(s1, image2, 0);
+    if (!pascalGpu || stream_attach) {
+        cudaStreamAttachMemAsync(s1, image2, 0);
+    }
     if (pascalGpu && do_prefetch) {
         cudaMemPrefetchAsync(image3, N * N * sizeof(float), 0, s1);
     }

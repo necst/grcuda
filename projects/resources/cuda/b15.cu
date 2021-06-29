@@ -2,7 +2,7 @@
 
 //////////////////////////////
 //////////////////////////////
-
+#define NGPU 2
 
 __device__ inline double
 cndGPUMulti(double d) {
@@ -53,11 +53,8 @@ void Benchmark15::alloc() {
     // cudaHostRegister(tmp_x, sizeof(double) * N, 0);
 
     for (int i = 0; i < M; i++) {
-        if(i%2 == 0){
-            cudaSetDevice(0);            // Set device 0 as current
-        }else{
-            cudaSetDevice(1);            // Set device 1 as current
-        }
+
+        cudaSetDevice(i%NGPU);
 
         cudaMallocManaged(&x[i], sizeof(double) * N);
         cudaMallocManaged(&y[i], sizeof(double) * N);
@@ -77,11 +74,7 @@ void Benchmark15::init() {
 
     s = (cudaStream_t *)malloc(sizeof(cudaStream_t) * M);
     for (int i = 0; i < M; i++) {
-        if(i%2 == 0){
-            cudaSetDevice(0);            // Set device 0 as current
-        }else{
-            cudaSetDevice(1);            // Set device 1 as current
-        }
+        cudaSetDevice(i%NGPU);
         err = cudaStreamCreate(&s[i]);
     }
 }
@@ -117,11 +110,7 @@ void Benchmark15::execute_async(int iter) {
     double T = 1.0;
     double K = 60.0;
     for (int j = 0; j < M; j++) {
-        if(j%2 == 0){
-            cudaSetDevice(0);            // Set device 0 as current
-        }else{
-            cudaSetDevice(1);            // Set device 1 as current
-        }
+        cudaSetDevice(j%NGPU);
         if (!pascalGpu || stream_attach) {
             cudaStreamAttachMemAsync(s[j], x[j], sizeof(double) * N);
             cudaStreamAttachMemAsync(s[j], y[j], sizeof(double) * N);
@@ -143,11 +132,7 @@ void Benchmark15::execute_async(int iter) {
     // cudaMemPrefetchAsync(y[M - 1], sizeof(double) * N, cudaCpuDeviceId, s[M - 1]);
 
     for (int j = 0; j < M; j++) {
-        if(j%2 == 0){
-            cudaSetDevice(0);            // Set device 0 as current
-        }else{
-            cudaSetDevice(1);            // Set device 1 as current
-        }
+        cudaSetDevice(j%NGPU);
         err = cudaStreamSynchronize(s[j]);
     }
 }
