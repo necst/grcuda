@@ -1,7 +1,7 @@
 #include "b21.cuh"
 
 // #define N 40000 // max 40000
-#define IT 2
+#define IT 1000
 #define NGPU 2
 
 __global__ void JacobiIterationDistributed_v2(int n, float *a, float *x, int offset, int max,float* b, float*x_result){
@@ -182,41 +182,41 @@ void Benchmark21::execute_async(int iter){
         err = cudaStreamSynchronize(s[0]);
     }
 
-    // float* a = (float*)malloc(sizeof(float)*N*N);
-    // float* x = (float*)malloc(sizeof(float)*N);
-    // float* b = (float*)malloc(sizeof(float)*N);
-    // float* x_res = (float*)malloc(sizeof(float)*N);
-    // for(int i = 0; i<N; i++){
-    //     x[i] = 0.0;
-    //     b[i] = 3.0;
-    // }
-    // b[N-1] = ( float ) ( N + 1 );
-    // for(int i = 0; i<N*N;i++){
-    //     a[i] = a_d[i];
-    // }
+    float* a = (float*)malloc(sizeof(float)*N*N);
+    float* x = (float*)malloc(sizeof(float)*N);
+    float* b = (float*)malloc(sizeof(float)*N);
+    float* x_res = (float*)malloc(sizeof(float)*N);
+    for(int i = 0; i<N; i++){
+        x[i] = 0.0;
+        b[i] = 3.0;
+    }
+    b[N-1] = ( float ) ( N + 1 );
+    for(int i = 0; i<N*N;i++){
+        a[i] = a_d[i];
+    }
 
 
-    // for(int it = 0; it < IT; it++){
-    //     for(int i = 0; i < N; i++){
-    //         float sigma = 0;
-    //         for(int j = 0; j<N; j++){
-    //             if(j!=i){
-    //                 sigma = sigma + a[i*N + j]*x[j];
-    //             }
-    //         }
+    for(int it = 0; it < IT; it++){
+        for(int i = 0; i < N; i++){
+            float sigma = 0;
+            for(int j = 0; j<N; j++){
+                if(j!=i){
+                    sigma = sigma + a[i*N + j]*x[j];
+                }
+            }
 
-    //         x_res[i] = (b[i]-sigma)/a[i*N + i];
-    //     }
+            x_res[i] = (b[i]-sigma)/a[i*N + i];
+        }
 
-    //     for(int k = 0; k<N; k++){
-    //         x[k] = x_res[k];
-    //     }
-    // }
+        for(int k = 0; k<N; k++){
+            x[k] = x_res[k];
+        }
+    }
 
-    // for(int i = 0; i<N; i++){
-    //     if(x[i] != x_d[i])
-    //         printf("x: %f, x_d: %f\n", x[i], x_d[i]);
-    // }
+    for(int i = 0; i<N; i++){
+        // if(x[i] != x_d[i])
+            printf("x: %f, x_d: %f\n", x[i], x_d[i]);
+    }
 
 }
 
