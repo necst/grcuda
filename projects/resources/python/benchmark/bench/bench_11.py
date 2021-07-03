@@ -13,8 +13,8 @@ import math
 ##############################
 
 JACOBI_KERNEL = """
-extern "C" __global__ void JacobiIter(int n, float *a, float *x, int offset, int max,float* b, float*x_result){
-    float buf = 0.0;
+extern "C" __global__ void JacobiIter(int n, double *a, double *x, int offset, int max,double*b, double*x_result){
+    double buf = 0.0;
     for (int idx = blockIdx.x * blockDim.x + threadIdx.x + offset; idx < max; idx += blockDim.x * gridDim.x){
         for (int idy = blockIdx.y * blockDim.y + threadIdx.y; idy < n; idy += blockDim.y * gridDim.y){
             if(idx != idy){
@@ -22,12 +22,13 @@ extern "C" __global__ void JacobiIter(int n, float *a, float *x, int offset, int
             }
         }
         x_result[idx - offset] = (b[idx] - buf)/a[idx + idx*n];
+        //printf("idx: %d, sigma: %f, x_result: %f, b: %f, a: %f   ", idx,  buf, x_result[idx - offset],b[idx],a[idx + idx*n]);
     }
 }
 """
 
 MERGE_KERNEL = """
-extern "C" __global__ void mergeResults(int n, int nGPU, int offset, float *x_result, float *x){
+extern "C" __global__ void mergeResults(int n, int nGPU, int offset, double *x_result, double *x){
 
     for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < n/nGPU; idx += blockDim.x * gridDim.x){
         x[idx + offset] = x_result[idx];
@@ -70,11 +71,10 @@ class Benchmark11(Benchmark):
         self.b_d = polyglot.eval(language="grcuda", string=f"double[{size}]")
         self.x_d = polyglot.eval(language="grcuda", string=f"double[{size}]")
 
-        
-        
         # Build the kernels;
+        # aggiungere const
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
-        self.jacobi_kernel = build_kernel(JACOBI_KERNEL, "JacobiIter", "sint32, pointer, pointer, sint32, sint32, pointer, pointer")
+        self.jacobi_kernel = build_kernel(JACOBI_KERNEL, "JacobiIter", "sint32, const pointer, pointer, sint32, sint32, pointer, pointer")
         self.merge_kernel = build_kernel(MERGE_KERNEL, "mergeResults","sint32, sint32, sint32, pointer, pointer")
 
 
@@ -83,7 +83,7 @@ class Benchmark11(Benchmark):
         for i in range(self.size):
             self.b_d[i] = 3.0
             self.x_d[i] = 0.0
-
+            
             for j in range(self.size):
                 if (i == j-1):
                     self.a_d[i+j*self.size] = -1.0
@@ -94,6 +94,8 @@ class Benchmark11(Benchmark):
                 else:
                     self.a_d[i+j*self.size] = 0.0
         self.b_d[self.size-1] = self.size + 1
+
+
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
@@ -113,26 +115,50 @@ class Benchmark11(Benchmark):
             for g in range(self.NGPU):
                 offset = self.size/self.NGPU * g
                 section = self.size/self.NGPU * (g+1)
-                self.execute_phase(f"jacobiIter_{g}", self.jacobi_kernel(self.num_blocks, self.block_size), self.size, self.a_d, self.x_d, offset, section, self.b_d, self.x_result_d[g])
+                self.execute_phase(f"jacobiIter_{g}", self.jacobi_kernel(self.num_blocks, self.block_size), self.size, self.a_d, self.x_d, int(offset), int(section), self.b_d, self.x_result_d[g])
+
             for j in range(self.NGPU):
                 offset = self.size/self.NGPU * j
-                self.execute_phase(f"mergeResult_{j}", self.merge_kernel(self.num_blocks, self.block_size), self.size, self.NGPU, offset, self.x_result_d[j], self.x_d)
+                self.execute_phase(f"mergeResult_{j}", self.merge_kernel(self.num_blocks, self.block_size), self.size, self.NGPU, int(offset), self.x_result_d[j], self.x_d)
         
         if self.time_phases:
             start = System.nanoTime()
-        # for i in range(self.NGPU):
-        #     result[i] = self.x_result_d[i][0]
+        
+        result_execution = self.x_d[0]
+
+
         end = System.nanoTime()
         if self.time_phases:
             self.benchmark.add_phase({"name": "sync", "time_sec": (end - start) / 1_000_000_000})
         self.benchmark.add_computation_time((end - start_comp) / 1_000_000_000)
 
-        self.benchmark.add_to_benchmark("gpu_result", self.x_result_d[0][0])
+        self.benchmark.add_to_benchmark("gpu_result", self.x_d[0])
         if self.benchmark.debug:
-            BenchmarkResult.log_message(f"\tgpu result: {self.x_result_d[0][0]}")
+            BenchmarkResult.log_message(f"\tgpu result: {self.x_d[0]}")
 
 
 
 
     def cpu_validation(self, gpu_result: object, reinit: bool) -> None:
-        print("cpu")
+        
+        x = [0.0 for x in range(self.size)]
+        b = [3.0 for x in range(self.size)]
+        b[self.size-1] = self.size+1
+        x_res = [0.0 for x in range(self.size)]
+
+        for it in range(self.ITER):
+            for i in range(self.size):
+                sigma = 0
+                for j in range(self.size):
+                    if (j!=i) :
+                        sigma = sigma + self.a_d[i*self.size + j] * x[j]
+            
+                x_res[i] = (b[i]-sigma)/self.a_d[i*self.size + i]
+
+            for k in range(self.size):
+                x[k] = x_res[k]
+
+        for i in range(self.size):
+            if(x[i] != self.x_d[i]):
+                print("x :" + str(x[i])+" x_d:" + str(self.x_d[i]))
+
