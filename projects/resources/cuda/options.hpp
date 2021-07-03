@@ -47,6 +47,7 @@ enum BenchmarkEnum {
     B18,
     B20,
     B21,
+    B22,
     ERR
 };
 
@@ -93,6 +94,8 @@ inline BenchmarkEnum get_benchmark(std::string benchmark) {
         return BenchmarkEnum::B20;
     else if (benchmark == "b21")
         return BenchmarkEnum::B21;
+    else if (benchmark == "b22")
+        return BenchmarkEnum::B22;
     else
         return BenchmarkEnum::ERR;
 }
