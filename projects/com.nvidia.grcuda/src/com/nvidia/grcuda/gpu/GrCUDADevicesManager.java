@@ -128,6 +128,7 @@ public class GrCUDADevicesManager {
                 deviceId = i;
             }
         }
+        //System.out.println("device with less active stream"+deviceId+" number of GPUs: "+numberOfGPUs);
         return deviceId;
     }
 

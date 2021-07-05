@@ -13,8 +13,8 @@ import math
 ##############################
 
 JACOBI_KERNEL = """
-extern "C" __global__ void JacobiIter(int n, double *a, double *x, int offset, int max,double*b, double*x_result){
-    double buf = 0.0;
+extern "C" __global__ void JacobiIter(int n, float *a, float *x, int offset, int max,float*b, float*x_result){
+    float buf = 0.0;
     for (int idx = blockIdx.x * blockDim.x + threadIdx.x + offset; idx < max; idx += blockDim.x * gridDim.x){
         for (int idy = blockIdx.y * blockDim.y + threadIdx.y; idy < n; idy += blockDim.y * gridDim.y){
             if(idx != idy){
@@ -28,7 +28,7 @@ extern "C" __global__ void JacobiIter(int n, double *a, double *x, int offset, i
 """
 
 MERGE_KERNEL = """
-extern "C" __global__ void mergeResults(int n, int nGPU, int offset, double *x_result, double *x){
+extern "C" __global__ void mergeResults(int n, int nGPU, int offset, float *x_result, float *x){
 
     for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < n/nGPU; idx += blockDim.x * gridDim.x){
         x[idx + offset] = x_result[idx];
@@ -47,7 +47,7 @@ class Benchmark11(Benchmark):
         self.block_size = DEFAULT_BLOCK_SIZE_1D
 
         self.NGPU = 2
-        self.ITER = 1000
+        self.ITER = 2
 
         self.x_result_d = [[]] * self.NGPU
         self.a_d = None
@@ -66,16 +66,16 @@ class Benchmark11(Benchmark):
         # print("partition: "+self.partition_size)
         # print("size: "+size)
         for i in range(self.NGPU):
-            self.x_result_d[i] = polyglot.eval(language="grcuda", string=f"double[{int(self.partition_size)}]")
-        self.a_d = polyglot.eval(language="grcuda", string=f"double[{size*size}]")
-        self.b_d = polyglot.eval(language="grcuda", string=f"double[{size}]")
-        self.x_d = polyglot.eval(language="grcuda", string=f"double[{size}]")
+            self.x_result_d[i] = polyglot.eval(language="grcuda", string=f"float[{int(self.partition_size)}]")
+        self.a_d = polyglot.eval(language="grcuda", string=f"float[{size*size}]")
+        self.b_d = polyglot.eval(language="grcuda", string=f"float[{size}]")
+        self.x_d = polyglot.eval(language="grcuda", string=f"float[{size}]")
 
         # Build the kernels;
         # aggiungere const
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
-        self.jacobi_kernel = build_kernel(JACOBI_KERNEL, "JacobiIter", "sint32, const pointer, pointer, sint32, sint32, pointer, pointer")
-        self.merge_kernel = build_kernel(MERGE_KERNEL, "mergeResults","sint32, sint32, sint32, pointer, pointer")
+        self.jacobi_kernel = build_kernel(JACOBI_KERNEL, "JacobiIter", "sint32, const pointer, const pointer, sint32, sint32, const pointer, pointer")
+        self.merge_kernel = build_kernel(MERGE_KERNEL, "mergeResults","sint32, sint32, sint32, const pointer, pointer")
 
 
     @time_phase("initialization")
@@ -115,11 +115,11 @@ class Benchmark11(Benchmark):
             for g in range(self.NGPU):
                 offset = self.size/self.NGPU * g
                 section = self.size/self.NGPU * (g+1)
-                self.execute_phase(f"jacobiIter_{g}", self.jacobi_kernel(self.num_blocks, self.block_size), self.size, self.a_d, self.x_d, int(offset), int(section), self.b_d, self.x_result_d[g])
+                self.execute_phase(f"jacobiIter_{g}", self.jacobi_kernel((32, 32),(32,32)), self.size, self.a_d, self.x_d, int(offset), int(section), self.b_d, self.x_result_d[g])
 
             for j in range(self.NGPU):
                 offset = self.size/self.NGPU * j
-                self.execute_phase(f"mergeResult_{j}", self.merge_kernel(self.num_blocks, self.block_size), self.size, self.NGPU, int(offset), self.x_result_d[j], self.x_d)
+                self.execute_phase(f"mergeResult_{j}", self.merge_kernel(1024, 32), self.size, self.NGPU, int(offset), self.x_result_d[j], self.x_d)
         
         if self.time_phases:
             start = System.nanoTime()
