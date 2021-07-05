@@ -1,5 +1,6 @@
 #pragma once
 #include "benchmark.cuh"
+// #define DIM 100
 
 class Benchmark22 : public Benchmark {
    public:
@@ -16,8 +17,9 @@ class Benchmark22 : public Benchmark {
     std::string print_result(bool short_form = false);
 
    private:
-    float A[N][N], U[N][N], L[N][N], *A_hw, *U_hw, *L_hw;
-    cudaStream_t s*;
+    //float A[DIM][DIM], U[DIM][DIM], L[DIM][DIM], LT[DIM][DIM];
+    float *A, *U, *L;
+    cudaStream_t *s;
     
     //// for LU_v1.cu
     // cudaGraph_t graph;
