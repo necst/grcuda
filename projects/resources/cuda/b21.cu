@@ -35,13 +35,13 @@ __global__ void JacobiIterationDistributed_v3(int n, float *a, float *x, int off
         // printf("idx: %d, sigma: %f, x_result: %f\n", idx,  buf, x_result[idx - offset]);
     }
 }
-__global__ void mergeResults(int n, int nGPU, int offset, float *x_result, float *x){
+__global__ void mergeResults(int n, int nGPU, int offset_1,float *x, float *x_result_0, float *x_result_1){
 
     for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < n/nGPU; idx += blockDim.x * gridDim.x){
-        x[idx + offset] = x_result[idx];
-        // printf("idx : %d, n/GPU: %d, offset: %d\n", idx, n/nGPU, offset);
+        x[idx] = x_result_0[idx];
+        x[idx + offset_1] = x_result_1[idx];
+        //printf("idx : %d, n/GPU: %d, offset: %d, x_res_0: %f, x_res_1 %f \n", idx, n/nGPU, offset_1, x_result_0[idx], x_result_1[idx]);
         // printf("idx: %d, x_result: %f, x: %f\n", idx, x_result[idx], x[idx]);
-
     }
 }
 
@@ -75,13 +75,14 @@ void Benchmark21::alloc(){
 
     s = (cudaStream_t *)malloc(sizeof(cudaStream_t) * NGPU);
     for (int i = 0; i < NGPU; i++) {
-        cudaSetDevice(0);
+        cudaSetDevice(i);
         err = cudaStreamCreate(&s[i]);
     }
 
 
     result_d = (float**)malloc(sizeof(float*)*NGPU);
     for (int i = 0; i < NGPU; i++) {
+        cudaSetDevice(0);
         cudaMallocManaged(&result_d[i], (N/NGPU)*sizeof(float));
     }
 }
@@ -153,7 +154,7 @@ void Benchmark21::execute_async(int iter){
     //     }
 
     // }
-    dim3 dimGrid(32,32);
+    dim3 dimGrid(1024,1024);
     dim3 dimBlock(32,32);
     int offset;
     int section;
@@ -164,7 +165,7 @@ void Benchmark21::execute_async(int iter){
             offset = (N/NGPU) * g;
             section = (N/NGPU) * (g+1);
             cudaSetDevice(g);
-            JacobiIterationDistributed_v3<<<dimGrid,dimBlock, 0,s[g]>>>(N, a_d, x_d, offset, section, b_d, result_d[g]);
+            JacobiIterationDistributed_v3<<<1024 , 32, 0,s[g]>>>(N, a_d, x_d, offset, section, b_d, result_d[g]);
             //printf("offset: %d, section: %d \n", offset, section);
         }
 
@@ -175,19 +176,21 @@ void Benchmark21::execute_async(int iter){
             //cudaDeviceSynchronize();
         }
 
-        for (int j = 0; j < NGPU; j++) {
-            offset = (N/NGPU) * j;
-            cudaSetDevice(j);
-
-            mergeResults<<<1024, 32, 0, s[j]>>>(N, NGPU, offset, result_d[j], x_d);
-        }
-        for (int j = 0; j < NGPU; j++) {
-            cudaSetDevice(j);
+        // for (int j = 0; j < NGPU; j++) {
+        //     
+        //     cudaSetDevice(j);
+        cudaSetDevice(0);
+        offset = (N/NGPU) * 1;
+        mergeResults<<<1024, 32,0, s[0]>>>(N, NGPU, offset, x_d, result_d[0], result_d[1]);
+        //cudaDeviceSynchronize();
+        // }
+        // for (int j = 0; j < NGPU; j++) {
+        //     cudaSetDevice(j);
              
-            err = cudaStreamSynchronize(s[j]);
-            //cudaDeviceSynchronize();
-        }
-        //err = cudaStreamSynchronize(s[0]);
+        //     err = cudaStreamSynchronize(s[j]);
+        //     //cudaDeviceSynchronize();
+        // }
+        err = cudaStreamSynchronize(s[0]);
     }
 
     // float* a = (float*)malloc(sizeof(float)*N*N);
@@ -222,7 +225,7 @@ void Benchmark21::execute_async(int iter){
     // }
 
     // for(int i = 0; i<N; i++){
-    //     // if(x[i] != x_d[i])
+    //     if(x[i] != x_d[i])
     //         printf("x: %f, x_d: %f\n", x[i], x_d[i]);
     // }
 
@@ -235,5 +238,5 @@ void Benchmark21::execute_cudagraph(int iter){}
 void Benchmark21::execute_cudagraph_manual(int iter){}
 void Benchmark21::execute_cudagraph_single(int iter){}
 std::string Benchmark21::print_result(bool short_form){
-    return std::to_string(x_result_d[0]);
+    return std::to_string(x_d[0]);
 }

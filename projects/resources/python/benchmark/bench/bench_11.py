@@ -22,18 +22,19 @@ extern "C" __global__ void JacobiIter(int n, float *a, float *x, int offset, int
             }
         }
         x_result[idx - offset] = (b[idx] - buf)/a[idx + idx*n];
-        //printf("idx: %d, sigma: %f, x_result: %f, b: %f, a: %f   ", idx,  buf, x_result[idx - offset],b[idx],a[idx + idx*n]);
     }
 }
 """
 
 MERGE_KERNEL = """
-extern "C" __global__ void mergeResults(int n, int nGPU, int offset, float *x_result, float *x){
+extern "C" __global__ void mergeResults(int n, int nGPU, int offset, float *x, float *x_result_0, float *x_result_1){
 
     for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < n/nGPU; idx += blockDim.x * gridDim.x){
-        x[idx + offset] = x_result[idx];
+        x[idx] = x_result_0[idx];
+        x[idx + offset] = x_result_1[idx];
     }
 }
+
 """
 
 class Benchmark11(Benchmark):
@@ -47,7 +48,7 @@ class Benchmark11(Benchmark):
         self.block_size = DEFAULT_BLOCK_SIZE_1D
 
         self.NGPU = 2
-        self.ITER = 2
+        self.ITER = 50
 
         self.x_result_d = [[]] * self.NGPU
         self.a_d = None
@@ -72,10 +73,9 @@ class Benchmark11(Benchmark):
         self.x_d = polyglot.eval(language="grcuda", string=f"float[{size}]")
 
         # Build the kernels;
-        # aggiungere const
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
         self.jacobi_kernel = build_kernel(JACOBI_KERNEL, "JacobiIter", "sint32, const pointer, const pointer, sint32, sint32, const pointer, pointer")
-        self.merge_kernel = build_kernel(MERGE_KERNEL, "mergeResults","sint32, sint32, sint32, const pointer, pointer")
+        self.merge_kernel = build_kernel(MERGE_KERNEL, "mergeResults","sint32, sint32, sint32,  pointer, const pointer, const pointer")
 
 
     @time_phase("initialization")
@@ -102,7 +102,6 @@ class Benchmark11(Benchmark):
         for i in range(self.size):
             self.x_d[i] = 0.0
 
-    
     def execute(self) -> object:
 
         # Call the kernels;
@@ -115,12 +114,10 @@ class Benchmark11(Benchmark):
             for g in range(self.NGPU):
                 offset = self.size/self.NGPU * g
                 section = self.size/self.NGPU * (g+1)
-                self.execute_phase(f"jacobiIter_{g}", self.jacobi_kernel((32, 32),(32,32)), self.size, self.a_d, self.x_d, int(offset), int(section), self.b_d, self.x_result_d[g])
-
-            for j in range(self.NGPU):
-                offset = self.size/self.NGPU * j
-                self.execute_phase(f"mergeResult_{j}", self.merge_kernel(1024, 32), self.size, self.NGPU, int(offset), self.x_result_d[j], self.x_d)
-        
+                self.execute_phase(f"jacobiIter_{g}", self.jacobi_kernel(1024,32), self.size, self.a_d, self.x_d, int(offset), int(section), self.b_d, self.x_result_d[g])
+            
+            offset = self.size/self.NGPU
+            self.execute_phase(f"mergeResult", self.merge_kernel(1024, 32), self.size, self.NGPU, int(offset), self.x_d, self.x_result_d[0], self.x_result_d[1])
         if self.time_phases:
             start = System.nanoTime()
         

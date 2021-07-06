@@ -220,7 +220,8 @@ public final class CUDARuntime {
         try{
             Object callable = CUDARuntimeFunction.CUDA_MEM_ADVISE.getSymbol(this);
             final long cudaMemAdviseSetPreferredLocation = 3;
-            Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(),cudaMemAdviseSetPreferredLocation, deviceId);
+            final long cudaMemAdviseSetReadMostly = 1;
+            Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(),cudaMemAdviseSetReadMostly, deviceId);
             checkCUDAReturnCode(result, "cudaMemAdvise");
         } catch (InteropException e) {
             throw new GrCUDAException(e);
