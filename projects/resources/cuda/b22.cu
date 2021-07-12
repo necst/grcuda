@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <time.h>
 
+#define NGPU 2
+
 #define A(i,j,N) A[(i)*N+(j)]
 #define U(i,j,N) U[(i)*N+(j)]
 #define L(i,j,N) L[(i)*N+(j)]
@@ -87,6 +89,12 @@ void Benchmark22::alloc(){
     cudaMallocManaged(&A, long(N)*long(N)*sizeof(float));
     cudaMallocManaged(&U, long(N)*long(N)*sizeof(float));
     cudaMallocManaged(&L, long(N)*long(N)*sizeof(float));
+
+    s = (cudaStream_t *)malloc(sizeof(cudaStream_t) * NGPU);
+    for (int i = 0; i < NGPU; i++) {
+        cudaSetDevice(i);
+        err = cudaStreamCreate(&s[i]);
+    }
 }
 
 /*
@@ -120,6 +128,24 @@ void Benchmark22::reset(){
         }
     }
 }
+
+void Benchmark22::execute_sync(int iter){
+    
+    printf("\nExecuting SW version (transpose)");
+    for (int it = 0; it < N; it++){
+        SWupdateUT(A, U, LT, N, it);
+        SWupdateLT(A, U, LT, N, it);
+    }
+    
+    printf("\nExecuting on GPU\n");
+    cudaSetDevice(0);
+    for (int it = 0; it < N; it++){
+        updateU<<<num_blocks,block_size_1d>>>(A, U, L, N, it);
+        cudaDeviceSynchronize();
+        updateL<<<num_blocks,block_size_1d>>>(A, U, L, N, it);
+        cudaDeviceSynchronize();
+    }
+}
 */
 
 void Benchmark22::init(){
@@ -148,27 +174,27 @@ void Benchmark22::reset(){
 }
 
 void Benchmark22::execute_sync(int iter){
-    
-    // printf("\nExecuting SW version (transpose)");
-    // for (int it = 0; it < N; it++){
-    //     SWupdateUT(A, U, LT, N, it);
-    //     SWupdateLT(A, U, LT, N, it);
-    // }
-    
-    // printf("\nExecuting on GPU\n");
-    cudaSetDevice(0);
     for (int it = 0; it < N; it++){
-        // cudaSetDevice(0);
-        cudaDeviceSynchronize();
-        updateU<<<num_blocks,block_size_1d>>>(A, U, L, N, it);
-        //printf("switch device\n");
-        //cudaSetDevice(1);
-        cudaDeviceSynchronize();
-        updateL<<<num_blocks,block_size_1d>>>(A, U, L, N, it);
+        for(int g = 0; g < NGPU; g++){
+            cudaSetDevice(g);
+            (g%2==0) ? updateU<<<num_blocks,block_size_1d>>>(A, U, L, N, it) : updateL<<<num_blocks,block_size_1d>>>(A, U, L, N, it);
+            cudaDeviceSynchronize();
+        }
     }
 }
 
-void Benchmark22::execute_async(int iter){}
+void Benchmark22::execute_async(int iter){
+    for (int it = 0; it < N; it++){
+        cudaSetDevice(0);
+        updateU<<<num_blocks,block_size_1d>>>(A, U, L, N, it);
+        cudaDeviceSynchronize();
+        // err = cudaStreamSynchronize(s[0]);
+        // err = cudaStreamSynchronize(s[1]);
+        cudaSetDevice(0);
+        updateL<<<num_blocks,block_size_1d>>>(A, U, L, N, it);
+        cudaDeviceSynchronize();
+    }
+}
 void Benchmark22::execute_cudagraph(int iter){}
 void Benchmark22::execute_cudagraph_manual(int iter){}
 void Benchmark22::execute_cudagraph_single(int iter){}
