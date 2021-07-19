@@ -270,7 +270,9 @@ graalpython -m ginstall install numpy;
 
 7. **Install GrCUDA with** `./install.sh`
 
-8. **Setup your IDE with** `mx ideinit`
+8. **Setup your IDE** 
+* `mx build --dependencies=TRUFFLE_NFI` in your GrCUDA folder
+* `mx ideinit` to initialize the IDE. Here we use IntelliJ
 * In IntelliJ Idea, install the Python plugin, then do Project Structure -> SDKs -> Create a new Python 2.7 Virtual Environment, it is used by `mx`
 * In IntelliJ Idea, Project Structures -> Modules -> Set the Module SDK (under Dependencies) of `mx` and submodules to your Java SDK (e.g. `1.8`)
 * Also update the project SDK and the default JUnit configurations to use the GraalVM SDK in `$GRAAL_HOME`, and update the `PATH` variable so that it can find `nvcc`
