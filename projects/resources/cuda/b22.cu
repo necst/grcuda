@@ -22,7 +22,7 @@ __global__ void updateU(const float *A, float *U, float *L, const int offset, co
 	//int id = row * dim + j;
     for (int j = blockIdx.x * blockDim.x + threadIdx.x + offset; j < max; j += blockDim.x * gridDim.x) {
 		// if(j<max && j<dim && j >= row){
-		if(j >= row && j<max){
+		if(j >= row){
 			U(row,j,dim) = A(row,j,dim);
 			for(int k = 0; k<row; k++)
 				U(row,j,dim) -= L(k,row,dim)*U(k,j,dim);
@@ -35,7 +35,7 @@ __global__ void updateL(const float *A, float *U, float *L, const int offset, co
 	//int id = row * dim + j;
 	for (int i = blockIdx.x * blockDim.x + threadIdx.x + offset; i < max; i += blockDim.x * gridDim.x) {
 		// if(i<max && i<dim && i>=col){
-		if(i>=col && i<max){
+		if(i>=col){
 			L(col,i,dim) = A(i,col,dim);
 			for(int k = 0; k<col; k++)
 				L(col,i,dim) -= L(k,i,dim)*U(k,col,dim);
