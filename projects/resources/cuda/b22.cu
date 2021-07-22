@@ -2,18 +2,14 @@
 #include <cstdio>
 #include <time.h>
 
-//#define NGPU 4
+//#define NGPU 1
 #define GPU0 0
 #define GPU1 1
-#define N_STREAMS 1
+#define N_STREAMS 4 // must be even
 
 #define A(i,j,N) A[(i)*N+(j)]
 #define U(i,j,N) U[(i)*N+(j)]
 #define L(i,j,N) L[(i)*N+(j)]
-// #define LT(i,j,N) L[(i)*N+(j)]
-// #define A_hw(i,j,N) A_hw[(i)*N+(j)]
-// #define U_hw(i,j,N) U_hw[(i)*N+(j)]
-// #define L_hw(i,j,N) L_hw[(i)*N+(j)]
 
 // Multi-kernel GPU implementation
 // L matrix is transposed -> we obtain 2 upper triangular matrix
@@ -43,38 +39,6 @@ __global__ void updateL(const float *A, float *U, float *L, const int offset, co
 		}
 	}
 }
-
-/*
-// Multi-kernel SW implementation
-// L matrix is transposed -> we obtain 2 upper triangular matrix
-void SWupdateUT(float A[DIM][DIM], float U[DIM][DIM], float LT[DIM][DIM], int dim, int row){
-	for(int j = row; j<dim; j++){
-		U[row][j] = A[row][j];
-		for(int k = 0; k<row; k++)
-			U[row][j] -= LT[k][row]*U[k][j];
-	}
-}
-
-void SWupdateLT(float A[DIM][DIM], float U[DIM][DIM], float LT[DIM][DIM], int dim, int row){
-	for(int j = row; j<dim; j++){
-		LT[row][j] = A[j][row];
-		for(int k = 0; k<row; k++)
-			LT[row][j] -= LT[k][j]*U[k][row];
-		LT[row][j] /= U[row][row];
-	}
-}
-
-// initialize A with random numbers in [-99, 99]
-void initializeA(float A[DIM][DIM], int dim, int seed){
-	srand(seed);
-	for(int i = 0; i<dim; i++)
-		for(int j = 0; j<dim; j++){
-			A[i][j] = rand()%100 + 1;
-			if(rand()%2)
-				A[i][j] *= -1;
-		}
-}
-*/
   
 void Benchmark22::alloc(){
 	cudaMallocManaged(&A, long(N)*long(N)*sizeof(float));
@@ -89,57 +53,6 @@ void Benchmark22::alloc(){
 	}
 }
 
-/*
-void Benchmark22::init(){
-	for(int i = 0; i<N; i++){
-		for(int j = 0; j<N; j++){
-			U[i][j] = 0.0;
-			LT[i][j] = 0.0;
-			A[i][j] = float(rand()%100 + 1);
-			if(rand()%2)
-				A[i][j] *= -1;
-			A_hw(i,j,N) = A[i][j];
-			U_hw(i,j,N) = 0.0;
-			L_hw(i,j,N) = 0.0;
-		}
-	}
-}
-
-void Benchmark22::reset(){
-	srand(time(0));
-	for(int i = 0; i<N; i++){
-		for(int j = 0; j<N; j++){
-			U[i][j] = 0.0;
-			LT[i][j] = 0.0;
-			A[i][j] = float(rand()%100 + 1);
-			if(rand()%2)
-				A[i][j] *= -1;
-			A_hw(i,j,N) = A[i][j];
-			U_hw(i,j,N) = 0.0;
-			L_hw(i,j,N) = 0.0;
-		}
-	}
-}
-
-void Benchmark22::execute_sync(int iter){
-	
-	printf("\nExecuting SW version (transpose)");
-	for (int it = 0; it < N; it++){
-		SWupdateUT(A, U, LT, N, it);
-		SWupdateLT(A, U, LT, N, it);
-	}
-	
-	printf("\nExecuting on GPU\n");
-	cudaSetDevice(0);
-	for (int it = 0; it < N; it++){
-		updateU<<<num_blocks,block_size_1d>>>(A, U, L, N, it);
-		cudaDeviceSynchronize();
-		updateL<<<num_blocks,block_size_1d>>>(A, U, L, N, it);
-		cudaDeviceSynchronize();
-	}
-}
-*/
-
 void Benchmark22::init(){
 	for(int i = 0; i<N; i++){
 		for(int j = 0; j<N; j++){
@@ -168,28 +81,25 @@ void Benchmark22::reset(){
 void Benchmark22::execute_sync(int iter){
 	int slice_GPU = N/NGPU+1;
 	int slice_stream = slice_GPU/N_STREAMS+1;
+	int offset,max;
 	for (int it = 0; it < N; it++){
 		for(int g = 0; g < NGPU; g++){
 			cudaSetDevice(g);
 			for (int i = 0; i < N_STREAMS; i++){
-				int offset = g*slice_GPU+i*slice_stream;
-				int max = (g*slice_GPU+(i+1)*slice_stream < (g+1)*slice_GPU) ? g*slice_GPU+(i+1)*slice_stream : (g+1)*slice_GPU;
-				// updateU<<<(N/block_size_1d+1)/NGPU+1,block_size_1d,0,s[g*N_STREAMS+i]>>>(A, U, L, offset, max, N, it);
+				offset = g*slice_GPU+i*slice_stream;
+				max = (g*slice_GPU+(i+1)*slice_stream < (g+1)*slice_GPU) ? g*slice_GPU+(i+1)*slice_stream : (g+1)*slice_GPU;
 				updateU<<<num_blocks,block_size_1d,0,s[g*N_STREAMS+i]>>>(A, U, L, offset, (max<N) ? max:N, N, it);
 				err = cudaStreamSynchronize(s[g*N_STREAMS+i]);
 			}
-			// cudaDeviceSynchronize();
 		}
 		for(int g = 0; g < NGPU; g++){
 			cudaSetDevice(g);
 			for (int i = 0; i < N_STREAMS; i++){
-				int offset = g*slice_GPU+i*slice_stream;
-				int max = (g*slice_GPU+(i+1)*slice_stream < (g+1)*slice_GPU) ? g*slice_GPU+(i+1)*slice_stream : (g+1)*slice_GPU;
-				// updateL<<<(N/block_size_1d+1)/NGPU+1,block_size_1d,0,s[g*N_STREAMS+i]>>>(A, U, L, offset, max, N, it); 
+				offset = g*slice_GPU+i*slice_stream;
+				max = (g*slice_GPU+(i+1)*slice_stream < (g+1)*slice_GPU) ? g*slice_GPU+(i+1)*slice_stream : (g+1)*slice_GPU;
 				updateL<<<num_blocks,block_size_1d,0,s[g*N_STREAMS+i]>>>(A, U, L, offset, (max<N) ? max:N, N, it);
 				err = cudaStreamSynchronize(s[g*N_STREAMS+i]);
 			}
-			// cudaDeviceSynchronize();
 		}	
 	}
 }
@@ -204,104 +114,71 @@ void Benchmark22::execute_async(int iter){
 	// 	}
     // }
 
-	// if (pascalGpu && do_prefetch) {
-	// 	for (int i = 0; i < NGPU; i++) {
-	// 		cudaMemPrefetchAsync(A, long(N)*long(N)*sizeof(float), i, s[i]);
-	// 		cudaMemPrefetchAsync(L, long(N)*long(N)*sizeof(float), i, s[i]);
-	// 		cudaMemPrefetchAsync(U, long(N)*long(N)*sizeof(float), i, s[i]);
-	// 	}
-    // }
+	if (pascalGpu && do_prefetch) {
+		for (int i = 0; i < NGPU; i++) {
+			cudaMemPrefetchAsync(A, long(N)*long(N)*sizeof(float), i, s[i]);
+			cudaMemPrefetchAsync(L, long(N)*long(N)*sizeof(float), i, s[i]);
+			cudaMemPrefetchAsync(U, long(N)*long(N)*sizeof(float), i, s[i]);
+		}
+    }
 
-	cudaEvent_t e1, e2;
+	cudaEvent_t e1, e2[NGPU*(N_STREAMS/2)];
 	int slice_GPU = N/NGPU+1;
-	int slice_stream = slice_GPU/N_STREAMS+1;
+	int slice_stream = slice_GPU/(N_STREAMS/2)+1;
 
 	for (int it = 0; it < N; it++){
-
 		for(int g = 0; g < NGPU; g++){		
 			cudaSetDevice(g);
-
-			for (int i = 0; i < N_STREAMS; i++){
+			for (int i = 0; i < N_STREAMS/2; i++){
 				int offset = g*slice_GPU+i*slice_stream;
 				int max = (g*slice_GPU+(i+1)*slice_stream < (g+1)*slice_GPU) ? g*slice_GPU+(i+1)*slice_stream : (g+1)*slice_GPU;
 				updateU<<<num_blocks,block_size_1d,0,s[g*N_STREAMS+i]>>>(A, U, L, offset, (max<N) ? max:N, N, it);
-				// if(it/slice_stream == g*N_STREAMS+i){ 
-				// 	cudaEventCreate(&e1);
-				// 	cudaEventRecord(e1, s[g*N_STREAMS+i]);
-				// }
+				if(it/slice_stream == g*N_STREAMS+i){ 
+					cudaEventCreate(&e1);
+					cudaEventRecord(e1, s[g*N_STREAMS+i]);
+				}
 			}
-			cudaDeviceSynchronize();
 		}
-
-		// for(int g = 0; g < NGPU*N_STREAMS; g++){
-		// 	// cudaStreamWaitEvent(s[g], e1, 0);
-		// 	err = cudaStreamSynchronize(s[g]);
-		// }
-
+		for(int g = 0; g < NGPU; g++){
+			for(int i =  N_STREAMS/2; i < N_STREAMS; i++)
+				cudaStreamWaitEvent(s[g*N_STREAMS+i], e1, 0);
+		}
         for(int g = 0; g < NGPU; g++){		
 			cudaSetDevice(g);
-			for (int i = 0; i < N_STREAMS; i++){
+			for (int i = 0; i < N_STREAMS/2; i++){
 				int offset = g*slice_GPU+i*slice_stream;
 				int max = (g*slice_GPU+(i+1)*slice_stream < (g+1)*slice_GPU) ? g*slice_GPU+(i+1)*slice_stream : (g+1)*slice_GPU;
-				updateL<<<num_blocks,block_size_1d,0,s[g*N_STREAMS+i]>>>(A, U, L, offset, (max<N) ? max:N, N, it);
-				// if(it/slice_stream == g*N_STREAMS+i){ 
-				// 	cudaEventCreate(&e2);
-				// 	cudaEventRecord(e2, s[g*N_STREAMS+i]);
-				// }
+				updateL<<<num_blocks,block_size_1d,0,s[g*N_STREAMS+i+N_STREAMS/2]>>>(A, U, L, offset, (max<N) ? max:N, N, it);
+				// cudaEventCreate(&e2[g*(N_STREAMS/2)+i]);
+				// cudaEventRecord(e2[g*(N_STREAMS/2)+i], s[g*N_STREAMS+i+N_STREAMS/2]);
 			}
-			cudaDeviceSynchronize();
 		}
-
-		// for(int g = 0; g < NGPU*N_STREAMS; g++){
-		// 	// cudaStreamWaitEvent(s[g], e2, 0);
-		// 	err = cudaStreamSynchronize(s[g]);
-		// }
+		for(int g = 0; g < NGPU; g++){
+			for(int i = 0; i < N_STREAMS/2; i++)
+				err = cudaStreamSynchronize(s[g*N_STREAMS+i+N_STREAMS/2]);
+				// cudaStreamWaitEvent(s[g*N_STREAMS+i], e2[g*(N_STREAMS/2)+i], 0);
+		}
 	}
-
-	// for (int j = 0; j < NGPU; j++) {
-	// 	cudaSetDevice(j);
-	// 	cudaDeviceSynchronize();
-	// 	// err = cudaStreamSynchronize(s[j]);
+	// for(int g = 0; g < NGPU; g++){
+	// 	for(int i = 0; i < N_STREAMS/2; i++)
+	// 		err = cudaStreamSynchronize(s[g*N_STREAMS+i+N_STREAMS/2]);
 	// }
-
 }
 
 void Benchmark22::execute_cudagraph(int iter){}
 void Benchmark22::execute_cudagraph_manual(int iter){}
+
 void Benchmark22::execute_cudagraph_single(int iter){
-	int ngpu = 1;
+	cudaSetDevice(0);
 	for (int it = 0; it < N; it++){
-		for(int g = 0; g < ngpu; g++){
-			cudaSetDevice(g);
-			updateU<<<(N/block_size_1d+1)/ngpu+1,block_size_1d>>>(A, U, L, g*(N/ngpu+1),(g+1)*(N/ngpu+1), N, it);
-			cudaDeviceSynchronize();
-		}
-		for(int g = 0; g < ngpu; g++){
-			cudaSetDevice(g);
-			updateL<<<(N/block_size_1d+1)/ngpu+1,block_size_1d>>>(A, U, L, g*(N/ngpu+1),(g+1)*(N/ngpu+1), N, it);
-			cudaDeviceSynchronize();
-		}
+		updateU<<<num_blocks,block_size_1d>>>(A, U, L, 0, N, N, it);
+		cudaDeviceSynchronize();
+		updateL<<<num_blocks,block_size_1d>>>(A, U, L, 0, N, N, it);
+		cudaDeviceSynchronize();
 	}
 }
 
 std::string Benchmark22::print_result(bool short_form){
-	/*
-	
-	float tolerance = 0.0001;
-	for(int i = 0; i<N; i++){
-		for(int j = 0; j<N; j++){
-			if(abs(U[i][j]-U_hw(i,j,N)) >= tolerance){
-				tolerance = abs(U[i][j]-U_hw(i,j,N));
-				// printf("(%d,%d) \t U= %f vs %f\terror = %f\n", i,j,U[i][j],U_hw(i,j,N),abs(U[i][j]-U_hw(i,j,N)));
-			}
-			if(abs(LT[i][j]-L_hw(i,j,N)) >= tolerance){
-				tolerance = abs(LT[i][j]-L_hw(i,j,N));
-				// printf("(%d,%d) \t LT= %f vs %f\terror = %f\n", i,j,LT[i][j],L_hw(i,j,N),abs(LT[i][j]-L_hw(i,j,N)));
-			}
-		}
-	}
-	printf("\n\n");
-	*/
 	std::string res;
 	float err = 0.0;
 	for(int i = N-100; i<N; i++)
