@@ -13,8 +13,8 @@ wss.on('connection', (ws: WebSocket) => {
   console.log("A new client connected")
   const grCUDAProxy = new GrCUDAProxy(ws)
 
-  ws.on('message', (message: string) => {
-    grCUDAProxy.beginComputation(message)
+  ws.on('message', async (message: string) => {
+    await grCUDAProxy.beginComputation(message)
   })
 
 })
