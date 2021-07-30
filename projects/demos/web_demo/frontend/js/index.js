@@ -3,7 +3,6 @@ const sendWSMessage = document.getElementById("btn-send-msg-ws")
 const progressBar = document.getElementById("progress-bar")
 const imageGallery = document.getElementById("images")
 let imageGalleryContent = ""
-//const lightGalleryElement = document.getElementById("lightgallery")
 
 ws.addEventListener("open", (evt) => {
   console.log("Connection to websocket is open at ws://localhost:8080")
@@ -30,7 +29,7 @@ ws.addEventListener("message", (evt) => {
     for(const image of images) {
       const imageId = image.split("/").pop().replace(".jpg", "")
       console.log("Adding image with id", imageId)
-      imageGalleryContent += `<img src="${image}" id="${imageId}" onclick="openLightBox(${imageId})">`
+      imageGalleryContent += `<img class="image-pad" src="${image}" id="${imageId}" onclick="openLightBox(${imageId})">`
     }
 
     imageGallery.innerHTML = imageGalleryContent
