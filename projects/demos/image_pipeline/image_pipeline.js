@@ -9,11 +9,9 @@ const cu = Polyglot.eval("grcuda", "CU");
 // Load CUDA kernels;
 const ck = require("./cuda_kernels.js");
 
-/////////////////////////////
-/////////////////////////////
 
 // Convert images to black and white;
-const BW = false;
+const BW = true;
 // Edge width (in pixel) of input images.
 // If a loaded image has lower width than this, it is rescaled;
 const RESIZED_IMG_WIDTH = 512;
@@ -203,7 +201,7 @@ async function storeImageInner(img, imgName, resolution, kind) {
 
 // Load and preprocess an image, return it as a matrix;
 async function loadImage(imgName) {
-    return cv.imreadAsync("img_in/" + imgName + ".jpg", BW ? cv.IMREAD_GRAYSCALE : cv.IMREAD_COLOR)
+    return Jimp.read("img_in/" + imgName + ".jpg")
         .then(img => {
             // Resize input;
             return img; // .resize(RESIZED_IMG_WIDTH, RESIZED_IMG_WIDTH);
@@ -329,12 +327,20 @@ async function processImageColor(img) {
 // Store the output of the image processing into 2 images,
 // with low and high resolution;
 async function storeImage(img, imgName) {
-    storeImageInner(img, imgName, RESIZED_IMG_WIDTH_OUT_LARGE, "large");
-    storeImageInner(img, imgName, RESIZED_IMG_WIDTH_OUT_SMALL, "small");
+    // Create a Jimp image from the matrix;
+    const out = new Jimp({
+        width: img.cols,
+        height: img.rows,
+        data: Buffer.from(img.data)
+    })
+    out.resize(RESIDED_IMG_WIDTH_OUT_LARGE, RESIDED_IMG_WIDTH_OUT_LARGE).write("img_out/" + imgName + ".jpeg");
+    out.resize(RESIDED_IMG_WIDTH_OUT_SMALL, RESIDED_IMG_WIDTH_OUT_SMALL).write("img_out/" + imgName + "_small.jpeg");
+    // Clean the OpenCV buffer;
+    img.delete();
 }
 
 // Main function, it loads an image, process it with our pipeline, writes it to a file;
-async function imagePipeline(imgName, count) {
+async function imagePipeline(imgName) {
     try {
         // Load image;
         const start = System.nanoTime();
@@ -347,7 +353,7 @@ async function imagePipeline(imgName, count) {
         // Store image;
         await storeImage(img, imgName + "_" + count)
         const endStore = System.nanoTime();
-        console.log("- total time=" + intervalToMs(start, endStore) + ", load=" + intervalToMs(start, endLoad) + ", processing=" + intervalToMs(endLoad, endProcess) + ", store=" + intervalToMs(endProcess, endStore));
+        console.log("- total time=" + ((endStore - start) / 10e6) + ", load=" + ((endLoad - start) / 10e6) + ", processing=" + ((endProcess - endLoad) / 10e6) + ", store=" + ((endStore - endProcess) / 10e6));
     } catch (err) {
         console.error(err);
     }
@@ -361,10 +367,4 @@ async function main() {
         await imagePipeline(i < 10 ? "lena" : "astro1", i);
     }
 }
-
-/////////////////////////////
-/////////////////////////////
-
-// Begin the computation;
-main();
 
