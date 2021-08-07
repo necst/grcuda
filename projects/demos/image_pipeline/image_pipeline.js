@@ -92,7 +92,7 @@ async function loadImage(imgName) {
 }
 
 // Main processing of the image;
-async function processImageColor(img, channel) {
+async function processImage(img, channel) {
 
     assert(img.rows === img.cols);
     const size = img.rows;
@@ -194,7 +194,7 @@ async function imagePipeline(imgName, count) {
         const img = await loadImage(imgName);
         const endLoad = System.nanoTime();
         for (let channel = 0; channel < 3; channel++) {
-            await processImageColor(img);
+            await processImage(img);
         }
         const endProcess = System.nanoTime();
         await storeImage(img, imgName + "_" + count)
