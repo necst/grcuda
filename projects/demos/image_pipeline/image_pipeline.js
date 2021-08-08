@@ -14,7 +14,7 @@ const ck = require("./cuda_kernels.js");
 const BW = true;
 // Edge width (in pixel) of input images.
 // If a loaded image has lower width than this, it is rescaled;
-const RESIZED_IMG_WIDTH = 512;
+const RESIZED_IMG_WIDTH = 1024;
 // Edge width (in pixel) of output images.
 // We store processed images in 2 variants: small and large;
 const RESIZED_IMG_WIDTH_OUT_SMALL = 40;
@@ -251,6 +251,8 @@ async function processImage(img, size, channel) {
     copy_array(image, img);
     const e1 = System.nanoTime();
     console.log("--img to device array=" + intervalToMs(s1, e1) + " ms");
+
+    const start = System.nanoTime();
 
     const start = System.nanoTime();
 
