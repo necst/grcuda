@@ -17,11 +17,11 @@ const { assert } = require("console");
 const BW = false;
 // Edge width (in pixel) of input images.
 // If a loaded image has lower width than this, it is rescaled;
-const RESIDED_IMG_WIDTH = 512;
+const RESIZED_IMG_WIDTH = 1024;
 // Edge width (in pixel) of output images.
 // We store processed images in 2 variants: small and large;
 const RESIZED_IMG_WIDTH_OUT_SMALL = 40;
-const RESIZED_IMG_WIDTH_OUT_LARGE = RESIDED_IMG_WIDTH;
+const RESIZED_IMG_WIDTH_OUT_LARGE = RESIZED_IMG_WIDTH;
 
 // Build the CUDA kernels;
 const GAUSSIAN_BLUR_KERNEL = cu.buildkernel(ck.GAUSSIAN_BLUR, "gaussian_blur", "const pointer, pointer, sint32, sint32, const pointer, sint32")
@@ -87,7 +87,7 @@ async function loadImage(imgName) {
     return cv.imreadAsync("img_in/" + imgName + ".jpg", BW ? cv.IMREAD_GRAYSCALE : cv.IMREAD_COLOR)
         .then(img => {
             // Resize input;
-            return img.resize(RESIDED_IMG_WIDTH, RESIDED_IMG_WIDTH);
+            return img.resize(RESIZED_IMG_WIDTH, RESIZED_IMG_WIDTH);
         });
 }
 
@@ -128,6 +128,8 @@ async function processImage(img, channel) {
         }
     }
 
+    const start = System.nanoTime();
+
     // Create Gaussian kernels;
     gaussian_kernel(kernel_small, KERNEL_SMALL_DIAMETER, KERNEL_SMALL_VARIANCE);
     gaussian_kernel(kernel_large, KERNEL_LARGE_DIAMETER, KERNEL_LARGE_VARIANCE);
@@ -167,6 +169,9 @@ async function processImage(img, channel) {
 
     // Store the image data.
     // FIXME: use memcpy to speed up the process. We cannot access channels in this way though;
+    const tmp = image3[0][0];
+    const end = System.nanoTime();
+    console.log("--cuda time=" + intervalToMs(start, end) + " ms");
     for (let i = 0; i < size; i++) {
         for (let j = 0; j < size; j++) {
             if (BW) {
