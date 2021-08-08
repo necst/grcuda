@@ -8,7 +8,6 @@ const fs = require("fs");
 const cu = Polyglot.eval("grcuda", "CU")
 // Load CUDA kernels;
 const ck = require("./cuda_kernels.js");
-const { assert } = require("console");
 
 /////////////////////////////
 /////////////////////////////
@@ -17,7 +16,7 @@ const { assert } = require("console");
 const BW = false;
 // Edge width (in pixel) of input images.
 // If a loaded image has lower width than this, it is rescaled;
-const RESIZED_IMG_WIDTH = 1024;
+const RESIZED_IMG_WIDTH = 512;
 // Edge width (in pixel) of output images.
 // We store processed images in 2 variants: small and large;
 const RESIZED_IMG_WIDTH_OUT_SMALL = 40;
@@ -29,18 +28,18 @@ const SOBEL_KERNEL = cu.buildkernel(ck.SOBEL, "sobel", "pointer, pointer, sint32
 const EXTEND_KERNEL = cu.buildkernel(ck.EXTEND_MASK, "extend", "pointer, const pointer, const pointer, sint32, sint32")
 const MAXIMUM_KERNEL = cu.buildkernel(ck.EXTEND_MASK, "maximum", "const pointer, pointer, sint32")
 const MINIMUM_KERNEL = cu.buildkernel(ck.EXTEND_MASK, "minimum", "const pointer, pointer, sint32")
-const UNSHARPEN_KERNEL = cu.buildkernel(ck.UNSHARPEN, "unsharpen", "pointer, pointer, pointer, float, sint32")
+const UNSHARPEN_KERNEL = cu.buildkernel(ck.UNSHARPEN, "unsharpen", "const pointer, const pointer, pointer, float, sint32")
 const COMBINE_KERNEL = cu.buildkernel(ck.COMBINE, "combine", "const pointer, const pointer, const pointer, pointer, sint32")
-const RESET_KERNEL = cu.buildkernel(ck.RESET, "reset", "pointer, sint32")
+const COMBINE_KERNEL_2 = cu.buildkernel(ck.COMBINE_2, "combine_2", "const pointer, const pointer, const pointer, pointer, sint32")
 
 // Constant parameters used in the image processing;
 const KERNEL_SMALL_DIAMETER = 3
 const KERNEL_SMALL_VARIANCE = 0.1
-const KERNEL_LARGE_DIAMETER = 5
+const KERNEL_LARGE_DIAMETER = 7
 const KERNEL_LARGE_VARIANCE = 20
 const KERNEL_UNSHARPEN_DIAMETER = 3
 const KERNEL_UNSHARPEN_VARIANCE = 5
-const UNSHARPEN_AMOUNT = 2
+const UNSHARPEN_AMOUNT = 30
 // CUDA parameters;
 const BLOCKS = 6;
 const THREADS_1D = 32;
@@ -74,7 +73,7 @@ function gaussian_kernel(buffer, diameter, sigma) {
 
 async function storeImageInner(img, imgName, resolution, kind) {
     const imgResized = img.resize(resolution, resolution);
-    const buffer = await cv.imencodeAsync('.jpg', imgResized, [cv.IMWRITE_JPEG_QUALITY, 40])
+    const buffer = await cv.imencodeAsync('.jpg', imgResized, [cv.IMWRITE_JPEG_QUALITY, 80])
     fs.writeFileSync("img_out/" + imgName + "_" + kind + ".jpg", buffer);
 }
 
@@ -92,15 +91,11 @@ async function loadImage(imgName) {
 }
 
 // Main processing of the image;
-async function processImage(img, channel) {
-
-    assert(img.rows === img.cols);
-    const size = img.rows;
-
+async function processImage(img, size) {
     // Allocate image data;
-    const image = cu.DeviceArray("float", size, size);
+    const image = cu.DeviceArray("int", size, size);
     const image2 = cu.DeviceArray("float", size, size);
-    const image3 = cu.DeviceArray("float", size, size);
+    const image3 = cu.DeviceArray("int", size, size);
 
     const kernel_small = cu.DeviceArray("float", KERNEL_SMALL_DIAMETER, KERNEL_SMALL_DIAMETER);
     const kernel_large = cu.DeviceArray("float", KERNEL_LARGE_DIAMETER, KERNEL_LARGE_DIAMETER);
@@ -120,13 +115,10 @@ async function processImage(img, channel) {
     const blurred_unsharpen = cu.DeviceArray("float", size, size);
 
     // Fill the image data;
-    // FIXME: use memcpy to speed up the process. We cannot access channels in this way though;
-    for (let i = 0; i < size; i++) {
-        for (let j = 0; j < size; j++) {
-            if (BW) image[i][j] = img.at(i, j) / 255;
-            else image[i][j] = img.atRaw(i, j)[channel] / 255;
-        }
-    }
+    const s1 = System.nanoTime();
+    image.copyFrom(img, size * size);
+    const e1 = System.nanoTime();
+    console.log("--img to device array=" + intervalToMs(s1, e1) + " ms");
 
     const start = System.nanoTime();
 
@@ -164,25 +156,32 @@ async function processImage(img, channel) {
     // Combine results;
     COMBINE_KERNEL(BLOCKS * 2, THREADS_1D)(
         image_unsharpen, blurred_large, mask_large, image2, size * size);
-    COMBINE_KERNEL(BLOCKS * 2, THREADS_1D)(
+    COMBINE_KERNEL_2(BLOCKS * 2, THREADS_1D)(
         image2, blurred_small, mask_small, image3, size * size);
 
     // Store the image data.
-    // FIXME: use memcpy to speed up the process. We cannot access channels in this way though;
     const tmp = image3[0][0];
     const end = System.nanoTime();
     console.log("--cuda time=" + intervalToMs(start, end) + " ms");
-    for (let i = 0; i < size; i++) {
-        for (let j = 0; j < size; j++) {
-            if (BW) {
-                img.set(i, j, image3[i][j] * 255);
-            } else {
-                const newPixel = img.atRaw(i, j);
-                newPixel[channel] = image3[i][j] * 255
-                img.set(i, j, newPixel);
-            }
-        }
+    const s2 = System.nanoTime();
+    image3.copyTo(img, size * size);
+    const e2 = System.nanoTime();
+    console.log("--device array to image=" + intervalToMs(s2, e2) + " ms");
+    return img;
+}
+
+async function processImageBW(img) {
+    return new cv.Mat(Buffer.from(await processImage(img.getData(), img.rows)), img.rows, img.cols, cv.CV_8UC1);
+}
+
+async function processImageColor(img) {
+    // Possibly not the most efficient way to do this,
+    // we should process the 3 channels concurrently, and avoid creation of temporary cv.Mat;
+    const channels = img.splitChannels();
+    for (let c = 0; c < 3; c++) {
+        channels[c] = new cv.Mat(Buffer.from(await processImage(channels[c].getData(), img.rows)), img.rows, img.cols, cv.CV_8UC1);;
     }
+    return new cv.Mat(channels);  
 }
 
 // Store the output of the image processing into 2 images,
@@ -195,13 +194,15 @@ async function storeImage(img, imgName) {
 // Main function, it loads an image, process it with our pipeline, writes it to a file;
 async function imagePipeline(imgName, count) {
     try {
+        // Load image;
         const start = System.nanoTime();
-        const img = await loadImage(imgName);
+        let img = await loadImage(imgName);
         const endLoad = System.nanoTime();
-        for (let channel = 0; channel < 3; channel++) {
-            await processImage(img);
-        }
+        // Process image;
+        if (BW) img = await processImageBW(img);
+        else img = await processImageColor(img);
         const endProcess = System.nanoTime();
+        // Store image;
         await storeImage(img, imgName + "_" + count)
         const endStore = System.nanoTime();
         console.log("- total time=" + intervalToMs(start, endStore) + ", load=" + intervalToMs(start, endLoad) + ", processing=" + intervalToMs(endLoad, endProcess) + ", store=" + intervalToMs(endProcess, endStore));
@@ -212,7 +213,7 @@ async function imagePipeline(imgName, count) {
 
 async function main() {
     // This will be some kind of server endpoint;
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 20; i++) {
         // Use await for serial execution, otherwise it processes multiple images in parallel.
         // Performance looks identical though;
         await imagePipeline("lena", i);

@@ -1,5 +1,5 @@
 GAUSSIAN_BLUR = `
-extern "C" __global__ void gaussian_blur(const float *image, float *result, int rows, int cols, const float* kernel, int diameter) {
+extern "C" __global__ void gaussian_blur(const int *image, float *result, int rows, int cols, const float* kernel, int diameter) {
     extern __shared__ float kernel_local[];
     for(int i = threadIdx.x; i < diameter; i += blockDim.x) {
         for(int j = threadIdx.y; j < diameter; j += blockDim.y) {
@@ -17,7 +17,7 @@ extern "C" __global__ void gaussian_blur(const float *image, float *result, int 
                     int nx = x + i;
                     int ny = y + j;
                     if (nx >= 0 && ny >= 0 && nx < rows && ny < cols) {
-                        sum += kernel_local[(x + radius) * diameter + (y + radius)] * image[nx * cols + ny];
+                        sum += kernel_local[(x + radius) * diameter + (y + radius)] * (float(image[nx * cols + ny]) / 255);
                     }
                 }
             }
@@ -148,9 +148,9 @@ extern "C" __global__ void extend(float *x, const float *minimum, const float *m
 `
 
 UNSHARPEN = `
-extern "C" __global__ void unsharpen(float *x, float *y, float *res, float amount, int n) {
+extern "C" __global__ void unsharpen(const int *x, const float *y, float *res, float amount, int n) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) { 
-        float res_tmp = x[i] * (1 + amount) - y[i] * amount;
+        float res_tmp = (float(x[i]) / 255) * (1 + amount) - y[i] * amount;
         res_tmp = res_tmp > 1 ? 1 : res_tmp;
         res[i] = res_tmp < 0 ? 0 : res_tmp;
     }
@@ -165,10 +165,36 @@ extern "C" __global__ void combine(const float *x, const float *y, const float *
 }
 `
 
+COMBINE_2 = `
+extern "C" __global__ void combine_2(const float *x, const float *y, const float *mask, int *res, int n) {
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) { 
+        res[i] = int(255 * (x[i] * mask[i] + y[i] * (1 - mask[i])));
+        // val = (val < 0.5) ? (0.5 * val) : (1.5 * val);
+        // res[i] = int(255 * ((val > 1) ? 1 : val));
+    }
+}
+`
+
 RESET = `
 extern "C" __global__ void reset(float *x, int n) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) { 
         x[i] = 0.0;
+    }
+}
+`
+
+INT_TO_FLOAT = `
+extern "C" __global__ void int_to_float(const int *x, float *y, int n) {
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) { 
+        y[i] = float(x) / 255;
+    }
+}
+`
+
+FLOAT_TO_INT = `
+extern "C" __global__ void float_to_int(const float *x, int *y, int n) {
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) { 
+        y[i] = int(x[i] * 255);
     }
 }
 `
@@ -178,4 +204,7 @@ exports.SOBEL = SOBEL;
 exports.EXTEND_MASK = EXTEND_MASK;
 exports.UNSHARPEN = UNSHARPEN;
 exports.COMBINE = COMBINE;
+exports.COMBINE_2 = COMBINE_2;
+exports.INT_TO_FLOAT = INT_TO_FLOAT;
+exports.FLOAT_TO_INT = FLOAT_TO_INT;
 exports.RESET = RESET;

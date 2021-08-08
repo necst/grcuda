@@ -27,6 +27,7 @@
 const System = Java.type("java.lang.System");
 const N = 1e6;
 const cu = Polyglot.eval('grcuda', 'CU')
+const cv = require("opencv4nodejs");
 
 const x = cu.DeviceArray('int', N);
 const y = [] 
@@ -34,32 +35,60 @@ for (let i = 0; i < N; i++) {
 	y[i] = i;
 }
 
-console.log("copy from device array to js")
-for (n = 0; n < 30; n++) {
-	const start = System.nanoTime();
-	for (let i = 0; i < N; i++) {
-		y[i] = x[i];
-	}
-	const end = System.nanoTime();
-	console.log("--copy - js=" + ((end - start) / 1e6) + " ms")
+// console.log("copy from device array to js")
+// for (n = 0; n < 30; n++) {
+// 	const start = System.nanoTime();
+// 	for (let i = 0; i < N; i++) {
+// 		y[i] = x[i];
+// 	}
+// 	const end = System.nanoTime();
+// 	console.log("--copy - js=" + ((end - start) / 1e6) + " ms")
 
-	const start2 = System.nanoTime();
-	x.copyTo(y, N);
-	const end2 = System.nanoTime();
-	console.log("--copy - grcuda=" + ((end2 - start2) / 1e6) + " ms")
+// 	const start2 = System.nanoTime();
+// 	x.copyTo(y, N);
+// 	const end2 = System.nanoTime();
+// 	console.log("--copy - grcuda=" + ((end2 - start2) / 1e6) + " ms")
+// }
+
+// console.log("copy to device array from js")
+// for (n = 0; n < 30; n++) {
+// 	const start = System.nanoTime();
+// 	for (let i = 0; i < N; i++) {
+// 		x[i] = y[i];
+// 	}
+// 	const end = System.nanoTime();
+// 	console.log("--copy - js=" + ((end - start) / 1e6) + " ms")
+
+// 	const start2 = System.nanoTime();
+// 	x.copyFrom(y, N);
+// 	const end2 = System.nanoTime();
+// 	console.log("--copy - grcuda=" + ((end2 - start2) / 1e6) + " ms")
+// }
+
+const img = cv.imread("img_in/lena.jpg", cv.IMREAD_GRAYSCALE).resize(10, 10);
+console.log("copy to image from js from device array")
+const b = img.getData();
+const size = img.rows;
+
+for (let i = 0; i < size; i++) {
+	for (let j = 0; j < size; j++) {
+		console.log(b[i * size + j]);
+	}
 }
 
-console.log("copy to device array from js")
 for (n = 0; n < 30; n++) {
 	const start = System.nanoTime();
-	for (let i = 0; i < N; i++) {
-		x[i] = y[i];
+	for (let i = 0; i < size; i++) {
+		for (let j = 0; j < size; j++) {
+			x[i * size + j] = b[i * size + j];
+		}
 	}
 	const end = System.nanoTime();
-	console.log("--copy - js=" + ((end - start) / 1e6) + " ms")
+	console.log("--copy - image - js=" + ((end - start) / 1e6) + " ms")
+}
 
-	const start2 = System.nanoTime();
-	x.copyFrom(y, N);
-	const end2 = System.nanoTime();
-	console.log("--copy - grcuda=" + ((end2 - start2) / 1e6) + " ms")
+for (let i = 0; i < size; i++) {
+	for (let j = 0; j < size; j++) {
+		console.log(x[i * size + j]);
+	}
 }
