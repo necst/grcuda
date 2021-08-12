@@ -124,3 +124,18 @@ window.getCudaNativeTemplate = () => `
 </div>
 </div>
 `
+
+window.getRaceModeTemplate = () => `
+      <div class="row">
+          <div class="col-sm-12">
+            <div id="container-info" class="">
+              <div class="row" id="sync-pipeline-description">
+                <div class="col-sm-9">
+                    <h3 class="display-4">RACE MOTHERFUCKER RACE</h3>
+                    <p class="lead">The gloves are off</p>
+                    <p>Only one will win</p>
+                </div>
+              </div>
+            </div>
+        </div>
+`
