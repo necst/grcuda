@@ -5,17 +5,54 @@ const imageGallery = document.getElementById("images")
 const selectElement = document.getElementById("computation-type")
 const containerInfo = document.getElementById("container-info")
 const raceModeContainer = document.getElementById("race-mode")
-const progressBarColor = {
-  "race-sync": "progress-bar-striped", 
+
+const progressBarSync = document.getElementById("progress-bar-sync")
+const progressBarAsync = document.getElementById("progress-bar-async")
+const progressBarCudaNative = document.getElementById("progress-bar-cuda-native")
+
+const imageGallerySync = document.getElementById("image-gallery-sync")
+const imageGalleryAsync = document.getElementById("image-gallery-async")
+const imageGalleryCudaNative = document.getElementById("image-gallery-cuda-native")
+
+const progressBarsRace = {
+  "race-sync": progressBarSync,
+  "race-async": progressBarAsync,
+  "race-cuda-native": progressBarCudaNative
+}
+
+const imageGalleriesRace = {
+  "race-sync": imageGallerySync,
+  "race-async": imageGalleryAsync,
+  "race-cuda-native": imageGalleryCudaNative
+}
+
+const imageGalleriesRaceContent = {
+  "race-sync": "",
+  "race-async": "",
+  "race-cuda-native": ""
+}
+
+const progressBarRaceColor = {
+  "race-sync": "progress-bar-striped",
   "race-async": "progress-bar-striped",
   "race-cuda-native": "progress-bar-striped"
 }
+
+const labelMap = {
+  "race-sync": "Sync",
+  "race-async": "Async",
+  "race-cuda-native": "Cuda Native",
+  "sync": "Sync",
+  "async": "Async",
+  "cuda-native": "Cuda Native"
+}
+
 let progressSync = 0
 let progressAsync = 0
 let progressNative = 0
 
 const progressBarsCompletionAmount = {
-  
+
 }
 
 let imageGalleryContent = ""
@@ -29,92 +66,11 @@ ws.addEventListener("message", (evt) => {
   const data = JSON.parse(evt.data)
 
   if (data.type === "progress") {
-    const { data: progressData, computationType } = JSON.parse(evt.data)
-    // This is really bad, it forces a rerender of the whole element
-    // at every progress message received.
-    // Works for now but TODO: change this
-
-    if (!computationType.includes("race")){
-      if (progressData < 99.99) {
-        progressBar.innerHTML = `
-        <div class="progress m-4">
-          <div style="width: ${progressData}%" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="${progressData}" aria-valuemin="0" aria-valuemax="100">${Math.round(progressData)}%</div>
-        </div>
-      `
-      } else {
-        progressBar.innerHTML = `
-        <div class="progress m-4">
-          <div style="width: ${progressData}%" class="progress-bar bg-success" role="progressbar" aria-valuenow="${progressData}" aria-valuemin="0" aria-valuemax="100">${progressData}%</div>
-        </div>
-        `
-      }
-    } else {
-      progressBar.innerHTML = ""
-
-      progressBarsCompletionAmount[computationType] = progressData
-
-      if (progressData > 99.99) {
-        
-        progressBarColor[computationType] = "bg-success"
-      
-      }
-
-      raceModeContainer.innerHTML = `
-        <div class="row m-3"> 
-          <div class="col-sm-3">
-            <span> Compute Mode: Sync </span>
-          </div>
-          <div class="col-sm-9">
-            <div class="progress">
-              <div style="width: ${progressBarsCompletionAmount["race-sync"]}%" class="progress-bar ${progressBarColor["race-sync"]}" role="progressbar" aria-valuenow="${progressBarsCompletionAmount["race-sync"]}" aria-valuemin="0" aria-valuemax="100">${Math.round(progressBarsCompletionAmount["race-sync"])}%</div>
-            </div>
-          </div>
-        </div>
-        <div class="row m-3"> 
-        <div class="col-sm-3">
-          <span> Compute Mode: Async </span>
-        </div>
-        <div class="col-sm-9">
-          <div class="progress">
-            <div style="width: ${progressBarsCompletionAmount["race-async"]}%" class="progress-bar ${progressBarColor["race-async"]}" role="progressbar" aria-valuenow="${progressBarsCompletionAmount["race-async"]}" aria-valuemin="0" aria-valuemax="100">${Math.round(progressBarsCompletionAmount["race-async"])}%</div>
-          </div>
-        </div>
-      </div>
-      <div class="row m-3"> 
-      <div class="col-sm-3">
-        <span> Compute Mode: Cuda Native </span>
-      </div>
-      <div class="col-sm-9">
-        <div class="progress">
-          <div style="width: ${progressBarsCompletionAmount["race-cuda-native"]}%" class="progress-bar ${progressBarColor["race-cuda-native"]}" role="progressbar" aria-valuenow="${progressBarsCompletionAmount["race-cuda-native"]}" aria-valuemin="0" aria-valuemax="100">${Math.round(progressBarsCompletionAmount["race-cuda-native"])}%</div>
-        </div>
-      </div>
-    </div>
-
-      `
-
-    }
-
+    processProgressMessage(evt)
   }
 
   if (data.type === "image") {
-    const { images, computationType } = data
-
-    console.log(`Received: ${images}`)
-
-    if (computationType != "race-mode") {
-
-      for (const image of images) {
-        const imageId = image.split("/").pop().replace(".jpg", "")
-        console.log("Adding image with id", imageId)
-        imageGalleryContent += `<img class="image-pad image" src="${image}" id="${imageId}" onclick="openLightBox(${imageId})">`
-      }
-
-      imageGallery.innerHTML = imageGalleryContent
-
-    }
-
-
+    processImageMessage(evt)
   }
 
 })
@@ -179,6 +135,87 @@ openLightBox = (imageId) => {
 
   }
 }
+
+const processImageMessage = (evt) => {
+  const data = JSON.parse(evt.data)
+  const { images, computationType } = data
+
+    console.log(`Received: ${images}`)
+
+    if (!computationType.includes("race")) {
+
+      for (const image of images) {
+        const imageId = image.split("/").pop().replace(".jpg", "")
+        imageGalleryContent += `<img class="image-pad image" src="${image}" id="${imageId}" onclick="openLightBox(${imageId})">`
+      }
+
+      imageGallery.innerHTML = imageGalleryContent
+
+    } else {
+
+      imageGalleriesRaceContent[computationType] = images.reduce((rest, image) => {
+        const imageId = image.split("/").pop().replace(".jpg", "")
+        const imgContent = `<img class="image-pad image" src="${image}" id="${imageId}" onclick="openLightBox(${imageId})">`
+        return rest + imgContent
+      }, imageGalleriesRaceContent[computationType])
+
+      imageGalleriesRace[computationType].innerHTML = imageGalleriesRaceContent[computationType]
+    }
+}
+
+const processProgressMessage = (evt) => {
+  const data = JSON.parse(evt.data)
+  const { data: progressData, computationType } = data
+
+  if (!computationType.includes("race")) {
+    if (progressData < 99.99) {
+      progressBar.innerHTML = `
+        <div class="progress m-4">
+          <div style="width: ${progressData}%" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="${progressData}" aria-valuemin="0" aria-valuemax="100">${Math.round(progressData)}%</div>
+        </div>
+      `
+    } else {
+      progressBar.innerHTML = `
+        <div class="progress m-4">
+          <div style="width: ${progressData}%" class="progress-bar bg-success" role="progressbar" aria-valuenow="${progressData}" aria-valuemin="0" aria-valuemax="100">${progressData}%</div>
+        </div>
+        `
+    }
+
+  } else {
+
+    progressBar.innerHTML = ""
+
+    progressBarsCompletionAmount[computationType] = progressData
+
+    if (progressData > 99.99) {
+
+      progressBarRaceColor[computationType] = "bg-success"
+
+    }
+
+    const label = labelMap[computationType]
+    progressBarsRace[computationType].innerHTML = `
+      <div class="m-3">
+        <div class="row">
+          <div class="col-sm-12 mb-3">
+            <span> Compute Mode: ${label} </span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="progress">
+              <div style="width: ${progressBarsCompletionAmount[computationType]}%" class="progress-bar ${progressBarRaceColor[computationType]}" role="progressbar" aria-valuenow="${progressBarsCompletionAmount[computationType]}" aria-valuemin="0" aria-valuemax="100">${Math.round(progressBarsCompletionAmount[computationType])}%</div>
+            </div>
+          </div>
+        </div>
+      </div>  
+    `
+  }
+
+}
+
+
 
 
 console.log("JS is loaded.")

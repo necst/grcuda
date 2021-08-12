@@ -13,7 +13,7 @@
 
 <body>
   <div id="main-container">
-    <div  class="jumbotron container position-sticky">
+    <div class="jumbotron container position-sticky">
       <div class="row">
         <div class="col-sm-8">
           <h1 class="display-3">SeptemberRSE</h1>
@@ -21,7 +21,8 @@
         </div>
         <div class="col-sm-4 mt-4">
           <div id="progress-bar">
-            <select id="computation-type" class="form-select form-select-sm" aria-label="select computation type" name="Computation Type">
+            <select id="computation-type" class="form-select form-select-sm" aria-label="select computation type"
+              name="Computation Type">
               <option value="sync">Sync</option>
               <option value="async">Async</option>
               <option value="cuda-native">Cuda Native</option>
@@ -30,75 +31,102 @@
             <button id="btn-send-msg-ws" class="btn btn-outline-primary mt-2">Start computation!</button>
           </div>
         </div>
-  
+
         <div class="row">
           <div class="col-sm-12">
             <hr class="my-4">
             <div id="container-info" class="">
               <div class="row" id="sync-pipeline-description">
                 <div class="col-sm-9">
-                    <h3 class="display-4">Computation Mode: Sync</h3>
-                    <p class="lead">Description of the sync pipeline</p>
-                    <p>3 different processing channels blablabla</p>
+                  <h3 class="display-4">Computation Mode: Sync</h3>
+                  <p class="lead">Description of the sync pipeline</p>
+                  <p>3 different processing channels blablabla</p>
                 </div>
                 <div class="col-sm-3">
-                  <img src="./images/description/async/pipeline-async.png" class="img-fluid" style="max-width: 100%; height: auto;" alt="Responsive image">
+                  <img src="./images/description/async/pipeline-async.png" class="img-fluid"
+                    style="max-width: 100%; height: auto;" alt="Responsive image">
                 </div>
               </div>
-  
+
               <div class="row" id="sync-pipeline-description">
                 <div class="col-sm-8">
-                    <p class="lead">First the image gets blurred </p>
-                    <p>blurring kernel blablabla</p>
+                  <p class="lead">First the image gets blurred </p>
+                  <p>blurring kernel blablabla</p>
                 </div>
                 <div class="col-sm-4">
-                  <img src="./images/description/async/blurred.png" class="img-fluid" style="max-width: 100%; height: auto;" alt="Responsive image">
+                  <img src="./images/description/async/blurred.png" class="img-fluid"
+                    style="max-width: 100%; height: auto;" alt="Responsive image">
                 </div>
               </div>
-  
+
               <div class="row" id="sync-pipeline-description">
                 <div class="col-sm-8">
-                    <p class="lead">Then sharpened </p>
-                    <p>sharpening kernel blablabla</p>
+                  <p class="lead">Then sharpened </p>
+                  <p>sharpening kernel blablabla</p>
                 </div>
                 <div class="col-sm-4">
-                  <img src="./images/description/async/sharpened.png" class="img-fluid" style="max-width: 100%; height: auto;" alt="Responsive image">
+                  <img src="./images/description/async/sharpened.png" class="img-fluid"
+                    style="max-width: 100%; height: auto;" alt="Responsive image">
                 </div>
               </div>
-  
+
               <div class="row" id="sync-pipeline-description">
                 <div class="col-sm-8">
-                    <p class="lead">Then combined </p>
-                    <p>combining blablabla</p>
+                  <p class="lead">Then combined </p>
+                  <p>combining blablabla</p>
                 </div>
                 <div class="col-sm-4">
-                  <img src="./images/description/async/combined.png" class="img-fluid" style="max-width: 100%; height: auto;" alt="Responsive image">
+                  <img src="./images/description/async/combined.png" class="img-fluid"
+                    style="max-width: 100%; height: auto;" alt="Responsive image">
                 </div>
               </div>
-  
+
             </div>
-  
-          
+
+
           </div>
         </div>
-  
+
       </div>
-  
-      <!-- <p class="lead">
-        <a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a>
-      </p> -->
     </div>
+
     <div class="container">
-  
+
       <br>
       <div id="images"></div>
     </div>
-    </div>
-    <div id="overlay">
-  
+
+    <div id="race-mode" class="container">
+      <div class="row">
+        <div class="col-sm-4">
+          <div id="progress-bar-sync" class="justify-content-center"></div>
+          <div class="row d-flex justify-content-center">
+            <div id="image-gallery-sync"></div>
+          </div>
+          
+        </div>
+        <div class="col-sm-4">
+          <div id="progress-bar-async" class="justify-content-center"></div>
+          <div class="row d-flex justify-content-center">
+            <div id="image-gallery-async"></div>
+          </div>
+          
+        </div>
+        <div class="col-sm-4">
+          <div id="progress-bar-cuda-native" class="justify-content-center"></div>
+          <div class="row d-flex justify-content-center">
+            <div id="image-gallery-cuda-native"></div>
+          </div>
+          
+        </div>
+      </div>
     </div>
 
-    <div id="race-mode" class="container"></div>
+  </div>
+  <div id="overlay">
+  </div>
+ 
+
 
   </div>
 
@@ -112,4 +140,5 @@
 -->
 <script type="text/javascript" src="js/templates.js"></script>
 <script type="text/javascript" src="js/index.js"></script>
+
 </html>
