@@ -23,7 +23,7 @@ export class GrCUDAProxy {
    * Begins the computation using the mode specified
    * by `computationType`
    * @param computationType {string}
-   * @returns
+   * @returns `void`
    */
   public async beginComputation(computationType: string){
   
@@ -97,9 +97,8 @@ export class GrCUDAProxy {
       await this._sleep(DELAY + Math.random() * 20 - 10)
 
       this.communicateImageProcessed(i)
-
-
     }
+    this.communicateImageProcessed(MAX_PHOTOS)
 
   }
 
