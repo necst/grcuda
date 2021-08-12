@@ -82,7 +82,7 @@ sendWSMessage.onclick = () => {
   ws.send(computationType)
 
   progressBar.innerHTML = ` 
-  <div class="progress m-4">
+  <div class="progress">
      <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"> 0%</div>
   </div>
   `
@@ -91,8 +91,21 @@ sendWSMessage.onclick = () => {
 
 }
 
+const clearAll = () => {
+  progressBar.innerHTML = ""
+  imageGallery.innerHTML = ""
+
+  // for(const k of imageGalleriesRace) {
+  //   imageGalleriesRace[k].innerHTML = ""
+  // }
+}
+
 selectElement.onchange = () => {
   const { value: computationType } = document.getElementById("computation-type")
+
+  // Remove progressbar if present
+  clearAll()
+
   console.log(`Value changed to ${computationType}`)
 
   switch (computationType) {
@@ -170,13 +183,13 @@ const processProgressMessage = (evt) => {
   if (!computationType.includes("race")) {
     if (progressData < 99.99) {
       progressBar.innerHTML = `
-        <div class="progress m-4">
+        <div class="progress">
           <div style="width: ${progressData}%" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="${progressData}" aria-valuemin="0" aria-valuemax="100">${Math.round(progressData)}%</div>
         </div>
       `
     } else {
       progressBar.innerHTML = `
-        <div class="progress m-4">
+        <div class="progress">
           <div style="width: ${progressData}%" class="progress-bar bg-success" role="progressbar" aria-valuenow="${progressData}" aria-valuemin="0" aria-valuemax="100">${progressData}%</div>
         </div>
         `

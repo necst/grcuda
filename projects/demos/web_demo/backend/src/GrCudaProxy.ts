@@ -1,24 +1,17 @@
 import WebSocket from 'ws'
-
+import {
+  _sleep,
+  _getDelayJitter,
+  MOCK_OPTIONS,
+  COMPUTATION_MODES,
+  CONFIG_OPTIONS
+} from './utils'
 
 export class GrCUDAProxy {
   private ws: WebSocket
   private computationType: string
   private imagesToSend: {[id: string]: Array<string>} = {}
   
-
-  private MOCK_OPTIONS = {
-    DELAY: 10,              //ms
-    DELAY_JITTER_SYNC: 30,  //ms
-    DELAY_JITTER_ASYNC: 0,  //ms
-    DELAY_JITTER_NATIVE: 50 //ms
-  }
-  private CONFIG_OPTIONS = {
-    MAX_PHOTOS: 200,
-    SEND_BATCH_SIZE: 20
-  }
-
-  private COMPUTATION_MODES: Array<string> = ["sync", "async", "cuda-native", "race-sync", "race-async", "race-cuda-native"]
 
   constructor(ws: WebSocket){
     this.ws = ws
@@ -34,7 +27,7 @@ export class GrCUDAProxy {
   
     this.computationType = computationType
 
-    this.COMPUTATION_MODES.forEach(cm => this.imagesToSend[cm] = [])
+    COMPUTATION_MODES.forEach(cm => this.imagesToSend[cm] = [])
 
     if (computationType == "sync"){
       await this.computeSync()
@@ -72,16 +65,16 @@ export class GrCUDAProxy {
   private async mockRaceProgress(computationType: string) {
     const {
       DELAY
-    } = this.MOCK_OPTIONS
+    } = MOCK_OPTIONS
 
     const {
       MAX_PHOTOS,
-    } = this.CONFIG_OPTIONS
+    } = CONFIG_OPTIONS
 
-    let delay_jitter = this._getDelayJitter(computationType)
+    let delay_jitter = _getDelayJitter(computationType)
 
     for(let imageId = 0; imageId < MAX_PHOTOS; imageId++){
-      await this._sleep(DELAY + Math.random() * delay_jitter)
+      await _sleep(DELAY + Math.random() * delay_jitter)
       this.communicateAll(imageId, `race-${computationType}`)
     }
 
@@ -93,7 +86,7 @@ export class GrCUDAProxy {
 
     const {
       MAX_PHOTOS,
-    } = this.CONFIG_OPTIONS
+    } = CONFIG_OPTIONS
 
     this.communicateProgress(imageId / MAX_PHOTOS * 100, computationType)
     this.communicateImageProcessed(imageId, computationType)
@@ -137,19 +130,18 @@ export class GrCUDAProxy {
 
     const {
       DELAY
-    } = this.MOCK_OPTIONS
+    } = MOCK_OPTIONS
 
     const {
       MAX_PHOTOS,
-      SEND_BATCH_SIZE
-    } = this.CONFIG_OPTIONS
+    } = CONFIG_OPTIONS
 
-    let delay_jitter = this._getDelayJitter(computationType)
+    let delay_jitter = _getDelayJitter(computationType)
 
     for(let imageId = 0; imageId < MAX_PHOTOS; ++imageId){
       // This does mock the actual computation that will happen 
       // in the CUDA realm
-      await this._sleep(DELAY + Math.random() * delay_jitter)
+      await _sleep(DELAY + Math.random() * delay_jitter)
       this.communicateAll(imageId, computationType)
     }
     this.communicateAll(MAX_PHOTOS, computationType)
@@ -160,7 +152,7 @@ export class GrCUDAProxy {
   private communicateProgress(data: number, computationType: string){
     const {
       MAX_PHOTOS
-    } = this.CONFIG_OPTIONS
+    } = CONFIG_OPTIONS
 
     this.ws.send(JSON.stringify({
       type: "progress",
@@ -170,11 +162,10 @@ export class GrCUDAProxy {
   }
 
   private communicateImageProcessed(imageId: number, computationType: string) {
-
     const {
       SEND_BATCH_SIZE, 
       MAX_PHOTOS
-    } = this.CONFIG_OPTIONS
+    } = CONFIG_OPTIONS
 
     this.imagesToSend[computationType].push(`./images/thumb/${("0000" + imageId).slice(-4)}.jpg`)
 
@@ -189,34 +180,6 @@ export class GrCUDAProxy {
       this.imagesToSend[computationType] = []
 
     }
-  }
-
-  private _sleep(ms: number) {
-    return new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-  } 
-
-  private _getDelayJitter(computationType: string) {
-
-    const {
-      DELAY_JITTER_ASYNC,
-      DELAY_JITTER_SYNC,
-      DELAY_JITTER_NATIVE
-    } = this.MOCK_OPTIONS
-
-    switch(computationType) {
-      case "sync": {
-        return DELAY_JITTER_SYNC
-      }
-      case "async": {
-        return DELAY_JITTER_ASYNC
-      }
-      case "cuda-native": {
-        return DELAY_JITTER_NATIVE
-      }
-    }
-  
   }
 
 }
