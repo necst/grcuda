@@ -139,3 +139,41 @@ window.getRaceModeTemplate = () => `
             </div>
         </div>
 `
+
+
+window.getImageLightBoxTemplate = (paddedImageId, imageId) => `<img src="./images/full_res/${paddedImageId}.jpg" id="${imageId}-full-res" onclick="openLightBox(${imageId})">`
+window.getGalleryImageContentTemplate = (image, imageId) => `<img class="image-pad image" src="${image}" id="${imageId}" onclick="openLightBox(${imageId})">`
+
+window.getProgressBarTemplate = (progressData, completed) => {
+  if (!completed) {
+    return `<div class="progress">
+            <div style="width: ${progressData}%" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="${progressData}" aria-valuemin="0" aria-valuemax="100">${Math.round(progressData)}%</div>
+          </div>`
+  } else {
+    return `<div class="progress">
+              <div style="width: ${progressData}%" class="progress-bar bg-success" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">100%</div>
+            </div>`
+  }
+}
+window.getProgressBarWithWrapperTemplate = (
+  label, 
+  progressBarsCompletionAmount, 
+  progressBarRaceColor, 
+  computationType
+) => `
+    <div class="m-3">
+      <div class="row">
+        <div class="col-sm-12 mb-3">
+          <span> Compute Mode: ${label} </span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="progress">
+            <div style="width: ${progressBarsCompletionAmount[computationType]}%" class="progress-bar ${progressBarRaceColor[computationType]}" role="progressbar" aria-valuenow="${progressBarsCompletionAmount[computationType]}" aria-valuemin="0" aria-valuemax="100">${Math.round(progressBarsCompletionAmount[computationType])}%</div>
+          </div>
+        </div>
+      </div>
+    </div>  
+    `
+

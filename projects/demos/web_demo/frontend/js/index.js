@@ -76,16 +76,12 @@ ws.addEventListener("message", (evt) => {
 })
 
 sendWSMessage.onclick = () => {
-
+  clearAll()
   const { value: computationType } = document.getElementById("computation-type")
   console.log(`Beginning computation on ${computationType}`)
   ws.send(computationType)
 
-  progressBar.innerHTML = ` 
-  <div class="progress">
-     <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"> 0%</div>
-  </div>
-  `
+  progressBar.innerHTML = window.getProgressBarTemplate(0, false)
 
   containerInfo.innerHTML = ""
 
@@ -94,10 +90,13 @@ sendWSMessage.onclick = () => {
 const clearAll = () => {
   progressBar.innerHTML = ""
   imageGallery.innerHTML = ""
-
-  // for(const k of imageGalleriesRace) {
-  //   imageGalleriesRace[k].innerHTML = ""
-  // }
+  try {
+    for(const k of imageGalleriesRace) {
+      imageGalleriesRace[k].innerHTML = ""
+    }
+  } catch (error) {
+    console.log(error)
+  }
 }
 
 selectElement.onchange = () => {
@@ -135,7 +134,8 @@ openLightBox = (imageId) => {
   const mainContainer = document.getElementById("main-container")
   const overlayImage = document.getElementById('overlay');
   const paddedImageId = ("0000" + imageId).slice(-4)
-  const imageElement = `<img src="./images/full_res/${paddedImageId}.jpg" id="${imageId}-full-res" onclick="openLightBox(${imageId})">`
+  const imageElement = window.getImageLightBoxTemplate(paddedImageId, imageId)
+         
   overlayImage.innerHTML = imageElement
   overlayImage.style.display = 'block';
   mainContainer.setAttribute('class', 'blur');
@@ -145,7 +145,6 @@ openLightBox = (imageId) => {
     const overlayImage = document.getElementById('overlay');
     overlayImage.style.display = 'none';
     mainContainer.removeAttribute('class', 'blur');
-
   }
 }
 
@@ -159,8 +158,13 @@ const processImageMessage = (evt) => {
 
       for (const image of images) {
         const imageId = image.split("/").pop().replace(".jpg", "")
-        imageGalleryContent += `<img class="image-pad image" src="${image}" id="${imageId}" onclick="openLightBox(${imageId})">`
+        imageGalleryContent += window.getGalleryImageContentTemplate(image, imageId)
       }
+
+      // imageGalleryContent = images.reduce((rest, image) => {
+      //   const imageId = image.split("/").pop().replace(".jpg", "")
+      //   return window.getGalleryImageContentTemplate(image, imageId)
+      // }, imageGalleryContent)
 
       imageGallery.innerHTML = imageGalleryContent
 
@@ -168,7 +172,7 @@ const processImageMessage = (evt) => {
 
       imageGalleriesRaceContent[computationType] = images.reduce((rest, image) => {
         const imageId = image.split("/").pop().replace(".jpg", "")
-        const imgContent = `<img class="image-pad image" src="${image}" id="${imageId}" onclick="openLightBox(${imageId})">`
+        const imgContent = window.getGalleryImageContentTemplate(image, imageId)
         return rest + imgContent
       }, imageGalleriesRaceContent[computationType])
 
@@ -182,17 +186,9 @@ const processProgressMessage = (evt) => {
 
   if (!computationType.includes("race")) {
     if (progressData < 99.99) {
-      progressBar.innerHTML = `
-        <div class="progress">
-          <div style="width: ${progressData}%" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="${progressData}" aria-valuemin="0" aria-valuemax="100">${Math.round(progressData)}%</div>
-        </div>
-      `
+      progressBar.innerHTML = window.getProgressBarTemplate(progressData, false)
     } else {
-      progressBar.innerHTML = `
-        <div class="progress">
-          <div style="width: ${progressData}%" class="progress-bar bg-success" role="progressbar" aria-valuenow="${progressData}" aria-valuemin="0" aria-valuemax="100">${progressData}%</div>
-        </div>
-        `
+      progressBar.innerHTML =  window.getProgressBarTemplate(progressData, true)
     }
 
   } else {
@@ -202,28 +198,12 @@ const processProgressMessage = (evt) => {
     progressBarsCompletionAmount[computationType] = progressData
 
     if (progressData > 99.99) {
-
       progressBarRaceColor[computationType] = "bg-success"
-
     }
 
     const label = labelMap[computationType]
-    progressBarsRace[computationType].innerHTML = `
-      <div class="m-3">
-        <div class="row">
-          <div class="col-sm-12 mb-3">
-            <span> Compute Mode: ${label} </span>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-sm-12">
-            <div class="progress">
-              <div style="width: ${progressBarsCompletionAmount[computationType]}%" class="progress-bar ${progressBarRaceColor[computationType]}" role="progressbar" aria-valuenow="${progressBarsCompletionAmount[computationType]}" aria-valuemin="0" aria-valuemax="100">${Math.round(progressBarsCompletionAmount[computationType])}%</div>
-            </div>
-          </div>
-        </div>
-      </div>  
-    `
+    progressBarsRace[computationType].innerHTML = window.getProgressBarWithWrapperTemplate(label, progressBarsCompletionAmount, progressBarRaceColor, computationType)
+    
   }
 
 }
