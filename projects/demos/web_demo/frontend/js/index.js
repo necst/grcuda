@@ -161,11 +161,6 @@ const processImageMessage = (evt) => {
         imageGalleryContent += window.getGalleryImageContentTemplate(image, imageId)
       }
 
-      // imageGalleryContent = images.reduce((rest, image) => {
-      //   const imageId = image.split("/").pop().replace(".jpg", "")
-      //   return window.getGalleryImageContentTemplate(image, imageId)
-      // }, imageGalleryContent)
-
       imageGallery.innerHTML = imageGalleryContent
 
     } else {
