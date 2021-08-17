@@ -71,10 +71,10 @@ export class GrCUDAProxy {
       MAX_PHOTOS,
     } = CONFIG_OPTIONS
 
-    let delay_jitter = _getDelayJitter(computationType)
+    let delayJitter = _getDelayJitter(computationType)
 
     for(let imageId = 0; imageId < MAX_PHOTOS; imageId++){
-      await _sleep(DELAY + Math.random() * delay_jitter)
+      await _sleep(DELAY + Math.random() * delayJitter)
       this.communicateAll(imageId, `race-${computationType}`)
     }
 
