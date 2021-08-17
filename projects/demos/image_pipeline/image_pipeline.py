@@ -15,7 +15,7 @@ import numpy as np
 from typing import Callable
 import time
 
-BW = False
+BW = True
 KERNEL_SMALL = 0.1
 KERNEL_LARGE = 2
 KERNEL_UNSHARPEN = 0.7
@@ -193,8 +193,8 @@ if __name__ == "__main__":
     
     cmap =  plt.cm.gray if BW else None
     ax[0].imshow(img, cmap=cmap)
-    ax[1].imshow(other[2], cmap=cmap)
-    ax[2].imshow(other[3], cmap=cmap)
+    ax[1].imshow(other[4], cmap=cmap)
+    ax[2].imshow(other[5], cmap=cmap)
     ax[3].imshow(result, cmap=cmap)
     for i in ax:
         i.axis("off")
@@ -202,25 +202,25 @@ if __name__ == "__main__":
     plt.show()
     fig.savefig("astronaut_g.jpg")
     
-    # Custom BW pipeline;
-    result2 = np.zeros(img.shape)
-    other2 = [np.zeros(img.shape) for i in range(len(other))]
-    for i in range(img.shape[-1]):
-        result2[:, :, i], tmp = pipeline_bw(img[:, :, i])
-        for j, x in enumerate(tmp):
-            other2[j][:, :, i] = x
+    # # Custom BW pipeline;
+    # result2 = np.zeros(img.shape)
+    # other2 = [np.zeros(img.shape) for i in range(len(other))]
+    # for i in range(img.shape[-1]):
+    #     result2[:, :, i], tmp = pipeline_bw(img[:, :, i])
+    #     for j, x in enumerate(tmp):
+    #         other2[j][:, :, i] = x
     
-    fig, axes = plt.subplots(2, 2, figsize=(6, 6))
-    ax = axes.ravel()
+    # fig, axes = plt.subplots(2, 2, figsize=(6, 6))
+    # ax = axes.ravel()
     
-    cmap =  plt.cm.gray if BW else None
-    ax[0].imshow(img, cmap=cmap)
-    ax[1].imshow(other2[2], cmap=cmap)
-    ax[2].imshow(other2[3], cmap=cmap)
-    ax[3].imshow(result2, cmap=cmap)
-    for i in ax:
-        i.axis("off")
-    fig.tight_layout()
-    plt.show()
-    fig.savefig("astronaut_py.jpg")
+    # cmap =  plt.cm.gray if BW else None
+    # ax[0].imshow(img, cmap=cmap)
+    # ax[1].imshow(other2[2], cmap=cmap)
+    # ax[2].imshow(other2[3], cmap=cmap)
+    # ax[3].imshow(result2, cmap=cmap)
+    # for i in ax:
+    #     i.axis("off")
+    # fig.tight_layout()
+    # plt.show()
+    # fig.savefig("astronaut_py.jpg")
 
