@@ -19,6 +19,13 @@
 #define DEFAULT_PREFETCH false
 #define DEFAULT_STREAM_ATTACH false
 #define DEFAULT_BLACK_AND_WHITE false
+#define DEFAULT_RESIZED_IMAGE_WIDTH 512
+#define RESIZED_IMAGE_WIDTH_OUT_SMALL 40
+#define RESIZED_IMAGE_WIDTH_OUT_LARGE DEFAULT_RESIZED_IMAGE_WIDTH
+
+// Input and output folders for images;
+#define INPUT_IMAGE_FOLDER "img_in"
+#define OUTPUT_IMAGE_FOLDER "img_out"
 
 //////////////////////////////
 //////////////////////////////
@@ -52,6 +59,8 @@ struct Options {
     std::string input_image;
     // Use black and white processing instead of color processing;
     bool black_and_white = DEFAULT_BLACK_AND_WHITE;
+    // Resize input image to this size;
+    int resized_image_width = DEFAULT_RESIZED_IMAGE_WIDTH;
 
     // Used for printing;
     std::map<Policy, std::string> policy_map;
@@ -72,11 +81,12 @@ struct Options {
                                                {"attach", no_argument, 0, 'a'},
                                                {"input", required_argument, 0, 'i'},
                                                {"bw", no_argument, 0, 'w'},
+                                               {"resized_image_width", required_argument, 0, 'n'},
                                                {0, 0, 0, 0}};
         // getopt_long stores the option index here;
         int option_index = 0;
 
-        while ((opt = getopt_long(argc, argv, "db:c:g:p:rai:w", long_options, &option_index)) != EOF) {
+        while ((opt = getopt_long(argc, argv, "db:c:g:p:rai:wn:", long_options, &option_index)) != EOF) {
             switch (opt) {
                 case 'd':
                     debug = true;
@@ -104,6 +114,9 @@ struct Options {
                     break;
                 case 'w':
                     black_and_white = true;
+                    break;
+                case 'n':
+                    resized_image_width = atoi(optarg);
                     break;
                 default:
                     break;

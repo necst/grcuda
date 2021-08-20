@@ -2,7 +2,7 @@
 #include <chrono>
 #include <iostream>
 #include <string>
-
+#include <cuda_runtime.h> 
 #include "options.hpp"
 #include "utils.hpp"
 
@@ -12,10 +12,12 @@ using clock_type = chrono::high_resolution_clock;
 class ImagePipeline {
    public:
     ImagePipeline(Options &options) : debug(options.debug),
+                                      image_name(options.input_image),
+                                      black_and_white(options.black_and_white),
+                                      image_width(options.resized_image_width),
                                       do_prefetch(options.prefetch),
                                       stream_attach(options.stream_attach),
                                       policy(options.policy_choice) {
-        cudaDeviceGetAttribute(&pascalGpu, cudaDeviceAttr::cudaDevAttrConcurrentManagedAccess, 0);
         if (debug) {
             std::cout << "------------------------------" << std::endl;
             std::cout << "- policy=" << options.policy_map[policy] << std::endl;
@@ -24,24 +26,34 @@ class ImagePipeline {
             std::cout << "- num blocks=" << options.num_blocks << std::endl;
             std::cout << "------------------------------" << std::endl;
         }
-        dim3 grid_size_2d(options.num_blocks, options.num_blocks);
-        dim3 grid_size_1d(options.num_blocks * 2);
-        dim3 block_size_2d(options.block_size_2d, options.block_size_2d);
-        dim3 block_size_1d(options.block_size_1d);
+        grid_size_2d = dim3(options.num_blocks, options.num_blocks);
+        grid_size_1d = dim3(options.num_blocks * 2);
+        block_size_2d = dim3(options.block_size_2d, options.block_size_2d);
+        block_size_1d = dim3(options.block_size_1d);
     }
+    std::string print_result(bool short_form = false);
     void alloc();
     void init();
     void execute_sync();
     void execute_async();
+
+    // Main execution functions;
+    void read_input();
     void run();
-    std::string print_result(bool short_form = false);
+    void write_output();
 
    private:
+
+    // Instance-specific settings;
+    std::string image_name;  // Input image for the benchmark;
+    bool black_and_white = DEFAULT_BLACK_AND_WHITE;  // Convert image to black and white;
+    int image_width = DEFAULT_RESIZED_IMAGE_WIDTH;
+    
     // General configuration settings;
     int debug = DEBUG;
     bool do_prefetch = DEFAULT_PREFETCH;
     bool stream_attach = DEFAULT_STREAM_ATTACH;
-    int pascalGpu = 0;
+    int pascalGpu = 1;
     Policy policy;
     int err = 0;
     dim3 grid_size_2d;
@@ -50,7 +62,6 @@ class ImagePipeline {
     dim3 block_size_1d;
 
     // Computation-specific settings;
-    int N = 1024;
     int kernel_small_diameter = 3;
     int kernel_large_diameter = 7;
     int kernel_unsharpen_diameter = 3;
@@ -59,6 +70,7 @@ class ImagePipeline {
     float kernel_unsharpen_variance = 5;
     float unsharpen_amount = 30;
 
+    // GPU data;
     int *image, *image3;
     float *image2, *image_unsharpen, *mask_small, *mask_large, *blurred_small, *blurred_large, *blurred_unsharpen;
     float *kernel_small, *kernel_large, *kernel_unsharpen, *maximum_1, *minimum_1, *maximum_2, *minimum_2;

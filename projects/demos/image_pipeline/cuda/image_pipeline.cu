@@ -1,6 +1,7 @@
 #include "image_pipeline.cuh"
 
 //////////////////////////////
+// GPU kernels ///////////////
 //////////////////////////////
 
 extern "C" __global__ void gaussian_blur(const int *image, float *result, int rows, int cols, const float* kernel, int diameter) {
@@ -169,18 +170,19 @@ extern "C" __global__ void combine_2(const float *x, const float *y, const float
 }
 
 //////////////////////////////
+// GPU functions /////////////
 //////////////////////////////
 
 void ImagePipeline::alloc() {
-    err = cudaMallocManaged(&image, sizeof(int) * N * N);
-    err = cudaMallocManaged(&image2, sizeof(float) * N * N);
-    err = cudaMallocManaged(&image3, sizeof(int) * N * N);
-    err = cudaMallocManaged(&image_unsharpen, sizeof(float) * N * N);
-    err = cudaMallocManaged(&mask_small, sizeof(float) * N * N);
-    err = cudaMallocManaged(&mask_large, sizeof(float) * N * N);
-    err = cudaMallocManaged(&blurred_small, sizeof(float) * N * N);
-    err = cudaMallocManaged(&blurred_large, sizeof(float) * N * N);
-    err = cudaMallocManaged(&blurred_unsharpen, sizeof(float) * N * N);
+    err = cudaMallocManaged(&image, sizeof(int) * image_width * image_width);
+    err = cudaMallocManaged(&image2, sizeof(float) * image_width * image_width);
+    err = cudaMallocManaged(&image3, sizeof(int) * image_width * image_width);
+    err = cudaMallocManaged(&image_unsharpen, sizeof(float) * image_width * image_width);
+    err = cudaMallocManaged(&mask_small, sizeof(float) * image_width * image_width);
+    err = cudaMallocManaged(&mask_large, sizeof(float) * image_width * image_width);
+    err = cudaMallocManaged(&blurred_small, sizeof(float) * image_width * image_width);
+    err = cudaMallocManaged(&blurred_large, sizeof(float) * image_width * image_width);
+    err = cudaMallocManaged(&blurred_unsharpen, sizeof(float) * image_width * image_width);
 
     err = cudaMallocManaged(&kernel_small, sizeof(float) * kernel_small_diameter * kernel_small_diameter);
     err = cudaMallocManaged(&kernel_large, sizeof(float) * kernel_large_diameter * kernel_large_diameter);
@@ -202,7 +204,7 @@ void ImagePipeline::init() {
     gaussian_kernel(kernel_large, kernel_large_diameter, kernel_large_variance);
     gaussian_kernel(kernel_unsharpen, kernel_unsharpen_diameter, kernel_unsharpen_variance);
 
-    memset(image3, 0, N * N * sizeof(int));
+    memset(image3, 0, image_width * image_width * sizeof(int));
     *maximum_1 = 0;
     *minimum_1 = 0;
     *maximum_2 = 0;
@@ -213,51 +215,51 @@ void ImagePipeline::init() {
 void ImagePipeline::execute_sync() {
 
     if (pascalGpu && do_prefetch) {
-        cudaMemPrefetchAsync(image, sizeof(int) * N * N, 0, 0);
-        cudaMemPrefetchAsync(image2, sizeof(float) * N * N, 0, 0);
-        cudaMemPrefetchAsync(image3, sizeof(int) * N * N, 0, 0);
-        cudaMemPrefetchAsync(image_unsharpen, sizeof(float) * N * N, 0, 0);
-        cudaMemPrefetchAsync(mask_small, sizeof(float) * N * N, 0, 0);
-        cudaMemPrefetchAsync(mask_large, sizeof(float) * N * N, 0, 0);
-        cudaMemPrefetchAsync(blurred_small, sizeof(float) * N * N, 0, 0);
-        cudaMemPrefetchAsync(blurred_large, sizeof(float) * N * N, 0, 0);
-        cudaMemPrefetchAsync(blurred_unsharpen, sizeof(float) * N * N, 0, 0);
+        cudaMemPrefetchAsync(image, sizeof(int) * image_width * image_width, 0, 0);
+        cudaMemPrefetchAsync(image2, sizeof(float) * image_width * image_width, 0, 0);
+        cudaMemPrefetchAsync(image3, sizeof(int) * image_width * image_width, 0, 0);
+        cudaMemPrefetchAsync(image_unsharpen, sizeof(float) * image_width * image_width, 0, 0);
+        cudaMemPrefetchAsync(mask_small, sizeof(float) * image_width * image_width, 0, 0);
+        cudaMemPrefetchAsync(mask_large, sizeof(float) * image_width * image_width, 0, 0);
+        cudaMemPrefetchAsync(blurred_small, sizeof(float) * image_width * image_width, 0, 0);
+        cudaMemPrefetchAsync(blurred_large, sizeof(float) * image_width * image_width, 0, 0);
+        cudaMemPrefetchAsync(blurred_unsharpen, sizeof(float) * image_width * image_width, 0, 0);
     }
     // Blur - Small;
-    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_small_diameter * kernel_small_diameter * sizeof(float)>>>(image, blurred_small, N, N, kernel_small, kernel_small_diameter);
+    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_small_diameter * kernel_small_diameter * sizeof(float)>>>(image, blurred_small, image_width, image_width, kernel_small, kernel_small_diameter);
     cudaDeviceSynchronize();
     // Blur - Large;
-    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_large_diameter * kernel_large_diameter * sizeof(float)>>>(image, blurred_large, N, N, kernel_large, kernel_large_diameter);
+    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_large_diameter * kernel_large_diameter * sizeof(float)>>>(image, blurred_large, image_width, image_width, kernel_large, kernel_large_diameter);
     cudaDeviceSynchronize();
     // Blur - Unsharpen;
-    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_unsharpen_diameter * kernel_unsharpen_diameter * sizeof(float)>>>(image, blurred_unsharpen, N, N, kernel_unsharpen, kernel_unsharpen_diameter);
+    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_unsharpen_diameter * kernel_unsharpen_diameter * sizeof(float)>>>(image, blurred_unsharpen, image_width, image_width, kernel_unsharpen, kernel_unsharpen_diameter);
     cudaDeviceSynchronize();
     // Sobel filter (edge detection);
-    sobel<<<grid_size_2d, block_size_2d>>>(blurred_small, mask_small, N, N);
+    sobel<<<grid_size_2d, block_size_2d>>>(blurred_small, mask_small, image_width, image_width);
     cudaDeviceSynchronize();
-    sobel<<<grid_size_2d, block_size_2d>>>(blurred_large, mask_large, N, N);
+    sobel<<<grid_size_2d, block_size_2d>>>(blurred_large, mask_large, image_width, image_width);
     cudaDeviceSynchronize();
     // Ensure that the output of Sobel is in [0, 1];
-    maximum_kernel<<<grid_size_1d, block_size_1d>>>(mask_small, maximum_1, N * N);
+    maximum_kernel<<<grid_size_1d, block_size_1d>>>(mask_small, maximum_1, image_width * image_width);
     cudaDeviceSynchronize();
-    minimum_kernel<<<grid_size_1d, block_size_1d>>>(mask_small, minimum_1, N * N);
+    minimum_kernel<<<grid_size_1d, block_size_1d>>>(mask_small, minimum_1, image_width * image_width);
     cudaDeviceSynchronize();
-    extend<<<grid_size_1d, block_size_1d>>>(mask_small, minimum_1, maximum_1, N * N, 1);
+    extend<<<grid_size_1d, block_size_1d>>>(mask_small, minimum_1, maximum_1, image_width * image_width, 1);
     cudaDeviceSynchronize();
     // Extend large edge detection mask, and normalize it;
-    maximum_kernel<<<grid_size_1d, block_size_1d>>>(mask_large, maximum_2, N * N);
+    maximum_kernel<<<grid_size_1d, block_size_1d>>>(mask_large, maximum_2, image_width * image_width);
     cudaDeviceSynchronize();
-    minimum_kernel<<<grid_size_1d, block_size_1d>>>(mask_large, minimum_2, N * N);
+    minimum_kernel<<<grid_size_1d, block_size_1d>>>(mask_large, minimum_2, image_width * image_width);
     cudaDeviceSynchronize();
-    extend<<<grid_size_1d, block_size_1d>>>(mask_large, minimum_2, maximum_2, N * N, 5);
+    extend<<<grid_size_1d, block_size_1d>>>(mask_large, minimum_2, maximum_2, image_width * image_width, 5);
     cudaDeviceSynchronize();
     // Unsharpen;
-    unsharpen<<<grid_size_1d, block_size_1d>>>(image, blurred_unsharpen, image_unsharpen, unsharpen_amount, N * N);
+    unsharpen<<<grid_size_1d, block_size_1d>>>(image, blurred_unsharpen, image_unsharpen, unsharpen_amount, image_width * image_width);
     cudaDeviceSynchronize();
     // Combine results;
-    combine<<<grid_size_1d, block_size_1d>>>(image_unsharpen, blurred_large, mask_large, image2, N * N);
+    combine<<<grid_size_1d, block_size_1d>>>(image_unsharpen, blurred_large, mask_large, image2, image_width * image_width);
     cudaDeviceSynchronize();
-    combine_2<<<grid_size_1d, block_size_1d>>>(image2, blurred_small, mask_small, image3, N * N);
+    combine_2<<<grid_size_1d, block_size_1d>>>(image2, blurred_small, mask_small, image3, image_width * image_width);
 
     cudaDeviceSynchronize();
 }
@@ -275,52 +277,52 @@ void ImagePipeline::execute_async() {
         cudaStreamAttachMemAsync(s1, image3, 0);
     }
     if (pascalGpu && do_prefetch) {
-        cudaMemPrefetchAsync(image, sizeof(int) * N * N, 0, s1);
-        cudaMemPrefetchAsync(image2, sizeof(float) * N * N, 0, s2);
-        cudaMemPrefetchAsync(image3, sizeof(int) * N * N, 0, s1);
-        cudaMemPrefetchAsync(image_unsharpen, sizeof(float) * N * N, 0, s3);
-        cudaMemPrefetchAsync(mask_small, sizeof(float) * N * N, 0, s1);
-        cudaMemPrefetchAsync(mask_large, sizeof(float) * N * N, 0, s2);
-        cudaMemPrefetchAsync(blurred_small, sizeof(float) * N * N, 0, s1);
-        cudaMemPrefetchAsync(blurred_large, sizeof(float) * N * N, 0, s2);
-        cudaMemPrefetchAsync(blurred_unsharpen, sizeof(float) * N * N, 0, s3);
+        cudaMemPrefetchAsync(image, sizeof(int) * image_width * image_width, 0, s1);
+        cudaMemPrefetchAsync(image2, sizeof(float) * image_width * image_width, 0, s2);
+        cudaMemPrefetchAsync(image3, sizeof(int) * image_width * image_width, 0, s1);
+        cudaMemPrefetchAsync(image_unsharpen, sizeof(float) * image_width * image_width, 0, s3);
+        cudaMemPrefetchAsync(mask_small, sizeof(float) * image_width * image_width, 0, s1);
+        cudaMemPrefetchAsync(mask_large, sizeof(float) * image_width * image_width, 0, s2);
+        cudaMemPrefetchAsync(blurred_small, sizeof(float) * image_width * image_width, 0, s1);
+        cudaMemPrefetchAsync(blurred_large, sizeof(float) * image_width * image_width, 0, s2);
+        cudaMemPrefetchAsync(blurred_unsharpen, sizeof(float) * image_width * image_width, 0, s3);
     }
     // Blur - Small;
-    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_small_diameter * kernel_small_diameter * sizeof(float), s1>>>(image, blurred_small, N, N, kernel_small, kernel_small_diameter);
+    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_small_diameter * kernel_small_diameter * sizeof(float), s1>>>(image, blurred_small, image_width, image_width, kernel_small, kernel_small_diameter);
     // Blur - Large;
-    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_large_diameter * kernel_large_diameter * sizeof(float), s2>>>(image, blurred_large, N, N, kernel_large, kernel_large_diameter);
+    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_large_diameter * kernel_large_diameter * sizeof(float), s2>>>(image, blurred_large, image_width, image_width, kernel_large, kernel_large_diameter);
     // Blur - Unsharpen;
-    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_unsharpen_diameter * kernel_unsharpen_diameter * sizeof(float), s3>>>(image, blurred_unsharpen, N, N, kernel_unsharpen, kernel_unsharpen_diameter);
+    gaussian_blur<<<grid_size_2d, block_size_2d, kernel_unsharpen_diameter * kernel_unsharpen_diameter * sizeof(float), s3>>>(image, blurred_unsharpen, image_width, image_width, kernel_unsharpen, kernel_unsharpen_diameter);
     // Sobel filter (edge detection);
-    sobel<<<grid_size_2d, block_size_2d, 0, s1>>>(blurred_small, mask_small, N, N);
-    sobel<<<grid_size_2d, block_size_2d, 0, s2>>>(blurred_large, mask_large, N, N);
+    sobel<<<grid_size_2d, block_size_2d, 0, s1>>>(blurred_small, mask_small, image_width, image_width);
+    sobel<<<grid_size_2d, block_size_2d, 0, s2>>>(blurred_large, mask_large, image_width, image_width);
 
     // Max-min + combine to normalize Sobel on small mask;
     cudaEvent_t e_ss, e_min1;
     cudaEventCreate(&e_ss);
     cudaEventCreate(&e_min1);
     cudaEventRecord(e_ss, s1);  // Wait end of Sobel on small mask; 
-    maximum_kernel<<<grid_size_1d, block_size_1d, 0, s1>>>(mask_small, maximum_1, N * N);
+    maximum_kernel<<<grid_size_1d, block_size_1d, 0, s1>>>(mask_small, maximum_1, image_width * image_width);
     cudaStreamWaitEvent(s4, e_ss, 0);
-    minimum_kernel<<<grid_size_1d, block_size_1d, 0, s4>>>(mask_small, minimum_1, N * N);
+    minimum_kernel<<<grid_size_1d, block_size_1d, 0, s4>>>(mask_small, minimum_1, image_width * image_width);
     cudaEventRecord(e_min1, s4);  
     cudaStreamWaitEvent(s1, e_min1, 0);  // Wait min;
-    extend<<<grid_size_1d, block_size_1d, 0, s1>>>(mask_small, minimum_1, maximum_1, N * N, 1);
+    extend<<<grid_size_1d, block_size_1d, 0, s1>>>(mask_small, minimum_1, maximum_1, image_width * image_width, 1);
     
     // Max-min + combine to normalize Sobel on large mask;
     cudaEvent_t e_sl, e_min2;
     cudaEventCreate(&e_sl);
     cudaEventCreate(&e_min2);
     cudaEventRecord(e_sl, s2);
-    maximum_kernel<<<grid_size_1d, block_size_1d, 0, s2>>>(mask_large, maximum_2, N * N);
+    maximum_kernel<<<grid_size_1d, block_size_1d, 0, s2>>>(mask_large, maximum_2, image_width * image_width);
     cudaStreamWaitEvent(s5, e_sl, 0);  // Wait end of Sobel on large mask; 
-    minimum_kernel<<<grid_size_1d, block_size_1d, 0, s5>>>(mask_large, minimum_2, N * N);
+    minimum_kernel<<<grid_size_1d, block_size_1d, 0, s5>>>(mask_large, minimum_2, image_width * image_width);
     cudaEventRecord(e_min2, s5);  
     cudaStreamWaitEvent(s2, e_min2, 0);  // Wait min;
-    extend<<<grid_size_1d, block_size_1d, 0, s2>>>(mask_large, minimum_2, maximum_2, N * N, 5);
+    extend<<<grid_size_1d, block_size_1d, 0, s2>>>(mask_large, minimum_2, maximum_2, image_width * image_width, 5);
 
     // Unsharpen;
-    unsharpen<<<grid_size_1d, block_size_1d, 0, s3>>>(image, blurred_unsharpen, image_unsharpen, unsharpen_amount, N * N);
+    unsharpen<<<grid_size_1d, block_size_1d, 0, s3>>>(image, blurred_unsharpen, image_unsharpen, unsharpen_amount, image_width * image_width);
 
     // Combine results;
     cudaEvent_t e_un, e_co;
@@ -328,19 +330,23 @@ void ImagePipeline::execute_async() {
     cudaEventCreate(&e_co);
     cudaEventRecord(e_un, s3);
     cudaStreamWaitEvent(s2, e_un, 0);
-    combine<<<grid_size_1d, block_size_1d, 0, s2>>>(image_unsharpen, blurred_large, mask_large, image2, N * N);
+    combine<<<grid_size_1d, block_size_1d, 0, s2>>>(image_unsharpen, blurred_large, mask_large, image2, image_width * image_width);
     cudaEventRecord(e_co, s2);
     cudaStreamWaitEvent(s1, e_co, 0);
     if (!pascalGpu || stream_attach) {
         cudaStreamAttachMemAsync(s1, image2, 0);
     }
     if (pascalGpu && do_prefetch) {
-        cudaMemPrefetchAsync(image3, N * N * sizeof(float), 0, s1);
+        cudaMemPrefetchAsync(image3, image_width * image_width * sizeof(float), 0, s1);
     }
-    combine_2<<<grid_size_1d, block_size_1d, 0, s1>>>(image2, blurred_small, mask_small, image3, N * N);
+    combine_2<<<grid_size_1d, block_size_1d, 0, s1>>>(image2, blurred_small, mask_small, image3, image_width * image_width);
 
     cudaStreamSynchronize(s1);
 }
+
+//////////////////////////////
+// Utility functions /////////
+//////////////////////////////
 
 std::string ImagePipeline::print_result(bool short_form) {
     if (short_form) {
@@ -353,6 +359,10 @@ std::string ImagePipeline::print_result(bool short_form) {
         return res + ", ...]";
     }
 }
+
+//////////////////////////////
+// Main execution ////////////
+//////////////////////////////
 
 void ImagePipeline::run() {
     auto start_tot = clock_type::now();
@@ -392,5 +402,6 @@ void ImagePipeline::run() {
     }
 
     auto end_time = chrono::duration_cast<chrono::microseconds>(clock_type::now() - start_tot).count();
-    if (debug) std::cout << "\ntotal execution time=" << end_time / 1e6 << " sec" << std::endl;
+    if (debug) std::cout << "\ntotal processing time=" << end_time / 1e6 << " sec" << std::endl;
 }
+
