@@ -1,3 +1,10 @@
+const websockets = {
+  "sync": new WebSocket("ws://localhost:8080"),
+  "async": new WebSocket("ws://localhost:8081"),
+  "cuda-native": new WebSocket("ws://localhost:8082"),
+  //"race-mode": undefined //new WebSocket("ws://localhost:8083"),
+}
+
 const ws = new WebSocket("ws://localhost:8080")
 const sendWSMessage = document.getElementById("btn-send-msg-ws")
 const progressBar = document.getElementById("progress-bar")
@@ -5,7 +12,6 @@ const imageGallery = document.getElementById("images")
 const selectElement = document.getElementById("computation-type")
 const containerInfo = document.getElementById("container-info")
 const raceModeContainer = document.getElementById("race-mode")
-
 const progressBarSync = document.getElementById("progress-bar-sync")
 const progressBarAsync = document.getElementById("progress-bar-async")
 const progressBarCudaNative = document.getElementById("progress-bar-cuda-native")
@@ -13,6 +19,9 @@ const progressBarCudaNative = document.getElementById("progress-bar-cuda-native"
 const imageGallerySync = document.getElementById("image-gallery-sync")
 const imageGalleryAsync = document.getElementById("image-gallery-async")
 const imageGalleryCudaNative = document.getElementById("image-gallery-cuda-native")
+
+
+const COMPUTATION_MODES = ["race-sync", "race-async", "race-cuda-native"]
 
 const progressBarsRace = {
   "race-sync": progressBarSync,
@@ -57,29 +66,36 @@ const progressBarsCompletionAmount = {
 
 let imageGalleryContent = ""
 
+for(const wsKey of Object.keys(websockets)) {
+  console.log(wsKey)
+  websockets[wsKey].addEventListener("open", (evt) => {
+    console.log(`Connection to websocket for computation mode ${wsKey}`)
+  })
 
-ws.addEventListener("open", (evt) => {
-  console.log("Connection to websocket is open at ws://localhost:8080")
-})
-
-ws.addEventListener("message", (evt) => {
-  const data = JSON.parse(evt.data)
-
-  if (data.type === "progress") {
-    processProgressMessage(evt)
-  }
-
-  if (data.type === "image") {
-    processImageMessage(evt)
-  }
-
-})
+  websockets[wsKey].addEventListener("message", (evt) => {
+    const data = JSON.parse(evt.data)
+  
+    if (data.type === "progress") {
+      processProgressMessage(evt)
+    }
+  
+    if (data.type === "image") {
+      processImageMessage(evt)
+    }
+  
+  })
+}
 
 sendWSMessage.onclick = () => {
   clearAll()
   const { value: computationType } = document.getElementById("computation-type")
   console.log(`Beginning computation on ${computationType}`)
-  ws.send(computationType)
+
+  if(computationType !== "race-mode") {
+    websockets[computationType].send(computationType)
+  } else {
+    Object.keys(websockets).forEach(ct => websockets[ct].send(`race-${ct}`))
+  }
 
   progressBar.innerHTML = window.getProgressBarTemplate(0, false)
 
@@ -90,13 +106,14 @@ sendWSMessage.onclick = () => {
 const clearAll = () => {
   progressBar.innerHTML = ""
   imageGallery.innerHTML = ""
-  try {
-    for(const k of imageGalleriesRace) {
-      imageGalleriesRace[k].innerHTML = ""
-    }
-  } catch (error) {
-    console.log(error)
-  }
+ 
+  Object.keys(imageGalleriesRace)
+    .forEach(key => imageGalleriesRace[key].innerHTML = "")
+  
+  COMPUTATION_MODES
+    .forEach(cm => progressBarsRace[cm].innerHTML = "")
+  
+  
 }
 
 selectElement.onchange = () => {
