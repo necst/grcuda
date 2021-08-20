@@ -36,6 +36,15 @@ export const _getDelayJitter = (computationType: string) => {
     case "cuda-native": {
       return DELAY_JITTER_NATIVE
     }
+    case "race-sync": {
+      return DELAY_JITTER_SYNC
+    }
+    case "race-async": {
+      return DELAY_JITTER_ASYNC
+    }
+    case "race-cuda-native": {
+      return DELAY_JITTER_NATIVE
+    }
   }
 
 }

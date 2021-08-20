@@ -5,12 +5,12 @@ import { GrCUDAProxy } from './GrCUDAProxy'
 
 const app = express()
 const server = http.createServer(app)
-const PORT = 8080
+const PORT = parseInt(process.argv[2])
 
 const wss = new WebSocket.Server({ server })
 
 wss.on('connection', (ws: WebSocket) => {
-  console.log("A new client connected")
+  console.log(`[${PORT}] A new client connected`)
   const grCUDAProxy = new GrCUDAProxy(ws)
 
   ws.on('message', async (message: string) => {

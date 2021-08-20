@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc",
     "start": "tsc & node .",
-    "dev": "tsc -w & nodemon ."
+    "dev": "tsc -w & nodemon . 8080",
+    "devall": "tsc -w & nodemon . 8080 & nodemon . 8081 & nodemon . 8082"
   },
   "dependencies": {
     "express": "^4.17.1",

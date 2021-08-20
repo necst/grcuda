@@ -24,62 +24,25 @@ export class GrCUDAProxy {
    * @returns `void`
    */
   public async beginComputation(computationType: string){
-  
     this.computationType = computationType
 
     COMPUTATION_MODES.forEach(cm => this.imagesToSend[cm] = [])
 
-    if (computationType == "sync"){
-      await this.computeSync()
+    if (computationType == "sync" || computationType == "race-sync"){
+      await this.computeSync(computationType.toString())
       return
     }
-    if (computationType == "async"){
-      await this.computeAsync()
+    if (computationType == "async" || computationType == "race-async"){
+      await this.computeAsync(computationType.toString())
       return
     }
-    if (computationType == "cuda-native"){
-      await this.computeNative()
-      return
-    }
-
-    if (computationType == "race-mode"){
-      await this.raceMode()
+    if (computationType == "cuda-native" || computationType == "race-cuda-native"){
+      await this.computeNative(computationType.toString())
       return
     }
 
-   throw new Error(`Could not recognize computation type: ${computationType}`)
+    throw new Error(`Could not recognize computation type: ${computationType}`)
 
-  }
-
-  private async raceMode() {
-    console.log("Computing using mode RACE!")
-    await this.mockRace()
-  }
-
-  private async mockRace() {
-    this.mockRaceProgress("sync")
-    this.mockRaceProgress("async")
-    this.mockRaceProgress("cuda-native")
-  }
-
-  private async mockRaceProgress(computationType: string) {
-    const {
-      DELAY
-    } = MOCK_OPTIONS
-
-    const {
-      MAX_PHOTOS,
-    } = CONFIG_OPTIONS
-
-    let delayJitter = _getDelayJitter(computationType)
-
-    for(let imageId = 0; imageId < MAX_PHOTOS; imageId++){
-      await _sleep(DELAY + Math.random() * delayJitter)
-      this.communicateAll(imageId, `race-${computationType}`)
-    }
-
-    this.communicateAll(MAX_PHOTOS, `race-${computationType}`)
-  
   }
 
   private communicateAll(imageId: number, computationType: string) {
@@ -96,18 +59,18 @@ export class GrCUDAProxy {
    * Compute the GrCUDA kernel using Sync mode
    * @returns `void`
    */
-  private async computeSync(){
+  private async computeSync(computationType: string){
     console.log("Computing using mode Sync")
-    await this.mockCompute("sync")
+    await this.mockCompute(computationType)
   }
 
   /*
    * Compute the GrCUDA kernel using Async mode
    * @returns `void`
    */
-  private async computeAsync(){
+  private async computeAsync(computationType: string){
     console.log("Computing using mode Async")
-    await this.mockCompute("async")
+    await this.mockCompute(computationType)
   }
 
   /*
@@ -116,9 +79,9 @@ export class GrCUDAProxy {
    * a shell
    * @returns `void`
    */
-  private async computeNative(){
+  private async computeNative(computationType: string){
     console.log("Computing using mode Native")
-    await this.mockCompute("cuda-native")
+    await this.mockCompute(computationType)
   }
 
   /* Mock the computation of the kernels 
