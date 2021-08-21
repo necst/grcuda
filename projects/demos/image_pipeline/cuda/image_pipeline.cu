@@ -199,16 +199,20 @@ void ImagePipeline::alloc() {
     err = cudaStreamCreate(&s5);
 }
 
-void ImagePipeline::init() {
+void ImagePipeline::init(unsigned char* input_image, int channel) {
     gaussian_kernel(kernel_small, kernel_small_diameter, kernel_small_variance);
     gaussian_kernel(kernel_large, kernel_large_diameter, kernel_large_variance);
     gaussian_kernel(kernel_unsharpen, kernel_unsharpen_diameter, kernel_unsharpen_variance);
-
-    memset(image3, 0, image_width * image_width * sizeof(int));
+    // memset(image3, 0, image_width * image_width * sizeof(int));
     *maximum_1 = 0;
     *minimum_1 = 0;
     *maximum_2 = 0;
     *minimum_2 = 0;
+
+    // Copy input data on the GPU managed memory;
+    for (int i = 0; i < image_width * image_width; i++) {
+        image[i] = int(input_image[black_and_white ? i : (i * 3 + channel)]);
+    }
     cudaDeviceSynchronize();
 }
 
@@ -364,7 +368,7 @@ std::string ImagePipeline::print_result(bool short_form) {
 // Main execution ////////////
 //////////////////////////////
 
-void ImagePipeline::run() {
+void ImagePipeline::run_inner(unsigned char* input_image, int channel) {
     auto start_tot = clock_type::now();
     auto start_tmp = clock_type::now();
     auto end_tmp = clock_type::now();
@@ -378,7 +382,7 @@ void ImagePipeline::run() {
 
     // Initialization;
     start_tmp = clock_type::now();
-    init();
+    init(input_image, channel);
     end_tmp = clock_type::now();
     if (debug && err) std::cout << "error=" << err << std::endl;
     if (debug) std::cout << "initialization time=" << chrono::duration_cast<chrono::microseconds>(end_tmp - start_tmp).count() / 1000 << " ms" << std::endl;
@@ -395,13 +399,29 @@ void ImagePipeline::run() {
     if (debug && err) std::cout << "  error=" << err << std::endl;
     end_tmp = clock_type::now();
     auto exec_time = chrono::duration_cast<chrono::microseconds>(end_tmp - start_tmp).count();
-
     if (debug) {
         std::cout << "  result=" << print_result() << std::endl;
         std::cout << "  execution=" << float(exec_time) / 1000 << " ms" << std::endl;
     }
 
+    // Copy back data;
+    start_tmp = clock_type::now();
+    for (int i = 0; i < image_width * image_width; i++) {
+        input_image[black_and_white ? i : (i * 3 + channel)] = (unsigned char) image3[i];
+    }
+    end_tmp = clock_type::now();
+    auto write_time = chrono::duration_cast<chrono::microseconds>(end_tmp - start_tmp).count();
+    if (debug) std::cout << "writeback time=" << write_time / 1e6 << " sec" << std::endl;
+
+    // End of the coputation;
     auto end_time = chrono::duration_cast<chrono::microseconds>(clock_type::now() - start_tot).count();
     if (debug) std::cout << "\ntotal processing time=" << end_time / 1e6 << " sec" << std::endl;
+}
+
+void ImagePipeline::run(unsigned char* input_image) {
+    for (int channel = 0; channel < (black_and_white ? 1 : 3); channel++) {
+        // Access individual channels;
+        run_inner(input_image, channel);
+    }
 }
 

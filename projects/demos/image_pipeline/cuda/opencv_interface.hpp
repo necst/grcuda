@@ -9,8 +9,6 @@
 
 #include "options.hpp"
 
-// Download OpenCV following: https://docs.opencv.org/master/d7/d9f/tutorial_linux_install.html
-
 namespace chrono = std::chrono;
 using clock_type = chrono::high_resolution_clock;
 

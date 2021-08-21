@@ -4,6 +4,7 @@ find_package(CUDAToolkit)
 include_directories("/usr/local/include" "${CUDA_DIR}/include")
 find_package( OpenCV REQUIRED )
 find_package(CUDA REQUIRED)
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
 # Pass options to NVCC
 set(

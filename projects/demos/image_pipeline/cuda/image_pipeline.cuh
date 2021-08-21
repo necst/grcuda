@@ -12,7 +12,6 @@ using clock_type = chrono::high_resolution_clock;
 class ImagePipeline {
    public:
     ImagePipeline(Options &options) : debug(options.debug),
-                                      image_name(options.input_image),
                                       black_and_white(options.black_and_white),
                                       image_width(options.resized_image_width),
                                       do_prefetch(options.prefetch),
@@ -32,20 +31,13 @@ class ImagePipeline {
         block_size_1d = dim3(options.block_size_1d);
     }
     std::string print_result(bool short_form = false);
-    void alloc();
-    void init();
-    void execute_sync();
-    void execute_async();
 
     // Main execution functions;
-    void read_input();
-    void run();
-    void write_output();
+    void run(unsigned char* input_image);
 
    private:
 
     // Instance-specific settings;
-    std::string image_name;  // Input image for the benchmark;
     bool black_and_white = DEFAULT_BLACK_AND_WHITE;  // Convert image to black and white;
     int image_width = DEFAULT_RESIZED_IMAGE_WIDTH;
     
@@ -75,6 +67,13 @@ class ImagePipeline {
     float *image2, *image_unsharpen, *mask_small, *mask_large, *blurred_small, *blurred_large, *blurred_unsharpen;
     float *kernel_small, *kernel_large, *kernel_unsharpen, *maximum_1, *minimum_1, *maximum_2, *minimum_2;
     cudaStream_t s1, s2, s3, s4, s5;
+
+    // Utility functions;
+    void alloc();
+    void init(unsigned char* input_image, int channel);
+    void execute_sync();
+    void execute_async();
+    void run_inner(unsigned char* input_image, int channel);
 
     inline void gaussian_kernel(float *kernel, int diameter, float sigma) {
         int mean = diameter / 2;
