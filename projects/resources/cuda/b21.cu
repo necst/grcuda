@@ -1,7 +1,7 @@
 #include "b21.cuh"
 
 // #define N 40000 // max 40000
-#define IT 50
+#define IT 2
 #define NGPU 2
 
 __global__ void JacobiIterationDistributed_v2(int n, float *a, float *x, int offset, int max,float* b, float*x_result){

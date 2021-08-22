@@ -218,7 +218,8 @@ public class GrCUDAStreamManager {
         });
     }
 
-    protected void setComputationFinishedInner(GrCUDAComputationalElement computation) {
+    protected void setComputationFinishedInner(ExecutionDAG.DAGVertex vertex) {
+        GrCUDAComputationalElement computation = vertex.getComputation();
         computation.setComputationFinished();
         // Destroy the event associated to this computation;
 
@@ -227,8 +228,10 @@ public class GrCUDAStreamManager {
             boolean timeComputation = runtime.getContext().isTimeComputation();
             if(timeComputation && computation.isProfilable()){
                 runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
+                
                 timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());
-                //System.out.println("print time elapsed in streamManager : "+timeMilliseconds);
+                System.out.println("profiled in [s] : "+timeMilliseconds/1000 + " " +vertex.toString());
+
                 computation.setExecutionTime(computation.getStream().getStreamDeviceId(), timeMilliseconds);
             }
             runtime.cudaEventDestroy(computation.getEventStop().get());
@@ -245,7 +248,7 @@ public class GrCUDAStreamManager {
         // Perform a reverse BFS to process all the parents of the starting computation;
         while (!queue.isEmpty()) {
             ExecutionDAG.DAGVertex currentVertex = queue.poll();
-            setComputationFinishedInner(currentVertex.getComputation());
+            setComputationFinishedInner(currentVertex);
             // Book-keeping on the stream of the current computation;
             CUDAStream stream = currentVertex.getComputation().getStream();
 
