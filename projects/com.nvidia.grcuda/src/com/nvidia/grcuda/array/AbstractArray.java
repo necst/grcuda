@@ -43,7 +43,7 @@ public abstract class AbstractArray implements TruffleObject {
     /**
      * Reference to the underlying CUDA runtime that manages the array memory.
      */
-    protected final AbstractGrCUDAExecutionContext GrCUDAExecutionContext;
+    protected final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
 
     /**
      * Data type of elements stored in the array.
