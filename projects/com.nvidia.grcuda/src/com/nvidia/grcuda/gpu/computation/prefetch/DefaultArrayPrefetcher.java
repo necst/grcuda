@@ -26,11 +26,11 @@ public class DefaultArrayPrefetcher extends AbstractArrayPrefetcher {
             if (a.getArgumentValue() instanceof AbstractArray) {
                 AbstractArray array = (AbstractArray) a.getArgumentValue();
                 // The array has been used by the CPU, so we should prefetch it;
-                //if (array.isLastComputationArrayAccess()) {
+                if (array.isLastComputationArrayAccess()) {
                     CUDAStream streamToPrefetch = computation.getStream();
                     runtime.cudaMemPrefetchAsync(array, streamToPrefetch);
                     //runtime.cudaMemAdvise(array, streamToPrefetch.getStreamDeviceId());
-                //}
+                }
             }
         }
     }

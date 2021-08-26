@@ -90,8 +90,9 @@ public abstract class GrCUDAComputationalElement {
         return argumentList;
     }
 
+    
     public boolean isProfilable(){
-        return false;
+        return true;
     }
 
 

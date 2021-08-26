@@ -217,6 +217,7 @@ public final class CUDARuntime {
     */
 
     public void cudaMemAdvise(AbstractArray array, int deviceId) {
+        System.out.println("set cudamemAdvise");
         try{
             Object callable = CUDARuntimeFunction.CUDA_MEM_ADVISE.getSymbol(this);
             final long cudaMemAdviseSetPreferredLocation = 3;
@@ -494,7 +495,7 @@ public final class CUDARuntime {
      */
     @TruffleBoundary
     public void cudaStreamAttachMemAsync(CUDAStream stream, AbstractArray array) {
-
+        System.out.println("attach mem");
         final int MEM_ATTACH_SINGLE = 0x04;
         final int MEM_ATTACH_GLOBAL = 0x01;
         try {
@@ -526,7 +527,6 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cudaMemPrefetchAsync(AbstractArray array, CUDAStream stream) {
-
         try {
             Object callable = CUDARuntimeFunction.CUDA_MEMPREFETCHASYNC.getSymbol(this);
             //Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(), 0, stream.getRawPointer());

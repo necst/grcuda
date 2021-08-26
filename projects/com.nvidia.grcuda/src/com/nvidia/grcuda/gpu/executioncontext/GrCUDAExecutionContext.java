@@ -65,6 +65,9 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
 
         // Associate a CUDA event to this computation, if performed asynchronously;
         streamManager.assignEventStop(vertex);
+        
+        System.out.println();
+
 //        System.out.println("-- running " + vertex.getComputation());
 
         return result;

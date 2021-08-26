@@ -67,8 +67,8 @@ public final class GrCUDAOptions {
     @Option(category = OptionCategory.USER, help = "Set how many GPUs can be used during computation", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> NumberOfGPUs = new OptionKey<>(GrCUDAContext.DEFAULT_NUMBER_GPUs.toString());
 
-    @Option(category = OptionCategory.USER, help = "Enable time Computation (default=true)", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<Boolean> TimeComputation = new OptionKey<>(true);
+    @Option(category = OptionCategory.USER, help = "Enable time Computation (default=false)", stability = OptionStability.EXPERIMENTAL) //
+    public static final OptionKey<Boolean> TimeComputation = new OptionKey<>(false);
 
     @Option(category = OptionCategory.USER, help = "Choose how streams for new GrCUDA computations are obtained from parent computations", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> RetrieveParentStreamPolicy = new OptionKey<>(GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY.getName());

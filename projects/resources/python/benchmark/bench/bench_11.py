@@ -28,13 +28,11 @@ extern "C" __global__ void JacobiIter(int n, float *a, float *x, int offset, int
 
 MERGE_KERNEL = """
 extern "C" __global__ void mergeResults(int n, int nGPU, int offset, float *x, float *x_result_0, float *x_result_1){
-
     for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < n/nGPU; idx += blockDim.x * gridDim.x){
         x[idx] = x_result_0[idx];
         x[idx + offset] = x_result_1[idx];
     }
 }
-
 """
 
 class Benchmark11(Benchmark):
@@ -48,7 +46,7 @@ class Benchmark11(Benchmark):
         self.block_size = DEFAULT_BLOCK_SIZE_1D
 
         self.NGPU = 2
-        self.ITER = 50
+        self.ITER = 2
 
         self.x_result_d = [[]] * self.NGPU
         self.a_d = None
@@ -117,7 +115,7 @@ class Benchmark11(Benchmark):
                 self.execute_phase(f"jacobiIter_{g}", self.jacobi_kernel(1024,32), self.size, self.a_d, self.x_d, int(offset), int(section), self.b_d, self.x_result_d[g])
             
             offset = self.size/self.NGPU
-            self.execute_phase(f"mergeResult", self.merge_kernel(1024, 32), self.size, self.NGPU, int(offset), self.x_d, self.x_result_d[0], self.x_result_d[1])
+            #self.execute_phase(f"mergeResult", self.merge_kernel(1024, 32), self.size, self.NGPU, int(offset), self.x_d, self.x_result_d[0], self.x_result_d[1])
         if self.time_phases:
             start = System.nanoTime()
         
