@@ -48,7 +48,7 @@ float HToD_copy (size_t size, int deviceID){
 
 	cudaSetDevice (deviceID);
 	cudaMalloc (&d_pointer, size);
-	pointer = (int*)malloc(size);
+	cudaMallocHost(&pointer, size);
 
 	cudaEvent_t begin, end;
 	cudaEventCreate (&begin);
