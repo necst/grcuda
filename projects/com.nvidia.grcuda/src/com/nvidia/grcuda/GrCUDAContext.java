@@ -44,6 +44,7 @@ import com.nvidia.grcuda.gpu.Device;
 import com.nvidia.grcuda.gpu.GrCUDADevicesManager;
 import com.nvidia.grcuda.gpu.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.gpu.computation.prefetch.PrefetcherEnum;
+import com.nvidia.grcuda.gpu.computation.memAdvise.AdviserEnum;
 import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.gpu.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.gpu.executioncontext.GrCUDAExecutionContext;
@@ -72,6 +73,7 @@ public final class GrCUDAContext {
     public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.FIFO;
     public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.DATA_AWARE;
     public static final boolean DEFAULT_FORCE_STREAM_ATTACH = false;
+    public static final String DEFAULT_MEM_ADVISE = "none";
 
     private static final String ROOT_NAMESPACE = "CU";
 
@@ -85,6 +87,7 @@ public final class GrCUDAContext {
     private final RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum;
     private final boolean forceStreamAttach;
     private final boolean inputPrefetch;
+
     private final int numberOfGPUs;
     private final boolean timeComputation;
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
@@ -98,6 +101,9 @@ public final class GrCUDAContext {
 
         // Retrieve if we should prefetch input data to GPU;
         inputPrefetch = env.getOptions().get(GrCUDAOptions.InputPrefetch);
+
+        // Retrieve if we should implement memAdvise function during computation;
+        AdviserEnum memAdvise = parseMemAdvise(env.getOptions().get(GrCUDAOptions.memAdviseOption));
 
         // Retrieve the number of GPUs to be used;
         numberOfGPUs = Integer.parseInt(env.getOptions().get(GrCUDAOptions.NumberOfGPUs));
@@ -123,13 +129,13 @@ public final class GrCUDAContext {
 
         switch (executionPolicy) {
             case SYNC:
-                this.grCUDAExecutionContext = new SyncGrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.SYNC : PrefetcherEnum.NONE);
+                this.grCUDAExecutionContext = new SyncGrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.SYNC : PrefetcherEnum.NONE, memAdvise);
                 break;
             case DEFAULT:
-                this.grCUDAExecutionContext = new GrCUDAExecutionContext(this, env ,dependencyPolicy, inputPrefetch ? PrefetcherEnum.DEFAULT : PrefetcherEnum.NONE);
+                this.grCUDAExecutionContext = new GrCUDAExecutionContext(this, env ,dependencyPolicy, inputPrefetch ? PrefetcherEnum.DEFAULT : PrefetcherEnum.NONE, memAdvise);
                 break;
             default:
-                this.grCUDAExecutionContext = new GrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.DEFAULT : PrefetcherEnum.NONE);
+                this.grCUDAExecutionContext = new GrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.DEFAULT : PrefetcherEnum.NONE, memAdvise);
         }
 
         Namespace namespace = new Namespace(ROOT_NAMESPACE);
@@ -250,6 +256,18 @@ public final class GrCUDAContext {
             default:
                 System.out.println("Warning: unknown execution policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_EXECUTION_POLICY);
                 return GrCUDAContext.DEFAULT_EXECUTION_POLICY;
+        }
+    }
+
+    @TruffleBoundary
+    private static AdviserEnum parseMemAdvise(String policyString) {
+        switch(policyString) {
+            case "read-mostly":
+                return AdviserEnum.ADVISE_READ_MOSTLY;
+            case "preffered-location":
+                return AdviserEnum.ADVISE_PREFERRED_LOCATION;
+            default:
+                return AdviserEnum.NONE;
         }
     }
 

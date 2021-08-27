@@ -29,7 +29,6 @@ public class DefaultArrayPrefetcher extends AbstractArrayPrefetcher {
                 if (array.isLastComputationArrayAccess()) {
                     CUDAStream streamToPrefetch = computation.getStream();
                     runtime.cudaMemPrefetchAsync(array, streamToPrefetch);
-                    //runtime.cudaMemAdvise(array, streamToPrefetch.getStreamDeviceId());
                 }
             }
         }

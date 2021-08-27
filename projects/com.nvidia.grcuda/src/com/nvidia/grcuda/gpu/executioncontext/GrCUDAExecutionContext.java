@@ -7,6 +7,7 @@ import com.nvidia.grcuda.gpu.GrCUDADevicesManager;
 import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.gpu.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.gpu.computation.prefetch.PrefetcherEnum;
+import com.nvidia.grcuda.gpu.computation.memAdvise.AdviserEnum;
 import com.nvidia.grcuda.gpu.stream.GrCUDAStreamManager;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -22,21 +23,21 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
      * scheduling computations on different streams;
      */
     private final GrCUDAStreamManager streamManager;
-    public GrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        this(new CUDARuntime(context, env), new GrCUDAThreadManager(context), dependencyPolicy, inputPrefetch);
+    public GrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch, AdviserEnum memAdvise) {
+        this(new CUDARuntime(context, env), new GrCUDAThreadManager(context), dependencyPolicy, inputPrefetch, memAdvise);
     }
 
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        this(cudaRuntime, threadManager, new GrCUDAStreamManager(cudaRuntime), dependencyPolicy, inputPrefetch);
+    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch, AdviserEnum memAdvise) {
+        this(cudaRuntime, threadManager, new GrCUDAStreamManager(cudaRuntime), dependencyPolicy, inputPrefetch, memAdvise);
     }
 
     public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager,DependencyPolicyEnum dependencyPolicy) {
-        super(cudaRuntime, dependencyPolicy, PrefetcherEnum.NONE);
+        super(cudaRuntime, dependencyPolicy, PrefetcherEnum.NONE, AdviserEnum.NONE);
         this.streamManager = streamManager;
     }
 
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        super(cudaRuntime, dependencyPolicy, inputPrefetch);
+    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch, AdviserEnum memAdvise) {
+        super(cudaRuntime, dependencyPolicy, inputPrefetch, memAdvise);
         this.streamManager = streamManager;
     }
 
@@ -53,10 +54,13 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
 
         // Compute the stream where the computation will be done, if the computation can be performed asynchronously;
         streamManager.assignStream(vertex);
+
         // Prefetching;
         arrayPrefetcher.prefetchToGpu(vertex);
-        // MemAdvise, (TODO not working properly, work only when added to prefetchToGPU, need to investigate):
-        //memAdviser.memAdviseToGpu(vertex);
+
+        // MemAdvise
+        memAdviser.memAdviseToGpu(vertex);
+        
         // Associate a CUDA event to the starting phase of the computation in order to get the Elapsed time from start to the end
         streamManager.assignEventStart(vertex);
 

@@ -16,6 +16,8 @@ import com.nvidia.grcuda.gpu.computation.prefetch.DefaultArrayPrefetcher;
 import com.nvidia.grcuda.gpu.computation.prefetch.NoneArrayPrefetcher;
 import com.nvidia.grcuda.gpu.computation.memAdvise.AbstractMemAdvise;
 import com.nvidia.grcuda.gpu.computation.memAdvise.DefaultMemAdviser;
+import com.nvidia.grcuda.gpu.computation.memAdvise.NoneMemAdviser;
+import com.nvidia.grcuda.gpu.computation.memAdvise.AdviserEnum;
 import com.nvidia.grcuda.gpu.computation.prefetch.PrefetcherEnum;
 import com.nvidia.grcuda.gpu.computation.prefetch.SyncArrayPrefetcher;
 import com.oracle.truffle.api.TruffleLanguage;
@@ -64,14 +66,14 @@ public abstract class AbstractGrCUDAExecutionContext {
     protected final AbstractMemAdvise memAdviser;
 
     public AbstractGrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy) {
-        this(new CUDARuntime(context, env), dependencyPolicy, PrefetcherEnum.NONE);
+        this(new CUDARuntime(context, env), dependencyPolicy, PrefetcherEnum.NONE, AdviserEnum.NONE);
     }
 
-    public AbstractGrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        this(new CUDARuntime(context, env), dependencyPolicy, inputPrefetch);
+    public AbstractGrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch, AdviserEnum memAdvise) {
+        this(new CUDARuntime(context, env), dependencyPolicy, inputPrefetch, memAdvise);
     }
 
-    public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
+    public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch, AdviserEnum memAdvise) {
         this.cudaRuntime = cudaRuntime;
         // Compute the dependency policy to use;
         switch (dependencyPolicy) {
@@ -99,14 +101,19 @@ public abstract class AbstractGrCUDAExecutionContext {
                 arrayPrefetcher = new NoneArrayPrefetcher(this.cudaRuntime);
         }
         this.dag = new ExecutionDAG(dependencyPolicy);
-        // switch (memAdvise) {
-        //     case DEFAULT:
-        //         memAdviser = new DefaultMemAdviser(this.cudaRuntime);
-        //         break;
-        //     default:
-        //         memAdviser = new NoneMemAdviser(this.cudaRuntime);
-        // }
-        memAdviser = new DefaultMemAdviser(this.cudaRuntime);
+        switch (memAdvise) {
+            case ADVISE_PREFERRED_LOCATION:
+                System.out.println("preferred location advise");
+                memAdviser = new DefaultMemAdviser(this.cudaRuntime);
+                break;
+            case ADVISE_READ_MOSTLY:
+                System.out.println("read mostly advise");
+                memAdviser = new DefaultMemAdviser(this.cudaRuntime);
+                break;
+            default:
+                memAdviser = new NoneMemAdviser(this.cudaRuntime);
+        }
+
     }
 
     /**

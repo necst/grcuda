@@ -5,7 +5,7 @@ import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.gpu.executioncontext.ExecutionDAG;
 
 /**
- * Class that declares an interface to advise the data to GPU.
+ * Class that declares an interface to use memAdvise function to move memory region between CPU and GPU.
  */
 public abstract class AbstractMemAdvise {
 
@@ -17,7 +17,7 @@ public abstract class AbstractMemAdvise {
 
     /**
      * advise the arrays of a {@link GrCUDAComputationalElement}.
-     * @param computation a computational element whose array inputs can be prefetched from host to GPU
+     * @param computation a computational element whose array inputs can be moved from host to GPU
      */
     public abstract void memAdviseToGpu(GrCUDAComputationalElement computation);
 

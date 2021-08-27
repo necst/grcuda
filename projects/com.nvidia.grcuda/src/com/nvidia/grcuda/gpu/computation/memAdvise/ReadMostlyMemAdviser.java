@@ -6,10 +6,10 @@ import com.nvidia.grcuda.gpu.CUDARuntime;
 import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.gpu.stream.CUDAStream;
 
-public class DefaultMemAdviser extends AbstractMemAdvise {
-    final long cudaMemAdviseSetPreferredLocation = 3;
+public class ReadMostlyMemAdviser extends AbstractMemAdvise {
+    final long cudaMemAdviseSetReadMostly = 1;
 
-    public DefaultMemAdviser(CUDARuntime runtime) {
+    public ReadMostlyMemAdviser(CUDARuntime runtime) {
         super(runtime);
     }
 
@@ -19,7 +19,7 @@ public class DefaultMemAdviser extends AbstractMemAdvise {
             if (a.getArgumentValue() instanceof AbstractArray) {
                 AbstractArray array = (AbstractArray) a.getArgumentValue();
                 CUDAStream streamToAdvise = computation.getStream();
-                runtime.cudaMemAdvise(array, streamToAdvise.getStreamDeviceId(), cudaMemAdviseSetPreferredLocation);
+                runtime.cudaMemAdvise(array, streamToAdvise.getStreamDeviceId(),cudaMemAdviseSetReadMostly );
             }
         }
     }

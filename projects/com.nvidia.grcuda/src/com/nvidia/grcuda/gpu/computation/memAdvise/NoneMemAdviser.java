@@ -10,8 +10,8 @@ public class NoneMemAdviser extends AbstractMemAdvise {
     }
 
     /**
-     * This array prefetcher doesn't do anything;
-     * @param computation a computational element whose array inputs can be prefetched from host to GPU
+     * void memAdviser;
+     * @param computation a computational element whose array inputs can be moved from host to GPU
      */
     @Override
     public void memAdviseToGpu(GrCUDAComputationalElement computation) {

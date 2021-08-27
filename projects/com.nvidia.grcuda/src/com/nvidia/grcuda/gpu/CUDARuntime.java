@@ -213,16 +213,15 @@ public final class CUDARuntime {
     * Advise about the usage of a given memory range. 
     * @param array: array to set the advice for 
     * @param deviceId: Device to apply the advice for
-    * 
+    * @param cudaMemoryAdvise: Advice to be applied for the specified memory range
     */
 
-    public void cudaMemAdvise(AbstractArray array, int deviceId) {
-        System.out.println("set cudamemAdvise");
+    public void cudaMemAdvise(AbstractArray array, int deviceId, long cudaMemoryAdvise) {
         try{
             Object callable = CUDARuntimeFunction.CUDA_MEM_ADVISE.getSymbol(this);
             final long cudaMemAdviseSetPreferredLocation = 3;
             final long cudaMemAdviseSetReadMostly = 1;
-            Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(),cudaMemAdviseSetReadMostly, deviceId);
+            Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(), cudaMemoryAdvise, deviceId);
             checkCUDAReturnCode(result, "cudaMemAdvise");
         } catch (InteropException e) {
             throw new GrCUDAException(e);

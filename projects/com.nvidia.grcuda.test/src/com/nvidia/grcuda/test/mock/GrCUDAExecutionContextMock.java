@@ -4,6 +4,7 @@ import com.nvidia.grcuda.gpu.computation.ArrayStreamArchitecturePolicy;
 import com.nvidia.grcuda.gpu.computation.PrePascalArrayStreamAssociation;
 import com.nvidia.grcuda.gpu.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.gpu.computation.prefetch.PrefetcherEnum;
+import com.nvidia.grcuda.gpu.computation.memAdvise.AdviserEnum;
 import com.nvidia.grcuda.gpu.executioncontext.GrCUDAExecutionContext;
 import com.nvidia.grcuda.gpu.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.gpu.stream.RetrieveParentStreamPolicyEnum;
@@ -15,19 +16,19 @@ public class GrCUDAExecutionContextMock extends GrCUDAExecutionContext {
 
     public GrCUDAExecutionContextMock() {
         super(null, null,
-                new GrCUDAStreamManagerMock(null),DependencyPolicyEnum.DEFAULT, PrefetcherEnum.NONE);
+                new GrCUDAStreamManagerMock(null),DependencyPolicyEnum.DEFAULT, PrefetcherEnum.NONE, AdviserEnum.NONE);
     }
 
     public GrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy) {
         super(null, null,
-                new GrCUDAStreamManagerMock(null),dependencyPolicy, PrefetcherEnum.NONE);
+                new GrCUDAStreamManagerMock(null),dependencyPolicy, PrefetcherEnum.NONE, AdviserEnum.NONE);
     }
 
     public GrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy,
                                       RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
                                       RetrieveParentStreamPolicyEnum parentStreamPolicyEnum) {
         super(null, null,
-                new GrCUDAStreamManagerMock(null, retrieveStreamPolicy, parentStreamPolicyEnum), dependencyPolicy, PrefetcherEnum.NONE);
+                new GrCUDAStreamManagerMock(null, retrieveStreamPolicy, parentStreamPolicyEnum), dependencyPolicy, PrefetcherEnum.NONE, AdviserEnum.NONE);
     }
 
     public ArrayStreamArchitecturePolicy getArrayStreamArchitecturePolicy() {
