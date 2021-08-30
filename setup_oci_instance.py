@@ -31,18 +31,31 @@ NUM_GPU_TO_SHAPE = {
     4: "VM.GPU3.4",
     8: "BM.GPU3.8",
 }
+# OCID of the Compartment
+# grcuda compartment
+COMPARTMENT = "ocid1.compartment.oc1..aaaaaaaakrrqfga2bqdbv7ruydhh36cbyy46w2m6k4dnbdfw3gyes45qebfq"
 
-SSH_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDkAFwfA9p+fEiJMECYGtBFde13EVeCeEUawMaYkzQWdRP3LEwh+D4mqJtKAGJImn0kayYjT/nJg+JHKycZh114GaRvW+VyinjrdXrQSZJC1wcN9+uy3U2V2qSRMthHZxs+xHeAzBZSAQzcCaSuq64XojPfsLzXct0n72Ej4CGeTjo33J5ak0IqCs9qwhIsvm4241c3gO0e17L23EE9sG8lzh+m8FpJyeon+QkLg7yNqhrsL5lqUomSXFZTswvg6J1cFotoa57EzQ44z4uEHG3kMb/Bg4HRCLT4jBwmFmzKQn2R+rkUoC0KxtGuPCrhxjxq7jGJXlg5fN0qMWZRmF0H aparravi@DESKTOP-L90IVGL"
+# OCID of the Public Subnet
+# grcuda_vcn 
+SUBNET = "ocid1.subnet.oc1.us-sanjose-1.aaaaaaaapwj5a3hkbym7yyeqha6chagx23lifuxnwxayfporkhqw2zuemdoq"
+
+# OCID of the Boot Volume 
+# grcuda_default_gw (cloned from grcuda_default_boot_volume on 16.6.2021)
+BOOT_VOLUME = "ocid1.bootvolume.oc1.us-sanjose-1.abzwuljrxlpin7nl6iyjzehemlybel43ujcf6fq355rslvdu7c2ytfk5o2iq"
+
+# Public key employed when creating the instance the first time (with a "fresh" Boot Volume)
+# If you use a Boot Volume created by another user, make sure to add your public key to ~/.ssh/authorized_keys
+SSH_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCpAOz1OGVDquUlnKngoOihVZtIr1aMAfGzGc3Kofi/SBucCkLLrPt5XtYpPMyZwDSV6laUrCd5gIkrcADJJq5yADObixzlNOOQUCCZnUngYN/DtLQhfsYtM5zFA2sGVm2zVJfXaZ4XOYSVWBZ0og1L/WsBMCR6l4NtAsXlNzMcwUuoMK2ZmeZmQIOBYbhLWQEqO0PvyKdkHnUGNjZG4IE6x458jAu+7Uu9moQj5HpoU72oyI/7EerIJkiKF7GpSxgPms/SrpxdITOmg5KJS1Il4537ggTPZOlTn15C4ywCd++tX0DSANRoFBHdh+jr+kOqpepeKZdjFbivM5SOha0KeYtmeZnH5QG9qmo0pxhK7ltYgE8KRu0bnEi75g5HpckEt/dzPPPuZfraqmlm4JE+c1ZOBRo4B3TMC/i4Z3EI2fP2cC4cV7E+74HOPsPmsOAS/09JtAcuCIl02XhpUQN7KV0+mgxhvllMA7yiV+ybBwBiIxDMbNukLFPBkvuIigoCPP4fdOhfnvwUEFp4Eo9DuGo3I9a88p9wPrpdWA22JJhABkq9rnSJjMJPlwVrHkKSRCR9Xfb6MmqyvkemLqTPftpKXC73qsWutgdwK3zSrmpDT3TRe+cV+mXx8QiNPNOMT0GMiDcA1cqCbRqKp9sq4GoNEJfnr0MIhELo6+20HQ== gweedo@Guidos-MacBook-Pro.local"
 
 DEFAULT_SETUP_JSON = """
 {{
-  "compartmentId": "ocid1.compartment.oc1..aaaaaaaakrrqfga2bqdbv7ruydhh36cbyy46w2m6k4dnbdfw3gyes45qebfq",
-  "sourceBootVolumeId": "ocid1.bootvolume.oc1.us-sanjose-1.abzwuljrtlv5wmipcguqvbgo5s7ctuhrw4v2pjpbat4iggfm4dpzcjcoonwq",
+  "compartmentId": "{}",
+  "sourceBootVolumeId": "{}",
   "sshAuthorizedKeys": "{}",
-  "subnetId": "ocid1.subnet.oc1.us-sanjose-1.aaaaaaaapwj5a3hkbym7yyeqha6chagx23lifuxnwxayfporkhqw2zuemdoq",
+  "subnetId": "{}",
   "assignPublicIp": false
 }}
-""".format(SSH_KEY)
+""".format(COMPARTMENT, BOOT_VOLUME, SSH_KEY, SUBNET)
 
 # Temporary directory where data are stored;
 DEFAULT_TEMP_DIR = "tmp_oci_setup"

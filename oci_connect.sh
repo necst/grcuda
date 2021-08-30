@@ -9,12 +9,12 @@
 
 # IP address of the OCI instance;
 OCI_IP=152.67.254.100
-OCI_IP=152.70.112.59
+# OCI_IP=152.70.112.59  # Another IP;
 # Path to the .ssh folder;
 SSH_FOLDER=~/.ssh
 # Path to the private SSH key used to connect to OCI,
 # relative to ${SSH_FOLDER};
-PRIVATE_SSH_KEY_PATH=aparravi_oci
+PRIVATE_SSH_KEY_PATH=id_rsa
 
 # Flags used to set debug (print commands),
 # OCI IP, SSH folder and SSH private key path;
