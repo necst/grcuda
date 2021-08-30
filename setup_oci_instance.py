@@ -37,7 +37,7 @@ SSH_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDkAFwfA9p+fEiJMECYGtBFde13EVeCe
 DEFAULT_SETUP_JSON = """
 {{
   "compartmentId": "ocid1.compartment.oc1..aaaaaaaakrrqfga2bqdbv7ruydhh36cbyy46w2m6k4dnbdfw3gyes45qebfq",
-  "sourceBootVolumeId": "ocid1.bootvolume.oc1.us-sanjose-1.abzwuljrenfkkaoocnxskfaomh2qn7r4wzazutjsepeplovdv2mm56ahrlva",
+  "sourceBootVolumeId": "ocid1.bootvolume.oc1.us-sanjose-1.abzwuljrtlv5wmipcguqvbgo5s7ctuhrw4v2pjpbat4iggfm4dpzcjcoonwq",
   "sshAuthorizedKeys": "{}",
   "subnetId": "ocid1.subnet.oc1.us-sanjose-1.aaaaaaaapwj5a3hkbym7yyeqha6chagx23lifuxnwxayfporkhqw2zuemdoq",
   "assignPublicIp": false

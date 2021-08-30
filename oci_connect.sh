@@ -9,6 +9,7 @@
 
 # IP address of the OCI instance;
 OCI_IP=152.67.254.100
+OCI_IP=152.70.112.59
 # Path to the .ssh folder;
 SSH_FOLDER=~/.ssh
 # Path to the private SSH key used to connect to OCI,

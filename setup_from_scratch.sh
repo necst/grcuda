@@ -2,14 +2,14 @@
 sudo apt update
 sudo apt upgrade -y
 # library needed later to run: gu rebuild-images polyglot and setting up graalpython;
-sudo apt install build-essential
+sudo apt install build-essential -y
 sudo apt install lib32z1-dev -y
 sudo apt install unzip -y
 
 # clone repositories (GraalVM, MX, GrCUDA);
 git clone https://github.com/oracle/graal.git
 git clone https://github.com/graalvm/mx.git
-git clone git@github.com:AlbertoParravicini/grcuda.git
+git clone https://github.com/AlbertoParravicini/grcuda.git
 
 # Checkout commit of GraalVM corresponding to the release;
 cd graal
@@ -66,7 +66,7 @@ source  ~/.bashrc
 # setup GraalVM;
 gu install native-image
 gu install llvm-toolchain
-gu install python 
+gu install python
 gu rebuild-images polyglot
 
 # create environment for Graalpython and set it up;
