@@ -55,36 +55,15 @@ public class CUBLASWithScheduleTest {
                     "    }" +
                     "}\n";
 
-//    @Parameters
-//    public static Collection<Object[]> data() {
-//        return Arrays.asList(new Object[][]{
-//                {'S'},
-//                {'D'},
-//                {'C'},
-//                {'Z'},
-//        });
-//    }
-
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
 
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
-                {"sync",
-//                        "default"
-                },
+                {"sync", "default"},
                 {true, false},
                 {'D'}
         }));
     }
-
-//    @BeforeClass
-//    public static void setup() {
-//        polyglot = Context.newBuilder().allowAllAccess(true).build();
-//        cu = polyglot.eval("grcuda", "CU");
-//    }
-//
-//    private static Context polyglot;
-//    private static Value cu;
 
     private final String policy;
     private final boolean inputPrefetch;
