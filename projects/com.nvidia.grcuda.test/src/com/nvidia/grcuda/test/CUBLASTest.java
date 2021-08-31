@@ -33,7 +33,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Function;
 
+<<<<<<< HEAD
 import com.nvidia.grcuda.gpu.executioncontext.ExecutionPolicyEnum;
+=======
+import com.nvidia.grcuda.test.gpu.ComplexExecutionDAGTest;
+import org.junit.BeforeClass;
+>>>>>>> improved testing interface to test all input options combinations at once
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -47,7 +52,13 @@ public class CUBLASTest {
     public static Collection<Object[]> data() {
 
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
+<<<<<<< HEAD
                 {ExecutionPolicyEnum.SYNC.getName(), ExecutionPolicyEnum.ASYNC.getName()},
+=======
+                {"sync",
+//                        "default"
+                },
+>>>>>>> improved testing interface to test all input options combinations at once
                 {true, false},
                 {'S', 'D', 'C', 'Z'}
         }));
@@ -72,7 +83,11 @@ public class CUBLASTest {
         // y = (0, -2, -4, ..., -2*numDim-2)
         // y := -1 * x + y
         // y = (0, 1, 2, ..., numDim-1)
+<<<<<<< HEAD
         try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy)
+=======
+        try (Context polyglot = Context.newBuilder().allowExperimentalOptions(true).option("grcuda.ExecutionPolicy", this.policy)
+>>>>>>> improved testing interface to test all input options combinations at once
                 .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
             Value cu = polyglot.eval("grcuda", "CU");
             boolean isComplex = (typeChar == 'C') || (typeChar == 'Z');
@@ -104,7 +119,11 @@ public class CUBLASTest {
      */
     @Test
     public void testTgemv() {
+<<<<<<< HEAD
         try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy)
+=======
+        try (Context polyglot = Context.newBuilder().allowExperimentalOptions(true).option("grcuda.ExecutionPolicy", this.policy)
+>>>>>>> improved testing interface to test all input options combinations at once
                 .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
             Value cu = polyglot.eval("grcuda", "CU");
             int numDim = 10;
@@ -159,7 +178,11 @@ public class CUBLASTest {
      */
     @Test
     public void testTgemm() {
+<<<<<<< HEAD
         try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy)
+=======
+        try (Context polyglot = Context.newBuilder().allowExperimentalOptions(true).option("grcuda.ExecutionPolicy", this.policy)
+>>>>>>> improved testing interface to test all input options combinations at once
                 .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
             Value cu = polyglot.eval("grcuda", "CU");
             int numDim = 10;
