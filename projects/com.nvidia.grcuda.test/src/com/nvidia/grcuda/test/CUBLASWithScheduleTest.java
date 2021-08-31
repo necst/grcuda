@@ -68,7 +68,7 @@ public class CUBLASWithScheduleTest {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
 
-        return ComplexExecutionDAGTest.crossProduct(Arrays.asList(new Object[][]{
+        return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
                 {"sync",
 //                        "default"
                 },
