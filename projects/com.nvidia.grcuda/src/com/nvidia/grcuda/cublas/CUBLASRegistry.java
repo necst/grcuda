@@ -163,6 +163,7 @@ public class CUBLASRegistry {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
+                        // TODO: wrap with sync execution;
                         Object result = INTEROP.execute(nfiFunction, argsWithHandle);
                         context.getCUDARuntime().cudaDeviceSynchronize();
                         checkCUBLASReturnCode(result, nfiFunction.getName());
