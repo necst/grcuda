@@ -82,7 +82,12 @@ public class GrCUDAExecutionContextTest {
     @Test
     public void dependencyKernelSimpleTest() {
 
+<<<<<<< HEAD
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+=======
+        try (Context context = Context.newBuilder().allowExperimentalOptions(true).option("grcuda.ExecutionPolicy", this.policy)
+                .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
+>>>>>>> added test cases for cublas support
             final int numElements = 10;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
             Value deviceArrayConstructor = context.eval("grcuda", "DeviceArray");
