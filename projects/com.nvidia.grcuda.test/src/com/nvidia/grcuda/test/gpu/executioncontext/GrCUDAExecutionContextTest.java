@@ -1,8 +1,5 @@
 package com.nvidia.grcuda.test.gpu.executioncontext;
 
-import com.nvidia.grcuda.gpu.computation.dependency.DependencyPolicyEnum;
-import com.nvidia.grcuda.gpu.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.gpu.stream.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.gpu.ComplexExecutionDAGTest;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
@@ -98,7 +95,7 @@ public class GrCUDAExecutionContextTest {
     @Test
     public void dependencyKernelSimpleTest() {
 
-        try (Context context = Context.newBuilder().option("grcuda.ExecutionPolicy", this.policy)
+        try (Context context = Context.newBuilder().allowExperimentalOptions(true).option("grcuda.ExecutionPolicy", this.policy)
                 .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
             final int numElements = 10;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
