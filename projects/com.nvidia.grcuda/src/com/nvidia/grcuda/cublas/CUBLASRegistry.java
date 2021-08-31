@@ -41,6 +41,7 @@ import com.nvidia.grcuda.Namespace;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.gpu.UnsafeHelper;
+import com.nvidia.grcuda.gpu.computation.CUDALibraryExecution;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
@@ -154,6 +155,7 @@ public class CUBLASRegistry {
                 protected Object call(Object[] arguments) {
                     ensureInitialized();
 
+                    // Array of [cuBLASHandle + arguments];
                     Object[] argsWithHandle = new Object[arguments.length + 1];
                     System.arraycopy(arguments, 0, argsWithHandle, 1, arguments.length);
                     argsWithHandle[0] = cublasHandle;
@@ -164,8 +166,9 @@ public class CUBLASRegistry {
                             nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
                         // TODO: wrap with sync execution;
-                        Object result = INTEROP.execute(nfiFunction, argsWithHandle);
-                        context.getCUDARuntime().cudaDeviceSynchronize();
+                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, argsWithHandle).schedule();
+//                        Object result = INTEROP.execute(nfiFunction, argsWithHandle);
+//                        context.getCUDARuntime().cudaDeviceSynchronize();
                         checkCUBLASReturnCode(result, nfiFunction.getName());
                         return result;
                     } catch (InteropException e) {

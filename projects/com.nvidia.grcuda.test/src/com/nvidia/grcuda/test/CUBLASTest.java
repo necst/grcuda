@@ -49,9 +49,7 @@ public class CUBLASTest {
     public static Collection<Object[]> data() {
 
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
-                {"sync",
-//                        "default"
-                },
+                {"sync", "default"},
                 {true, false},
                 {'S', 'D', 'C', 'Z'}
         }));
