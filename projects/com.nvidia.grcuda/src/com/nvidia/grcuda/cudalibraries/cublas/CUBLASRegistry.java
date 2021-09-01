@@ -26,12 +26,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.nvidia.grcuda.cublas;
+package com.nvidia.grcuda.cudalibraries.cublas;
 
 import static com.nvidia.grcuda.functions.Function.INTEROP;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAException;
@@ -186,7 +187,7 @@ public class CUBLASRegistry {
         try {
             returnCode = InteropLibrary.getFactory().getUncached().asInt(result);
         } catch (UnsupportedMessageException e) {
-            throw new GrCUDAInternalException("expected return code as Integer object in " + function + ", got " + result.getClass().getName());
+            throw new GrCUDAInternalException("expected return code as Integer object in " + Arrays.toString(function) + ", got " + result.getClass().getName());
         }
         if (returnCode != 0) {
             throw new GrCUDAException(returnCode, cublasReturnCodeToString(returnCode), function);
