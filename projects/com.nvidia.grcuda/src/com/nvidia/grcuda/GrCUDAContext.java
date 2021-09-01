@@ -28,8 +28,8 @@
  */
 package com.nvidia.grcuda;
 
-import com.nvidia.grcuda.cublas.CUBLASRegistry;
-import com.nvidia.grcuda.cuml.CUMLRegistry;
+import com.nvidia.grcuda.cudalibraries.cublas.CUBLASRegistry;
+import com.nvidia.grcuda.cudalibraries.cuml.CUMLRegistry;
 import com.nvidia.grcuda.functions.BindAllFunction;
 import com.nvidia.grcuda.functions.BindFunction;
 import com.nvidia.grcuda.functions.BindKernelFunction;
@@ -48,7 +48,7 @@ import com.nvidia.grcuda.gpu.executioncontext.GrCUDAExecutionContext;
 import com.nvidia.grcuda.gpu.executioncontext.SyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.gpu.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.gpu.stream.RetrieveParentStreamPolicyEnum;
-import com.nvidia.grcuda.tensorrt.TensorRTRegistry;
+import com.nvidia.grcuda.cudalibraries.tensorrt.TensorRTRegistry;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleLanguage.Env;
