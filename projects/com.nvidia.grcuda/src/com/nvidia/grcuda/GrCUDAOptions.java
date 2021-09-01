@@ -32,9 +32,9 @@ import org.graalvm.options.OptionCategory;
 import org.graalvm.options.OptionKey;
 import org.graalvm.options.OptionStability;
 
-import com.nvidia.grcuda.cublas.CUBLASRegistry;
-import com.nvidia.grcuda.cuml.CUMLRegistry;
-import com.nvidia.grcuda.tensorrt.TensorRTRegistry;
+import com.nvidia.grcuda.cudalibraries.cublas.CUBLASRegistry;
+import com.nvidia.grcuda.cudalibraries.cuml.CUMLRegistry;
+import com.nvidia.grcuda.cudalibraries.tensorrt.TensorRTRegistry;
 import com.oracle.truffle.api.Option;
 
 @Option.Group(GrCUDALanguage.ID)

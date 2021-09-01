@@ -13,14 +13,14 @@ import java.util.List;
 
 import static com.nvidia.grcuda.functions.Function.INTEROP;
 
+/**
+ * Computational element that wraps calls to CUDA libraries such as cuBLAS or cuML.
+ */
 public class CUDALibraryExecution extends GrCUDAComputationalElement {
 
     private final Function nfiFunction;
     private final Object[] args;
 
-    /**
-     * Computational element that wraps calls to CUDA libraries such as cuBLAS or cuML.
-     */
     public CUDALibraryExecution(AbstractGrCUDAExecutionContext context, Function nfiFunction, Object[] args) {
         super(context, new CUDALibraryExecutionInitializer());
         this.nfiFunction = nfiFunction;
