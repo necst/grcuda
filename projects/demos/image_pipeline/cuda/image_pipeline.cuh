@@ -3,8 +3,11 @@
 #include <iostream>
 #include <string>
 #include <cuda_runtime.h> 
+#include <math.h>
 #include "options.hpp"
 #include "utils.hpp"
+
+#define CDEPTH 256
 
 namespace chrono = std::chrono;
 using clock_type = chrono::high_resolution_clock;
@@ -66,13 +69,14 @@ class ImagePipeline {
     int *image, *image3;
     float *image2, *image_unsharpen, *mask_small, *mask_large, *blurred_small, *blurred_large, *blurred_unsharpen;
     float *kernel_small, *kernel_large, *kernel_unsharpen, *maximum_1, *minimum_1, *maximum_2, *minimum_2;
+    int *lut[3];
     cudaStream_t s1, s2, s3, s4, s5;
 
     // Utility functions;
     void alloc();
     void init(unsigned char* input_image, int channel);
-    void execute_sync();
-    void execute_async();
+    void execute_sync(int channel);
+    void execute_async(int channel);
     void run_inner(unsigned char* input_image, int channel);
 
     inline void gaussian_kernel(float *kernel, int diameter, float sigma) {
@@ -90,4 +94,55 @@ class ImagePipeline {
             }
         }
     }
+#define FACTOR 0.8
+    inline void lut_r(int* lut) {
+        for (int i = 0; i < CDEPTH; i++) {
+            float x = float(i) / CDEPTH;
+            if (i < CDEPTH / 2) {
+                lut[i] = std::min(CDEPTH - 1, int(255 * (0.8 * (1 / (1 + expf(-x + 0.5) * 7 * FACTOR)) + 0.2)));
+            } else {
+                lut[i] = std::min(CDEPTH - 1, int(255 * (1 / (1 + expf((-x + 0.5) * 7 * FACTOR)))));
+            }
+        }
+    }
+
+    inline void lut_g(int* lut) {
+        for (int i = 0; i < CDEPTH; i++) {
+            float x = float(i) / CDEPTH;
+            float y = 0;
+            if (i < CDEPTH / 2) {
+                y = 0.8 * (1 / (1 + expf(-x + 0.5) * 10 * FACTOR)) + 0.2;
+            } else {
+                y = 1 / (1 + expf((-x + 0.5) * 9 * FACTOR));
+            }
+            lut[i] = std::min(CDEPTH - 1, int(255 * powf(y, 1.4)));
+        }
+    }
+
+    inline void lut_b(int* lut) {
+        for (int i = 0; i < CDEPTH; i++) {
+            float x = float(i) / CDEPTH;
+            float y = 0;
+            if (i < CDEPTH / 2) {
+                y = 0.7 * (1 / (1 + expf(-x + 0.5) * 10 * FACTOR)) + 0.3;
+            } else {
+                y = 1 / (1 + expf((-x + 0.5) * 10 * FACTOR));
+            }
+            lut[i] = std::min(CDEPTH - 1, int(255 * powf(y, 1.6)));
+        }
+    }
+
+// img_out = img.copy()
+// lut_b = lambda x: 0.7 * (1 / (1 + np.exp((-x + 0.5) * 10))) + 0.3 if x < 0.5 else 1 / (1 + np.exp((-x + 0.5) * 10))
+// lut_r = lambda x: 0.8 * (1 / (1 + np.exp((-x + 0.5) * 7))) + 0.2 if x < 0.5 else (1 / (1 + np.exp((-x + 0.5) * 7)))
+// lut_g = lambda x: 0.8 * (1 / (1 + np.exp((-x + 0.5) * 10))) + 0.2 if x < 0.5 else  (1 / (1 + np.exp((-x + 0.5) * 9)))
+// lut_g2 = lambda x: x**1.4
+// lut_b2 = lambda x: x**1.6
+// img_out[:, :, 0] = np.vectorize(lut_b)(img[:, :, 0])
+// img_out[:, :, 1] = np.vectorize(lut_g)(img[:, :, 1])
+// img_out[:, :, 2] = np.vectorize(lut_r)(img[:, :, 2])
+
+// img_out[:, :, 1] = np.vectorize(lut_g2)(img_out[:, :, 1])
+// img_out[:, :, 0] = np.vectorize(lut_b2)(img_out[:, :, 0])
+
 };

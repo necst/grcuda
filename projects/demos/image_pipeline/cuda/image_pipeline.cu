@@ -161,11 +161,9 @@ extern "C" __global__ void combine(const float *x, const float *y, const float *
     }
 }
 
-extern "C" __global__ void combine_2(const float *x, const float *y, const float *mask, int *res, int n) {
+extern "C" __global__ void combine_lut(const float *x, const float *y, const float *mask, int *res, int n, int* lut) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) { 
-        res[i] = int(255 * (x[i] * mask[i] + y[i] * (1 - mask[i])));
-        // val = (val < 0.5) ? (0.5 * val) : (1.5 * val);
-        // res[i] = int(255 * ((val > 1) ? 1 : val));
+        res[i] = lut[min(CDEPTH - 1, int(CDEPTH * (x[i] * mask[i] + y[i] * (1 - mask[i]))))];
     }
 }
 
@@ -187,6 +185,11 @@ void ImagePipeline::alloc() {
     err = cudaMallocManaged(&kernel_small, sizeof(float) * kernel_small_diameter * kernel_small_diameter);
     err = cudaMallocManaged(&kernel_large, sizeof(float) * kernel_large_diameter * kernel_large_diameter);
     err = cudaMallocManaged(&kernel_unsharpen, sizeof(float) * kernel_unsharpen_diameter * kernel_unsharpen_diameter);
+
+    err = cudaMallocManaged(&lut[0], sizeof(int) * CDEPTH);
+    err = cudaMallocManaged(&lut[1], sizeof(int) * CDEPTH);
+    err = cudaMallocManaged(&lut[2], sizeof(int) * CDEPTH);
+
     err = cudaMallocManaged(&maximum_1, sizeof(float));
     err = cudaMallocManaged(&minimum_1, sizeof(float));
     err = cudaMallocManaged(&maximum_2, sizeof(float));
@@ -209,6 +212,11 @@ void ImagePipeline::init(unsigned char* input_image, int channel) {
     *maximum_2 = 0;
     *minimum_2 = 0;
 
+    // Initialize LUTs;
+    lut_r(lut[0]);
+    lut_b(lut[1]);
+    lut_g(lut[2]);
+
     // Copy input data on the GPU managed memory;
     for (int i = 0; i < image_width * image_width; i++) {
         image[i] = int(input_image[black_and_white ? i : (i * 3 + channel)]);
@@ -216,7 +224,7 @@ void ImagePipeline::init(unsigned char* input_image, int channel) {
     cudaDeviceSynchronize();
 }
 
-void ImagePipeline::execute_sync() {
+void ImagePipeline::execute_sync(int channel) {
 
     if (pascalGpu && do_prefetch) {
         cudaMemPrefetchAsync(image, sizeof(int) * image_width * image_width, 0, 0);
@@ -263,12 +271,12 @@ void ImagePipeline::execute_sync() {
     // Combine results;
     combine<<<grid_size_1d, block_size_1d>>>(image_unsharpen, blurred_large, mask_large, image2, image_width * image_width);
     cudaDeviceSynchronize();
-    combine_2<<<grid_size_1d, block_size_1d>>>(image2, blurred_small, mask_small, image3, image_width * image_width);
+    combine_lut<<<grid_size_1d, block_size_1d>>>(image2, blurred_small, mask_small, image3, image_width * image_width, lut[channel]);
 
     cudaDeviceSynchronize();
 }
 
-void ImagePipeline::execute_async() {
+void ImagePipeline::execute_async(int channel) {
    
     if (!pascalGpu || stream_attach) {
         cudaStreamAttachMemAsync(s1, blurred_small, 0);
@@ -343,7 +351,7 @@ void ImagePipeline::execute_async() {
     if (pascalGpu && do_prefetch) {
         cudaMemPrefetchAsync(image3, image_width * image_width * sizeof(float), 0, s1);
     }
-    combine_2<<<grid_size_1d, block_size_1d, 0, s1>>>(image2, blurred_small, mask_small, image3, image_width * image_width);
+    combine_lut<<<grid_size_1d, block_size_1d, 0, s1>>>(image2, blurred_small, mask_small, image3, image_width * image_width, lut[channel]);
 
     cudaStreamSynchronize(s1);
 }
@@ -391,10 +399,10 @@ void ImagePipeline::run_inner(unsigned char* input_image, int channel) {
     start_tmp = clock_type::now();
     switch (policy) {
         case Policy::Sync:
-            execute_sync();
+            execute_sync(channel);
             break;
         default:
-            execute_async();
+            execute_async(channel);
     }
     if (debug && err) std::cout << "  error=" << err << std::endl;
     end_tmp = clock_type::now();
