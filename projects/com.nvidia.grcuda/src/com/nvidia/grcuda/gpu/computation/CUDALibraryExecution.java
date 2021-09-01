@@ -1,5 +1,6 @@
 package com.nvidia.grcuda.gpu.computation;
 
+import com.nvidia.grcuda.ComputationArgument;
 import com.nvidia.grcuda.ComputationArgumentWithValue;
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
@@ -8,8 +9,8 @@ import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.nvidia.grcuda.functions.Function.INTEROP;
 
@@ -19,42 +20,48 @@ import static com.nvidia.grcuda.functions.Function.INTEROP;
 public class CUDALibraryExecution extends GrCUDAComputationalElement {
 
     private final Function nfiFunction;
-    private final Object[] args;
+    private final Object[] argsWithHandle;
 
-    public CUDALibraryExecution(AbstractGrCUDAExecutionContext context, Function nfiFunction, Object[] args) {
-        super(context, new CUDALibraryExecutionInitializer());
+    public CUDALibraryExecution(AbstractGrCUDAExecutionContext context, Function nfiFunction, List<ComputationArgumentWithValue> args) {
+        super(context, new CUDALibraryExecutionInitializer(args));
         this.nfiFunction = nfiFunction;
-        this.args = args;
+
+        // Array of [libraryHandle + arguments], required by CUDA libraries for execution;
+        this.argsWithHandle = new Object[args.size()];
+        for (int i = 0; i < args.size(); i++) {
+            argsWithHandle[i] = args.get(i).getArgumentValue();
+        }
     }
 
     @Override
     public Object execute() throws UnsupportedTypeException {
-        // FIXME: don't sync before execution!
-        this.grCUDAExecutionContext.getCudaRuntime().cudaDeviceSynchronize();
-
         // Execution happens on the default stream;
         Object result = null;
         try {
-            result = INTEROP.execute(this.nfiFunction, this.args);
+            result = INTEROP.execute(this.nfiFunction, this.argsWithHandle);
         } catch (ArityException | UnsupportedMessageException e) {
             System.out.println("error in execution of cuBLAS function");
             e.printStackTrace();
         }
         // Synchronize only the default stream;
-        // FIXME: don't sync entire device, just the default stream!
-        this.grCUDAExecutionContext.getCudaRuntime().cudaDeviceSynchronize();
-//        this.grCUDAExecutionContext.getCudaRuntime().cudaStreamSynchronize(DefaultStream.get());
+        this.grCUDAExecutionContext.getCudaRuntime().cudaStreamSynchronize(DefaultStream.get());
         this.setComputationFinished();
         return result;
     }
 
-    private static class CUDALibraryExecutionInitializer implements InitializeArgumentList {
-        CUDALibraryExecutionInitializer() {
+    static class CUDALibraryExecutionInitializer implements InitializeArgumentList {
+        private final List<ComputationArgumentWithValue> args;
+
+        CUDALibraryExecutionInitializer(List<ComputationArgumentWithValue> args) {
+            this.args = args;
         }
 
         @Override
         public List<ComputationArgumentWithValue> initialize() {
-            return new ArrayList<>();
+            // Consider only arrays as dependencies;
+            // FIXME: should the library handle be considered a dependency?
+            //  The CUDA documentation is not clear on whether you can have concurrent computations with the same handle;
+            return this.args.stream().filter(ComputationArgument::isArray).collect(Collectors.toList());
         }
     }
 }
