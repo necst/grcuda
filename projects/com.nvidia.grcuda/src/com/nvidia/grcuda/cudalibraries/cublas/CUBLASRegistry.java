@@ -39,6 +39,7 @@ import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDAInternalException;
 import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.Namespace;
+import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.gpu.UnsafeHelper;
@@ -75,7 +76,7 @@ public class CUBLASRegistry {
         libraryPath = context.getOption(GrCUDAOptions.CuBLASLibrary);
     }
 
-    private void ensureInitialized() {
+    public void ensureInitialized() {
         if (cublasHandle == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
@@ -144,10 +145,9 @@ public class CUBLASRegistry {
     }
 
     public void registerCUBLASFunctions(Namespace namespace) {
-        // Create function wrappers (decorators for all functions except handle con- and
-        // destruction)
+        // Create function wrappers (decorators for all functions except handle con- and destruction);
         for (ExternalFunctionFactory factory : functions) {
-            final Function wrapperFunction = new Function(factory.getName()) {
+            final Function wrapperFunction = new CUDALibraryFunction(factory.getName(), factory.getNFISignature()) {
 
                 private Function nfiFunction;
 
@@ -156,18 +156,13 @@ public class CUBLASRegistry {
                 protected Object call(Object[] arguments) {
                     ensureInitialized();
 
-                    // Array of [cuBLASHandle + arguments];
-                    Object[] argsWithHandle = new Object[arguments.length + 1];
-                    System.arraycopy(arguments, 0, argsWithHandle, 1, arguments.length);
-                    argsWithHandle[0] = cublasHandle;
-
                     try {
                         if (nfiFunction == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
                         // TODO: wrap with sync execution;
-                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, argsWithHandle).schedule();
+                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, this.createComputationArgumentWithValueList(arguments, cublasHandle)).schedule();
 //                        Object result = INTEROP.execute(nfiFunction, argsWithHandle);
 //                        context.getCUDARuntime().cudaDeviceSynchronize();
                         checkCUBLASReturnCode(result, nfiFunction.getName());

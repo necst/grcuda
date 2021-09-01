@@ -57,22 +57,14 @@ public class CUBLASWithScheduleTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-
-        return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
-                {"sync", "default"},
-                {true, false},
-                {'D'}
-        }));
+        return GrCUDATestUtil.getAllOptionCombinations();
     }
 
-    private final String policy;
-    private final boolean inputPrefetch;
-    private final char typeChar;
+    private final GrCUDATestOptionsStruct options;
+    private final char typeChar = 'D';
 
-    public CUBLASWithScheduleTest(String policy, boolean inputPrefetch, char typeChar) {
-        this.policy = policy;
-        this.inputPrefetch = inputPrefetch;
-        this.typeChar = typeChar;
+    public CUBLASWithScheduleTest(GrCUDATestOptionsStruct options) {
+        this.options = options;
     }
 
     /**
@@ -89,8 +81,7 @@ public class CUBLASWithScheduleTest {
         // y := 2 * y
         // z := -1 * z + y
         // z = 2 * (0, 1, 2, ..., numElements-1)
-        try (Context context = Context.newBuilder().allowExperimentalOptions(true).option("grcuda.ExecutionPolicy", this.policy)
-                .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
             String cudaType = "double";
             int numElements = 1000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -142,8 +133,7 @@ public class CUBLASWithScheduleTest {
         // x = (0, 1, 2, ..., numElements-1)
         // z := 2 * x
         // y := 2 * y
-        try (Context context = Context.newBuilder().allowExperimentalOptions(true).option("grcuda.ExecutionPolicy", this.policy)
-                .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
             String cudaType = "double";
             int numElements = 1000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -197,8 +187,7 @@ public class CUBLASWithScheduleTest {
         // z := -1 * z + y
         // z := -2 * z
         // y := 2 * y
-        try (Context context = Context.newBuilder().allowExperimentalOptions(true).option("grcuda.ExecutionPolicy", this.policy)
-                .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
             String cudaType = "double";
             int numElements = 1000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -254,8 +243,7 @@ public class CUBLASWithScheduleTest {
         // z := 2 * x
         // y := 4 * y
         // y := -1 * z + y
-        try (Context context = Context.newBuilder().allowExperimentalOptions(true).option("grcuda.ExecutionPolicy", this.policy)
-                .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
             String cudaType = "double";
             int numElements = 1000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -312,8 +300,7 @@ public class CUBLASWithScheduleTest {
         // y := -1 * z + y
         // x := 2 * x
         // x := 2 * x
-        try (Context context = Context.newBuilder().allowExperimentalOptions(true).option("grcuda.ExecutionPolicy", this.policy)
-                .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
             String cudaType = "double";
             int numElements = 1000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -360,18 +347,10 @@ public class CUBLASWithScheduleTest {
      */
     private void assertOutputVectorIsCorrect(int len, Value deviceArray,
                                              Function<Integer, Integer> outFunc) {
-        boolean hasDouble = (typeChar == 'D') || (typeChar == 'Z');
         for (int i = 0; i < len; i++) {
-            if (hasDouble) {
-                double expected = outFunc.apply(i);
-                double actual = deviceArray.getArrayElement(i).asDouble();
-                assertEquals(expected, actual, 1e-5);
-            } else {
-                float expected = outFunc.apply(i);
-                float actual = deviceArray.getArrayElement(i).asFloat();
-                System.out.println("exp=" + expected + " actual=" + actual);
-                assertEquals(expected, actual, 1e-5f);
-            }
+            double expected = outFunc.apply(i);
+            double actual = deviceArray.getArrayElement(i).asDouble();
+            assertEquals(expected, actual, 1e-5);
         }
     }
 }
