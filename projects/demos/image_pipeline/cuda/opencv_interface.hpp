@@ -22,7 +22,7 @@ class OpenCVInterface {
             std::cout << "------------------------------" << std::endl;
             std::cout << "- image name=" << options.input_image << std::endl;
             std::cout << "- image size=" << image_width << "x" << image_width << std::endl;
-            std::cout << "- black and white? " << (options.black_and_white ? "no" : "yes") << std::endl;
+            std::cout << "- black and white? " << (options.black_and_white ? "yes" : "no") << std::endl;
             std::cout << "------------------------------" << std::endl;
         }
     }

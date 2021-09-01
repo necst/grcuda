@@ -15,6 +15,7 @@ uchar* OpenCVInterface::read_input() {
     if (image_matrix.rows != image_width || image_matrix.cols != image_width) {
         cv::resize(image_matrix, resized_image, cv::Size(image_width, image_width));
         if (debug) std::cout << "resized image to " << image_width << "x" << image_width << std::endl;
+        resized = true;
     }
     auto end = clock_type::now();
     if (debug) std::cout << "read image time=" << chrono::duration_cast<chrono::microseconds>(end - start).count() / 1000 << " ms" << std::endl;

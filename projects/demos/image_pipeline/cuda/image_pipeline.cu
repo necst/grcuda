@@ -407,7 +407,7 @@ void ImagePipeline::run_inner(unsigned char* input_image, int channel) {
     // Copy back data;
     start_tmp = clock_type::now();
     for (int i = 0; i < image_width * image_width; i++) {
-        input_image[black_and_white ? i : (i * 3 + channel)] = (unsigned char) image3[i];
+        input_image[black_and_white ? i : (i * 3 + channel)] = (unsigned char) (image3[i]);
     }
     end_tmp = clock_type::now();
     auto write_time = chrono::duration_cast<chrono::microseconds>(end_tmp - start_tmp).count();
