@@ -58,9 +58,10 @@ public class CUMLRegistry {
 
     private static final InteropLibrary INTEROP = InteropLibrary.getFactory().getUncached();
 
-    public static final String DEFAULT_LIBRARY = "libcuml.so";
+    public static final String DEFAULT_LIBRARY = (System.getenv("LIBCUML_DIR") != null ? System.getenv("LIBCUML_DIR") : "") + "libcuml.so";
+
     public static final String DEFAULT_LIBRARY_HINT = " (CuML library location can be set via the --grcuda.CuMLLibrary= option. " +
-                    "CuML support can be disabled via --grcuda.CuMLEnabled=false.";
+            "CuML support can be disabled via --grcuda.CuMLEnabled=false.";
     public static final String NAMESPACE = "ML";
 
     private final GrCUDAContext context;
@@ -158,7 +159,7 @@ public class CUMLRegistry {
             final ExternalFunctionFactory factory = func.getFunctionFactory();
             final Function wrapperFunction = new CUDALibraryFunction(factory.getName(), factory.getNFISignature()) {
 
-            private Function nfiFunction;
+                private Function nfiFunction;
 
                 @Override
                 @TruffleBoundary
