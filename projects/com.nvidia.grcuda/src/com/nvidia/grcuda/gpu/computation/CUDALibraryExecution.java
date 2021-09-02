@@ -34,6 +34,13 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
     }
 
     @Override
+    public boolean canUseStream() { return false; }
+
+    // TODO: See note in parent class;
+//    @Override
+//    public boolean mustUseDefaultStream() { return true; }
+
+    @Override
     public Object execute() throws UnsupportedTypeException {
         // Execution happens on the default stream;
         Object result = null;
