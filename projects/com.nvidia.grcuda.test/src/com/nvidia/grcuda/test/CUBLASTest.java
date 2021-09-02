@@ -219,8 +219,8 @@ public class CUBLASTest {
     /**
      * Validation function for vectors.
      */
-    private void assertOutputVectorIsCorrect(int len, Value deviceArray,
-                    Function<Integer, Integer> outFunc) {
+    public static void assertOutputVectorIsCorrect(int len, Value deviceArray,
+                    Function<Integer, Integer> outFunc, char typeChar) {
         boolean hasDouble = (typeChar == 'D') || (typeChar == 'Z');
         for (int i = 0; i < len; i++) {
             if (hasDouble) {
@@ -233,6 +233,11 @@ public class CUBLASTest {
                 assertEquals(expected, actual, 1e-5f);
             }
         }
+    }
+
+    private void assertOutputVectorIsCorrect(int len, Value deviceArray,
+                                                    Function<Integer, Integer> outFunc) {
+        CUBLASTest.assertOutputVectorIsCorrect(len, deviceArray, outFunc, this.typeChar);
     }
 
     /**

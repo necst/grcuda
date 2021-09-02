@@ -57,7 +57,7 @@ public class CUMLTest {
             Value dbscan = polyglot.eval("grcuda", "ML::cuml" + typeChar + "pDbscanFit");
             try {
                 dbscan.execute(input, numRows, numCols, eps, minSamples, labels, maxBytesPerChunk, verbose);
-                System.out.println(labels);
+                CUBLASTest.assertOutputVectorIsCorrect(numRows, labels, (Integer i) -> i / 10, this.typeChar);
             } catch (Exception e) {
                 System.out.println("warning: failed to launch cuML, skipping test");
             }
