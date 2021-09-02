@@ -41,9 +41,9 @@ rm graalvm-ce-java11-linux-amd64-21.1.0.tar.gz
 # option 2 (from Nvidia's website);
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
 sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
-wget https://developer.download.nvidia.com/compute/cuda/11.3.1/local_installers/cuda-repo-ubuntu2004-11-3-local_11.3.1-465.19.01-1_amd64.deb
-sudo dpkg -i cuda-repo-ubuntu2004-11-3-local_11.3.1-465.19.01-1_amd64.deb
-sudo apt-key add /var/cuda-repo-ubuntu2004-11-3-local/7fa2af80.pub
+wget https://developer.download.nvidia.com/compute/cuda/11.4.1/local_installers/cuda-repo-ubuntu2004-11-4-local_11.4.1-470.57.02-1_amd64.deb
+sudo dpkg -i cuda-repo-ubuntu2004-11-4-local_11.4.1-470.57.02-1_amd64.deb
+sudo apt-key add /var/cuda-repo-ubuntu2004-11-4-local/7fa2af80.pub
 sudo apt-get update
 sudo apt-get -y install cuda
 
@@ -73,6 +73,7 @@ source  ~/.bashrc
 gu install native-image
 gu install llvm-toolchain
 gu install python
+gu install nodejs
 gu rebuild-images polyglot
 
 # create environment for Graalpython and set it up;
@@ -81,6 +82,17 @@ source ~/graalpython_venv/bin/activate
 graalpython -m ginstall install setuptools
 graalpython -m ginstall install Cython
 graalpython -m ginstall install numpy
+
+# Iinstall miniconda (Python is required to build with mx);
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod 777 Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda
+$HOME/miniconda/bin/conda init
+
+# Optional: install cuML;
+$HOME/miniconda/bin/conda create -n rapids-21.08 -c rapidsai -c nvidia -c conda-forge cuml=21.08 python=3.8 cudatoolkit=11.4
+echo 'export LIBCUML_DIR=/home/ubuntu/miniconda/envs/rapids-21.08/lib/' >> ~/.bashrc
+source  ~/.bashrc
 
 # reboot the machine to load the Nvidia drivers;
 sudo reboot

@@ -41,7 +41,9 @@ SUBNET = "ocid1.subnet.oc1.us-sanjose-1.aaaaaaaapwj5a3hkbym7yyeqha6chagx23lifuxn
 
 # OCID of the Boot Volume 
 # grcuda_default_gw (cloned from grcuda_default_boot_volume on 16.6.2021)
-BOOT_VOLUME = "ocid1.bootvolume.oc1.us-sanjose-1.abzwuljrxlpin7nl6iyjzehemlybel43ujcf6fq355rslvdu7c2ytfk5o2iq"
+#BOOT_VOLUME = "ocid1.bootvolume.oc1.us-sanjose-1.abzwuljrxlpin7nl6iyjzehemlybel43ujcf6fq355rslvdu7c2ytfk5o2iq"
+# grcuda_default_alberto
+BOOT_VOLUME = "ocid1.bootvolume.oc1.us-sanjose-1.abzwuljr4ik4aqqwnzu7udsmj4tu2d3v2hf2xxrad3e4mlmwaav2ymp2ivha"
 
 # Public key employed when creating the instance the first time (with a "fresh" Boot Volume)
 # If you use a Boot Volume created by another user, make sure to add your public key to ~/.ssh/authorized_keys
