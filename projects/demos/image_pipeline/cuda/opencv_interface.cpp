@@ -4,9 +4,14 @@
 uchar* OpenCVInterface::read_input() {
     auto start = clock_type::now();
     // Read image;
-    std::stringstream ss;
-    ss << "../../" << INPUT_IMAGE_FOLDER << "/" << image_name << ".jpg";
-    std::string input_path = ss.str();
+    std::string input_path;
+    if (!full_input_path.empty()) {
+        input_path = full_input_path;
+    } else {
+        std::stringstream ss;
+        ss << "../../" << INPUT_IMAGE_FOLDER << "/" << image_name << ".jpg";
+        input_path = ss.str();
+    }
     image_matrix = imread(input_path,  black_and_white ? cv::IMREAD_GRAYSCALE : cv::IMREAD_COLOR);
     
     if (debug) std::cout << "loaded image=" << image_name << " of size " << image_matrix.rows << "x" << image_matrix.cols << std::endl;
@@ -37,9 +42,20 @@ void OpenCVInterface::write_output_inner(std::string kind, int resize_width) {
     std::vector<int> compression_params;
     compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
     compression_params.push_back(80);
-    std::stringstream ss;
-    ss << "../../" << OUTPUT_IMAGE_FOLDER << "/" << image_name << "_" << kind << ".jpg";
-    std::string output_path = ss.str();
+
+    std::string output_path;
+    if (kind == "small" && !full_output_path_small.empty()) {
+        output_path = full_output_path_small;
+    } else if (kind == "large" && !full_output_path_large.empty()) {
+        output_path = full_output_path_large;
+    } else if (!image_name.empty()) {
+         std::stringstream ss;
+        ss << "../../" << OUTPUT_IMAGE_FOLDER << "/" << image_name << "_" << kind << ".jpg";
+        output_path = ss.str();
+    } else {
+        if (debug) std::cout << "error: missing output path or image name, cannot write output" << std::endl;
+        return;
+    }
     imwrite(output_path, image_matrix_out, compression_params);
 }
 

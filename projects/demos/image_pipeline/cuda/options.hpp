@@ -62,6 +62,11 @@ struct Options {
     // Resize input image to this size;
     int resized_image_width = DEFAULT_RESIZED_IMAGE_WIDTH;
 
+    // Optional full input/output paths;
+    std::string full_input_path;
+    std::string full_output_path_small;
+    std::string full_output_path_large;
+
     // Used for printing;
     std::map<Policy, std::string> policy_map;
 
@@ -82,11 +87,14 @@ struct Options {
                                                {"input", required_argument, 0, 'i'},
                                                {"bw", no_argument, 0, 'w'},
                                                {"resized_image_width", required_argument, 0, 'n'},
+                                               {"full_input_path", required_argument, 0, 'f'},
+                                               {"full_output_path_small", required_argument, 0, 's'},
+                                               {"full_output_path_large", required_argument, 0, 'l'},
                                                {0, 0, 0, 0}};
         // getopt_long stores the option index here;
         int option_index = 0;
 
-        while ((opt = getopt_long(argc, argv, "db:c:g:p:rai:wn:", long_options, &option_index)) != EOF) {
+        while ((opt = getopt_long(argc, argv, "db:c:g:p:rai:wn:f:s:l:", long_options, &option_index)) != EOF) {
             switch (opt) {
                 case 'd':
                     debug = true;
@@ -117,6 +125,15 @@ struct Options {
                     break;
                 case 'n':
                     resized_image_width = atoi(optarg);
+                    break;
+                case 'f':
+                    full_input_path = optarg;
+                    break;
+                case 's':
+                    full_output_path_small = optarg;
+                    break;
+                case 'l':
+                    full_output_path_large = optarg;
                     break;
                 default:
                     break;
