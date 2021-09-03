@@ -9,7 +9,9 @@ import {
   IMAGE_IN_DIRECTORY, 
   IMAGE_OUT_BIG_DIRECTORY, 
   IMAGE_OUT_SMALL_DIRECTORY, 
-  MOCK_OPTIONS
+  MOCK_OPTIONS,
+  CDEPTH,
+  FACTOR
 } from "./options"
 
 
@@ -71,9 +73,10 @@ export const _getDelayJitter = (computationType: string) => {
 
 export async function loadImage(imgName: string | number, resizeWidth = RESIZED_IMG_WIDTH, resizeHeight = RESIZED_IMG_WIDTH, fileFormat=".jpg") {
   const imagePath = `${IMAGE_IN_DIRECTORY}/${imgName}${fileFormat}`
-  console.log(imagePath)
   const image = await cv.imreadAsync(imagePath, BW ? cv.IMREAD_GRAYSCALE : cv.IMREAD_COLOR)
-  return image.resize(resizeWidth, resizeWidth);
+  //return image.resize(resizeWidth, resizeWidth);
+  // We do not require resizing anymore as the input image is bound to be 512x512
+  return image
 }
 
 export async function storeImageInner(img: cv.Mat, imgName: string | number, resolution: number, kind: string, imgFormat: string = ".jpg") {
@@ -93,3 +96,42 @@ export async function storeImage(img: cv.Mat, imgName: string | number, resizedI
 export function _intervalToMs(start: number, end: number) {
   return (end - start) / 1e6;
 }
+
+function lut_r(lut: any) {
+  for (let i = 0; i < CDEPTH; i++) {
+      let x = i / CDEPTH;
+      if (i < CDEPTH / 2) {
+          lut[i] = Math.min(CDEPTH - 1, 255 * (0.8 * (1 / (1 + Math.exp(-x + 0.5) * 7 * FACTOR)) + 0.2)) >> 0;
+      } else {
+          lut[i] = Math.min(CDEPTH - 1, 255 * (1 / (1 + Math.exp((-x + 0.5) * 7 * FACTOR)))) >> 0;
+      }
+  }
+}
+
+function lut_g(lut: any) {
+  for (let i = 0; i < CDEPTH; i++) {
+      let x = i / CDEPTH;
+      let y = 0;
+      if (i < CDEPTH / 2) {
+          y = 0.8 * (1 / (1 + Math.exp(-x + 0.5) * 10 * FACTOR)) + 0.2;
+      } else {
+          y = 1 / (1 + Math.exp((-x + 0.5) * 9 * FACTOR));
+      }
+      lut[i] = Math.min(CDEPTH - 1, 255 * Math.pow(y, 1.4)) >> 0;
+  }
+}
+
+function lut_b(lut: any) {
+  for (let i = 0; i < CDEPTH; i++) {
+      let x = i / CDEPTH;
+      let y = 0;
+      if (i < CDEPTH / 2) {
+          y = 0.7 * (1 / (1 + Math.exp(-x + 0.5) * 10 * FACTOR)) + 0.3;
+      } else {
+          y = 1 / (1 + Math.exp((-x + 0.5) * 10 * FACTOR));
+      }
+      lut[i] = Math.min(CDEPTH - 1, 255 * Math.pow(y, 1.6)) >> 0;
+  }
+}
+
+export const LUT = [lut_r, lut_g, lut_b];

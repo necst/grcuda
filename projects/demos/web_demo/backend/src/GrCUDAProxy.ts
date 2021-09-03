@@ -6,6 +6,7 @@ import {
   _gaussianKernel,
   loadImage,
   storeImage,
+  LUT
 } from './utils'
 
 import {
@@ -16,7 +17,7 @@ import {
   KERNEL_UNSHARPEN_DIAMETER,
   KERNEL_UNSHARPEN_VARIANCE,
   UNSHARPEN_AMOUNT,
-  NUM_BLOCKS,
+  NUM_BLOCKS as BLOCKS,
   THREADS_1D,
   THREADS_2D,
   DEBUG,
@@ -24,7 +25,12 @@ import {
   MOCK_OPTIONS,
   COMPUTATION_MODES,
   CONFIG_OPTIONS,
-  BW
+  BW,
+  CUDA_NATIVE_EXEC_FILE,
+  CUDA_NATIVE_IMAGE_OUT_BIG_DIRECTORY,
+  CUDA_NATIVE_IMAGE_OUT_SMALL_DIRECTORY,
+  CUDA_NATIVE_IMAGE_IN_DIRECTORY,
+  CDEPTH
 } from './options';
 
 
@@ -32,14 +38,17 @@ import * as ck from "./CudaKernels"
 
 // Load OpenCV;
 import cv from "opencv4nodejs";
-// Load function to write to file;
-import fs from "fs";
+
+import {
+  execSync
+} from "child_process"
+
 // Load GrCUDA;
 //@ts-ignore
 const cu = Polyglot.eval("grcuda", "CU")
 
 //@ts-ignore
-const cudaFree = Polyglot.eval('grcuda', 'cudaFree')
+//const cudaSetDevice = Polyglot.eval("grcuda", "cudaSetDevice")
 
 
 // Use Java System to measure time;
@@ -47,21 +56,20 @@ const cudaFree = Polyglot.eval('grcuda', 'cudaFree')
 const System = Java.type("java.lang.System");
 
 // Build the CUDA kernels;
-const GAUSSIAN_BLUR_KERNEL = cu.buildkernel(ck.GAUSSIAN_BLUR, "gaussian_blur", "const pointer, pointer, sint32, sint32, const pointer, sint32")
-const SOBEL_KERNEL = cu.buildkernel(ck.SOBEL, "sobel", "pointer, pointer, sint32, sint32")
-const EXTEND_KERNEL = cu.buildkernel(ck.EXTEND_MASK, "extend", "pointer, const pointer, const pointer, sint32, sint32")
-const MAXIMUM_KERNEL = cu.buildkernel(ck.EXTEND_MASK, "maximum", "const pointer, pointer, sint32")
-const MINIMUM_KERNEL = cu.buildkernel(ck.EXTEND_MASK, "minimum", "const pointer, pointer, sint32")
-const UNSHARPEN_KERNEL = cu.buildkernel(ck.UNSHARPEN, "unsharpen", "const pointer, const pointer, pointer, float, sint32")
-const COMBINE_KERNEL = cu.buildkernel(ck.COMBINE, "combine", "const pointer, const pointer, const pointer, pointer, sint32")
-const COMBINE_KERNEL_2 = cu.buildkernel(ck.COMBINE_2, "combine_2", "const pointer, const pointer, const pointer, pointer, sint32")
+const GAUSSIAN_BLUR_KERNEL = cu.buildkernel(ck.GAUSSIAN_BLUR, "gaussian_blur", "const pointer, pointer, sint32, sint32, const pointer, sint32");
+const SOBEL_KERNEL = cu.buildkernel(ck.SOBEL, "sobel", "pointer, pointer, sint32, sint32");
+const EXTEND_KERNEL = cu.buildkernel(ck.EXTEND_MASK, "extend", "pointer, const pointer, const pointer, sint32, sint32");
+const MAXIMUM_KERNEL = cu.buildkernel(ck.EXTEND_MASK, "maximum", "const pointer, pointer, sint32");
+const MINIMUM_KERNEL = cu.buildkernel(ck.EXTEND_MASK, "minimum", "const pointer, pointer, sint32");
+const UNSHARPEN_KERNEL = cu.buildkernel(ck.UNSHARPEN, "unsharpen", "const pointer, const pointer, pointer, float, sint32");
+const COMBINE_KERNEL = cu.buildkernel(ck.COMBINE, "combine", "const pointer, const pointer, const pointer, pointer, sint32");
+const COMBINE_KERNEL_LUT = cu.buildkernel(ck.COMBINE_2, "combine_lut", "const pointer, const pointer, const pointer, pointer, sint32, pointer");
 
 export class GrCUDAProxy {
   private ws: WebSocket
   private computationType: string
   private imagesToSend: { [id: string]: Array<string> } = {}
-
-
+  private totalTime: number = 0
   constructor(ws: WebSocket) {
     this.ws = ws
   }
@@ -74,20 +82,20 @@ export class GrCUDAProxy {
    */
   public async beginComputation(computationType: string) {
     this.computationType = computationType
-    console.log("beginning computation ", computationType)
+    console.log("beginning computation ", computationType.toString())
 
     COMPUTATION_MODES.forEach(cm => this.imagesToSend[cm] = [])
 
     if (computationType == "sync" || computationType == "race-sync") {
-      await this.computeSync(computationType.toString())
+      await this.runGrCUDA(computationType.toString())
       return
     }
     if (computationType == "async" || computationType == "race-async") {
-      await this.computeAsync(computationType.toString())
+      await this.runGrCUDA(computationType.toString())
       return
     }
     if (computationType == "cuda-native" || computationType == "race-cuda-native") {
-      await this.computeNative(computationType.toString())
+      await this.runNative(computationType.toString())
       return
     }
 
@@ -106,21 +114,26 @@ export class GrCUDAProxy {
   }
 
   async processImageBW(img: cv.Mat) {
-    return new cv.Mat(Buffer.from(await this.processImage(img.getData(), img.rows)), img.rows, img.cols, cv.CV_8UC1);
+    return new cv.Mat(Buffer.from(await this.processImage(img.getData(), img.rows, 0)), img.rows, img.cols, cv.CV_8UC1);
   }
 
   async processImageColor(img: cv.Mat) {
     // Possibly not the most efficient way to do this,
     // we should process the 3 channels concurrently, and avoid creation of temporary cv.Mat;
-    const channels = img.splitChannels();
-    for (let c = 0; c < 3; c++) {
-      channels[c] = new cv.Mat(Buffer.from(await this.processImage(channels[c].getData(), img.rows)), img.rows, img.cols, cv.CV_8UC1);;
-    }
-    return new cv.Mat(channels);
-  }
+    let channels = img.splitChannels()
+    
+    const buffers = await Promise.all([
+      this.processImage(channels[0].getData(), img.rows, 0),
+      this.processImage(channels[1].getData(), img.rows, 1),
+      this.processImage(channels[2].getData(), img.rows, 2)
+    ])
 
+    channels = buffers.map(buffer => new cv.Mat(buffer, img.rows, img.cols, cv.CV_8UC1))
+    
+    return new cv.Mat(channels);  
+}
 
-  private async processImage(img: Buffer, size: number, debug: boolean = DEBUG) {
+  private async processImage(img: Buffer, size: number, channel: number, debug: boolean = DEBUG) {
     // Allocate image data;
     const image = cu.DeviceArray("int", size, size);
     const image2 = cu.DeviceArray("float", size, size);
@@ -143,12 +156,17 @@ export class GrCUDAProxy {
     const blurred_large = cu.DeviceArray("float", size, size);
     const blurred_unsharpen = cu.DeviceArray("float", size, size);
 
+
+    const lut = cu.DeviceArray("int", CDEPTH);  
+
+    // Initialize the right LUT;
+    LUT[channel](lut);
+
     // Fill the image data;
     const s1 = System.nanoTime();
     image.copyFrom(img, size * size);
     const e1 = System.nanoTime();
-    if (DEBUG)
-      console.log("--img to device array=" + _intervalToMs(s1, e1) + " ms");
+    if(debug) console.log("--img to device array=" + _intervalToMs(s1, e1) + " ms");
 
     const start = System.nanoTime();
 
@@ -159,153 +177,109 @@ export class GrCUDAProxy {
 
     // Main GPU computation;
     // Blur - Small;
-    GAUSSIAN_BLUR_KERNEL([NUM_BLOCKS, NUM_BLOCKS],
-      [THREADS_2D, THREADS_2D],
-      4 * KERNEL_SMALL_DIAMETER * KERNEL_SMALL_DIAMETER
-    )
-      (image, blurred_small, size, size, kernel_small, KERNEL_SMALL_DIAMETER);
-
+    GAUSSIAN_BLUR_KERNEL([BLOCKS, BLOCKS], [THREADS_2D, THREADS_2D], 4 * KERNEL_SMALL_DIAMETER * KERNEL_SMALL_DIAMETER)(
+        image, blurred_small, size, size, kernel_small, KERNEL_SMALL_DIAMETER);
     // Blur - Large;
-    GAUSSIAN_BLUR_KERNEL([NUM_BLOCKS, NUM_BLOCKS],
-      [THREADS_2D, THREADS_2D],
-      4 * KERNEL_LARGE_DIAMETER * KERNEL_LARGE_DIAMETER
-    )
-      (image, blurred_large, size, size, kernel_large, KERNEL_LARGE_DIAMETER);
-
+    GAUSSIAN_BLUR_KERNEL([BLOCKS, BLOCKS], [THREADS_2D, THREADS_2D], 4 * KERNEL_LARGE_DIAMETER * KERNEL_LARGE_DIAMETER)(
+        image, blurred_large, size, size, kernel_large, KERNEL_LARGE_DIAMETER);
     // Blur - Unsharpen;
-    GAUSSIAN_BLUR_KERNEL([NUM_BLOCKS, NUM_BLOCKS],
-      [THREADS_2D, THREADS_2D],
-      4 * KERNEL_UNSHARPEN_DIAMETER * KERNEL_UNSHARPEN_DIAMETER
-    )
-      (image, blurred_unsharpen, size, size, kernel_unsharpen, KERNEL_UNSHARPEN_DIAMETER);
-
+    GAUSSIAN_BLUR_KERNEL([BLOCKS, BLOCKS], [THREADS_2D, THREADS_2D], 4 * KERNEL_UNSHARPEN_DIAMETER * KERNEL_UNSHARPEN_DIAMETER)(
+        image, blurred_unsharpen, size, size, kernel_unsharpen, KERNEL_UNSHARPEN_DIAMETER);
     // Sobel filter (edge detection);
-    SOBEL_KERNEL(
-      [NUM_BLOCKS, NUM_BLOCKS],
-      [THREADS_2D, THREADS_2D]
-    )
-      (blurred_small, mask_small, size, size);
-
-    SOBEL_KERNEL(
-      [NUM_BLOCKS, NUM_BLOCKS],
-      [THREADS_2D, THREADS_2D]
-    )
-      (blurred_large, mask_large, size, size);
+    SOBEL_KERNEL([BLOCKS, BLOCKS], [THREADS_2D, THREADS_2D])(
+        blurred_small, mask_small, size, size);
+    SOBEL_KERNEL([BLOCKS, BLOCKS], [THREADS_2D, THREADS_2D])(
+        blurred_large, mask_large, size, size);
     // Ensure that the output of Sobel is in [0, 1];
-    MAXIMUM_KERNEL(
-      NUM_BLOCKS * 2,
-      THREADS_1D
-    )
-      (mask_small, maximum_1, size * size);
-
-    MINIMUM_KERNEL(
-      NUM_BLOCKS * 2,
-      THREADS_1D
-    )
-      (mask_small, minimum_1, size * size);
-
-    EXTEND_KERNEL(
-      NUM_BLOCKS * 2,
-      THREADS_1D
-    )
-      (mask_small, minimum_1, maximum_1, size * size, 1);
-
+    MAXIMUM_KERNEL(BLOCKS * 2, THREADS_1D)(mask_small, maximum_1, size * size);
+    MINIMUM_KERNEL(BLOCKS * 2, THREADS_1D)(mask_small, minimum_1, size * size);
+    EXTEND_KERNEL(BLOCKS * 2, THREADS_1D)(mask_small, minimum_1, maximum_1, size * size, 1);
     // Extend large edge detection mask, and normalize it;
-    MAXIMUM_KERNEL(
-      NUM_BLOCKS * 2,
-      THREADS_1D
-    )
-      (mask_large, maximum_2, size * size);
-
-    MINIMUM_KERNEL(
-      NUM_BLOCKS * 2,
-      THREADS_1D
-    )
-      (mask_large, minimum_2, size * size);
-
-    EXTEND_KERNEL(
-      NUM_BLOCKS * 2,
-      THREADS_1D
-    )
-      (mask_large, minimum_2, maximum_2, size * size, 5);
-
+    MAXIMUM_KERNEL(BLOCKS * 2, THREADS_1D)(mask_large, maximum_2, size * size);
+    MINIMUM_KERNEL(BLOCKS * 2, THREADS_1D)(mask_large, minimum_2, size * size);
+    EXTEND_KERNEL(BLOCKS * 2, THREADS_1D)(mask_large, minimum_2, maximum_2, size * size, 5);
     // Unsharpen;
-    UNSHARPEN_KERNEL(
-      NUM_BLOCKS * 2,
-      THREADS_1D
-    )
-      (image, blurred_unsharpen, image_unsharpen, UNSHARPEN_AMOUNT, size * size);
-
+    UNSHARPEN_KERNEL(BLOCKS * 2, THREADS_1D)(
+        image, blurred_unsharpen, image_unsharpen, UNSHARPEN_AMOUNT, size * size);
     // Combine results;
-    COMBINE_KERNEL(
-      NUM_BLOCKS * 2,
-      THREADS_1D
-    )
-      (image_unsharpen, blurred_large, mask_large, image2, size * size);
-
-    COMBINE_KERNEL_2(
-      NUM_BLOCKS * 2,
-      THREADS_1D
-    )
-      (image2, blurred_small, mask_small, image3, size * size);
+    COMBINE_KERNEL(BLOCKS * 2, THREADS_1D)(
+        image_unsharpen, blurred_large, mask_large, image2, size * size);
+    COMBINE_KERNEL_LUT(BLOCKS * 2, THREADS_1D)(
+        image2, blurred_small, mask_small, image3, size * size, lut);
 
     // Store the image data.
+    const tmp = image3[0][0];
     const end = System.nanoTime();
-    if (DEBUG)
-      console.log("--cuda time=" + _intervalToMs(start, end) + " ms");
+    if(debug) console.log("--cuda time=" + _intervalToMs(start, end) + " ms");
     const s2 = System.nanoTime();
     image3.copyTo(img, size * size);
     const e2 = System.nanoTime();
-    if (DEBUG)
-      console.log("--device array to image=" + _intervalToMs(s2, e2) + " ms");
+    if(debug) console.log("--device array to image=" + _intervalToMs(s2, e2) + " ms");
+
 
     image.free()
     image2.free()
     image3.free()
-
+    kernel_small.free()
+    kernel_large.free()
+    kernel_unsharpen.free()
+    mask_small.free()
+    mask_large.free()
+    image_unsharpen.free()
+    blurred_small.free()
+    blurred_large.free()
+    blurred_unsharpen.free()
 
     return img;
+}
+
+  private async runGrCUDAInner(imageName: string, computationType: string, imageId: number, debug: boolean = DEBUG){
+    const image = await loadImage(imageName)
+    const begin = System.nanoTime()
+    const processedImage = BW ? await this.processImageBW(image) : await this.processImageColor(image)
+    const end = System.nanoTime()
+    await storeImage(processedImage, imageName)
+    const elapsed = _intervalToMs(begin, end)
+    //this.totalTime += elapsed
+    this.communicateAll(imageId, computationType)
   }
 
   /*
-   * Compute the GrCUDA kernel using Async mode
+   * Compute the GrCUDA kernels 
+   * Execution mode (sync or async) depends on the options 
+   * passed to nodejs
    * @returns `void`
    */
-  private async computeAsync(computationType: string) {
-    console.log("Computing using mode Async")
+  private async runGrCUDA(computationType: string, debug: boolean = DEBUG) {
+    console.log(`Computing using mode ${computationType}`)
 
     const {
       MAX_PHOTOS,
     } = CONFIG_OPTIONS
 
+    const beginComputeAllImages = System.nanoTime()
+
     for (let imageId = 0; imageId < MAX_PHOTOS; ++imageId) {
       try {
         const imageName = ("0000" + imageId).slice(-4)
         const begin = System.nanoTime();
-        const image = await loadImage(imageName)
-        const processedImage = BW ? await this.processImageBW(image) : await this.processImageColor(image)
-        storeImage(processedImage, imageName)
-        this.communicateAll(imageId, computationType)
+        await this.runGrCUDAInner(imageName, computationType, imageId)
         const end = System.nanoTime();
-        console.log(`One image took ${_intervalToMs(begin, end)}`)
+        if(debug){
+          console.log(`One image took ${_intervalToMs(begin, end)}`)
+        }
       } catch (e) {
         console.log(e)
         continue
       }
     }
 
+    this.communicateAll(MAX_PHOTOS, computationType)
+
+    const endComputeAllImages = System.nanoTime()
+    console.log(`[${this.computationType}] Whole computation took ${_intervalToMs(beginComputeAllImages, endComputeAllImages)}`)
 
 
-
-  }
-
-  /*
-   * Compute the GrCUDA kernel using Sync mode
-   * @returns `void`
-   */
-  private async computeSync(computationType: string) {
-    console.log("Computing using mode Sync")
-    await this.mockCompute(computationType)
   }
 
   /*
@@ -314,9 +288,41 @@ export class GrCUDAProxy {
    * a shell
    * @returns `void`
    */
-  private async computeNative(computationType: string) {
-    console.log("Computing using mode Native")
-    await this.mockCompute(computationType)
+  private async runNative(computationType: string, debug: boolean = DEBUG) {
+    console.log(`Computing using mode ${computationType}`)
+
+    const {
+      MAX_PHOTOS,
+    } = CONFIG_OPTIONS
+
+    const beginComputeAllImages = System.nanoTime()
+
+    for (let imageId = 0; imageId < MAX_PHOTOS; ++imageId) {
+      try {
+        const imageName = ("0000" + imageId).slice(-4)
+        const begin = System.nanoTime();
+        execSync(
+          `${CUDA_NATIVE_EXEC_FILE} -d -r -f ${CUDA_NATIVE_IMAGE_IN_DIRECTORY}/${imageName}.jpg -s ${CUDA_NATIVE_IMAGE_OUT_SMALL_DIRECTORY}/${imageName}.jpg -l ${CUDA_NATIVE_IMAGE_OUT_BIG_DIRECTORY}/${imageName}.jpg `
+        )
+        this.communicateAll(imageId, computationType)
+        const end = System.nanoTime();
+        if(debug){
+          console.log(`One image took ${_intervalToMs(begin, end)}`)
+        }
+      } catch (e) {
+        console.log(e)
+        continue
+      }
+    }
+
+    this.communicateAll(MAX_PHOTOS, computationType)
+
+    const endComputeAllImages = System.nanoTime()
+    console.log(`[${this.computationType}] Whole computation took ${_intervalToMs(beginComputeAllImages, endComputeAllImages)}`)
+
+
+    //console.log("Computing using mode Native")
+    //await this.mockCompute(computationType)
   }
 
   /* Mock the computation of the kernels 

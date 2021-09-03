@@ -7,6 +7,11 @@ import { GrCUDAProxy } from './GrCUDAProxy'
 const app = express()
 const server = http.createServer(app)
 const PORT = parseInt(process.argv[2])
+const deviceNumber = parseInt(process.argv[3])
+
+//@ts-ignore
+const cu = Polyglot.eval("grcuda", `CU`)
+cu.cudaSetDevice(deviceNumber)
 
 const wss = new WebSocket.Server({ server })
 
@@ -24,4 +29,4 @@ app.get('/', (req: any, res: any) => {
   res.send("Everithing is working properly")
 })
 
-server.listen(PORT, () => console.log(`Running on port ${PORT}`))
+server.listen(PORT, () => console.log(`Running on port ${PORT} - Using GPU ${deviceNumber}`))
