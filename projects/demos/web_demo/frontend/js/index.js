@@ -2,10 +2,8 @@ const websockets = {
   "sync": new WebSocket("ws://localhost:8080"),
   "async": new WebSocket("ws://localhost:8081"),
   "cuda-native": new WebSocket("ws://localhost:8082"),
-  //"race-mode": undefined //new WebSocket("ws://localhost:8083"),
 }
 
-const ws = new WebSocket("ws://localhost:8080")
 const sendWSMessage = document.getElementById("btn-send-msg-ws")
 const progressBar = document.getElementById("progress-bar")
 const imageGallery = document.getElementById("images")
