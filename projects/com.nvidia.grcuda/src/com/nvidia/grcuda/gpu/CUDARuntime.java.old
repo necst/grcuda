@@ -33,9 +33,7 @@ import static com.nvidia.grcuda.functions.Function.checkArgumentLength;
 import static com.nvidia.grcuda.functions.Function.expectInt;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 import static com.nvidia.grcuda.functions.Function.expectPositiveLong;
-import com.nvidia.grcuda.gpu.stream.DefaultStream;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import org.graalvm.collections.Pair;
 
@@ -77,12 +75,8 @@ public final class CUDARuntime {
     public static final String CUDA_LIBRARY_NAME = "cuda";
     static final String NVRTC_LIBRARY_NAME = "nvrtc";
 
-    private int lastDeviceSet = 0;
     private final GrCUDAContext context;
     private final NVRuntimeCompiler nvrtc;
-
-    private ArrayList<GPUPointer> innerCudaContext = new ArrayList<>();    
-    private final int numDevices;
 
     /**
      * Users can manually create streams that are not managed directly by a {@link com.nvidia.grcuda.gpu.stream.GrCUDAStreamManager}.
@@ -139,14 +133,6 @@ public final class CUDARuntime {
             loadedLibraries.put(CUDA_RUNTIME_LIBRARY_NAME, libcudart);
             loadedLibraries.put(CUDA_LIBRARY_NAME, libcuda);
             loadedLibraries.put(NVRTC_LIBRARY_NAME, libnvrtc);
-
-            numDevices = cudaGetDeviceCount();
-
-            for(int i = 0;i<numDevices; i++){
-                HashMap<String, CUModule> modules = new HashMap<String, CUModule>();
-                loadedModules.add(modules);
-            }
-
         } catch (UnsatisfiedLinkError e) {
             throw new GrCUDAException(e.getMessage());
         }
@@ -163,7 +149,9 @@ public final class CUDARuntime {
 
     // using this slow/uncached instance since all calls are non-critical
     private static final InteropLibrary INTEROP = InteropLibrary.getFactory().getUncached();
-    
+
+    private GPUPointer innerCudaContext;
+
     public GrCUDAContext getContext() {
         return context;
     }
@@ -322,7 +310,6 @@ public final class CUDARuntime {
         try {
             Object callable = CUDARuntimeFunction.CUDA_SETDEVICE.getSymbol(this);
             Object result = INTEROP.execute(callable, device);
-            //System.out.println("[TRUFFLE] cudaSetDevice got called with arg " + device);
             checkCUDAReturnCode(result, "cudaSetDevice");
         } catch (InteropException e) {
             throw new GrCUDAException(e);
@@ -452,7 +439,7 @@ public final class CUDARuntime {
     }
 
     @TruffleBoundary
-    public ArrayList<GPUPointer> getInnerCudaContext() {
+    public GPUPointer getInnerCudaContext() {
         if (this.innerCudaContext == null) {
             assertCUDAInitialized();
         }
@@ -460,10 +447,10 @@ public final class CUDARuntime {
     }
 
     @TruffleBoundary
-    public GPUPointer initializeInnerCudaContext(int deviceId) {
+    public GPUPointer initializeInnerCudaContext() {
         int CU_CTX_SCHED_YIELD = 0x02; // Optimal multi-threaded host flag;
-        //int device = 0; // Support only device 0;
-        return new GPUPointer(cuDevicePrimaryCtxRetain(deviceId));
+        int device = 0; // Support only device 0;
+        return new GPUPointer(cuDevicePrimaryCtxRetain(device));
     }
 
     /**
@@ -606,10 +593,6 @@ public final class CUDARuntime {
         return callable;
     }
 
-    public void setLastDeviceUsed(int device){ 
-        this.lastDeviceSet = device;
-    }
-
     private void checkCUDAReturnCode(Object result, String... function) {
         if (!(result instanceof Integer)) {
             CompilerDirectives.transferToInterpreter();
@@ -743,7 +726,6 @@ public final class CUDARuntime {
             public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
                 checkArgumentLength(args, 1);
                 int device = expectInt(args[0]);
-                cudaRuntime.setLastDeviceUsed(device);
                 callSymbol(cudaRuntime, device);
                 return NoneValue.get();
             }
@@ -1053,8 +1035,7 @@ public final class CUDARuntime {
         }
     }
 
-    //private HashMap<String, CUModule> loadedModules = new HashMap<>();
-    private ArrayList<HashMap<String, CUModule>> loadedModules = new ArrayList<HashMap<String, CUModule>>();
+    private HashMap<String, CUModule> loadedModules = new HashMap<>();
 
 //    @TruffleBoundary
 //    public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String signature) {
@@ -1077,65 +1058,31 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature) {
-
-        ArrayList<Long> functionHandles = new ArrayList<>();
-        ArrayList<CUModule> modules = new ArrayList<>();
-        int currentDevice = cudaGetDevice();
-
-        for(int i = 0; i < numDevices; i++){
-            CUModule module = loadedModules.get(i).get(cubinFile);
-
-            cudaSetDevice(i);
-
-            if(module == null){
-                module = cuModuleLoad(cubinFile);
-                loadedModules.get(i).put(cubinFile, module);
-            }else{
-                
-            }
-            modules.add(module);
-
-            long kernelFunction = cuModuleGetFunction(module, symbolName);
-            functionHandles.add(kernelFunction);
+        CUModule module = loadedModules.get(cubinFile);
+        if (module == null) {
+            // load module as it is not yet loaded
+            module = cuModuleLoad(cubinFile);
+            loadedModules.put(cubinFile, module);
         }
-        cudaSetDevice(currentDevice);
-        
-        return new Kernel(grCUDAExecutionContext, kernelName, symbolName, functionHandles, signature, modules);
+        long kernelFunction = cuModuleGetFunction(module, symbolName);
+        return new Kernel(grCUDAExecutionContext, kernelName, symbolName, kernelFunction, signature, module);
     }
 
     @TruffleBoundary
     public Kernel buildKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String code, String kernelName, String signature) {
-        //System.out.println("buildKernel device:" + cudaGetDevice());
         String moduleName = "truffle" + context.getNextModuleId();
         PTXKernel ptx = nvrtc.compileKernel(code, kernelName, moduleName, "--std=c++14");
-
-        ArrayList<Long> functionHandles = new ArrayList<>();
-        ArrayList<CUModule> modules = new ArrayList<>();
-        int currentDevice = cudaGetDevice();
-
-        for(int i = 0; i<numDevices; i++){
-
-            cudaSetDevice(i);
-            CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
-            long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
-            functionHandles.add(kernelFunctionHandle);
-            modules.add(module);
-
-            loadedModules.get(i).put(moduleName, module);
-            
-        }
-        cudaSetDevice(currentDevice);
-        
-        return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), functionHandles,
-                        signature, modules, ptx.getPtxSource());
+        CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
+        loadedModules.put(moduleName, module);
+        long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
+        return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), kernelFunctionHandle,
+                        signature, module, ptx.getPtxSource());
     }
-
 
     @TruffleBoundary
     public CUModule cuModuleLoad(String cubinName) {
-
         assertCUDAInitialized();
-        if (loadedModules.get(cudaGetDevice()).containsKey(cubinName)) {
+        if (loadedModules.containsKey(cubinName)) {
             throw new GrCUDAException("A module for " + cubinName + " was already loaded.");
         }
         try (UnsafeHelper.Integer64Object modulePtr = UnsafeHelper.createInteger64Object()) {
@@ -1148,12 +1095,10 @@ public final class CUDARuntime {
         }
     }
 
-
     @TruffleBoundary
     public CUModule cuModuleLoadData(String ptx, String moduleName) {
-
         assertCUDAInitialized();
-        if (loadedModules.get(cudaGetDevice()).containsKey(moduleName)) {
+        if (loadedModules.containsKey(moduleName)) {
             throw new GrCUDAException("A module for " + moduleName + " was already loaded.");
         }
         try (UnsafeHelper.Integer64Object modulePtr = UnsafeHelper.createInteger64Object()) {
@@ -1166,7 +1111,6 @@ public final class CUDARuntime {
             throw new GrCUDAException(e);
         }
     }
-
 
     @TruffleBoundary
     public void cuModuleUnload(CUModule module) {
@@ -1218,22 +1162,12 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public void cuLaunchKernel(Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream) {
-
-        // FIXME: as multigpu is not ~properly~ supported in this branch
-        // using multiple gpu requires the stream associated to the device to be 
-        // set manually.
-        stream.setDeviceId(this.lastDeviceSet);
-        cudaSetDevice(stream.getStreamDeviceId());
-        assert stream.getStreamDeviceId() == cudaGetDevice();
-
         try {
-
             Object callable = CUDADriverFunction.CU_LAUNCHKERNEL.getSymbol(this);
             Dim3 gridSize = config.getGridSize();
             Dim3 blockSize = config.getBlockSize();
             Object result = INTEROP.execute(callable,
-                            kernel.getKernelFunctionHandle(stream.getStreamDeviceId()),
-                            //kernel.getKernelFunctionHandle(cudaGetDevice()),
+                            kernel.getKernelFunctionHandle(),
                             gridSize.getX(),
                             gridSize.getY(),
                             gridSize.getZ(),
@@ -1250,6 +1184,7 @@ public final class CUDARuntime {
             throw new GrCUDAException(e);
         }
     }
+
     @TruffleBoundary
     private void cuInit() {
         try {
@@ -1361,17 +1296,10 @@ public final class CUDARuntime {
     @TruffleBoundary
     private void assertCUDAInitialized() {
         if (!context.isCUDAInitialized()) {
-            int currentDevice = cudaGetDevice();
-            int numDevices = cudaGetDeviceCount();
-            for(int i = 0; i < numDevices; i++){
-                cudaSetDevice(i);
-                cuInit();
-                // a simple way to create the device context in the driver is to call CUDA function
-                cudaDeviceSynchronize();
-                this.innerCudaContext.add(initializeInnerCudaContext(i));
-            }
-
-            cudaSetDevice(currentDevice);
+            cuInit();
+            // a simple way to create the device context in the driver is to call CUDA function
+            cudaDeviceSynchronize();
+            this.innerCudaContext = initializeInnerCudaContext();
 
             context.setCUDAInitialized();
         }
@@ -1396,17 +1324,14 @@ public final class CUDARuntime {
 
     private void shutdown() {
         // unload all modules
-        for(int i = 0; i < numDevices; i++){
-            for (CUModule module : loadedModules.get(i).values()) {
-                try {
-                    module.close();
-                } catch (Exception e) {
-                    /* ignore exception */
-                }
+        for (CUModule module : loadedModules.values()) {
+            try {
+                module.close();
+            } catch (Exception e) {
+                /* ignore exception */
             }
-            loadedModules.get(i).clear();
         }
-
+        loadedModules.clear();
     }
 
     public enum CUDADriverFunction {

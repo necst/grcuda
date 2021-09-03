@@ -63,8 +63,8 @@ public class Kernel implements TruffleObject {
     private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
     private final String kernelName;
     private final String kernelSymbol;
-    private final long nativeKernelFunctionHandle;
-    private final CUModule module;
+    private final ArrayList<Long> nativeKernelFunctionHandle;
+    private final ArrayList<CUModule> modules;
     private final ComputationArgument[] kernelComputationArguments;
     private int launchCount = 0;
     private String ptxCode;
@@ -75,14 +75,14 @@ public class Kernel implements TruffleObject {
      * @param grCUDAExecutionContext captured reference to the GrCUDA execution context
      * @param kernelName name of the kernel as exposed through Truffle
      * @param kernelSymbol name of the kernel symbol*
-     * @param kernelFunction native pointer to the kernel function (CUfunction)
+     * @param kernelFunction native pointer to the kernel function (CUfunction), one pointer for each device on which it is loaded
      * @param kernelSignature signature string of the kernel (NFI or NIDL)
-     * @param module CUmodule that contains the kernel function
+     * @param modules CUmodule that contains the kernel function
      */
     public Kernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName,
-                    String kernelSymbol, long kernelFunction,
-                    String kernelSignature, CUModule module) {
-        this(grCUDAExecutionContext, kernelName, kernelSymbol, kernelFunction, kernelSignature, module, "");
+                    String kernelSymbol, ArrayList<Long> kernelFunction,
+                    String kernelSignature, ArrayList<CUModule> modules) {
+        this(grCUDAExecutionContext, kernelName, kernelSymbol, kernelFunction, kernelSignature, modules, "");
     }
 
     /**
@@ -91,13 +91,13 @@ public class Kernel implements TruffleObject {
      * @param grCUDAExecutionContext captured reference to the GrCUDA execution context
      * @param kernelName name of kernel as exposed through Truffle
      * @param kernelSymbol name of the kernel symbol
-     * @param kernelFunction native pointer to the kernel function (CUfunction)
+     * @param kernelFunction native pointer to the kernel function (CUfunction), one pointer for each device on which it is loaded
      * @param kernelSignature signature string of the kernel (NFI or NIDL)
-     * @param module CUmodule that contains the kernel function
+     * @param modules CUmodule that contains the kernel function
      * @param ptx PTX source code for the kernel.
      */
     public Kernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String kernelSymbol,
-                    long kernelFunction, String kernelSignature, CUModule module, String ptx) {
+                    ArrayList<Long> kernelFunction, String kernelSignature, ArrayList<CUModule> modules, String ptx) {
 //        parseSignature(kernelSignature);
         try {
             ArrayList<ComputationArgument> paramList = ComputationArgument.parseParameterSignature(kernelSignature);
@@ -111,10 +111,11 @@ public class Kernel implements TruffleObject {
         this.kernelName = kernelName;
         this.kernelSymbol = kernelSymbol;
         this.nativeKernelFunctionHandle = kernelFunction;
-        this.module = module;
+        this.modules = modules;
         this.ptxCode = ptx;
         this.grCUDAExecutionContext.registerKernel(this);
     }
+
 
     public void incrementLaunchCount() {
         launchCount++;
@@ -271,12 +272,12 @@ public class Kernel implements TruffleObject {
         return new GrCUDAException("value " + value + " is out of range for type " + type);
     }
 
-    public long getKernelFunctionHandle() {
-        if (module.isClosed()) {
+    public long getKernelFunctionHandle(int deviceId) {
+        if (modules.get(deviceId).isClosed()) {
             CompilerDirectives.transferToInterpreter();
             throw new GrCUDAException("CUmodule containing kernel " + kernelName + " is already closed");
         }
-        return nativeKernelFunctionHandle;
+        return nativeKernelFunctionHandle.get(deviceId);
     }
 
     @Override
@@ -443,5 +444,4 @@ public class Kernel implements TruffleObject {
         return new ConfiguredKernel(this, configBuilder.build());
     }
 }
-
 

@@ -11,14 +11,30 @@ import java.util.Objects;
 public class CUDAStream extends GPUPointer {
 
     private final int streamNumber;
+    private int deviceId;
+
+    public CUDAStream(long rawPointer, int streamNumber, int deviceId) {
+        super(rawPointer);
+        this.streamNumber = streamNumber;
+        this.deviceId = deviceId;
+    }
+
 
     public CUDAStream(long rawPointer, int streamNumber) {
         super(rawPointer);
         this.streamNumber = streamNumber;
+        this.deviceId = 0;
+    }
+    public int getStreamDeviceId(){
+        return this.deviceId;
     }
 
     public int getStreamNumber() {
         return streamNumber;
+    }
+
+    public void setDeviceId(int deviceId) {
+        this.deviceId = deviceId;
     }
 
     public boolean isDefaultStream() { return false; }
