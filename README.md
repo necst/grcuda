@@ -1,4 +1,4 @@
-# grCUDA: Polyglot GPU Access in GraalVM
+# GrCUDA: Polyglot GPU Access in GraalVM
 
 This Truffle language exposes GPUs to the polyglot [GraalVM](http://www.graalvm.org). The goal is to
 
@@ -15,23 +15,23 @@ Supported and tested GraalVM languages:
 - Java
 - C and Rust through the Graal Sulong Component
 
-A description of grCUDA and its the features can be found in the [grCUDA documentation](docs/grcuda.md).
+A description of GrCUDA and its the features can be found in the [GrCUDA documentation](docs/grcuda.md).
 
 The [bindings documentation](docs/bindings.md) contains a tutorial that shows
 how to bind precompiled kernels to callables, compile and launch kernels.
 
 **Additional Information:**
 
-- [grCUDA: A Polyglot Language Binding for CUDA in GraalVM](https://devblogs.nvidia.com/grcuda-a-polyglot-language-binding-for-cuda-in-graalvm/). NVIDIA Developer Blog,
+- [GrCUDA: A Polyglot Language Binding for CUDA in GraalVM](https://devblogs.nvidia.com/grcuda-a-polyglot-language-binding-for-cuda-in-graalvm/). NVIDIA Developer Blog,
   November 2019.
-- [grCUDA: A Polyglot Language Binding](https://youtu.be/_lI6ubnG9FY). Presentation at Oracle CodeOne 2019, September 2019.
+- [GrCUDA: A Polyglot Language Binding](https://youtu.be/_lI6ubnG9FY). Presentation at Oracle CodeOne 2019, September 2019.
 - [Simplifying GPU Access](https://developer.nvidia.com/gtc/2020/video/s21269-vid). Presentation at NVIDIA GTC 2020, March 2020.
 - [DAG-based Scheduling with Resource Sharing for Multi-task Applications in a Polyglot GPU Runtime](https://ieeexplore.ieee.org/abstract/document/9460491). Paper at IPDPS 2021 on the GrCUDA scheduler, May 2021. [Video](https://youtu.be/QkX0FHDRyxA) of the presentation.
 
-## Using grCUDA in the GraalVM
+## Using GrCUDA in the GraalVM
 
-grCUDA can be used in the binaries of the GraalVM languages (`lli`, `graalpython`,
-`js`, `R`, and `ruby)`. The JAR file containing grCUDA must be appended to the classpath
+GrCUDA can be used in the binaries of the GraalVM languages (`lli`, `graalpython`,
+`js`, `R`, and `ruby)`. The JAR file containing GrCUDA must be appended to the classpath
 or copied into `jre/languages/grcuda` of the Graal installation. Note that `--jvm`
 and `--polyglot` must be specified in both cases as well.
 
@@ -47,7 +47,7 @@ __global__ void increment(int *arr, int n) {
     arr[idx] += 1;
   }
 }`
-const cu = Polyglot.eval('grcuda', 'CU') // get grCUDA namespace object
+const cu = Polyglot.eval('grcuda', 'CU') // get GrCUDA namespace object
 const incKernel = cu.buildkernel(
   kernelSource, // CUDA kernel source code string
   'increment', // kernel name
@@ -126,7 +126,7 @@ Documentation on [polyglot kernel launches](docs/launchkernel.md).
 
 ## Installation
 
-grCUDA can be downloaded as a binary JAR from [grcuda/releases](https://github.com/NVIDIA/grcuda/releases) and manually copied into a GraalVM installation.
+GrCUDA can be downloaded as a binary JAR from [grcuda/releases](https://github.com/NVIDIA/grcuda/releases) and manually copied into a GraalVM installation.
 
 1. Download GraalVM CE 21.1.0 for Linux `graalvm-ce-java11-linux-amd64-21.1.0.tar.gz`
    from [GitHub](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.1.0/graalvm-ce-java11-linux-amd64-21.1.0.tar.gz) and untar it in your
@@ -138,7 +138,7 @@ grCUDA can be downloaded as a binary JAR from [grcuda/releases](https://github.c
    export GRAALVM_DIR=`pwd`/graalvm-ce-java11-21.1.0
    ```
 
-2. Download the grCUDA JAR from [grcuda/releases](https://github.com/NVIDIA/grcuda/releases). If using the official release, the latest features (e.g. the asynchronous scheduler) are not available. Instead, follow the guide below to install GrCUDA from the source code.
+2. Download the GrCUDA JAR from [grcuda/releases](https://github.com/NVIDIA/grcuda/releases). If using the official release, the latest features (e.g. the asynchronous scheduler) are not available. Instead, follow the guide below to install GrCUDA from the source code.
 
    ```console
    cd $GRAALVM_DIR/jre/languages
@@ -146,7 +146,7 @@ grCUDA can be downloaded as a binary JAR from [grcuda/releases](https://github.c
    cp <download folder>/grcuda-0.1.0.jar grcuda
    ```
 
-3. Test grCUDA in Node.JS from GraalVM.
+3. Test GrCUDA in Node.JS from GraalVM.
 
    ```console
    cd $GRAALVM_DIR/bin
@@ -165,13 +165,13 @@ grCUDA can be downloaded as a binary JAR from [grcuda/releases](https://github.c
    ./gu install ruby
    ```
 
-## Instructions to build grCUDA from Sources
+## Instructions to build GrCUDA from Sources
 
-grCUDA requires the [mx build tool](https://github.com/graalvm/mx). Clone the mx
+GrCUDA requires the [mx build tool](https://github.com/graalvm/mx). Clone the mx
 repository and add the directory into `$PATH`, such that the `mx` can be invoked from
 the command line.
 
-Build grCUDA and the unit tests:
+Build GrCUDA and the unit tests:
 
 ```console
 cd <directory containing this README>
@@ -186,7 +186,7 @@ To run unit tests:
 mx unittest com.nvidia
 ```
 
-## Using grCUDA in a JDK
+## Using GrCUDA in a JDK
 
 Make sure that you use the [OpenJDK+JVMCI-21.1](https://github.com/graalvm/labs-openjdk-11/releases/download/jvmci-21.1-b05/labsjdk-ce-11.0.11+8-jvmci-21.1-b05-linux-amd64.tar.gz).
 
@@ -274,8 +274,12 @@ graalpython -m ginstall install numpy;
 7. **Install GrCUDA with** `./install.sh`
 
 8. **Setup your IDE with** `mx ideinit`
+* See this [guide](https://github.com/graalvm/mx/blob/master/docs/IDE.md) to configure the syntax checker
 * In IntelliJ Idea, install the Python plugin, then do Project Structure -> SDKs -> Create a new Python 2.7 Virtual Environment, it is used by `mx`
 * In IntelliJ Idea, Project Structures -> Modules -> Set the Module SDK (under Dependencies) of `mx` and submodules to your Java SDK (e.g. `11`)
+    * This is also given by the `configure` option if you try to build the project in IntelliJ Idea before setting these options. Set your project Java SDK (e.g. `11`) for those missing modules
+    * When building for the first time in Intellij Idea, you might get errors like `cannot use --export for target 1.8`, which means that some package is being build with Java 8. For those packages (look at the log to find them), manually specify a more recent SDK (e.g. `11`) as you did in step above
+    * If you get errors of missing symbols, follow IntelliJ's hints and export the requested packages
 * Also update the project SDK and the default JUnit configurations to use the GraalVM SDK in `$GRAAL_HOME`, and update the `PATH` variable so that it can find `nvcc`
 	* Modify the template Junit test configuration adding `-Djava.library.path="$GRAAL_HOME/lib` (in Java 11) to the VM options to find `trufflenfi`
  and update the environment variables with `PATH=your/path/env/var` to find `nvcc`
@@ -320,21 +324,21 @@ sudo /usr/local/cuda/bin/nvprof --profile-from-start off --print-gpu-trace --pro
 and you can create more benchmarks by inheriting from the `Benchmark` class. Single benchmarks are executed from `benchmark_main.py`, while running all benchmark is done through `benchmark_wrapper.py`
 * The output of benchmarks is stored in a JSON (by default, located in `data/results`)
 * The benchmarking suite, through `benchmark_main.py`, supports the following options
-    1. `-d`, `--debug`: print to the console the results and details of each benchmark. False by default
-    2. `-t`, `--num_iter`: number of times that each benchmark is executed, for each combination of options. 30 by default
-    3. `-o`, `--output_path`: full path to the file where results are stored. By default results are stored in `data/results`,
-    and the file name is generated automatically
-    4. `--realloc`: if true, allocate new memory and rebuild the GPU code at each iteration. False by default
-    5. `--reinit`: if true, re-initialize the values used in each benchmark at each iteration. True by default
-    6. `-c`, `--cpu_validation`: if present, validate the result of each benchmark using the CPU (use `--no_cpu_validation` to skip it instead)
-    7. `-b`, `--benchmark`: run the benchmark only for the specified kernel. Otherwise run all benchmarks specified in `benchmark_main.py`
-    8. `-n`, `--size`: specify the input size of data used as input for each benchmark. Otherwise use the sizes specified in `benchmark_main.py`
-    9. `-r`, `--random`: initialize benchmarks randomly whenever possible. True by default
-	10. `--block_size_1d`: number of threads per block when using 1D kernels
-	11. `--block_size_2d`: number of threads per block when using 2D kernels
-	12. `-g`, `--number_of_blocks`: number of blocks in the computation
-	13. `-p`, `--time_phases`: measure the execution time of each phase of the benchmark; note that this introduces overheads, and might influence the total execution time. Results for each phase are meaningful only for synchronous execution
-	14. `--nvprof`: if present, enable profiling when using nvprof. For this option to have effect, run graalpython using nvprof, with flag '--profile-from-start off'
+  1. `-d`, `--debug`: print to the console the results and details of each benchmark. False by default
+  2. `-t`, `--num_iter`: number of times that each benchmark is executed, for each combination of options. 30 by default
+  3. `-o`, `--output_path`: full path to the file where results are stored. By default results are stored in `data/results`,
+  and the file name is generated automatically
+  4. `--realloc`: if true, allocate new memory and rebuild the GPU code at each iteration. False by default
+  5. `--reinit`: if true, re-initialize the values used in each benchmark at each iteration. True by default
+  6. `-c`, `--cpu_validation`: if present, validate the result of each benchmark using the CPU (use `--no_cpu_validation` to skip it instead)
+  7. `-b`, `--benchmark`: run the benchmark only for the specified kernel. Otherwise run all benchmarks specified in `benchmark_main.py`
+  8. `-n`, `--size`: specify the input size of data used as input for each benchmark. Otherwise use the sizes specified in `benchmark_main.py`
+  9. `-r`, `--random`: initialize benchmarks randomly whenever possible. True by default
+  10. `--block_size_1d`: number of threads per block when using 1D kernels
+  11. `--block_size_2d`: number of threads per block when using 2D kernels
+  12. `-g`, `--number_of_blocks`: number of blocks in the computation
+  13. `-p`, `--time_phases`: measure the execution time of each phase of the benchmark; note that this introduces overheads, and might influence the total execution time. Results for each phase are meaningful only for synchronous execution
+  14. `--nvprof`: if present, enable profiling when using nvprof. For this option to have effect, run graalpython using nvprof, with flag '--profile-from-start off'
 	
 
 ## DAG Scheduling Settings
