@@ -51,7 +51,7 @@ public class DeviceArrayCopyFunctionTest {
             for (int i = 0; i < numElements; ++i) {
                 hostArray.setInt(i, i + 1);
             }
-            try (Context ctx = Context.newBuilder().allowAllAccess(true).build()) {
+            try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
                 // create DeviceArray and copy content from off-heap host memory into it
                 Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
                 Value deviceArray = createDeviceArray.execute("int", numElements);
@@ -76,7 +76,7 @@ public class DeviceArrayCopyFunctionTest {
             for (int i = 0; i < numElements; ++i) {
                 hostArray.setInt(i, i);
             }
-            try (Context ctx = Context.newBuilder().allowAllAccess(true).build()) {
+            try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
                 // create DeviceArray and set its content [1, 2, 3, 4, ..., 1000]
                 Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
                 Value deviceArray = createDeviceArray.execute("int", numElements);
@@ -97,7 +97,7 @@ public class DeviceArrayCopyFunctionTest {
     @Test
     public void testDeviceArrayCopyFromDeviceArray() {
         final int numElements = 1000;
-        try (Context ctx = Context.newBuilder().allowAllAccess(true).build()) {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
             Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
             // create device array initialize its elements.
             Value sourceDeviceArray = createDeviceArray.execute("int", numElements);
@@ -120,7 +120,7 @@ public class DeviceArrayCopyFunctionTest {
     @Test
     public void testDeviceArrayCopyToDeviceArray() {
         final int numElements = 1000;
-        try (Context ctx = Context.newBuilder().allowAllAccess(true).build()) {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
             Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
             // create device array initialize its elements.
             Value sourceDeviceArray = createDeviceArray.execute("int", numElements);
@@ -144,7 +144,7 @@ public class DeviceArrayCopyFunctionTest {
     public void testMultiDimDeviceArrayCopyFromDeviceArray() {
         final int numElements1 = 10;
         final int numElements2 = 25;
-        try (Context ctx = Context.newBuilder().allowAllAccess(true).build()) {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
             Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
             // create device array initialize its elements.
             Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2);
@@ -172,7 +172,7 @@ public class DeviceArrayCopyFunctionTest {
     public void testMultiDimDeviceArrayCopyToDeviceArray() {
         final int numElements1 = 10;
         final int numElements2 = 25;
-        try (Context ctx = Context.newBuilder().allowAllAccess(true).build()) {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
             Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
             // create device array initialize its elements.
             Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2);
@@ -199,7 +199,7 @@ public class DeviceArrayCopyFunctionTest {
     public void testMultiDimDeviceArrayCopyToDeviceArrayRow() {
         final int numElements1 = 10;
         final int numElements2 = 25;
-        try (Context ctx = Context.newBuilder().allowAllAccess(true).build()) {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
             Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
             // create device array initialize its elements.
             Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2);
@@ -223,7 +223,7 @@ public class DeviceArrayCopyFunctionTest {
     public void testMultiDimDeviceArrayCopyFromDeviceArrayRow() {
         final int numElements1 = 10;
         final int numElements2 = 25;
-        try (Context ctx = Context.newBuilder().allowAllAccess(true).build()) {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
             Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
             // create device array initialize its elements.
             Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2);
@@ -248,7 +248,7 @@ public class DeviceArrayCopyFunctionTest {
     public void testMultiDimDeviceArrayCopyFromDeviceArrayF() {
         final int numElements1 = 10;
         final int numElements2 = 25;
-        try (Context ctx = Context.newBuilder().allowAllAccess(true).build()) {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
             Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
             // create device array initialize its elements.
             Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2, "F");
@@ -276,7 +276,7 @@ public class DeviceArrayCopyFunctionTest {
     public void testMultiDimDeviceArrayCopyToDeviceArrayF() {
         final int numElements1 = 10;
         final int numElements2 = 25;
-        try (Context ctx = Context.newBuilder().allowAllAccess(true).build()) {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
             Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
             // create device array initialize its elements.
             Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2, "F");
