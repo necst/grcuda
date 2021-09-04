@@ -31,7 +31,6 @@ const COMBINE_KERNEL = cu.buildkernel(ck.COMBINE, "combine", "const pointer, con
 const COMBINE_KERNEL_LUT = cu.buildkernel(ck.COMBINE_2, "combine_lut", "const pointer, const pointer, const pointer, pointer, sint32, pointer");
 
 // Constant parameters used in the image processing;
-<<<<<<< HEAD
 const KERNEL_SMALL_DIAMETER = 5;
 const KERNEL_SMALL_VARIANCE = 0.1;
 const KERNEL_LARGE_DIAMETER = 7;
@@ -40,17 +39,6 @@ const KERNEL_UNSHARPEN_DIAMETER = 5;
 const KERNEL_UNSHARPEN_VARIANCE = 5;
 const UNSHARPEN_AMOUNT = 30;
 const CDEPTH = 256;
-=======
-const KERNEL_SMALL_DIAMETER = 3;
-const KERNEL_SMALL_VARIANCE = 0.1;
-const KERNEL_LARGE_DIAMETER = 7;
-const KERNEL_LARGE_VARIANCE = 20;
-const KERNEL_UNSHARPEN_DIAMETER = 3;
-const KERNEL_UNSHARPEN_VARIANCE = 5;
-const UNSHARPEN_AMOUNT = 30;
-const CDEPTH = 256;
-const FACTOR = 0.8
->>>>>>> 86b9fec (added lut to js demo)
 // CUDA parameters;
 const BLOCKS = 2;
 const THREADS_1D = 32;
@@ -82,7 +70,6 @@ function gaussian_kernel(buffer, diameter, sigma) {
     }
 }
 
-<<<<<<< HEAD
 // Outdated LUTs;
 // const FACTOR = 0.8
 // function lut_r(lut) {
@@ -194,46 +181,6 @@ const LUT = [new Array(CDEPTH).fill(0), new Array(CDEPTH).fill(0), new Array(CDE
 lut_r(LUT[0]);
 lut_r(LUT[1]);
 lut_r(LUT[2]);
-=======
-function lut_r(lut) {
-    for (let i = 0; i < CDEPTH; i++) {
-        x = i / CDEPTH;
-        if (i < CDEPTH / 2) {
-            lut[i] = Math.min(CDEPTH - 1, 255 * (0.8 * (1 / (1 + Math.exp(-x + 0.5) * 7 * FACTOR)) + 0.2)) >> 0;
-        } else {
-            lut[i] = Math.min(CDEPTH - 1, 255 * (1 / (1 + Math.exp((-x + 0.5) * 7 * FACTOR)))) >> 0;
-        }
-    }
-}
-
-function lut_g(lut) {
-    for (let i = 0; i < CDEPTH; i++) {
-        x = i / CDEPTH;
-        y = 0;
-        if (i < CDEPTH / 2) {
-            y = 0.8 * (1 / (1 + Math.exp(-x + 0.5) * 10 * FACTOR)) + 0.2;
-        } else {
-            y = 1 / (1 + Math.exp((-x + 0.5) * 9 * FACTOR));
-        }
-        lut[i] = Math.min(CDEPTH - 1, 255 * Math.pow(y, 1.4)) >> 0;
-    }
-}
-
-function lut_b(lut) {
-    for (let i = 0; i < CDEPTH; i++) {
-        x = i / CDEPTH;
-        y = 0;
-        if (i < CDEPTH / 2) {
-            y = 0.7 * (1 / (1 + Math.exp(-x + 0.5) * 10 * FACTOR)) + 0.3;
-        } else {
-            y = 1 / (1 + Math.exp((-x + 0.5) * 10 * FACTOR));
-        }
-        lut[i] = Math.min(CDEPTH - 1, 255 * Math.pow(y, 1.6)) >> 0;
-    }
-}
-
-const LUT = [lut_r, lut_g, lut_b];
->>>>>>> 86b9fec (added lut to js demo)
 
 async function storeImageInner(img, imgName, resolution, kind) {
     
@@ -371,7 +318,6 @@ async function processImageBW(img) {
 async function processImageColor(img) {
     // Possibly not the most efficient way to do this,
     // we should process the 3 channels concurrently, and avoid creation of temporary cv.Mat;
-<<<<<<< HEAD
     let channels = img.splitChannels();
     
     const b = await Promise.all([
@@ -383,13 +329,6 @@ async function processImageColor(img) {
     channels = b.map(buffer => new cv.Mat(buffer, img.rows, img.cols, cv.CV_8UC1));
     
     return new cv.Mat(channels);
-=======
-    const channels = img.splitChannels();
-    for (let c = 0; c < 3; c++) {
-        channels[c] = new cv.Mat(Buffer.from(await processImage(channels[c].getData(), img.rows, c)), img.rows, img.cols, cv.CV_8UC1);;
-    }
-    return new cv.Mat(channels);  
->>>>>>> 86b9fec (added lut to js demo)
 }
 
 // Store the output of the image processing into 2 images,
@@ -432,11 +371,7 @@ async function main() {
     for (let i = 0; i < 20; i++) {
         // Use await for serial execution, otherwise it processes multiple images in parallel.
         // Performance looks identical though;
-<<<<<<< HEAD
         await imagePipeline(i < 10 ? "lena" : "astro1", i);
-=======
-        await imagePipeline("astro1", i);
->>>>>>> 86b9fec (added lut to js demo)
     }
 }
 
