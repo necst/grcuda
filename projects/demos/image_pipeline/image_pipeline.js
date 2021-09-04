@@ -13,7 +13,7 @@ const ck = require("./cuda_kernels.js");
 /////////////////////////////
 
 // Convert images to black and white;
-const BW = false;
+const BW = true;
 // Edge width (in pixel) of input images.
 // If a loaded image has lower width than this, it is rescaled;
 const RESIZED_IMG_WIDTH = 512;
@@ -33,17 +33,17 @@ const COMBINE_KERNEL = cu.buildkernel(ck.COMBINE, "combine", "const pointer, con
 const COMBINE_KERNEL_LUT = cu.buildkernel(ck.COMBINE_2, "combine_lut", "const pointer, const pointer, const pointer, pointer, sint32, pointer");
 
 // Constant parameters used in the image processing;
-const KERNEL_SMALL_DIAMETER = 3;
+const KERNEL_SMALL_DIAMETER = 5;
 const KERNEL_SMALL_VARIANCE = 0.1;
 const KERNEL_LARGE_DIAMETER = 7;
 const KERNEL_LARGE_VARIANCE = 20;
-const KERNEL_UNSHARPEN_DIAMETER = 3;
+const KERNEL_UNSHARPEN_DIAMETER = 5;
 const KERNEL_UNSHARPEN_VARIANCE = 5;
 const UNSHARPEN_AMOUNT = 30;
 const CDEPTH = 256;
 const FACTOR = 0.8
 // CUDA parameters;
-const BLOCKS = 6;
+const BLOCKS = 2;
 const THREADS_1D = 32;
 const THREADS_2D = 8;
 
@@ -113,9 +113,16 @@ function lut_b(lut) {
 const LUT = [lut_r, lut_g, lut_b];
 
 async function storeImageInner(img, imgName, resolution, kind) {
-    const imgResized = img.resize(resolution, resolution);
-    const buffer = await cv.imencodeAsync('.jpg', imgResized, [cv.IMWRITE_JPEG_QUALITY, 80])
-    fs.writeFileSync("img_out/" + imgName + "_" + kind + ".jpg", buffer);
+    
+    if (kind == "small") { 
+        const imgResized = img.resize(resolution, resolution);
+        const buffer = await cv.imencodeAsync('.jpg', imgResized, [cv.IMWRITE_JPEG_QUALITY, 40])
+        fs.writeFileSync("img_out/" + imgName + "_" + kind + ".jpg", buffer);
+    } else {
+        const buffer = await cv.imencodeAsync('.jpg', img, [cv.IMWRITE_JPEG_QUALITY, 40])
+        fs.writeFileSync("img_out/" + imgName + "_" + kind + ".jpg", buffer);
+    }
+
 }
 
 /////////////////////////////
@@ -127,7 +134,7 @@ async function loadImage(imgName) {
     return cv.imreadAsync("img_in/" + imgName + ".jpg", BW ? cv.IMREAD_GRAYSCALE : cv.IMREAD_COLOR)
         .then(img => {
             // Resize input;
-            return img.resize(RESIZED_IMG_WIDTH, RESIZED_IMG_WIDTH);
+            return img; // .resize(RESIZED_IMG_WIDTH, RESIZED_IMG_WIDTH);
         });
 }
 
@@ -154,12 +161,12 @@ async function processImage(img, size, channel) {
     const blurred_small = cu.DeviceArray("float", size, size);
     const blurred_large = cu.DeviceArray("float", size, size);
     const blurred_unsharpen = cu.DeviceArray("float", size, size);
-
+    
     const lut = cu.DeviceArray("int", CDEPTH);  
 
     // Initialize the right LUT;
     LUT[channel](lut);
-
+    
     // Fill the image data;
     const s1 = System.nanoTime();
     image.copyFrom(img, size * size);
@@ -223,11 +230,17 @@ async function processImageBW(img) {
 async function processImageColor(img) {
     // Possibly not the most efficient way to do this,
     // we should process the 3 channels concurrently, and avoid creation of temporary cv.Mat;
-    const channels = img.splitChannels();
-    for (let c = 0; c < 3; c++) {
-        channels[c] = new cv.Mat(Buffer.from(await processImage(channels[c].getData(), img.rows, c)), img.rows, img.cols, cv.CV_8UC1);;
-    }
-    return new cv.Mat(channels);  
+    let channels = img.splitChannels();
+    
+    const b = await Promise.all([
+      processImage(channels[0].getData(), img.rows, 0),
+      processImage(channels[1].getData(), img.rows, 1),
+      processImage(channels[2].getData(), img.rows, 2)
+    ]);
+
+    channels = b.map(buffer => new cv.Mat(buffer, img.rows, img.cols, cv.CV_8UC1));
+    
+    return new cv.Mat(channels);
 }
 
 // Store the output of the image processing into 2 images,
@@ -262,7 +275,7 @@ async function main() {
     for (let i = 0; i < 20; i++) {
         // Use await for serial execution, otherwise it processes multiple images in parallel.
         // Performance looks identical though;
-        await imagePipeline("astro1", i);
+        await imagePipeline(i < 10 ? "lena" : "astro1", i);
     }
 }
 
