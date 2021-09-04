@@ -77,7 +77,7 @@ public final class GrCUDAOptions {
     public static final OptionKey<Boolean> EnableMultiGPU = new OptionKey<>(false);
 
     @Option(category = OptionCategory.USER, help = "Enable TensorRT support.", stability = OptionStability.STABLE) //
-    public static final OptionKey<Boolean> TensorRTEnabled = new OptionKey<>(true);
+    public static final OptionKey<Boolean> TensorRTEnabled = new OptionKey<>(false);
 
     @Option(category = OptionCategory.USER, help = "Set the location of the TensorRT library.", stability = OptionStability.STABLE) //
     public static final OptionKey<String> TensorRTLibrary = new OptionKey<>(TensorRTRegistry.DEFAULT_LIBRARY);

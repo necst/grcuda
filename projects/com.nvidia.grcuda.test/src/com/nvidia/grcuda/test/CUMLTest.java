@@ -54,12 +54,16 @@ public class CUMLTest {
             int minSamples = 5;
             int maxBytesPerChunk = 0;
             int verbose = 1;
-            Value dbscan = polyglot.eval("grcuda", "ML::cuml" + typeChar + "pDbscanFit");
             try {
-                dbscan.execute(input, numRows, numCols, eps, minSamples, labels, maxBytesPerChunk, verbose);
-                CUBLASTest.assertOutputVectorIsCorrect(numRows, labels, (Integer i) -> i / 10, this.typeChar);
+                Value dbscan = polyglot.eval("grcuda", "ML::cuml" + typeChar + "pDbscanFit");
+                try {
+                    dbscan.execute(input, numRows, numCols, eps, minSamples, labels, maxBytesPerChunk, verbose);
+                    CUBLASTest.assertOutputVectorIsCorrect(numRows, labels, (Integer i) -> i / 10, this.typeChar);
+                } catch (Exception e) {
+                    System.out.println("warning: failed to launch cuML, skipping test");
+                }
             } catch (Exception e) {
-                System.out.println("warning: failed to launch cuML, skipping test");
+                System.out.println("warning: cuML not enabled, skipping test");
             }
         }
     }
