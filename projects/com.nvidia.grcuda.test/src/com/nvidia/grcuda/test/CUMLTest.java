@@ -1,5 +1,6 @@
 package com.nvidia.grcuda.test;
 
+import com.nvidia.grcuda.GrCUDALanguage;
 import com.nvidia.grcuda.gpu.executioncontext.ExecutionPolicyEnum;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
@@ -10,6 +11,7 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.nvidia.grcuda.test.GrCUDATestUtil.buildTestContext;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -37,8 +39,8 @@ public class CUMLTest {
 
     @Test
     public void testDbscan() {
-        try (Context polyglot = Context.newBuilder().allowExperimentalOptions(true).option("grcuda.ExecutionPolicy", this.policy)
-                .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
+        try (Context polyglot = GrCUDATestUtil.buildTestContext()
+                .option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
             Value cu = polyglot.eval("grcuda", "CU");
             int numRows = 100;
             int numCols = 2;
