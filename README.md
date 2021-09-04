@@ -294,7 +294,7 @@ graalpython -m ginstall install numpy;
 
 Run a specific benchmark with custom settings
 ```
-graalpython --jvm --polyglot --grcuda.InputPrefetch --grcuda.ForceStreamAttach --grcuda.RetrieveNewStreamPolicy=always-new --grcuda.ExecutionPolicy=default --grcuda.DependencyPolicy=with-const --grcuda.RetrieveParentStreamPolicy=disjoint benchmark_main.py -d -i 10 -n 4800 --no_cpu_validation --reinit false --realloc false -b b10
+graalpython --jvm --polyglot --grcuda.InputPrefetch --grcuda.ForceStreamAttach --grcuda.RetrieveNewStreamPolicy=always-new --grcuda.ExecutionPolicy=async --grcuda.DependencyPolicy=with-const --grcuda.RetrieveParentStreamPolicy=disjoint benchmark_main.py -d -i 10 -n 4800 --no_cpu_validation --reinit false --realloc false -b b10
 ```
 
 Run all benchmarks
@@ -345,12 +345,12 @@ and you can create more benchmarks by inheriting from the `Benchmark` class. Sin
 The automatic DAG scheduling of GrCUDA supports different settings that can be used for debugging or to simplify the dependency computation in some circumstances
 
 * `ExecutionPolicy`: this regulates the global scheduling policy;
- `default` uses the DAG for asynchronous parallel execution, while `sync` executes each computation synchronously and can be used for debugging or to measure the execution time of each kernel
+ `async` uses the DAG for asynchronous parallel execution, while `sync` executes each computation synchronously and can be used for debugging or to measure the execution time of each kernel
 * `DependencyPolicy`: choose how data dependencies between GrCUDA computations are computed;
-`with_const` considers read-only parameter, while `default` assumes that all arguments can be modified in a computation
+`with/const` considers read-only parameter, while `no-const` assumes that all arguments can be modified in a computation
 * `RetrieveNewStreamPolicy`: choose how streams for new GrCUDA computations are created;
- `fifo` (the default) reuses free streams whenever possible, while `always_new` creates new streams every time a computation should use a stream different from its parent
+ `fifo` (the default) reuses free streams whenever possible, while `always-new` creates new streams every time a computation should use a stream different from its parent
 * `RetrieveParentStreamPolicy`: choose how streams for new GrCUDA computations are obtained from parent computations;
-`default` simply reuse the stream of one of the parent computations, while `disjoint` allows parallel scheduling of multiple child computations as long as their arguments are disjoint
+`same-as-parent` simply reuse the stream of one of the parent computations, while `disjoint` allows parallel scheduling of multiple child computations as long as their arguments are disjoint
 * `--grcuda.InputPrefetch`: if present, prefetch the data on GPUs with architecture starting from Pascal. In most cases, it improves performance.
 * `--grcuda.ForceStreamAttach`: if present, force association between arrays and CUDA streams. True by default on architectures older than Pascal, to allow concurrent CPU/GPU computation. On architectures starting from Pascal, it can improve performance.
