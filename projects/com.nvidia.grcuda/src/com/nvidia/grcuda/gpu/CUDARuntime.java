@@ -141,7 +141,8 @@ public final class CUDARuntime {
         context.addDisposable(this::shutdown);
 
         // Check if the GPU available in the system has Compute Capability >= 6.0 (Pascal architecture)
-        architectureIsPascalOrNewer = cudaDeviceGetAttribute(CUDADeviceAttribute.COMPUTE_CAPABILITY_MAJOR, 0) >= 6;
+        int architectureCode = cudaDeviceGetAttribute(CUDADeviceAttribute.COMPUTE_CAPABILITY_MAJOR, 0);
+        architectureIsPascalOrNewer = architectureCode >= 6;
 
         // Use pre-Pascal stream attachment policy if the CC is < 6 or if the attachment is forced by options;
         this.arrayStreamArchitecturePolicy = (!architectureIsPascalOrNewer || context.isForceStreamAttach()) ? new PrePascalArrayStreamAssociation() : new PostPascalArrayStreamAssociation();

@@ -107,6 +107,15 @@ public final class GrCUDAContext {
 
         // Retrieve the execution policy;
         ExecutionPolicyEnum executionPolicy = parseExecutionPolicy(env.getOptions().get(GrCUDAOptions.ExecutionPolicy));
+        
+        
+        // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it. 
+        //  Once Nvidia adds support for it, we want to remove this limitation;
+        if (this.getOption(GrCUDAOptions.TensorRTEnabled) && executionPolicy == ExecutionPolicyEnum.DEFAULT) {
+            System.out.println("warning: TensorRT and the asynchronous scheduler are not compatible. Switching to the synchronous scheduler.");
+            executionPolicy = ExecutionPolicyEnum.SYNC;
+        }
+        
         // Initialize the execution policy;
 //        System.out.println("-- using " + executionPolicy.getName() + " execution policy");
         switch (executionPolicy) {
@@ -133,14 +142,18 @@ public final class GrCUDAContext {
         namespace.addFunction(new GetDeviceFunction(this.grCUDAExecutionContext.getCudaRuntime()));
         this.grCUDAExecutionContext.getCudaRuntime().registerCUDAFunctions(namespace);
         if (this.getOption(GrCUDAOptions.CuMLEnabled)) {
-            Namespace ml = new Namespace(CUMLRegistry.NAMESPACE);
-            namespace.addNamespace(ml);
-            new CUMLRegistry(this).registerCUMLFunctions(ml);
+            if (this.getCUDARuntime().isArchitectureIsPascalOrNewer()) {
+                Namespace ml = new Namespace(CUMLRegistry.NAMESPACE);
+                namespace.addNamespace(ml);
+                new CUMLRegistry(this).registerCUMLFunctions(ml);
+            } else {
+//                System.out.println("warning: cuML is supported only on GPUs with compute capability >= 6.0 (Pascal and newer). It cannot be enabled.");
+            }
         }
         if (this.getOption(GrCUDAOptions.CuBLASEnabled)) {
-            Namespace blas = new Namespace(CUBLASRegistry.NAMESPACE);
-            namespace.addNamespace(blas);
-            new CUBLASRegistry(this).registerCUBLASFunctions(blas);
+                Namespace blas = new Namespace(CUBLASRegistry.NAMESPACE);
+                namespace.addNamespace(blas);
+                new CUBLASRegistry(this).registerCUBLASFunctions(blas);
         }
         if (this.getOption(GrCUDAOptions.TensorRTEnabled)) {
             Namespace trt = new Namespace(TensorRTRegistry.NAMESPACE);
