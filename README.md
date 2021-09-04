@@ -357,7 +357,7 @@ The automatic DAG scheduling of GrCUDA supports different settings that can be u
 * `ExecutionPolicy`: this regulates the global scheduling policy;
  `async` uses the DAG for asynchronous parallel execution, while `sync` executes each computation synchronously and can be used for debugging or to measure the execution time of each kernel
 * `DependencyPolicy`: choose how data dependencies between GrCUDA computations are computed;
-`with/const` considers read-only parameter, while `no-const` assumes that all arguments can be modified in a computation
+`with-const` considers read-only parameter, while `no-const` assumes that all arguments can be modified in a computation
 * `RetrieveNewStreamPolicy`: choose how streams for new GrCUDA computations are created;
  `fifo` (the default) reuses free streams whenever possible, while `always-new` creates new streams every time a computation should use a stream different from its parent
 * `RetrieveParentStreamPolicy`: choose how streams for new GrCUDA computations are obtained from parent computations;
