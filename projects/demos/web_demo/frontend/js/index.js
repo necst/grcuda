@@ -80,9 +80,14 @@ for(const wsKey of Object.keys(websockets)) {
     if (data.type === "image") {
       processImageMessage(evt)
     }
+
+    if (data.type === "executionTime"){
+      processExecutionTimeMessage(evt)
+    }
   
   })
 }
+
 
 sendWSMessage.onclick = () => {
   clearAll()
@@ -161,6 +166,17 @@ openLightBox = (imageId) => {
     overlayImage.style.display = 'none';
     mainContainer.removeAttribute('class', 'blur');
   }
+}
+
+const processExecutionTimeMessage = (evt) => {
+  const data = JSON.parse(evt.data)
+  const { data: executionTime, computationType } = data
+  console.log(`${computationType} took: ${executionTime / 1000}s`)
+  const formattedExecutionTime = executionTime / 1000
+  document.getElementById(`${labelMap[computationType]}-execution-time`).innerHTML = `
+    <b>Took ${formattedExecutionTime.toFixed(2)}s</b>
+  `
+
 }
 
 const processImageMessage = (evt) => {
