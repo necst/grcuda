@@ -79,7 +79,7 @@ export async function loadImage(imgName: string | number, resizeWidth = RESIZED_
   return image
 }
 
-export async function storeImageInner(img: cv.Mat, imgName: string | number, resolution: number, kind: string, imgFormat: string = ".jpg") {
+export async function storeImageInner(img: cv.Mat, imgName: string | number, resolution: number, kind: string, imgFormat: string = ".jpg", blackAndWhite: boolean = BW) {
   const imgResized = img.resize(resolution, resolution);
   const buffer = await cv.imencodeAsync('.jpg', imgResized, [cv.IMWRITE_JPEG_QUALITY, 80])
   const writeDirectory = kind === "full_res" ? IMAGE_OUT_BIG_DIRECTORY : IMAGE_OUT_SMALL_DIRECTORY
@@ -88,9 +88,9 @@ export async function storeImageInner(img: cv.Mat, imgName: string | number, res
 
 // Store the output of the image processing into 2 images,
 // with low and high resolution;
-export async function storeImage(img: cv.Mat, imgName: string | number, resizedImageWidthLarge = RESIZED_IMG_WIDTH_OUT_LARGE, resizedImageWidthSmall=RESIZED_IMG_WIDTH_OUT_SMALL) {
-  storeImageInner(img, imgName, resizedImageWidthLarge, "full_res");
-  storeImageInner(img, imgName, resizedImageWidthSmall, "thumb");
+export async function storeImage(img: cv.Mat, imgName: string | number, resizedImageWidthLarge = RESIZED_IMG_WIDTH_OUT_LARGE, resizedImageWidthSmall=RESIZED_IMG_WIDTH_OUT_SMALL, blackAndWhite: boolean = BW) {
+  storeImageInner(img, imgName, resizedImageWidthLarge, "full_res", ".jpg", blackAndWhite);
+  storeImageInner(img, imgName, resizedImageWidthSmall, "thumb", ".jpg", blackAndWhite);
 }
 
 export function _intervalToMs(start: number, end: number) {

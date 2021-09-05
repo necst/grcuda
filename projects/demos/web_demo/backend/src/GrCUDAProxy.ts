@@ -259,7 +259,7 @@ export class GrCUDAProxy {
 
     const beginComputeAllImages = System.nanoTime()
 
-    for (let imageId = 0; imageId < MAX_PHOTOS; ++imageId) {
+    for (let imageId = 0; imageId < MAX_PHOTOS + 1; ++imageId) {
       try {
         const imageName = ("0000" + imageId).slice(-4)
         const begin = System.nanoTime();
@@ -274,9 +274,11 @@ export class GrCUDAProxy {
       }
     }
 
-    this.communicateAll(MAX_PHOTOS, computationType)
-
     const endComputeAllImages = System.nanoTime()
+
+    //this.communicateExecutionTime(_intervalToMs(beginComputeAllImages, endComputeAllImages), computationType)
+    //this.communicateAll(MAX_PHOTOS, computationType)
+
     console.log(`[${this.computationType}] Whole computation took ${_intervalToMs(beginComputeAllImages, endComputeAllImages)}`)
 
 
@@ -315,9 +317,12 @@ export class GrCUDAProxy {
       }
     }
 
-    this.communicateAll(MAX_PHOTOS, computationType)
 
     const endComputeAllImages = System.nanoTime()
+
+    //this.communicateExecutionTime(_intervalToMs(beginComputeAllImages, endComputeAllImages), computationType)
+    this.communicateAll(MAX_PHOTOS, computationType)
+
     console.log(`[${this.computationType}] Whole computation took ${_intervalToMs(beginComputeAllImages, endComputeAllImages)}`)
 
 
@@ -342,16 +347,24 @@ export class GrCUDAProxy {
 
     let delay_jitter = _getDelayJitter(computationType)
 
-    for (let imageId = 0; imageId < MAX_PHOTOS; ++imageId) {
+    for (let imageId = 0; imageId < MAX_PHOTOS + 1; ++imageId) {
       // This does mock the actual computation that will happen 
       // in the CUDA realm
       await _sleep(DELAY + Math.random() * delay_jitter)
       this.communicateAll(imageId, computationType)
     }
-    this.communicateAll(MAX_PHOTOS, computationType)
+    //this.communicateAll(MAX_PHOTOS, computationType)
 
 
   }
+
+  // private communicateExecutionTime(executionTime: number, computationType: string){
+  //   this.ws.send(JSON.stringify({
+  //     type: "executionTime",
+  //     data: executionTime,
+  //     computationType
+  //   }))
+  // }
 
   private communicateProgress(data: number, computationType: string) {
     const {
