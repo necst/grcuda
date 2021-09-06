@@ -39,7 +39,7 @@ export const FACTOR = 0.8
 export const NUM_BLOCKS = 2
 export const THREADS_1D = 32
 export const THREADS_2D = 8
-export const IMAGE_IN_DIRECTORY = "../frontend/images/dataset"
+export const IMAGE_IN_DIRECTORY = `../frontend/images/dataset${RESIZED_IMG_WIDTH}`
 export const IMAGE_OUT_SMALL_DIRECTORY = "../frontend/images/thumb"
 export const IMAGE_OUT_BIG_DIRECTORY = "../frontend/images/full_res"
 
@@ -48,5 +48,5 @@ export const CUDA_NATIVE_EXEC_FILE = "../../image_pipeline/cuda/build/image_pipe
 export const CUDA_NATIVE_IMAGE_OUT_SMALL_DIRECTORY = IMAGE_OUT_SMALL_DIRECTORY // "$HOME/grcuda/projects/demos/web_demo/frontend/images/thumb/"
 export const CUDA_NATIVE_IMAGE_OUT_BIG_DIRECTORY = IMAGE_OUT_BIG_DIRECTORY //"$HOME/grcuda/projects/demos/web_demo/frontend/images/full_res/"
 
-export const DEBUG = false
+export const DEBUG = true
 

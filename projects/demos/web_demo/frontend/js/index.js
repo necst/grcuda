@@ -109,7 +109,11 @@ sendWSMessage.onclick = () => {
 const clearAll = () => {
   progressBar.innerHTML = ""
   imageGallery.innerHTML = ""
- 
+  imageGalleryContent = ""
+
+  Object.keys(imageGalleriesRaceContent)
+    .forEach(key => imageGalleriesRaceContent[key] = "")
+
   Object.keys(imageGalleriesRace)
     .forEach(key => imageGalleriesRace[key].innerHTML = "")
   

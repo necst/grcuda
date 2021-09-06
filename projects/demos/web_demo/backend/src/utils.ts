@@ -134,4 +134,16 @@ function lut_b(lut: any) {
   }
 }
 
+export const copyFrom = (arrayFrom: any, arrayTo: any) => {
+  // let i = arrayFrom.length
+  // while(i--){
+  //   arrayTo[i] = arrayFrom[i]
+  // }
+
+  // for(let i = 0; i < arrayFrom.length; ++i){
+  //   arrayTo[i] = arrayFrom[i]
+  // }
+
+}
+
 export const LUT = [lut_r, lut_g, lut_b];

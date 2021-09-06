@@ -8,7 +8,9 @@ git submodule update --remote
 cd -
 
 # Create symbolic link for the images
-ln -s ../../../grcuda-data/datasets/web_demo/images/ images
+cd frontend
+ln -s ../../../../grcuda-data/datasets/web_demo/images images
+cd -
 
 # install cmake (required for opencv4nodejs)
 sudo apt-get install cmake libopencv-dev python3
