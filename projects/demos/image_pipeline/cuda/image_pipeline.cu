@@ -427,6 +427,9 @@ void ImagePipeline::run_inner(unsigned char* input_image, int channel) {
 }
 
 void ImagePipeline::run(unsigned char* input_image) {
+
+    cudaSetDevice(3);
+
     for (int channel = 0; channel < (black_and_white ? 1 : 3); channel++) {
         // Access individual channels;
         run_inner(input_image, channel);

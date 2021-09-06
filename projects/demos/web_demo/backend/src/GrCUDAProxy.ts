@@ -6,7 +6,8 @@ import {
   _gaussianKernel,
   loadImage,
   storeImage,
-  LUT
+  LUT, 
+  copyFrom
 } from './utils'
 
 import {
@@ -135,9 +136,9 @@ export class GrCUDAProxy {
 
   private async processImage(img: Buffer, size: number, channel: number, debug: boolean = DEBUG) {
     // Allocate image data;
-    const image = cu.DeviceArray("int", size, size);
+    const image = cu.DeviceArray("int", size * size);
     const image2 = cu.DeviceArray("float", size, size);
-    const image3 = cu.DeviceArray("int", size, size);
+    const image3 = cu.DeviceArray("int", size * size);
 
     const kernel_small = cu.DeviceArray("float", KERNEL_SMALL_DIAMETER, KERNEL_SMALL_DIAMETER);
     const kernel_large = cu.DeviceArray("float", KERNEL_LARGE_DIAMETER, KERNEL_LARGE_DIAMETER);
@@ -164,7 +165,10 @@ export class GrCUDAProxy {
 
     // Fill the image data;
     const s1 = System.nanoTime();
+    console.log(`[${this.computationType}] Begin copy!`)
+    //copyFrom(img, image)
     image.copyFrom(img, size * size);
+    console.log(`[${this.computationType}] End copy!`)
     const e1 = System.nanoTime();
     if(debug) console.log("--img to device array=" + _intervalToMs(s1, e1) + " ms");
 
@@ -207,12 +211,12 @@ export class GrCUDAProxy {
     COMBINE_KERNEL_LUT(BLOCKS * 2, THREADS_1D)(
         image2, blurred_small, mask_small, image3, size * size, lut);
 
-    // Store the image data.
-    const tmp = image3[0][0];
+    const tmp = image3[0]
     const end = System.nanoTime();
     if(debug) console.log("--cuda time=" + _intervalToMs(start, end) + " ms");
     const s2 = System.nanoTime();
-    image3.copyTo(img, size * size);
+    img.set(image3)
+    //image3.copyTo(img, size * size);
     const e2 = System.nanoTime();
     if(debug) console.log("--device array to image=" + _intervalToMs(s2, e2) + " ms");
 
@@ -235,12 +239,8 @@ export class GrCUDAProxy {
 
   private async runGrCUDAInner(imageName: string, computationType: string, imageId: number, debug: boolean = DEBUG){
     const image = await loadImage(imageName)
-    const begin = System.nanoTime()
     const processedImage = BW ? await this.processImageBW(image) : await this.processImageColor(image)
-    const end = System.nanoTime()
     await storeImage(processedImage, imageName)
-    const elapsed = _intervalToMs(begin, end)
-    //this.totalTime += elapsed
     this.communicateAll(imageId, computationType)
   }
 
@@ -259,7 +259,7 @@ export class GrCUDAProxy {
 
     const beginComputeAllImages = System.nanoTime()
 
-    for (let imageId = 0; imageId < MAX_PHOTOS; ++imageId) {
+    for (let imageId = 0; imageId < MAX_PHOTOS + 1; ++imageId) {
       try {
         const imageName = ("0000" + imageId).slice(-4)
         const begin = System.nanoTime();
@@ -274,9 +274,11 @@ export class GrCUDAProxy {
       }
     }
 
-    this.communicateAll(MAX_PHOTOS, computationType)
-
     const endComputeAllImages = System.nanoTime()
+
+    //this.communicateExecutionTime(_intervalToMs(beginComputeAllImages, endComputeAllImages), computationType)
+    //this.communicateAll(MAX_PHOTOS, computationType)
+
     console.log(`[${this.computationType}] Whole computation took ${_intervalToMs(beginComputeAllImages, endComputeAllImages)}`)
 
 
@@ -300,9 +302,10 @@ export class GrCUDAProxy {
     for (let imageId = 0; imageId < MAX_PHOTOS; ++imageId) {
       try {
         const imageName = ("0000" + imageId).slice(-4)
+        const blackAndWhite = BW ? "-w" : ""
         const begin = System.nanoTime();
         execSync(
-          `${CUDA_NATIVE_EXEC_FILE} -d -r -f ${CUDA_NATIVE_IMAGE_IN_DIRECTORY}/${imageName}.jpg -s ${CUDA_NATIVE_IMAGE_OUT_SMALL_DIRECTORY}/${imageName}.jpg -l ${CUDA_NATIVE_IMAGE_OUT_BIG_DIRECTORY}/${imageName}.jpg `
+          `${CUDA_NATIVE_EXEC_FILE} -d ${blackAndWhite} -r -f ${CUDA_NATIVE_IMAGE_IN_DIRECTORY}/${imageName}.jpg -s ${CUDA_NATIVE_IMAGE_OUT_SMALL_DIRECTORY}/${imageName}.jpg -l ${CUDA_NATIVE_IMAGE_OUT_BIG_DIRECTORY}/${imageName}.jpg -n ${RESIZED_IMG_WIDTH} -g ${BLOCKS}`
         )
         this.communicateAll(imageId, computationType)
         const end = System.nanoTime();
@@ -315,9 +318,12 @@ export class GrCUDAProxy {
       }
     }
 
-    this.communicateAll(MAX_PHOTOS, computationType)
 
     const endComputeAllImages = System.nanoTime()
+
+    //this.communicateExecutionTime(_intervalToMs(beginComputeAllImages, endComputeAllImages), computationType)
+    this.communicateAll(MAX_PHOTOS, computationType)
+
     console.log(`[${this.computationType}] Whole computation took ${_intervalToMs(beginComputeAllImages, endComputeAllImages)}`)
 
 
@@ -342,16 +348,24 @@ export class GrCUDAProxy {
 
     let delay_jitter = _getDelayJitter(computationType)
 
-    for (let imageId = 0; imageId < MAX_PHOTOS; ++imageId) {
+    for (let imageId = 0; imageId < MAX_PHOTOS + 1; ++imageId) {
       // This does mock the actual computation that will happen 
       // in the CUDA realm
       await _sleep(DELAY + Math.random() * delay_jitter)
       this.communicateAll(imageId, computationType)
     }
-    this.communicateAll(MAX_PHOTOS, computationType)
+    //this.communicateAll(MAX_PHOTOS, computationType)
 
 
   }
+
+  // private communicateExecutionTime(executionTime: number, computationType: string){
+  //   this.ws.send(JSON.stringify({
+  //     type: "executionTime",
+  //     data: executionTime,
+  //     computationType
+  //   }))
+  // }
 
   private communicateProgress(data: number, computationType: string) {
     const {

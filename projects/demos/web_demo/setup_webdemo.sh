@@ -1,27 +1,38 @@
 #!/bin/bash
 
+# For grcuda-data repo
+git submodule init
+cd ../../../grcuda-data
+git submodule update --remote
+
+cd -
+
+# Create symbolic link for the images
+cd frontend
+ln -s ../../../../grcuda-data/datasets/web_demo/images images
+cd -
+
 # install cmake (required for opencv4nodejs)
-sudo apt install cmake
+sudo apt-get install cmake libopencv-dev python3
 
-# Create cloned directory and clone grcuda repo
-mkdir Cloned
-cd ~/Cloned/
-git clone https://github.com/AlbertoParravicini/grcuda.git
-cd ~/Cloned/grcuda
-git checkout GRCUDA-36-web-demo
+# Compile cuda binary
+echo "Compiling CUDA binary"
+mkdir ../image_pipeline/cuda/build
+cd ../image_pipeline/cuda/build
+cmake ..
+make
 
+cd -
 
-# Move to project directory (backend)
-cd ~/Cloned/grcuda/projects/demos/web_demo/backend
-
-# install project dependencies
+# Build backend 
+echo "Building and running backend"
+cd backend 
 npm i
+npm run build
+npm run runall &
 
-# Now we should be ready. build and start the server ...
-# npm run build
+# Run frontend
+python -m http.server 8085 --directory ../frontend
 
-# node --polyglot --jvm  --vm.Dtruffle.class.path.append=../../mxbuild/dists/jdk1.8/grcuda.jar dist/index.js &
 
-# Start the web interface
-# cd ~/Cloned/grcuda/projects/demos/web_demo/frontend
-# python3 -m http.server &
+
