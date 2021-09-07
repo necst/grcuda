@@ -134,8 +134,22 @@ function lut_b(lut: any) {
 }
 
 export const copyFrom = (arrayFrom: any, arrayTo: any) => {
-  let i = arrayTo.length
-  while(i--) arrayTo[i] = arrayFrom[i];
+  // let i = 0// = arrayTo.length
+  //while(i--) arrayTo[i] = arrayFrom[i];
+  
+  for(let i = 0; i < arrayTo.length; ++i){
+    arrayTo[i] = arrayFrom[i]
+  }
+
+  // for (const _ of arrayTo) {
+  //   arrayTo[i] = arrayFrom[i]
+  //   i++
+  // }
+  // arrayFrom.forEach((el: any) => {
+  //   arrayTo[i++] = el;
+  //  });
+  //arrayTo.forEach((_: any,i: number) => arrayTo[i] = arrayFrom[i])
+
 }
 
 export const LUT = [lut_r, lut_g, lut_b]; // VELVIA 50
