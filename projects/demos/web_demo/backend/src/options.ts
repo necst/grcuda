@@ -6,7 +6,7 @@ export const MOCK_OPTIONS = {
 }
 
 export const CONFIG_OPTIONS = {
-  MAX_PHOTOS: 100,
+  MAX_PHOTOS: 60,
   SEND_BATCH_SIZE: 1
 }
 
@@ -17,7 +17,7 @@ export const BW = false
 
 // Edge width (in pixel) of input images.
 // If a loaded image has lower width than this, it is rescaled
-export const RESIZED_IMG_WIDTH = 512
+export const RESIZED_IMG_WIDTH = 1024
 // Edge width (in pixel) of output images.
 // We store processed images in 2 variants: small and large
 export const RESIZED_IMG_WIDTH_OUT_SMALL = 40

@@ -86,10 +86,8 @@ for(const wsKey of Object.keys(websockets)) {
     if (data.type === "executionTime"){
       processExecutionTimeMessage(evt)
     }
-  
   })
 }
-
 
 sendWSMessage.onclick = () => {
   clearAll()
@@ -108,7 +106,6 @@ sendWSMessage.onclick = () => {
   progressBar.innerHTML = window.getProgressBarTemplate(0, false)
 
   containerInfo.innerHTML = ""
-
 }
 
 const clearAll = () => {
@@ -124,8 +121,6 @@ const clearAll = () => {
   
   COMPUTATION_MODES
     .forEach(cm => progressBarsRace[cm].innerHTML = "")
-  
-  
 }
 
 selectElement.onchange = () => {
@@ -153,9 +148,7 @@ selectElement.onchange = () => {
       containerInfo.innerHTML = window.getRaceModeTemplate()
       break
     }
-
   }
-
 }
 
 
@@ -185,7 +178,6 @@ const processExecutionTimeMessage = (evt) => {
   document.getElementById(`${labelMap[computationType]}-execution-time`).innerHTML = `
     <b>Took ${formattedExecutionTime.toFixed(2)}s</b>
   `
-
 }
 
 const processImageMessage = (evt) => {
@@ -240,12 +232,7 @@ const processProgressMessage = (evt) => {
 
     const label = labelMap[computationType]
     progressBarsRace[computationType].innerHTML = window.getProgressBarWithWrapperTemplate(label, progressBarsCompletionAmount, progressBarRaceColor, computationType)
-    
   }
-
 }
-
-
-
 
 console.log("JS is loaded.")

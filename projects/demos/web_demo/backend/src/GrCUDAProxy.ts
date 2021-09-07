@@ -312,7 +312,6 @@ export class GrCUDAProxy {
       }
     }
 
-
     const endComputeAllImages = System.nanoTime()
 
     //this.communicateExecutionTime(_intervalToMs(beginComputeAllImages, endComputeAllImages), computationType)
