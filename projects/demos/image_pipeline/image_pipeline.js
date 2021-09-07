@@ -11,7 +11,7 @@ const ck = require("./cuda_kernels.js");
 
 
 // Convert images to black and white;
-const BW = true;
+const BW = false;
 // Edge width (in pixel) of input images.
 // If a loaded image has lower width than this, it is rescaled;
 const RESIZED_IMG_WIDTH = 512;
