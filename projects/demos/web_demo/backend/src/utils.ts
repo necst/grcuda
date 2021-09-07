@@ -75,7 +75,6 @@ export async function loadImage(imgName: string | number, resizeWidth = RESIZED_
   const imagePath = `${IMAGE_IN_DIRECTORY}/${imgName}${fileFormat}`
   const image = await cv.imreadAsync(imagePath, BW ? cv.IMREAD_GRAYSCALE : cv.IMREAD_COLOR)
   //return image.resize(resizeWidth, resizeWidth);
-  // We do not require resizing anymore as the input image is bound to be 512x512
   return image
 }
 

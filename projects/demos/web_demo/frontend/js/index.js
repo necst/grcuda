@@ -162,7 +162,7 @@ openLightBox = (imageId) => {
   overlayImage.style.display = 'block';
   mainContainer.setAttribute('class', 'blur');
   const currentImage = document.getElementById(`${imageId}-full-res`)
-  currentImage.style.width = '512px';
+  //currentImage.style.width = '512px';
   currentImage.onclick = () => {
     const mainContainer = document.getElementById("main-container")
     const overlayImage = document.getElementById('overlay');
@@ -211,9 +211,11 @@ const processImageMessage = (evt) => {
 const processProgressMessage = (evt) => {
   const data = JSON.parse(evt.data)
   const { data: progressData, computationType } = data
-  //if(lastProgress > 99.99) return
-  lastProgress = Math.max(progressData, lastProgress)
+  
   if (!computationType.includes("race")) {
+    if(lastProgress > 99.99) return
+    lastProgress = Math.max(progressData, lastProgress)
+
     if (progressData < 99.99) {
       progressBar.innerHTML = window.getProgressBarTemplate(lastProgress, false)
     } else {
@@ -223,7 +225,7 @@ const processProgressMessage = (evt) => {
   } else {
 
     progressBar.innerHTML = ""
-    //if( progressBarsCompletionAmount[computationType] > 99.99) return
+    if(progressBarsCompletionAmount[computationType] > 99.99) return
     progressBarsCompletionAmount[computationType] = Math.max(progressData, progressBarsCompletionAmount[computationType] || 1)
     if (progressData > 99.99) {
       progressBarRaceColor[computationType] = "bg-success"
