@@ -58,6 +58,8 @@ let progressSync = 0
 let progressAsync = 0
 let progressNative = 0
 
+let lastProgress = 0
+
 const progressBarsCompletionAmount = {
 
 }
@@ -93,6 +95,9 @@ sendWSMessage.onclick = () => {
   clearAll()
   const { value: computationType } = document.getElementById("computation-type")
   console.log(`Beginning computation on ${computationType}`)
+
+  lastProgress = 0
+  Object.keys(progressBarsCompletionAmount).forEach(k => progressBarsCompletionAmount[k] = 0)
 
   if(computationType !== "race-mode") {
     websockets[computationType].send(computationType)
@@ -213,22 +218,24 @@ const processImageMessage = (evt) => {
 const processProgressMessage = (evt) => {
   const data = JSON.parse(evt.data)
   const { data: progressData, computationType } = data
-
+  //if(lastProgress > 99.99) return
+  lastProgress = Math.max(progressData, lastProgress)
   if (!computationType.includes("race")) {
     if (progressData < 99.99) {
-      progressBar.innerHTML = window.getProgressBarTemplate(progressData, false)
+      progressBar.innerHTML = window.getProgressBarTemplate(lastProgress, false)
     } else {
-      progressBar.innerHTML =  window.getProgressBarTemplate(progressData, true)
+      progressBar.innerHTML =  window.getProgressBarTemplate(lastProgress, true)
     }
 
   } else {
 
     progressBar.innerHTML = ""
-
-    progressBarsCompletionAmount[computationType] = progressData;
-
+    //if( progressBarsCompletionAmount[computationType] > 99.99) return
+    progressBarsCompletionAmount[computationType] = Math.max(progressData, progressBarsCompletionAmount[computationType] || 1)
     if (progressData > 99.99) {
       progressBarRaceColor[computationType] = "bg-success"
+    } else {
+      progressBarRaceColor[computationType] = "progress-bar-striped"
     }
 
     const label = labelMap[computationType]

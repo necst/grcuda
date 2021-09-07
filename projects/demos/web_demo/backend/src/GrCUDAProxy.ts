@@ -164,11 +164,8 @@ export class GrCUDAProxy {
 
     // Fill the image data;
     const s1 = System.nanoTime();
-    console.log(`[${this.computationType}] Begin copy!`)
-    copyFrom(img, image, size * size)
-
-    // image.copyFrom(img, size * size);
-    console.log(`[${this.computationType}] End copy!`)
+    copyFrom(img, image);
+    //image.copyFrom(img, size * size);
     const e1 = System.nanoTime();
     if(debug) console.log("--img to device array=" + _intervalToMs(s1, e1) + " ms");
 
@@ -262,7 +259,7 @@ export class GrCUDAProxy {
       try {
         const imageName = ("0000" + imageId).slice(-4)
         const begin = System.nanoTime();
-        await this.runGrCUDAInner(imageName, computationType, imageId)
+        this.runGrCUDAInner(imageName, computationType, imageId)
         const end = System.nanoTime();
         if(debug){
           console.log(`One image took ${_intervalToMs(begin, end)}`)
