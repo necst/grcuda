@@ -258,7 +258,7 @@ export class GrCUDAProxy {
       try {
         const imageName = ("0000" + imageId).slice(-4)
         const begin = System.nanoTime();
-        await this.runGrCUDAInner(imageName, computationType, imageId)
+        this.runGrCUDAInner(imageName, computationType, imageId)
         const end = System.nanoTime();
         if(debug){
           console.log(`One image took ${_intervalToMs(begin, end)}`)
