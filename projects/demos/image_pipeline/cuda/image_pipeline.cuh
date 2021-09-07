@@ -94,43 +94,116 @@ class ImagePipeline {
             }
         }
     }
-#define FACTOR 0.8
-    inline void lut_r(int* lut) {
+
+    // Beziér curve defined by 3 points.
+    // The input is used to map points of the curve to the output LUT,
+    // and can be used to combine multiple LUTs.
+    // By default, it is just [0, 1, ..., 255];
+    inline void spline3(int *input, int *lut, float P[3]) {
         for (int i = 0; i < CDEPTH; i++) {
-            float x = float(i) / CDEPTH;
-            if (i < CDEPTH / 2) {
-                lut[i] = std::min(CDEPTH - 1, int(255 * (0.8 * (1 / (1 + expf(-x + 0.5) * 7 * FACTOR)) + 0.2)));
-            } else {
-                lut[i] = std::min(CDEPTH - 1, int(255 * (1 / (1 + expf((-x + 0.5) * 7 * FACTOR)))));
-            }
+            float t = float(i) / CDEPTH;
+            float x = powf((1 - t), 2) * P[0] + 2 * t * (1 - t) * P[1] + powf(t, 2) * P[2];
+            lut[i] = input[int(x * CDEPTH)];
         }
+    }
+
+    // Beziér curve defined by 5 points;
+    inline void spline5(int *input, int *lut, float P[5]) {
+        for (int i = 0; i < CDEPTH; i++) {
+            float t = float(i) / CDEPTH;
+            float x = powf((1 - t), 4) * P[0] + 4 * t * powf((1 - t), 3) * P[1] + 6 * powf(t, 2) * powf((1 - t), 2) * P[2] + 4 * powf(t, 3) * (1 - t) * P[3] + powf(t, 4) * P[4];
+            lut[i] = input[int(x * CDEPTH)];
+        }
+    }
+    
+    inline void lut_r(int* lut) {
+        // Create a temporary LUT to swap values;
+        int *lut_tmp = (int*) malloc(sizeof(int) * CDEPTH);
+        // Initialize LUT;
+        for (int i = 0; i < CDEPTH; i++) {
+            lut[i] = i;
+        }
+        // Apply 1st curve;
+        float P[3] = {0.0, 0.2, 1.0};
+        spline3(lut, lut_tmp, P);
+        // Apply 2nd curve;
+        float P2[5] = {0.0, 0.3, 0.5, 0.99, 1};
+        spline5(lut_tmp, lut, P2);
+        free(lut_tmp);        
     }
 
     inline void lut_g(int* lut) {
+        // Create a temporary LUT to swap values;
+        int *lut_tmp = (int*) malloc(sizeof(int) * CDEPTH);
+        // Initialize LUT;
         for (int i = 0; i < CDEPTH; i++) {
-            float x = float(i) / CDEPTH;
-            float y = 0;
-            if (i < CDEPTH / 2) {
-                y = 0.8 * (1 / (1 + expf(-x + 0.5) * 10 * FACTOR)) + 0.2;
-            } else {
-                y = 1 / (1 + expf((-x + 0.5) * 9 * FACTOR));
-            }
-            lut[i] = std::min(CDEPTH - 1, int(255 * powf(y, 1.4)));
+            lut[i] = i;
         }
+        // Apply 1st curve;
+        float P[5] = {0.0, 0.01, 0.5, 0.99, 1};
+        spline5(lut, lut_tmp, P);
+        // Apply 2nd curve;
+        float P2[5] = {0.0, 0.1, 0.5, 0.75, 1};
+        spline5(lut_tmp, lut, P2);
+        free(lut_tmp);
     }
 
     inline void lut_b(int* lut) {
+        // Create a temporary LUT to swap values;
+        int *lut_tmp = (int*) malloc(sizeof(int) * CDEPTH);
+        // Initialize LUT;
         for (int i = 0; i < CDEPTH; i++) {
-            float x = float(i) / CDEPTH;
-            float y = 0;
-            if (i < CDEPTH / 2) {
-                y = 0.7 * (1 / (1 + expf(-x + 0.5) * 10 * FACTOR)) + 0.3;
-            } else {
-                y = 1 / (1 + expf((-x + 0.5) * 10 * FACTOR));
-            }
-            lut[i] = std::min(CDEPTH - 1, int(255 * powf(y, 1.6)));
+            lut[i] = i;
         }
+        // Apply 1st curve;
+        float P[5] = {0.0, 0.01, 0.5, 0.99, 1};
+        spline5(lut, lut_tmp, P);
+        // Apply 2nd curve;
+        float P2[5] = {0.0, 0.25, 0.5, 0.70, 1};
+        spline5(lut_tmp, lut, P2);
+        free(lut_tmp);
     }
+
+// Outdated LUTs;
+// #define FACTOR 0.8
+//     inline void lut_r(int* lut) {
+//         for (int i = 0; i < CDEPTH; i++) {
+//             float x = float(i) / CDEPTH;
+//             float y = x;
+//             // if (i < CDEPTH / 2) {
+//                 // y = 0.8 * (1 / (1 + expf(-x + 0.5) * 7 * FACTOR)) + 0.2;
+//             // } else {
+//                 y = 1 / (1 + expf((-x + 0.5) * 7 * FACTOR));
+//             // }
+//             lut[i] = std::min(CDEPTH - 1, int(255 * y));
+//         }
+//     }
+
+//     inline void lut_g(int* lut) {
+//         for (int i = 0; i < CDEPTH; i++) {
+//             float x = float(i) / CDEPTH;
+//             float y = x;
+//             // if (i < CDEPTH / 2) {
+//                 // y = 0.7 * (1 / (1 + expf(-x + 0.5) * 10 * FACTOR)) + 0.3;
+//             // } else {
+//                 y = 1 / (1 + expf((-x + 0.5) * 10 * FACTOR));
+//             // }
+//             lut[i] = std::min(CDEPTH - 1, int(255 * powf(y, 1.6)));
+//         }
+//     }
+
+//     inline void lut_b(int* lut) {
+//         for (int i = 0; i < CDEPTH; i++) {
+//             float x = float(i) / CDEPTH;
+//             float y = x;
+//             // if (i < CDEPTH / 2) {
+//             //     y = 0.8 * (1 / (1 + expf(-x + 0.5) * 10 * FACTOR)) + 0.2;
+//             // } else {
+//                 y = 1 / (1 + expf((-x + 0.5) * 9 * FACTOR));
+//             // }
+//             lut[i] = std::min(CDEPTH - 1, int(255 * powf(y, 1.4)));
+//         }
+//     }
 
 // img_out = img.copy()
 // lut_b = lambda x: 0.7 * (1 / (1 + np.exp((-x + 0.5) * 10))) + 0.3 if x < 0.5 else 1 / (1 + np.exp((-x + 0.5) * 10))
