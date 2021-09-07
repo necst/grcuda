@@ -13,7 +13,7 @@ const ck = require("./cuda_kernels.js");
 /////////////////////////////
 
 // Convert images to black and white;
-const BW = true;
+const BW = false;
 // Edge width (in pixel) of input images.
 // If a loaded image has lower width than this, it is rescaled;
 const RESIZED_IMG_WIDTH = 512;
@@ -41,7 +41,6 @@ const KERNEL_UNSHARPEN_DIAMETER = 5;
 const KERNEL_UNSHARPEN_VARIANCE = 5;
 const UNSHARPEN_AMOUNT = 30;
 const CDEPTH = 256;
-const FACTOR = 0.8
 // CUDA parameters;
 const BLOCKS = 2;
 const THREADS_1D = 32;
@@ -73,44 +72,117 @@ function gaussian_kernel(buffer, diameter, sigma) {
     }
 }
 
-function lut_r(lut) {
+// Outdated LUTs;
+// const FACTOR = 0.8
+// function lut_r(lut) {
+//     for (let i = 0; i < CDEPTH; i++) {
+//         x = i / CDEPTH;
+//         if (i < CDEPTH / 2) {
+//             lut[i] = Math.min(CDEPTH - 1, 255 * (0.8 * (1 / (1 + Math.exp(-x + 0.5) * 7 * FACTOR)) + 0.2)) >> 0;
+//         } else {
+//             lut[i] = Math.min(CDEPTH - 1, 255 * (1 / (1 + Math.exp((-x + 0.5) * 7 * FACTOR)))) >> 0;
+//         }
+//     }
+// }
+
+// function lut_g(lut) {
+//     for (let i = 0; i < CDEPTH; i++) {
+//         x = i / CDEPTH;
+//         y = 0;
+//         if (i < CDEPTH / 2) {
+//             y = 0.8 * (1 / (1 + Math.exp(-x + 0.5) * 10 * FACTOR)) + 0.2;
+//         } else {
+//             y = 1 / (1 + Math.exp((-x + 0.5) * 9 * FACTOR));
+//         }
+//         lut[i] = Math.min(CDEPTH - 1, 255 * Math.pow(y, 1.4)) >> 0;
+//     }
+// }
+
+// function lut_b(lut) {
+//     for (let i = 0; i < CDEPTH; i++) {
+//         x = i / CDEPTH;
+//         y = 0;
+//         if (i < CDEPTH / 2) {
+//             y = 0.7 * (1 / (1 + Math.exp(-x + 0.5) * 10 * FACTOR)) + 0.3;
+//         } else {
+//             y = 1 / (1 + Math.exp((-x + 0.5) * 10 * FACTOR));
+//         }
+//         lut[i] = Math.min(CDEPTH - 1, 255 * Math.pow(y, 1.6)) >> 0;
+//     }
+// }
+
+// Beziér curve defined by 3 points.
+// The input is used to map points of the curve to the output LUT,
+// and can be used to combine multiple LUTs.
+// By default, it is just [0, 1, ..., 255];
+function spline3(input, lut, P) {
     for (let i = 0; i < CDEPTH; i++) {
-        x = i / CDEPTH;
-        if (i < CDEPTH / 2) {
-            lut[i] = Math.min(CDEPTH - 1, 255 * (0.8 * (1 / (1 + Math.exp(-x + 0.5) * 7 * FACTOR)) + 0.2)) >> 0;
-        } else {
-            lut[i] = Math.min(CDEPTH - 1, 255 * (1 / (1 + Math.exp((-x + 0.5) * 7 * FACTOR)))) >> 0;
-        }
+        t = i / CDEPTH;
+        x = Math.pow((1 - t), 2) * P[0] + 2 * t * (1 - t) * P[1] + Math.pow(t, 2) * P[2];
+        lut[i] = input[(x * CDEPTH) >> 0]; // >> 0 is an evil hack to cast float to int;
     }
+}
+
+// Beziér curve defined by 5 points;
+function spline5(input, lut, P) {
+    for (let i = 0; i < CDEPTH; i++) {
+        t = i / CDEPTH;
+        x = Math.pow((1 - t), 4) * P[0] + 4 * t * Math.pow((1 - t), 3) * P[1] + 6 * Math.pow(t, 2) * Math.pow((1 - t), 2) * P[2] + 4 * Math.pow(t, 3) * (1 - t) * P[3] + Math.pow(t, 4) * P[4];
+        lut[i] = input[(x * CDEPTH) >> 0];
+    }
+}
+
+function lut_r(lut) {
+    // Create a temporary LUT to swap values;
+    lut_tmp = new Array(CDEPTH).fill(0);
+
+    // Initialize LUT;
+    for (let i = 0; i < CDEPTH; i++) {
+        lut[i] = i;
+    }
+    // Apply 1st curve;
+    const P = [0.0, 0.2, 1.0];
+    spline3(lut, lut_tmp, P);
+    // Apply 2nd curve;
+    const P2 = [0.0, 0.3, 0.5, 0.99, 1];
+    spline5(lut_tmp, lut, P2);     
 }
 
 function lut_g(lut) {
+    // Create a temporary LUT to swap values;
+    let lut_tmp = new Array(CDEPTH).fill(0);
+    // Initialize LUT;
     for (let i = 0; i < CDEPTH; i++) {
-        x = i / CDEPTH;
-        y = 0;
-        if (i < CDEPTH / 2) {
-            y = 0.8 * (1 / (1 + Math.exp(-x + 0.5) * 10 * FACTOR)) + 0.2;
-        } else {
-            y = 1 / (1 + Math.exp((-x + 0.5) * 9 * FACTOR));
-        }
-        lut[i] = Math.min(CDEPTH - 1, 255 * Math.pow(y, 1.4)) >> 0;
+        lut[i] = i;
     }
+    // Apply 1st curve;
+    const P = [0.0, 0.01, 0.5, 0.99, 1];
+    spline5(lut, lut_tmp, P);
+    // Apply 2nd curve;
+    const P2 = [0.0, 0.1, 0.5, 0.75, 1];
+    spline5(lut_tmp, lut, P2);
 }
 
 function lut_b(lut) {
+    // Create a temporary LUT to swap values;
+    let lut_tmp = new Array(CDEPTH).fill(0);
+    // Initialize LUT;
     for (let i = 0; i < CDEPTH; i++) {
-        x = i / CDEPTH;
-        y = 0;
-        if (i < CDEPTH / 2) {
-            y = 0.7 * (1 / (1 + Math.exp(-x + 0.5) * 10 * FACTOR)) + 0.3;
-        } else {
-            y = 1 / (1 + Math.exp((-x + 0.5) * 10 * FACTOR));
-        }
-        lut[i] = Math.min(CDEPTH - 1, 255 * Math.pow(y, 1.6)) >> 0;
+        lut[i] = i;
     }
+    // Apply 1st curve;
+    const P = [0.0, 0.01, 0.5, 0.99, 1];
+    spline5(lut, lut_tmp, P);
+    // Apply 2nd curve;
+    const P2 = [0.0, 0.25, 0.5, 0.70, 1];
+    spline5(lut_tmp, lut, P2);
 }
 
-const LUT = [lut_r, lut_g, lut_b];
+// Initialize LUTs;
+const LUT = [new Array(CDEPTH).fill(0), new Array(CDEPTH).fill(0), new Array(CDEPTH).fill(0)];
+lut_r(LUT[0]);
+lut_r(LUT[1]);
+lut_r(LUT[2]);
 
 async function storeImageInner(img, imgName, resolution, kind) {
     
@@ -138,12 +210,17 @@ async function loadImage(imgName) {
         });
 }
 
+function copy_array(x, y) {
+    let i = y.length;
+	while(i--) x[i] = y[i];
+}
+
 // Main processing of the image;
 async function processImage(img, size, channel) {
     // Allocate image data;
-    const image = cu.DeviceArray("int", size, size);
+    const image = cu.DeviceArray("int", size * size);
     const image2 = cu.DeviceArray("float", size, size);
-    const image3 = cu.DeviceArray("int", size, size);
+    const image3 = cu.DeviceArray("int", size * size);
 
     const kernel_small = cu.DeviceArray("float", KERNEL_SMALL_DIAMETER, KERNEL_SMALL_DIAMETER);
     const kernel_large = cu.DeviceArray("float", KERNEL_LARGE_DIAMETER, KERNEL_LARGE_DIAMETER);
@@ -164,12 +241,16 @@ async function processImage(img, size, channel) {
     
     const lut = cu.DeviceArray("int", CDEPTH);  
 
-    // Initialize the right LUT;
-    LUT[channel](lut);
-    
+    const s0 = System.nanoTime();
+    // Initialize the LUT;
+    copy_array(LUT[channel], lut);
+    const e0 = System.nanoTime();
+    console.log("--lut=" + intervalToMs(s0, e0) + " ms");
+
     // Fill the image data;
     const s1 = System.nanoTime();
-    image.copyFrom(img, size * size);
+    // image.copyFrom(img, size * size);
+    copy_array(image, img);
     const e1 = System.nanoTime();
     console.log("--img to device array=" + intervalToMs(s1, e1) + " ms");
 
@@ -213,11 +294,13 @@ async function processImage(img, size, channel) {
         image2, blurred_small, mask_small, image3, size * size, lut);
 
     // Store the image data.
-    const tmp = image3[0][0];
+    const tmp = image3[0]; // Used only to "sync" the GPU computation and obtain the GPU computation time;
     const end = System.nanoTime();
     console.log("--cuda time=" + intervalToMs(start, end) + " ms");
     const s2 = System.nanoTime();
-    image3.copyTo(img, size * size);
+    // copy_array(img, image3);
+
+    img.set(image3);
     const e2 = System.nanoTime();
     console.log("--device array to image=" + intervalToMs(s2, e2) + " ms");
     return img;

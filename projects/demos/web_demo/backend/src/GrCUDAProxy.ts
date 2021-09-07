@@ -160,8 +160,7 @@ export class GrCUDAProxy {
     const lut = cu.DeviceArray("int", CDEPTH);  
 
     // Initialize the right LUT;
-    LUT[channel](lut);
-
+    copyFrom(LUT[channel], lut);
     // Fill the image data;
     const s1 = System.nanoTime();
     copyFrom(img, image);

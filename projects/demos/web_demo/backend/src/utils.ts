@@ -97,41 +97,71 @@ export function _intervalToMs(start: number, end: number) {
   return (end - start) / 1e6;
 }
 
-function lut_r(lut: any) {
+// Beziér curve defined by 3 points.
+// The input is used to map points of the curve to the output LUT,
+// and can be used to combine multiple LUTs.
+// By default, it is just [0, 1, ..., 255];
+function spline3(input: any, lut: any, P: any) {
   for (let i = 0; i < CDEPTH; i++) {
-      let x = i / CDEPTH;
-      if (i < CDEPTH / 2) {
-          lut[i] = Math.min(CDEPTH - 1, 255 * (0.8 * (1 / (1 + Math.exp(-x + 0.5) * 7 * FACTOR)) + 0.2)) >> 0;
-      } else {
-          lut[i] = Math.min(CDEPTH - 1, 255 * (1 / (1 + Math.exp((-x + 0.5) * 7 * FACTOR)))) >> 0;
-      }
+      const t = i / CDEPTH;
+      const x = Math.pow((1 - t), 2) * P[0] + 2 * t * (1 - t) * P[1] + Math.pow(t, 2) * P[2];
+      lut[i] = input[(x * CDEPTH) >> 0]; // >> 0 is an evil hack to cast float to int;
   }
+}
+
+// Beziér curve defined by 5 points;
+function spline5(input: any, lut: any, P: any) {
+  for (let i = 0; i < CDEPTH; i++) {
+      const t = i / CDEPTH;
+      const x = Math.pow((1 - t), 4) * P[0] + 4 * t * Math.pow((1 - t), 3) * P[1] + 6 * Math.pow(t, 2) * Math.pow((1 - t), 2) * P[2] + 4 * Math.pow(t, 3) * (1 - t) * P[3] + Math.pow(t, 4) * P[4];
+      lut[i] = input[(x * CDEPTH) >> 0];
+  }
+}
+
+function lut_r(lut: any) {
+  // Create a temporary LUT to swap values;
+  let lut_tmp = new Array(CDEPTH).fill(0);
+
+  // Initialize LUT;
+  for (let i = 0; i < CDEPTH; i++) {
+      lut[i] = i;
+  }
+  // Apply 1st curve;
+  const P = [0.0, 0.2, 1.0];
+  spline3(lut, lut_tmp, P);
+  // Apply 2nd curve;
+  const P2 = [0.0, 0.3, 0.5, 0.99, 1];
+  spline5(lut_tmp, lut, P2);     
 }
 
 function lut_g(lut: any) {
+  // Create a temporary LUT to swap values;
+  let lut_tmp = new Array(CDEPTH).fill(0);
+  // Initialize LUT;
   for (let i = 0; i < CDEPTH; i++) {
-      let x = i / CDEPTH;
-      let y = 0;
-      if (i < CDEPTH / 2) {
-          y = 0.8 * (1 / (1 + Math.exp(-x + 0.5) * 10 * FACTOR)) + 0.2;
-      } else {
-          y = 1 / (1 + Math.exp((-x + 0.5) * 9 * FACTOR));
-      }
-      lut[i] = Math.min(CDEPTH - 1, 255 * Math.pow(y, 1.4)) >> 0;
+      lut[i] = i;
   }
+  // Apply 1st curve;
+  const P = [0.0, 0.01, 0.5, 0.99, 1];
+  spline5(lut, lut_tmp, P);
+  // Apply 2nd curve;
+  const P2 = [0.0, 0.1, 0.5, 0.75, 1];
+  spline5(lut_tmp, lut, P2);
 }
 
 function lut_b(lut: any) {
+  // Create a temporary LUT to swap values;
+  let lut_tmp = new Array(CDEPTH).fill(0);
+  // Initialize LUT;
   for (let i = 0; i < CDEPTH; i++) {
-      let x = i / CDEPTH;
-      let y = 0;
-      if (i < CDEPTH / 2) {
-          y = 0.7 * (1 / (1 + Math.exp(-x + 0.5) * 10 * FACTOR)) + 0.3;
-      } else {
-          y = 1 / (1 + Math.exp((-x + 0.5) * 10 * FACTOR));
-      }
-      lut[i] = Math.min(CDEPTH - 1, 255 * Math.pow(y, 1.6)) >> 0;
+      lut[i] = i;
   }
+  // Apply 1st curve;
+  const P = [0.0, 0.01, 0.5, 0.99, 1];
+  spline5(lut, lut_tmp, P);
+  // Apply 2nd curve;
+  const P2 = [0.0, 0.25, 0.5, 0.70, 1];
+  spline5(lut_tmp, lut, P2);
 }
 
 export const copyFrom = (arrayFrom: any, arrayTo: any) => {
@@ -139,7 +169,11 @@ export const copyFrom = (arrayFrom: any, arrayTo: any) => {
   while(i--) arrayTo[i] = arrayFrom[i];
 }
 
-export const LUT = [lut_r, lut_g, lut_b]; // VELVIA 50
+// Initialize LUTs;
+export const LUT = [new Array(CDEPTH).fill(0), new Array(CDEPTH).fill(0), new Array(CDEPTH).fill(0)];
+lut_r(LUT[0]);
+lut_r(LUT[1]);
+lut_r(LUT[2]);
 
 // export const LUT = [lut_b, lut_r, lut_g]; // FUJIFILM SUPERIA 400
 
