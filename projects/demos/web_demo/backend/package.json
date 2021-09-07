@@ -9,7 +9,6 @@
     "build": "tsc",
     "start": "tsc & node .",
     "dev": "tsc -w & nodemon --polyglot --jvm --vm.Dtruffle.class.path.append=$GRAAL_HOME/languages/grcuda/grcuda.jar --experimental-options --grcuda.ExecutionPolicy=default dist/index.js 8080",
-    "devall": "tsc -w & nodemon --polyglot --jvm --vm.Dtruffle.class.path.append=$GRAAL_HOME/languages/grcuda/grcuda.jar --experimental-options --grcuda.ExecutionPolicy=sync dist/index.js 8080 1 & nodemon --polyglot --jvm --vm.Dtruffle.class.path.append=$GRAAL_HOME/languages/grcuda/grcuda.jar --experimental-options --grcuda.ExecutionPolicy=default dist/index.js 8081 2 & nodemon --polyglot --jvm --vm.Dtruffle.class.path.append=$GRAAL_HOME/languages/grcuda/grcuda.jar --experimental-options --grcuda.ExecutionPolicy=default dist/index.js 8082 3",
     "runall": "node --polyglot --jvm --vm.Dtruffle.class.path.append=$GRAAL_HOME/languages/grcuda/grcuda.jar --experimental-options --grcuda.ExecutionPolicy=sync dist/index.js 8080 2 & node --polyglot --jvm --vm.Dtruffle.class.path.append=$GRAAL_HOME/languages/grcuda/grcuda.jar --experimental-options --grcuda.ExecutionPolicy=default --grcuda.ForceStreamAttach --grcuda.RetrieveNewStreamPolicy=always-new --grcuda.DependencyPolicy=with-const --grcuda.RetrieveParentStreamPolicy=disjoint --grcuda.InputPrefetch dist/index.js 8083 0 & node --polyglot --jvm --vm.Dtruffle.class.path.append=$GRAAL_HOME/languages/grcuda/grcuda.jar --experimental-options --grcuda.ExecutionPolicy=default dist/index.js 8082 3"
   },
   "dependencies": {

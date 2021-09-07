@@ -75,7 +75,6 @@ export async function loadImage(imgName: string | number, resizeWidth = RESIZED_
   const imagePath = `${IMAGE_IN_DIRECTORY}/${imgName}${fileFormat}`
   const image = await cv.imreadAsync(imagePath, BW ? cv.IMREAD_GRAYSCALE : cv.IMREAD_COLOR)
   //return image.resize(resizeWidth, resizeWidth);
-  // We do not require resizing anymore as the input image is bound to be 512x512
   return image
 }
 
@@ -165,8 +164,22 @@ function lut_b(lut: any) {
 }
 
 export const copyFrom = (arrayFrom: any, arrayTo: any) => {
-  let i = arrayTo.length
-  while(i--) arrayTo[i] = arrayFrom[i];
+  // let i = 0// = arrayTo.length
+  //while(i--) arrayTo[i] = arrayFrom[i];
+  
+  for(let i = 0; i < arrayTo.length; ++i){
+    arrayTo[i] = arrayFrom[i]
+  }
+
+  // for (const _ of arrayTo) {
+  //   arrayTo[i] = arrayFrom[i]
+  //   i++
+  // }
+  // arrayFrom.forEach((el: any) => {
+  //   arrayTo[i++] = el;
+  //  });
+  //arrayTo.forEach((_: any,i: number) => arrayTo[i] = arrayFrom[i])
+
 }
 
 // Initialize LUTs;
