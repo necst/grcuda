@@ -1,6 +1,6 @@
 const websockets = {
   "sync": new WebSocket("ws://localhost:8080"),
-  "async": new WebSocket("ws://localhost:8081"),
+  "async": new WebSocket("ws://localhost:8083"),
   "cuda-native": new WebSocket("ws://localhost:8082"),
 }
 
@@ -225,7 +225,7 @@ const processProgressMessage = (evt) => {
 
     progressBar.innerHTML = ""
 
-    progressBarsCompletionAmount[computationType] = progressData
+    progressBarsCompletionAmount[computationType] = progressData;
 
     if (progressData > 99.99) {
       progressBarRaceColor[computationType] = "bg-success"

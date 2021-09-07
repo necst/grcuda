@@ -7,11 +7,16 @@ import { GrCUDAProxy } from './GrCUDAProxy'
 const app = express()
 const server = http.createServer(app)
 const PORT = parseInt(process.argv[2])
-const deviceNumber = parseInt(process.argv[3])
-
+let deviceNumber = parseInt(process.argv[3])
 //@ts-ignore
 const cu = Polyglot.eval("grcuda", `CU`)
-cu.cudaSetDevice(deviceNumber)
+
+const numDevices = cu.cudaGetDeviceCount()
+if (deviceNumber >= numDevices) {
+  console.log("warning: device number (" + deviceNumber + ") is bigger than the number of GPUs (" + numDevices + "), using GPU 0 instead");
+  deviceNumber = 0;
+}
+cu.cudaSetDevice(deviceNumber);
 
 const wss = new WebSocket.Server({ server })
 
@@ -22,7 +27,6 @@ wss.on('connection', (ws: WebSocket) => {
   ws.on('message', async (message: string) => {
     await grCUDAProxy.beginComputation(message)
   })
-
 })
 
 app.get('/', (req: any, res: any) => {

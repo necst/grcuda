@@ -140,9 +140,9 @@ public final class CUDARuntime {
             loadedLibraries.put(CUDA_LIBRARY_NAME, libcuda);
             loadedLibraries.put(NVRTC_LIBRARY_NAME, libnvrtc);
 
-            numDevices = cudaGetDeviceCount();
+            this.numDevices = cudaGetDeviceCount();
 
-            for(int i = 0;i<numDevices; i++){
+            for(int i = 0; i<numDevices; i++){
                 HashMap<String, CUModule> modules = new HashMap<String, CUModule>();
                 loadedModules.add(modules);
             }

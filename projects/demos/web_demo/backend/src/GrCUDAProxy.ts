@@ -157,7 +157,6 @@ export class GrCUDAProxy {
     const blurred_large = cu.DeviceArray("float", size, size);
     const blurred_unsharpen = cu.DeviceArray("float", size, size);
 
-
     const lut = cu.DeviceArray("int", CDEPTH);  
 
     // Initialize the right LUT;
@@ -166,8 +165,9 @@ export class GrCUDAProxy {
     // Fill the image data;
     const s1 = System.nanoTime();
     console.log(`[${this.computationType}] Begin copy!`)
-    //copyFrom(img, image)
-    image.copyFrom(img, size * size);
+    copyFrom(img, image, size * size)
+
+    // image.copyFrom(img, size * size);
     console.log(`[${this.computationType}] End copy!`)
     const e1 = System.nanoTime();
     if(debug) console.log("--img to device array=" + _intervalToMs(s1, e1) + " ms");
@@ -211,15 +211,14 @@ export class GrCUDAProxy {
     COMBINE_KERNEL_LUT(BLOCKS * 2, THREADS_1D)(
         image2, blurred_small, mask_small, image3, size * size, lut);
 
-    const tmp = image3[0]
+    const tmp = image3[0]; // Required only to "sync" the GPU computation and obtain the precise GPU execution time;
     const end = System.nanoTime();
     if(debug) console.log("--cuda time=" + _intervalToMs(start, end) + " ms");
     const s2 = System.nanoTime();
-    img.set(image3)
+    img.set(image3);
     //image3.copyTo(img, size * size);
     const e2 = System.nanoTime();
     if(debug) console.log("--device array to image=" + _intervalToMs(s2, e2) + " ms");
-
 
     image.free()
     image2.free()
@@ -280,8 +279,6 @@ export class GrCUDAProxy {
     //this.communicateAll(MAX_PHOTOS, computationType)
 
     console.log(`[${this.computationType}] Whole computation took ${_intervalToMs(beginComputeAllImages, endComputeAllImages)}`)
-
-
   }
 
   /*
