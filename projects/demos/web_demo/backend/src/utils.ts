@@ -135,15 +135,16 @@ function lut_b(lut: any) {
 }
 
 export const copyFrom = (arrayFrom: any, arrayTo: any) => {
-  // let i = arrayFrom.length
-  // while(i--){
-  //   arrayTo[i] = arrayFrom[i]
-  // }
-
-  // for(let i = 0; i < arrayFrom.length; ++i){
-  //   arrayTo[i] = arrayFrom[i]
-  // }
-
+  let i = arrayTo.length
+  while(i--){
+    arrayTo[i] = arrayFrom[i]
+  }
 }
 
-export const LUT = [lut_r, lut_g, lut_b];
+export const LUT = [lut_r, lut_g, lut_b]; // VELVIA 50
+
+// export const LUT = [lut_b, lut_r, lut_g]; // FUJIFILM SUPERIA 400
+
+// export const LUT = [ lut_r, lut_b, lut_g]; // BAD
+
+// export const LUT = [ lut_g, lut_r,  lut_b]; 
