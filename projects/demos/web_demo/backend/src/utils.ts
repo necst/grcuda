@@ -96,6 +96,12 @@ export function _intervalToMs(start: number, end: number) {
   return (end - start) / 1e6;
 }
 
+export const copyFrom = (arrayFrom: any, arrayTo: any) => {
+  for(let i = 0; i < arrayTo.length; ++i){
+    arrayTo[i] = arrayFrom[i]
+  }
+}
+
 // Beziér curve defined by 3 points.
 // The input is used to map points of the curve to the output LUT,
 // and can be used to combine multiple LUTs.
@@ -161,25 +167,6 @@ function lut_b(lut: any) {
   // Apply 2nd curve;
   const P2 = [0.0, 0.25, 0.5, 0.70, 1];
   spline5(lut_tmp, lut, P2);
-}
-
-export const copyFrom = (arrayFrom: any, arrayTo: any) => {
-  // let i = 0// = arrayTo.length
-  //while(i--) arrayTo[i] = arrayFrom[i];
-  
-  for(let i = 0; i < arrayTo.length; ++i){
-    arrayTo[i] = arrayFrom[i]
-  }
-
-  // for (const _ of arrayTo) {
-  //   arrayTo[i] = arrayFrom[i]
-  //   i++
-  // }
-  // arrayFrom.forEach((el: any) => {
-  //   arrayTo[i++] = el;
-  //  });
-  //arrayTo.forEach((_: any,i: number) => arrayTo[i] = arrayFrom[i])
-
 }
 
 // Initialize LUTs;
