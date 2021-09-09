@@ -1,5 +1,9 @@
 package com.nvidia.grcuda.test;
 
+import com.nvidia.grcuda.gpu.computation.dependency.DependencyPolicyEnum;
+import com.nvidia.grcuda.gpu.executioncontext.ExecutionPolicyEnum;
+import com.nvidia.grcuda.gpu.stream.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.gpu.stream.RetrieveParentStreamPolicyEnum;
 import org.graalvm.polyglot.Context;
 
 import java.util.ArrayList;
@@ -42,13 +46,16 @@ public class GrCUDATestUtil {
         }));
         List<Object[]> combinations = new ArrayList<>();
         options.forEach(optionArray -> {
-            List<Object> current = new ArrayList<>();
-            current.add(new GrCUDATestOptionsStruct(
+            GrCUDATestOptionsStruct newStruct = new GrCUDATestOptionsStruct(
                     (String) optionArray[0], (boolean) optionArray[1],
                     (String) optionArray[2], (String) optionArray[3],
-                    (String) optionArray[4], (boolean) optionArray[5]));
-            combinations.add(current.toArray(new Object[0]));
+                    (String) optionArray[4], (boolean) optionArray[5]);
+            if (!isOptionRedundantForSync(newStruct)) {
+                combinations.add(new GrCUDATestOptionsStruct[]{newStruct});
+            }
         });
+        // Check that the number of options is correct;
+        assert(combinations.size() == (2 * 2 + 2 * 2 * 2 * 2 * 2));
         return combinations;
     }
 
@@ -61,6 +68,22 @@ public class GrCUDATestUtil {
                 .option("grcuda.DependencyPolicy", options.dependencyPolicy)
                 .option("grcuda.ForceStreamAttach", String.valueOf(options.forceStreamAttach))
                 .allowAllAccess(true).build();
+    }
+
+    /**
+     * If the execution policy is "sync", we don't need to test all combinations of flags that are specific to
+     * the async scheduler. So we can simply keep the default values for them (as they are unused anyway)
+     * and flag all other combinations as redundant;
+     * @param options a combination of input options for GrCUDA
+     * @return if the option combination is redundant for the sync scheduler
+     */
+    private static boolean isOptionRedundantForSync(GrCUDATestOptionsStruct options) {
+        if (options.policy.equals(ExecutionPolicyEnum.SYNC.getName())) {
+            return options.retrieveNewStreamPolicy.equals(RetrieveNewStreamPolicyEnum.ALWAYS_NEW.getName()) ||
+                    options.retrieveParentStreamPolicy.equals(RetrieveParentStreamPolicyEnum.DISJOINT.getName()) ||
+                    options.dependencyPolicy.equals(DependencyPolicyEnum.WITH_CONST.getName());
+        }
+        return false;
     }
 }
 
