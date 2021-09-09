@@ -13,6 +13,7 @@ import java.util.Collection;
 
 import static com.nvidia.grcuda.test.GrCUDATestUtil.buildTestContext;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeNoException;
 
 @RunWith(Parameterized.class)
 public class CUMLTest {
@@ -67,6 +68,7 @@ public class CUMLTest {
                 }
             } catch (Exception e) {
                 System.out.println("warning: cuML not enabled, skipping test");
+                assumeNoException(e);
             }
         }
     }
