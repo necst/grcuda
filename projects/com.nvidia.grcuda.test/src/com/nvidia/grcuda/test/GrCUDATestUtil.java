@@ -42,12 +42,13 @@ public class GrCUDATestUtil {
         }));
         List<Object[]> combinations = new ArrayList<>();
         options.forEach(optionArray -> {
-            List<Object> current = new ArrayList<>();
-            current.add(new GrCUDATestOptionsStruct(
+            GrCUDATestOptionsStruct newStruct = new GrCUDATestOptionsStruct(
                     (ExecutionPolicyEnum) optionArray[0], (boolean) optionArray[1],
                     (RetrieveNewStreamPolicyEnum) optionArray[2], (RetrieveParentStreamPolicyEnum) optionArray[3],
-                    (DependencyPolicyEnum) optionArray[4], (boolean) optionArray[5]));
-            combinations.add(current.toArray(new Object[0]));
+                    (DependencyPolicyEnum) optionArray[4], (boolean) optionArray[5]);
+            if (!isOptionRedundantForSync(newStruct)) {
+                combinations.add(new GrCUDATestOptionsStruct[]{newStruct});
+            }
         });
         // Check that the number of options is correct;
         assert(combinations.size() == (2 * 2 + 2 * 2 * 2 * 2 * 2));
