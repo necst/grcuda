@@ -14,7 +14,7 @@
 #define DEBUG false
 #define DEFAULT_BLOCK_SIZE_1D 32
 #define DEFAULT_BLOCK_SIZE_2D 8
-#define DEFAULT_NUM_BLOCKS 6
+#define DEFAULT_NUM_BLOCKS 2
 #define DEFAULT_POLICY "default"
 #define DEFAULT_PREFETCH false
 #define DEFAULT_STREAM_ATTACH false

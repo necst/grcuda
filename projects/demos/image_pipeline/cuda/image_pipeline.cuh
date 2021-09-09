@@ -57,9 +57,9 @@ class ImagePipeline {
     dim3 block_size_1d;
 
     // Computation-specific settings;
-    int kernel_small_diameter = 3;
-    int kernel_large_diameter = 7;
-    int kernel_unsharpen_diameter = 3;
+    int kernel_small_diameter = 7;
+    int kernel_large_diameter = 9;
+    int kernel_unsharpen_diameter = 7;
     float kernel_small_variance = 0.1;
     float kernel_large_variance = 20;
     float kernel_unsharpen_variance = 5;
