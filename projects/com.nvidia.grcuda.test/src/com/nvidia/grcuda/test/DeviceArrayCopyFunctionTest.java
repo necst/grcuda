@@ -28,6 +28,17 @@
 package com.nvidia.grcuda.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import com.nvidia.grcuda.Type;
+import com.nvidia.grcuda.array.AbstractArray;
+import com.nvidia.grcuda.array.DeviceArray;
+import com.nvidia.grcuda.array.MultiDimDeviceArray;
+import com.nvidia.grcuda.array.MultiDimDeviceArrayView;
+import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
+import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.test.mock.GrCUDAExecutionContextMock;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Test;
@@ -39,6 +50,66 @@ import java.util.Arrays;
 import java.util.List;
 
 public class DeviceArrayCopyFunctionTest {
+
+    protected static class DeviceArrayMock extends DeviceArray {
+        DeviceArrayMock() {
+            super(new GrCUDAExecutionContextMock(), 0, Type.SINT32);
+        }
+
+        @Override
+        protected LittleEndianNativeArrayView allocateMemory() {
+            return null;
+        }
+    }
+
+    protected static class MultiDimDeviceArrayMock extends MultiDimDeviceArray {
+        MultiDimDeviceArrayMock(long[] dimensions, boolean columnMajor) {
+            super(new GrCUDAExecutionContextMock(), Type.SINT32, dimensions, columnMajor);
+        }
+
+        @Override
+        protected LittleEndianNativeArrayView allocateMemory() {
+            return null;
+        }
+    }
+
+    @Test
+    public void testIfSlowPathIsChosenCorrectly() {
+        try (Context ctx = Context.newBuilder().allowAllAccess(true).allowExperimentalOptions(true).logHandler(new TestLogHandler())
+                .option("log.grcuda.com.nvidia.grcuda.level", "SEVERE").build()) {
+            DeviceArray array1d = new DeviceArrayMock();
+            DeviceArray array1d2 = new DeviceArrayMock();
+            DeviceArrayCopyFunction copyFunction = new DeviceArrayCopyFunction(array1d, DeviceArrayCopyFunction.CopyDirection.FROM_POINTER);
+            assertTrue(copyFunction.canUseMemcpy(array1d2));
+
+            long[] dimensions = {2, 2};
+            MultiDimDeviceArray array2d = new MultiDimDeviceArrayMock(dimensions, false);
+            MultiDimDeviceArray array2d2 = new MultiDimDeviceArrayMock(dimensions, false);
+            copyFunction = new DeviceArrayCopyFunction(array2d, DeviceArrayCopyFunction.CopyDirection.FROM_POINTER);
+            assertTrue(copyFunction.canUseMemcpy(array2d2));
+
+            // Inconsistent memory layouts;
+            MultiDimDeviceArray array2d3 = new MultiDimDeviceArrayMock(dimensions, true);
+            copyFunction = new DeviceArrayCopyFunction(array2d, DeviceArrayCopyFunction.CopyDirection.FROM_POINTER);
+            assertFalse(copyFunction.canUseMemcpy(array2d3));
+
+            // We can copy from a single row, if the layout is row-major;
+            MultiDimDeviceArrayView view1 = new MultiDimDeviceArrayView(array2d2, 1, 0, 0);
+            copyFunction = new DeviceArrayCopyFunction(view1, DeviceArrayCopyFunction.CopyDirection.FROM_POINTER);
+            assertTrue(copyFunction.canUseMemcpy(array2d));
+            copyFunction = new DeviceArrayCopyFunction(array1d, DeviceArrayCopyFunction.CopyDirection.FROM_POINTER);
+            assertTrue(copyFunction.canUseMemcpy(array2d));
+
+            // We cannot copy from a single row, if the destination layout is column-major;
+            MultiDimDeviceArrayView view2 = new MultiDimDeviceArrayView(array2d3, 1, 0, 0);
+            copyFunction = new DeviceArrayCopyFunction(view2, DeviceArrayCopyFunction.CopyDirection.FROM_POINTER);
+            assertFalse(copyFunction.canUseMemcpy(array2d));
+            copyFunction = new DeviceArrayCopyFunction(view2, DeviceArrayCopyFunction.CopyDirection.FROM_POINTER);
+            assertFalse(copyFunction.canUseMemcpy(array2d3));
+            copyFunction = new DeviceArrayCopyFunction(array1d, DeviceArrayCopyFunction.CopyDirection.FROM_POINTER);
+            assertFalse(copyFunction.canUseMemcpy(array2d3));
+        }
+    }
 
     @Test
     public void testDeviceArrayCopyFromOffheapMemory() {
@@ -255,8 +326,6 @@ public class DeviceArrayCopyFunctionTest {
             }
         }
     }
-
-    // FIXME: memcpy on single dimensions of column-major arrays doesn't work, as memory is not contiguous;
 
     @Test
     public void testMultiDimDeviceArrayCopyFromDeviceArrayF() {
