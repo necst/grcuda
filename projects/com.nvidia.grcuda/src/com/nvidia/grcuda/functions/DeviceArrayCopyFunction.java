@@ -29,7 +29,7 @@ package com.nvidia.grcuda.functions;
 
 import com.nvidia.grcuda.array.AbstractArray;
 import com.nvidia.grcuda.gpu.computation.ArrayReadWriteFunctionExecutionDefault;
-import com.nvidia.grcuda.gpu.computation.ArrayReadWriteFunctionExecutionMalloc;
+import com.nvidia.grcuda.gpu.computation.ArrayReadWriteFunctionExecutionMemcpy;
 import com.nvidia.grcuda.gpu.computation.DeviceArrayCopyException;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.ArityException;
@@ -98,7 +98,7 @@ public class DeviceArrayCopyFunction implements TruffleObject {
         try {
             // Try using the native pointer implementation;
             long pointer = extractPointer(arguments[0], pointerAccess);
-            new ArrayReadWriteFunctionExecutionMalloc(array, direction, numElements, pointer).schedule();
+            new ArrayReadWriteFunctionExecutionMemcpy(array, direction, numElements, pointer).schedule();
         } catch (UnsupportedMessageException e) {
             // Try using the array implementation;
             if (pointerAccess.hasArrayElements(arguments[0])) {

@@ -21,7 +21,7 @@ public abstract class ArrayReadWriteFunctionExecution extends GrCUDAComputationa
      */
     protected final AbstractArray array;
     /**
-     * Whether this computations copies data from the array or writes to it;
+     * Whether this computation copies data from the array or writes to it;
      */
     protected final DeviceArrayCopyFunction.CopyDirection direction;
     /**

@@ -232,13 +232,27 @@ public abstract class AbstractArray implements TruffleObject {
 
     /**
      * When working with array views, it is common to require both the pointer to the view, and the pointer
-     * to the whole array. This method always returns the pointer to the whole array (hence, the "ZeroOffset"),
+     * to the whole array. This method always returns the pointer to the whole array,
      * and should be used when dealing with low-level CUDA APIs that cannot handle just part of the array.
      * By default, i.e. if the array is not a view of a larger array,
      * this function is identical to {@link AbstractArray#getPointer()}
      * @return the pointer to the whole array
      */
-    public long getZeroOffsetPointer() { return this.getPointer(); }
+    public long getFullArrayPointer() {
+        return this.getPointer();
+    }
+
+    /**
+     * When working with array views, it is common to require both the size of the view, and the size of
+     * the whole array. This method always returns the size (in bytes) of the whole array,
+     * and should be used when dealing with low-level CUDA APIs that cannot handle just part of the array.
+     * By default, i.e. if the array is not a view of a larger array,
+     * this function is identical to {@link AbstractArray#getSizeBytes()}
+     * @return the size, in bytes, of the whole array
+     */
+    public long getFullArraySizeBytes() {
+        return this.getSizeBytes();
+    }
 
     // Implementation of InteropLibrary
 
