@@ -98,11 +98,14 @@ public class MultiDimDeviceArrayView extends AbstractArray implements TruffleObj
     public long getFullArrayPointer() {
         return mdDeviceArray.getFullArrayPointer();
     }
+<<<<<<< HEAD
 
     @Override
     public boolean isColumnMajorFormat() {
         return mdDeviceArray.isColumnMajorFormat();
     }
+=======
+>>>>>>> added internal API to obtain full array size of array view
 
     /**
      * Propagate the flag to the parent array, so other temporary views are aware of this computation;
