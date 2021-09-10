@@ -144,7 +144,8 @@ public class MultiDimDeviceArray extends AbstractArray implements TruffleObject 
         return (index > 0) && (index < numElementsInDim);
     }
 
-    final boolean isColumnMajorFormat() {
+    @Override
+    public final boolean isColumnMajorFormat() {
         return columnMajor;
     }
 

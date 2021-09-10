@@ -27,7 +27,12 @@
  */
 package com.nvidia.grcuda.functions;
 
+import com.nvidia.grcuda.GrCUDALanguage;
+import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.array.AbstractArray;
+import com.nvidia.grcuda.array.DeviceArray;
+import com.nvidia.grcuda.array.MultiDimDeviceArray;
+import com.nvidia.grcuda.array.MultiDimDeviceArrayView;
 import com.nvidia.grcuda.gpu.computation.ArrayReadWriteFunctionExecutionDefault;
 import com.nvidia.grcuda.gpu.computation.ArrayReadWriteFunctionExecutionMemcpy;
 import com.nvidia.grcuda.gpu.computation.DeviceArrayCopyException;
@@ -94,22 +99,56 @@ public class DeviceArrayCopyFunction implements TruffleObject {
             CompilerDirectives.transferToInterpreter();
             throw ArityException.create(1, arguments.length);
         }
-        // Obtain what kind of copy (pointer or array) should be executed;
+        // Obtain what kind of copy (pointer or array) should be executed.
+        // By default, see if we can use the fast CUDA memcpy: we cannot use it if the source and target arrays
+        // are stored with incompatible memory layouts.
+        boolean useFastCopy = canUseMemcpy(arguments[0]);
+        Long pointer = null;
         try {
             // Try using the native pointer implementation;
-            long pointer = extractPointer(arguments[0], pointerAccess);
-            new ArrayReadWriteFunctionExecutionMemcpy(array, direction, numElements, pointer).schedule();
+            pointer = extractPointer(arguments[0], pointerAccess);
         } catch (UnsupportedMessageException e) {
-            // Try using the array implementation;
+            GrCUDALanguage.LOGGER.warning("cannot extract a native pointer; falling back to slow copy");
+        }
+        if (pointer != null && useFastCopy) {
+            // Fast array copy;
+            new ArrayReadWriteFunctionExecutionMemcpy(array, direction, numElements, pointer).schedule();
+        } else {
+            // Slow array copy, suitable for generic arrays or incompatible memory layouts;
             if (pointerAccess.hasArrayElements(arguments[0])) {
                 new ArrayReadWriteFunctionExecutionDefault(array, direction, numElements, pointerAccess, arguments[0]).schedule();
             } else {
                 // The target object is not an array;
                 CompilerDirectives.transferToInterpreter();
-                throw UnsupportedTypeException.create(new Object[]{arguments[0]}, "integer expected for " + (direction.equals(CopyDirection.FROM_POINTER) ? "fromPointer" : "toPointer"));
+                throw UnsupportedTypeException.create(new Object[]{arguments[0]}, "array or pointer expected for " + (direction.equals(CopyDirection.FROM_POINTER) ? "fromPointer" : "toPointer"));
             }
         }
-        return array;
+        return NoneValue.get();
+    }
+
+    /**
+     * We can use fast memcpy only if both arrays are stored with the same memory layout. This also
+     * holds true if either the other array is not an Abstract array, but some other kind of native
+     * memory; in this second case, the user has the responsibility of providing meaningful data to
+     * copy.
+     * 
+     * @param other the other object involved in the copy
+     * @return if we can use the fast CUDA memcpy, under the assumption that "other" contains an accessible pointer
+     */
+    private boolean canUseMemcpy(Object other) {
+        if (other instanceof AbstractArray) {
+            boolean coherentMemoryLayout = array.isColumnMajorFormat() == ((AbstractArray) other).isColumnMajorFormat();
+            if (!coherentMemoryLayout) {
+                GrCUDALanguage.LOGGER.warning("both source and destination arrays should be row-major or column-major; falling back to slow copy");
+                return false;
+            }
+            if ((array instanceof MultiDimDeviceArrayView && array.isColumnMajorFormat()) ||
+                            (other instanceof MultiDimDeviceArrayView && ((MultiDimDeviceArrayView) other).isColumnMajorFormat())) {
+                GrCUDALanguage.LOGGER.warning("fast copy from/to column-major array views is not supported; falling back to slow copy");
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

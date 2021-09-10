@@ -98,6 +98,11 @@ public final class MultiDimDeviceArrayView extends AbstractArray implements Truf
         return mdDeviceArray.getFullArrayPointer();
     }
 
+    @Override
+    public boolean isColumnMajorFormat() {
+        return mdDeviceArray.isColumnMajorFormat();
+    }
+
     /**
      * Propagate the flag to the parent array, so other temporary views are aware of this computation;
      * @param lastComputationArrayAccess if the last computation on this array is a host read/write
