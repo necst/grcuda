@@ -451,17 +451,15 @@ public class DeviceArrayCopyFunctionTest {
                     sourceDeviceArray.getArrayElement(i).setArrayElement(j, i * numElements2 + j);
                 }
             }
-            // Initialize destination array with unique values, to ensure that it's modified
-            // correctly;
+            // Initialize destination array with unique values, to ensure that it's modified correctly;
             Value destinationDeviceArray = createDeviceArray.execute("int", numElements1, numElements2);
             for (int i = 0; i < numElements1; ++i) {
                 for (int j = 0; j < numElements2; ++j) {
-                    destinationDeviceArray.getArrayElement(i).setArrayElement(j, -(i * numElements2 + j));
+                    destinationDeviceArray.getArrayElement(i).setArrayElement(j,  -(i * numElements2 + j));
                 }
             }
 
-            // This copies the 4th row of the source array into the 4th row of the destination
-            // array;
+            // This copies the 4th row of the source array into the 4th row of the destination array;
             sourceDeviceArray.getArrayElement(3).invokeMember("copyTo", destinationDeviceArray.getArrayElement(3), sourceDeviceArray.getArrayElement(3).getArraySize());
 
             // Verify content of device array
@@ -488,12 +486,11 @@ public class DeviceArrayCopyFunctionTest {
                     sourceDeviceArray.getArrayElement(i).setArrayElement(j, i * numElements2 + j);
                 }
             }
-            // Initialize destination array with unique values, to ensure that it's modified
-            // correctly;
+            // Initialize destination array with unique values, to ensure that it's modified correctly;
             Value destinationDeviceArray = createDeviceArray.execute("int", numElements1, numElements2);
             for (int i = 0; i < numElements1; ++i) {
                 for (int j = 0; j < numElements2; ++j) {
-                    destinationDeviceArray.getArrayElement(i).setArrayElement(j, -(i * numElements2 + j));
+                    destinationDeviceArray.getArrayElement(i).setArrayElement(j,  -(i * numElements2 + j));
                 }
             }
 
