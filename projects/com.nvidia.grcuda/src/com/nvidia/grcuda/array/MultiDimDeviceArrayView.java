@@ -117,6 +117,10 @@ public final class MultiDimDeviceArrayView extends AbstractArray implements Truf
 
     @Override
     final public long getSizeBytes() {
+        if (arrayFreed) {
+            CompilerDirectives.transferToInterpreter();
+            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
+        }
         return mdDeviceArray.getElementsInDimension(thisDimension) * elementType.getSizeBytes();
     }
 
@@ -146,16 +150,28 @@ public final class MultiDimDeviceArrayView extends AbstractArray implements Truf
     @ExportMessage
     @Override
     public long getArraySize() {
+        if (arrayFreed) {
+            CompilerDirectives.transferToInterpreter();
+            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
+        }
         return mdDeviceArray.getElementsInDimension(thisDimension);
     }
 
     @ExportMessage
     boolean isArrayElementReadable(long index) {
+        if (arrayFreed) {
+            CompilerDirectives.transferToInterpreter();
+            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
+        }
         return index >= 0 && index < mdDeviceArray.getElementsInDimension(thisDimension);
     }
 
     @ExportMessage
     boolean isArrayElementModifiable(long index) {
+        if (arrayFreed) {
+            CompilerDirectives.transferToInterpreter();
+            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
+        }
         return (thisDimension + 1) == mdDeviceArray.getNumberDimensions() &&
                         index >= 0 && index < mdDeviceArray.getElementsInDimension(thisDimension);
     }
@@ -169,6 +185,10 @@ public final class MultiDimDeviceArrayView extends AbstractArray implements Truf
     @ExportMessage
     Object readArrayElement(long index,
                     @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws InvalidArrayIndexException {
+        if (arrayFreed) {
+            CompilerDirectives.transferToInterpreter();
+            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
+        }
         if ((index < 0) || (index >= mdDeviceArray.getElementsInDimension(thisDimension))) {
             CompilerDirectives.transferToInterpreter();
             throw InvalidArrayIndexException.create(index);
@@ -176,7 +196,7 @@ public final class MultiDimDeviceArrayView extends AbstractArray implements Truf
         try {
             if (this.canSkipScheduling()) {
                 // Fast path, skip the DAG scheduling;
-                return readArrayElementImpl(index, elementTypeProfile);
+                return readNativeView(index, elementTypeProfile);
             } else {
                 return new MultiDimDeviceArrayViewReadExecution(this, index, elementTypeProfile).schedule();
             }
@@ -186,24 +206,11 @@ public final class MultiDimDeviceArrayView extends AbstractArray implements Truf
         }
     }
 
-    public Object readArrayElementImpl(long index, ValueProfile elementTypeProfile) {
+    @Override
+    public Object readNativeView(long index, @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) {
         if ((thisDimension + 1) == mdDeviceArray.getNumberDimensions()) {
             long flatIndex = offset + index * stride;
-            switch (elementTypeProfile.profile(mdDeviceArray.getElementType())) {
-                case CHAR:
-                    return mdDeviceArray.getNativeView().getByte(flatIndex);
-                case SINT16:
-                    return mdDeviceArray.getNativeView().getShort(flatIndex);
-                case SINT32:
-                    return mdDeviceArray.getNativeView().getInt(flatIndex);
-                case SINT64:
-                    return mdDeviceArray.getNativeView().getLong(flatIndex);
-                case FLOAT:
-                    return mdDeviceArray.getNativeView().getFloat(flatIndex);
-                case DOUBLE:
-                    return mdDeviceArray.getNativeView().getDouble(flatIndex);
-            }
-            return null;
+            return AbstractArray.readArrayElementNative(this.mdDeviceArray.getNativeView(), flatIndex, this.mdDeviceArray.getElementType(), elementTypeProfile);
         } else {
             long off = offset + index * stride;
             long newStride = mdDeviceArray.getStrideInDimension(thisDimension + 1);
@@ -215,49 +222,29 @@ public final class MultiDimDeviceArrayView extends AbstractArray implements Truf
     void writeArrayElement(long index, Object value,
                     @CachedLibrary(limit = "3") InteropLibrary valueLibrary,
                     @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException, InvalidArrayIndexException {
+        if (arrayFreed) {
+            CompilerDirectives.transferToInterpreter();
+            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
+        }
         if ((index < 0) || (index >= mdDeviceArray.getElementsInDimension(thisDimension))) {
             CompilerDirectives.transferToInterpreter();
             throw InvalidArrayIndexException.create(index);
         }
         if (this.canSkipScheduling()) {
             // Fast path, skip the DAG scheduling;
-            writeArrayElementImpl(index, value, valueLibrary, elementTypeProfile);
+            writeNativeView(index, value, valueLibrary, elementTypeProfile);
         } else {
             new MultiDimDeviceArrayViewWriteExecution(this, index, value, valueLibrary, elementTypeProfile).schedule();
         }
     }
 
-    public void writeArrayElementImpl(long index, Object value,
-                                      InteropLibrary valueLibrary,
-                                      ValueProfile elementTypeProfile) throws UnsupportedTypeException {
+    @Override
+    public void writeNativeView(long index, Object value,
+                                @CachedLibrary(limit = "3") InteropLibrary valueLibrary,
+                                @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException {
         if ((thisDimension + 1) == mdDeviceArray.getNumberDimensions()) {
             long flatIndex = offset + index * stride;
-            try {
-                switch (elementTypeProfile.profile(mdDeviceArray.getElementType())) {
-                    case CHAR:
-                        mdDeviceArray.getNativeView().setByte(flatIndex, valueLibrary.asByte(value));
-                        break;
-                    case SINT16:
-                        mdDeviceArray.getNativeView().setShort(flatIndex, valueLibrary.asShort(value));
-                        break;
-                    case SINT32:
-                        mdDeviceArray.getNativeView().setInt(flatIndex, valueLibrary.asInt(value));
-                        break;
-                    case SINT64:
-                        mdDeviceArray.getNativeView().setLong(flatIndex, valueLibrary.asLong(value));
-                        break;
-                    case FLOAT:
-                        // InteropLibrary does not downcast Double to Float due loss of precision
-                        mdDeviceArray.getNativeView().setFloat(flatIndex, (float) valueLibrary.asDouble(value));
-                        break;
-                    case DOUBLE:
-                        mdDeviceArray.getNativeView().setDouble(flatIndex, valueLibrary.asDouble(value));
-                        break;
-                }
-            } catch (UnsupportedMessageException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw UnsupportedTypeException.create(new Object[]{value}, "value cannot be coerced to " + mdDeviceArray.getElementType());
-            }
+            AbstractArray.writeArrayElementNative(this.mdDeviceArray.getNativeView(), flatIndex, value, this.mdDeviceArray.getElementType(), valueLibrary, elementTypeProfile);
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new IllegalStateException("tried to write non-last dimension in MultiDimDeviceArrayView");

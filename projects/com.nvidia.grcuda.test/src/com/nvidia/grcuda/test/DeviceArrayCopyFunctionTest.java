@@ -34,6 +34,10 @@ import org.junit.Test;
 import com.nvidia.grcuda.gpu.LittleEndianNativeArrayView;
 import com.nvidia.grcuda.gpu.OffheapMemory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class DeviceArrayCopyFunctionTest {
 
     @Test
