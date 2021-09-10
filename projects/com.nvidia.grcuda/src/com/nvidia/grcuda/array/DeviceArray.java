@@ -114,32 +114,6 @@ public final class DeviceArray extends AbstractArray implements TruffleObject {
         super.finalize();
     }
 
-//    public void copyFrom(long fromPointer, long numCopyElements) throws IndexOutOfBoundsException {
-//        if (arrayFreed) {
-//            CompilerDirectives.transferToInterpreter();
-//            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
-//        }
-//        long numBytesToCopy = numCopyElements * elementType.getSizeBytes();
-//        if (numBytesToCopy > getSizeBytes()) {
-//            CompilerDirectives.transferToInterpreter();
-//            throw new IndexOutOfBoundsException();
-//        }
-//        runtime.cudaMemcpy(getPointer(), fromPointer, numBytesToCopy);
-//    }
-//
-//    public void copyTo(long toPointer, long numCopyElements) throws IndexOutOfBoundsException {
-//        if (arrayFreed) {
-//            CompilerDirectives.transferToInterpreter();
-//            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
-//        }
-//        long numBytesToCopy = numCopyElements * elementType.getSizeBytes();
-//        if (numBytesToCopy > getSizeBytes()) {
-//            CompilerDirectives.transferToInterpreter();
-//            throw new IndexOutOfBoundsException();
-//        }
-//        runtime.cudaMemcpy(toPointer, getPointer(), numBytesToCopy);
-//    }
-
     @Override
     public void freeMemory() {
         if (arrayFreed) {
@@ -229,16 +203,5 @@ public final class DeviceArray extends AbstractArray implements TruffleObject {
     public void writeNativeView(long index, Object value, @CachedLibrary(limit = "3") InteropLibrary valueLibrary,
                                 @Cached.Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException {
         AbstractArray.writeArrayElementNative(this.nativeView, index, value, elementType, valueLibrary, elementTypeProfile);
-    }
-
-    @ExportMessage
-    @SuppressWarnings("static-method")
-    boolean isPointer() {
-        return true;
-    }
-
-    @ExportMessage
-    long asPointer() {
-        return getPointer();
     }
 }

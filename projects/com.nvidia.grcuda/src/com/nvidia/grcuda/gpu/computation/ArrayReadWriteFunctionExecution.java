@@ -60,7 +60,9 @@ public abstract class ArrayReadWriteFunctionExecution extends GrCUDAComputationa
     }
 
     @Override
-    protected Optional<CUDAStream> additionalStreamDependencyImpl() { return Optional.of(this.array.getStreamMapping()); }
+    protected Optional<CUDAStream> additionalStreamDependencyImpl() {
+        return Optional.of(array.getStreamMapping());
+    }
 
     @Override
     public String toString() {

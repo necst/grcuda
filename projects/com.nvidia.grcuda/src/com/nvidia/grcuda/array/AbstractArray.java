@@ -230,7 +230,23 @@ public abstract class AbstractArray implements TruffleObject {
         return this.isLastComputationArrayAccess() && !(this.streamMapping.isDefaultStream() && grCUDAExecutionContext.isAnyComputationActive());
     }
 
+    /**
+     * When working with array views, it is common to require both the pointer to the view, and the pointer
+     * to the whole array. This method always returns the pointer to the whole array (hence, the "ZeroOffset"),
+     * and should be used when dealing with low-level CUDA APIs that cannot handle just part of the array.
+     * By default, i.e. if the array is not a view of a larger array,
+     * this function is identical to {@link AbstractArray#getPointer()}
+     * @return the pointer to the whole array
+     */
+    public long getZeroOffsetPointer() { return this.getPointer(); }
+
     // Implementation of InteropLibrary
+
+    @ExportMessage
+    boolean isPointer() { return true; }
+
+    @ExportMessage
+    long asPointer() { return this.getPointer(); }
 
     @ExportMessage
     @SuppressWarnings("static-method")

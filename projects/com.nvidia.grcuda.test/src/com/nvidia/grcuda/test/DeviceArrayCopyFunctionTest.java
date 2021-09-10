@@ -227,17 +227,31 @@ public class DeviceArrayCopyFunctionTest {
             Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
             // create device array initialize its elements.
             Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2);
-            // create destination device array initialize its elements to zero.
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    sourceDeviceArray.getArrayElement(i).setArrayElement(j, i * numElements2 + j);
+                }
+            }
+
+            // create destination device array.
             Value destinationDeviceArray = createDeviceArray.execute("int", numElements2);
             // Set each value to j;
             for (int j = 0; j < numElements2; ++j) {
-                destinationDeviceArray.setArrayElement(j, j);
+                destinationDeviceArray.setArrayElement(j, 42 + j);
             }
 
             sourceDeviceArray.getArrayElement(3).invokeMember("copyFrom", destinationDeviceArray, sourceDeviceArray.getArrayElement(3).getArraySize());
             // Verify content of device array
             for (int j = 0; j < numElements2; ++j) {
-                assertEquals(j, sourceDeviceArray.getArrayElement(3).getArrayElement(j).asInt());
+                assertEquals(42 + j, sourceDeviceArray.getArrayElement(3).getArrayElement(j).asInt());
+            }
+            // Everything else is unmodified;
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    if (i != 3) {
+                        assertEquals(i * numElements2 + j, sourceDeviceArray.getArrayElement(i).getArrayElement(j).asInt());
+                    }
+                }
             }
         }
     }
@@ -259,14 +273,14 @@ public class DeviceArrayCopyFunctionTest {
             // Set each row to j;
             for (int i = 0; i < numElements1; ++i) {
                 for (int j = 0; j < numElements2; ++j) {
-                    sourceDeviceArray.getArrayElement(i).setArrayElement(j, j);
+                    sourceDeviceArray.getArrayElement(i).setArrayElement(j, i * numElements2 + j);
                 }
             }
             destinationDeviceArray.invokeMember("copyFrom", sourceDeviceArray, numElements1 * numElements2);
             // Verify content of device array
             for (int i = 0; i < numElements1; ++i) {
                 for (int j = 0; j < numElements2; ++j) {
-                    assertEquals(j, destinationDeviceArray.getArrayElement(i).getArrayElement(j).asInt());
+                    assertEquals(i * numElements2 + j, destinationDeviceArray.getArrayElement(i).getArrayElement(j).asInt());
                 }
             }
         }
@@ -283,11 +297,66 @@ public class DeviceArrayCopyFunctionTest {
             // Set each row to j;
             for (int i = 0; i < numElements1; ++i) {
                 for (int j = 0; j < numElements2; ++j) {
-                    sourceDeviceArray.getArrayElement(i).setArrayElement(j, j);
+                    sourceDeviceArray.getArrayElement(i).setArrayElement(j, i * numElements2 + j);
                 }
             }
             // create destination device array initialize its elements to zero.
             Value destinationDeviceArray = createDeviceArray.execute("int", numElements1, numElements2, "F");
+
+            sourceDeviceArray.invokeMember("copyTo", destinationDeviceArray, numElements1 * numElements2);
+            // Verify content of device array
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    assertEquals(i * numElements2 + j, destinationDeviceArray.getArrayElement(i).getArrayElement(j).asInt());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testMultiDimDeviceArrayCopyFromDeviceArrayC() {
+        final int numElements1 = 10;
+        final int numElements2 = 25;
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
+            Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
+            // create device array initialize its elements.
+            Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2, "C");
+
+            // create destination device array initialize its elements to zero.
+            Value destinationDeviceArray = createDeviceArray.execute("int", numElements1, numElements2, "C");
+
+            // Set each row to j;
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    sourceDeviceArray.getArrayElement(i).setArrayElement(j, i * numElements2 + j);
+                }
+            }
+            destinationDeviceArray.invokeMember("copyFrom", sourceDeviceArray, numElements1 * numElements2);
+            // Verify content of device array
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    assertEquals(i * numElements2 + j, destinationDeviceArray.getArrayElement(i).getArrayElement(j).asInt());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testMultiDimDeviceArrayCopyToDeviceArrayC() {
+        final int numElements1 = 10;
+        final int numElements2 = 25;
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
+            Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
+            // create device array initialize its elements.
+            Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2, "C");
+            // Set each row to j;
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    sourceDeviceArray.getArrayElement(i).setArrayElement(j, j);
+                }
+            }
+            // create destination device array initialize its elements to zero.
+            Value destinationDeviceArray = createDeviceArray.execute("int", numElements1, numElements2, "C");
 
             sourceDeviceArray.invokeMember("copyTo", destinationDeviceArray, numElements1 * numElements2);
             // Verify content of device array
@@ -347,6 +416,36 @@ public class DeviceArrayCopyFunctionTest {
             // Verify content of device array
             for (int i = 0; i < numElements; ++i) {
                 assertEquals(i, destinationDeviceArray.getArrayElement(i).asInt());
+    public void testMultiDimDeviceArrayCopyToDeviceArrayRowC() {
+        final int numElements1 = 5;
+        final int numElements2 = 7;
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
+            Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
+            // Create device array initialize its elements;
+            Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2);
+            // Initialize elements with unique values.
+            // Values are still written as (row, col), even if the storage is "C";
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    sourceDeviceArray.getArrayElement(i).setArrayElement(j, i * numElements2 + j);
+                }
+            }
+            // Initialize destination array with unique values, to ensure that it's modified correctly;
+            Value destinationDeviceArray = createDeviceArray.execute("int", numElements1, numElements2);
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    destinationDeviceArray.getArrayElement(i).setArrayElement(j,  -(i * numElements2 + j));
+                }
+            }
+
+            // This copies the 4th row of the source array into the 4th row of the destination array;
+            sourceDeviceArray.getArrayElement(3).invokeMember("copyTo", destinationDeviceArray.getArrayElement(3), sourceDeviceArray.getArrayElement(3).getArraySize());
+
+            // Verify content of device array
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    assertEquals((i == 3 ? 1 : -1) *(i * numElements2 + j), destinationDeviceArray.getArrayElement(i).getArrayElement(j).asInt());
+                }
             }
         }
     }
@@ -398,6 +497,34 @@ public class DeviceArrayCopyFunctionTest {
             // Verify content of java array;
             for (int i = 0; i < numElements; ++i) {
                 assertEquals(i + 1, array.get(i).intValue());
+    public void testMultiDimDeviceArrayCopyFromDeviceArrayRowC() {
+        final int numElements1 = 10;
+        final int numElements2 = 25;
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
+            Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
+            // Create device array initialize its elements;
+            Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2);
+            // Initialize elements with unique values.
+            // Values are still written as (row, col), even if the storage is "C";
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    sourceDeviceArray.getArrayElement(i).setArrayElement(j, i * numElements2 + j);
+                }
+            }
+            // Initialize destination array with unique values, to ensure that it's modified correctly;
+            Value destinationDeviceArray = createDeviceArray.execute("int", numElements1, numElements2);
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    destinationDeviceArray.getArrayElement(i).setArrayElement(j,  -(i * numElements2 + j));
+                }
+            }
+
+            sourceDeviceArray.getArrayElement(3).invokeMember("copyFrom", destinationDeviceArray.getArrayElement(3), destinationDeviceArray.getArrayElement(3).getArraySize());
+            // Verify content of device array
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    assertEquals((i == 3 ? -1 : 1) * (i * numElements2 + j), sourceDeviceArray.getArrayElement(i).getArrayElement(j).asInt());
+                }
             }
         }
     }
@@ -465,6 +592,60 @@ public class DeviceArrayCopyFunctionTest {
                 for (int j = 0; j < numElements2; ++j) {
                     array.add(i * numElements2 + j + 1);
                     assertEquals(i * numElements2 + j + 1, deviceArray.getArrayElement(i).getArrayElement(j).asInt());
+    public void testMultiDimDeviceArrayCopyToDeviceArrayRowF() {
+        final int numElements1 = 5;
+        final int numElements2 = 7;
+        try (Context ctx = GrCUDATestUtil.buildTestContext().build()) {
+            Value createDeviceArray = ctx.eval("grcuda", "DeviceArray");
+            // Create device array initialize its elements;
+            Value sourceDeviceArray = createDeviceArray.execute("int", numElements1, numElements2, "F");
+            // Initialize elements with unique values.
+            // Values are still written as (row, col), even if the storage is "C";
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    sourceDeviceArray.getArrayElement(i).setArrayElement(j, i * numElements2 + j);
+                }
+            }
+            // Initialize destination array with unique values, to ensure that it's modified correctly;
+            Value destinationDeviceArray = createDeviceArray.execute("int", numElements1, numElements2, "F");
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    destinationDeviceArray.getArrayElement(i).setArrayElement(j,  -(i * numElements2 + j));
+                }
+            }
+            System.out.println("source");
+            for (int i = 0; i < numElements1; ++i) {
+                System.out.print(i + "=[");
+                for (int j = 0; j < numElements2; ++j) {
+                    System.out.print(sourceDeviceArray.getArrayElement(i).getArrayElement(j) + ", ");
+                }
+                System.out.println("]");
+            }
+            System.out.println("destination");
+            for (int i = 0; i < numElements1; ++i) {
+                System.out.print(i + "=[");
+                for (int j = 0; j < numElements2; ++j) {
+                    System.out.print(destinationDeviceArray.getArrayElement(i).getArrayElement(j) + ", ");
+                }
+                System.out.println("]");
+            }
+
+            // This copies the 4th column of the source array into the 4th column of the destination array;
+            sourceDeviceArray.getArrayElement(3).invokeMember("copyTo", destinationDeviceArray.getArrayElement(3), sourceDeviceArray.getArrayElement(3).getArraySize());
+
+            System.out.println("destination-after");
+            for (int i = 0; i < numElements1; ++i) {
+                System.out.print(i + "=[");
+                for (int j = 0; j < numElements2; ++j) {
+                    System.out.print(destinationDeviceArray.getArrayElement(i).getArrayElement(j) + ", ");
+                }
+                System.out.println("]");
+            }
+
+            // Verify content of device array
+            for (int i = 0; i < numElements1; ++i) {
+                for (int j = 0; j < numElements2; ++j) {
+                    assertEquals((i == 3 ? 1 : -1) *(i * numElements2 + j), destinationDeviceArray.getArrayElement(i).getArrayElement(j).asInt());
                 }
             }
         }
