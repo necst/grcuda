@@ -254,6 +254,15 @@ public abstract class AbstractArray implements TruffleObject {
         return this.getSizeBytes();
     }
 
+    /**
+     * By default, we assume that arrays are stored in row-major format ("C" format).
+     * This holds true for {@link DeviceArray}s, which are 1D arrays where the storage order does not matter;
+     * @return if the array was stored in column-major format (i.e. "Fortran" or "F")
+     */
+    public boolean isColumnMajorFormat() {
+        return false;
+    }
+
     // Implementation of InteropLibrary
 
     @ExportMessage
