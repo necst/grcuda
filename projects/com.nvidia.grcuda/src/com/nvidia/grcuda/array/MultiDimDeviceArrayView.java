@@ -75,11 +75,13 @@ public final class MultiDimDeviceArrayView extends AbstractArray implements Truf
         return stride;
     }
 
-    // FIXME: when column-major, low-level memcpy is accessing columns instead of rows!
     @Override
     public final long getPointer() {
         return mdDeviceArray.getPointer() + offset * elementType.getSizeBytes();
     }
+
+    @Override
+    public final long getZeroOffsetPointer() { return mdDeviceArray.getZeroOffsetPointer(); }
 
     /**
      * Propagate the flag to the parent array, so other temporary views are aware of this computation;

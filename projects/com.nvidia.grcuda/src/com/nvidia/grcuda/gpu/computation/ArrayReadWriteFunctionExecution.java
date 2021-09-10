@@ -23,7 +23,8 @@ public class ArrayReadWriteFunctionExecution extends GrCUDAComputationalElement 
      */
     private final DeviceArrayCopyFunction.CopyDirection direction;
     /**
-     * A memory pointer from which data copied to the array are retrieved, or memory pointer to which data are written;
+     * A memory pointer from which data copied to the array are retrieved, or memory pointer to
+     * which data are written;
      */
     private final long pointer;
     /**
@@ -87,7 +88,9 @@ public class ArrayReadWriteFunctionExecution extends GrCUDAComputationalElement 
     }
 
     @Override
-    protected Optional<CUDAStream> additionalStreamDependencyImpl() { return Optional.of(array.getStreamMapping()); }
+    protected Optional<CUDAStream> additionalStreamDependencyImpl() {
+        return Optional.of(array.getStreamMapping());
+    }
 
     @Override
     public String toString() {

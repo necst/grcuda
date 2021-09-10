@@ -410,7 +410,7 @@ public final class CUDARuntime {
             // Book-keeping of the stream attachment within the array;
             array.setStreamMapping(stream);
 
-            Object result = INTEROP.execute(callable, stream.getRawPointer(), array.getPointer(), array.getSizeBytes(), flag);
+            Object result = INTEROP.execute(callable, stream.getRawPointer(), array.getZeroOffsetPointer(), array.getSizeBytes(), flag);
             checkCUDAReturnCode(result, "cudaStreamAttachMemAsync");
         } catch (InteropException e) {
             throw new GrCUDAException(e);
@@ -432,7 +432,7 @@ public final class CUDARuntime {
     public void cudaMemPrefetchAsync(AbstractArray array, CUDAStream stream) {
         try {
             Object callable = CUDARuntimeFunction.CUDA_MEMPREFETCHASYNC.getSymbol(this);
-            Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(), 0, stream.getRawPointer());
+            Object result = INTEROP.execute(callable, array.getZeroOffsetPointer(), array.getSizeBytes(), 0, stream.getRawPointer());
             checkCUDAReturnCode(result, "cudaMemPrefetchAsync");
         } catch (InteropException e) {
             throw new GrCUDAException(e);
@@ -1018,10 +1018,8 @@ public final class CUDARuntime {
                 return ((GPUPointer) array).getRawPointer();
             } else if (array instanceof LittleEndianNativeArrayView) {
                 return ((LittleEndianNativeArrayView) array).getStartAddress();
-            } else if (array instanceof DeviceArray) {
-                return ((DeviceArray) array).getPointer();
-            } else if (array instanceof MultiDimDeviceArray) {
-                return ((MultiDimDeviceArray) array).getPointer();
+            } else if (array instanceof AbstractArray) {
+                return ((AbstractArray) array).getZeroOffsetPointer();
             } else {
                 throw new GrCUDAException("expected GPUPointer or LittleEndianNativeArrayView or DeviceArray");
             }
