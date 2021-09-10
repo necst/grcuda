@@ -135,7 +135,7 @@ public class DeviceArrayCopyFunction implements TruffleObject {
      * @param other the other object involved in the copy
      * @return if we can use the fast CUDA memcpy, under the assumption that "other" contains an accessible pointer
      */
-    private boolean canUseMemcpy(Object other) {
+    public boolean canUseMemcpy(Object other) {
         if (other instanceof AbstractArray) {
             boolean coherentMemoryLayout = array.isColumnMajorFormat() == ((AbstractArray) other).isColumnMajorFormat();
             if (!coherentMemoryLayout) {

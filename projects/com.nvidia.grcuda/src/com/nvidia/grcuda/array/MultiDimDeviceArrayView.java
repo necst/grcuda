@@ -29,6 +29,7 @@
 package com.nvidia.grcuda.array;
 
 import com.nvidia.grcuda.GrCUDAException;
+import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.gpu.computation.MultiDimDeviceArrayViewReadExecution;
 import com.nvidia.grcuda.gpu.computation.MultiDimDeviceArrayViewWriteExecution;
 import com.nvidia.grcuda.gpu.stream.CUDAStream;
@@ -45,7 +46,7 @@ import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
 @ExportLibrary(InteropLibrary.class)
-public final class MultiDimDeviceArrayView extends AbstractArray implements TruffleObject {
+public class MultiDimDeviceArrayView extends AbstractArray implements TruffleObject {
 
     private final MultiDimDeviceArray mdDeviceArray;
     private final int thisDimension;
@@ -66,7 +67,7 @@ public final class MultiDimDeviceArrayView extends AbstractArray implements Truf
      * @param offset the index (in the full array) at which this array view start
      * @param stride value used to jump to consecutive values in the array, and determined by the slice that has been extracted
      */
-    MultiDimDeviceArrayView(MultiDimDeviceArray mdDeviceArray, int dim, long offset, long stride) {
+    public MultiDimDeviceArrayView(MultiDimDeviceArray mdDeviceArray, int dim, long offset, long stride) {
         super(mdDeviceArray.grCUDAExecutionContext, mdDeviceArray.elementType, mdDeviceArray.isLastComputationArrayAccess());
         this.mdDeviceArray = mdDeviceArray;
         this.thisDimension = dim;

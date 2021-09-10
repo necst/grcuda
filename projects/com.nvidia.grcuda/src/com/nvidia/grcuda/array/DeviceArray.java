@@ -49,7 +49,7 @@ import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
 @ExportLibrary(InteropLibrary.class)
-public final class DeviceArray extends AbstractArray implements TruffleObject {
+public class DeviceArray extends AbstractArray implements TruffleObject {
 
     /** Total number of elements stored in the array. */
     private final long numElements;
@@ -66,9 +66,18 @@ public final class DeviceArray extends AbstractArray implements TruffleObject {
         super(grCUDAExecutionContext, elementType);
         this.numElements = numElements;
         this.sizeBytes = numElements * elementType.getSizeBytes();
-        this.nativeView = grCUDAExecutionContext.getCudaRuntime().cudaMallocManaged(sizeBytes);
+        // Allocate the GPU memory;
+        this.nativeView = allocateMemory();
         // Register the array in the GrCUDAExecutionContext;
         this.registerArray();
+    }
+
+    /**
+     * Allocate the GPU memory. It can be overridden to mock the array;
+     * @return a reference to the GPU memory
+     */
+    protected LittleEndianNativeArrayView allocateMemory() {
+        return this.grCUDAExecutionContext.getCudaRuntime().cudaMallocManaged(getSizeBytes());
     }
 
     @Override
