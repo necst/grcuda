@@ -30,11 +30,10 @@ package com.nvidia.grcuda.functions;
 import com.nvidia.grcuda.GrCUDALanguage;
 import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.array.AbstractArray;
-import com.nvidia.grcuda.array.DeviceArray;
-import com.nvidia.grcuda.array.MultiDimDeviceArray;
 import com.nvidia.grcuda.array.MultiDimDeviceArrayView;
-import com.nvidia.grcuda.gpu.computation.ArrayReadWriteFunctionExecutionDefault;
-import com.nvidia.grcuda.gpu.computation.ArrayReadWriteFunctionExecutionMemcpy;
+import com.nvidia.grcuda.gpu.computation.ArrayCopyFunctionExecutionDefault;
+import com.nvidia.grcuda.gpu.computation.ArrayCopyFunctionExecutionInitializer;
+import com.nvidia.grcuda.gpu.computation.ArrayCopyFunctionExecutionMemcpy;
 import com.nvidia.grcuda.gpu.computation.DeviceArrayCopyException;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.ArityException;
@@ -110,13 +109,14 @@ public class DeviceArrayCopyFunction implements TruffleObject {
         } catch (UnsupportedMessageException e) {
             GrCUDALanguage.LOGGER.warning("cannot extract a native pointer; falling back to slow copy");
         }
+        ArrayCopyFunctionExecutionInitializer dependencyInitializer = new ArrayCopyFunctionExecutionInitializer(array, arguments[0], direction);
         if (pointer != null && useFastCopy) {
             // Fast array copy;
-            new ArrayReadWriteFunctionExecutionMemcpy(array, direction, numElements, pointer).schedule();
+            new ArrayCopyFunctionExecutionMemcpy(array, direction, numElements, pointer, dependencyInitializer).schedule();
         } else {
             // Slow array copy, suitable for generic arrays or incompatible memory layouts;
             if (pointerAccess.hasArrayElements(arguments[0])) {
-                new ArrayReadWriteFunctionExecutionDefault(array, direction, numElements, pointerAccess, arguments[0]).schedule();
+                new ArrayCopyFunctionExecutionDefault(array, direction, numElements, pointerAccess, arguments[0], dependencyInitializer).schedule();
             } else {
                 // The target object is not an array;
                 CompilerDirectives.transferToInterpreter();
