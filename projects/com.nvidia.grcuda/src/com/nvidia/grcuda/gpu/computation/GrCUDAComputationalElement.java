@@ -8,8 +8,6 @@ import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.gpu.executioncontext.GrCUDAExecutionContext;
 import com.nvidia.grcuda.gpu.stream.CUDAStream;
 import com.nvidia.grcuda.gpu.stream.DefaultStream;
-import com.oracle.truffle.api.interop.ArityException;
-import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
 import java.util.Collection;
@@ -65,7 +63,7 @@ public abstract class GrCUDAComputationalElement {
      * @param grCUDAExecutionContext execution context in which this computational element will be scheduled
      * @param initializer the initializer used to build the internal set of arguments considered in the dependency computation
      */
-    public GrCUDAComputationalElement(AbstractGrCUDAExecutionContext grCUDAExecutionContext, InitializeArgumentList initializer) {
+    public GrCUDAComputationalElement(AbstractGrCUDAExecutionContext grCUDAExecutionContext, InitializeDependencyList initializer) {
         this.argumentList = initializer.initialize();
         // Initialize by making a copy of the original set;
         this.grCUDAExecutionContext = grCUDAExecutionContext;
@@ -244,7 +242,7 @@ public abstract class GrCUDAComputationalElement {
      * The default initializer will simply store all the arguments,
      * and consider each of them in the dependency computations;
      */
-    private static class DefaultExecutionInitializer implements InitializeArgumentList {
+    private static class DefaultExecutionInitializer implements InitializeDependencyList {
         private final List<ComputationArgumentWithValue> args;
 
         DefaultExecutionInitializer(List<ComputationArgumentWithValue> args) {
