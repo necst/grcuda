@@ -15,4 +15,9 @@ In production, first compile the `typescript` files using the `typescript` compi
 The frontend is in charge of signaling the beginning of the computation to the backend, showing the progress and, when the computation is finished, display a grid of the computed images. By clicking on any thumbnail in the grid, the user is displayed the full resolution image.
 
 ### Install dependencies and run
-Open the `index.html` file, requires the backend to be already running in the local server (`localhost`) on port 8080 (sync), 8081 (async), 8082 (cuda-native).
+Open the `index.html` file, requires the backend to be already running in the local server (`localhost`) on port 8080 (sync), 8083 (async), 8082 (cuda-native).
+
+If running on a remote machine remember setup port forwarding using ssh: 
+```
+ssh -f -L LOCAL_PORT:DESTINATION_IP:DESTINATION_PORT user@DESTINATION_IP
+```
