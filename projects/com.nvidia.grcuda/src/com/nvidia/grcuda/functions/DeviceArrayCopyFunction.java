@@ -101,29 +101,31 @@ public class DeviceArrayCopyFunction implements TruffleObject {
         // Obtain what kind of copy (pointer or array) should be executed.
         // By default, see if we can use the fast CUDA memcpy: we cannot use it if the source and target arrays
         // are stored with incompatible memory layouts.
-        boolean useFastCopy = canUseMemcpy(arguments[0]);
-        Long pointer = null;
-        try {
-            // Try using the native pointer implementation;
-            pointer = extractPointer(arguments[0], pointerAccess);
-        } catch (UnsupportedMessageException e) {
-            GrCUDALanguage.LOGGER.warning("cannot extract a native pointer; falling back to slow copy");
-        }
         ArrayCopyFunctionExecutionInitializer dependencyInitializer = new ArrayCopyFunctionExecutionInitializer(array, arguments[0], direction);
-        if (pointer != null && useFastCopy) {
-            // Fast array copy;
-            new ArrayCopyFunctionExecutionMemcpy(array, direction, numElements, pointer, dependencyInitializer).schedule();
-        } else {
-            // Slow array copy, suitable for generic arrays or incompatible memory layouts;
-            if (pointerAccess.hasArrayElements(arguments[0])) {
-                new ArrayCopyFunctionExecutionDefault(array, direction, numElements, pointerAccess, arguments[0], dependencyInitializer).schedule();
-            } else {
-                // The target object is not an array;
-                CompilerDirectives.transferToInterpreter();
-                throw UnsupportedTypeException.create(new Object[]{arguments[0]}, "array or pointer expected for " + (direction.equals(CopyDirection.FROM_POINTER) ? "fromPointer" : "toPointer"));
+        if (canUseMemcpy(arguments[0])) {
+            try {
+                // Try using the native pointer implementation;
+                long pointer = extractPointer(arguments[0], pointerAccess);
+                // Fast memcpy path;
+                return new ArrayCopyFunctionExecutionMemcpy(array, direction, numElements, pointer, dependencyInitializer).schedule();
+            } catch (UnsupportedMessageException e) {
+                GrCUDALanguage.LOGGER.warning("cannot extract a native pointer; falling back to slow copy");
             }
         }
-        return NoneValue.get();
+        // Perform the slow memcpy, if no other option is available;
+        return slowCopyPath(pointerAccess, arguments[0], numElements, dependencyInitializer);
+    }
+    
+    private Object slowCopyPath(@CachedLibrary(limit = "3") InteropLibrary pointerAccess, Object otherArray,
+                                long numElements, ArrayCopyFunctionExecutionInitializer dependencyInitializer) throws UnsupportedTypeException {
+        // Slow array copy, suitable for generic arrays or incompatible memory layouts;
+        if (pointerAccess.hasArrayElements(otherArray)) {
+            return new ArrayCopyFunctionExecutionDefault(array, direction, numElements, pointerAccess, otherArray, dependencyInitializer).schedule();
+        } else {
+            // The target object is not an array;
+            CompilerDirectives.transferToInterpreter();
+            throw UnsupportedTypeException.create(new Object[]{otherArray}, "array or pointer expected for " + (direction.equals(CopyDirection.FROM_POINTER) ? "fromPointer" : "toPointer"));
+        }
     }
 
     /**
