@@ -321,7 +321,7 @@ and you can create more benchmarks by inheriting from the `Benchmark` class. Sin
     6. `-c`, `--cpu_validation`: if present, validate the result of each benchmark using the CPU (use `--no_cpu_validation` to skip it instead)
     7. `-b`, `--benchmark`: run the benchmark only for the specified kernel. Otherwise run all benchmarks specified in `benchmark_main.py`
     8. `-n`, `--size`: specify the input size of data used as input for each benchmark. Otherwise use the sizes specified in `benchmark_main.py`
-    9. `-r`, `--random`: initialize benchmarks randomly whenever possible. True by default
+    9. `, `--random`: initialize benchmarks randomly whenever possible. True by default
 	10. `--block_size_1d`: number of threads per block when using 1D kernels
 	11. `--block_size_2d`: number of threads per block when using 2D kernels
 	12. `-g`, `--number_of_blocks`: number of blocks in the computation
@@ -341,6 +341,8 @@ The automatic DAG scheduling of GrCUDA supports different settings that can be u
 * `--grcuda.TimeComputation`: Enable time computation to get execution time of the kernels, default is false;
 * `--grcuda.NumberOfGPUs`: choose how many GPUs to use during computation, default use 1 GPU;
 * `--grcuda.RetrieveParentStreamPolicy`: choose how streams for new GrCUDA computations are obtained from parent computations;
-`default` simply reuse the stream of one of the parent computations, while `disjoint` allows parallel scheduling of multiple child computations as long as their arguments are disjoint
+`default` simply reuse the stream of one of the parent computations, while `disjoint` allows parallel scheduling of multiple child computations as long as their arguments are disjoint.
+
+* `--grcuda.memAdviseOption`: choose how memAdvise handles the memory region of the array. Options: `read-mostly`, `preffered-location`, `none` (default).
 * `--grcuda.InputPrefetch`: if present, prefetch the data on GPUs with architecture starting from Pascal. In most cases, it improves performance.
 * `--grcuda.ForceStreamAttach`: if present, force association between arrays and CUDA streams. True by default on architectures older than Pascal, to allow concurrent CPU/GPU computation. On architectures starting from Pascal, it can improve performance.
