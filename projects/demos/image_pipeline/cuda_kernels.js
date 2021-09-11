@@ -168,7 +168,8 @@ extern "C" __global__ void combine(const float *x, const float *y, const float *
 COMBINE_2 = `
 extern "C" __global__ void combine_lut(const float *x, const float *y, const float *mask, int *res, int n, int* lut) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) { 
-        res[i] = lut[min(256 - 1, int(256 * (x[i] * mask[i] + y[i] * (1 - mask[i]))))];
+        int res_tmp = min(256 - 1, int(256 * (x[i] * mask[i] + y[i] * (1 - mask[i]))));
+        res[i] = lut[res_tmp];
     }
 }
 `
