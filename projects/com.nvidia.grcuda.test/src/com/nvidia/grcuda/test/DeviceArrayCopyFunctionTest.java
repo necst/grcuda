@@ -786,6 +786,4 @@ public class DeviceArrayCopyFunctionTest {
             }
         }
     }
-
-    // TODO. test with mock;
 }
