@@ -85,6 +85,7 @@ public class DeviceArrayCopyFunctionTest {
         public void testIfSlowPathIsChosenCorrectly() {
             try (Context ctx = Context.newBuilder().allowAllAccess(true).allowExperimentalOptions(true).logHandler(new TestLogHandler())
                     .option("log.grcuda.com.nvidia.grcuda.level", "SEVERE").build()) {
+                ctx.getEngine(); // ctx is required to set the logger level. Perform a access to suppress compiler warnings about it being unused;
                 DeviceArray array1d = new DeviceArrayMock();
                 DeviceArray array1d2 = new DeviceArrayMock();
                 DeviceArrayCopyFunction copyFunction = new DeviceArrayCopyFunction(array1d, DeviceArrayCopyFunction.CopyDirection.FROM_POINTER);
@@ -123,6 +124,7 @@ public class DeviceArrayCopyFunctionTest {
         public void testDeviceToDeviceDependencies() {
             try (Context ctx = Context.newBuilder().allowAllAccess(true).allowExperimentalOptions(true).logHandler(new TestLogHandler())
                     .option("log.grcuda.com.nvidia.grcuda.level", "SEVERE").build()) {
+                ctx.getEngine(); // ctx is required to set the logger level. Perform a access to suppress compiler warnings about it being unused;
                 DeviceArray array1d = new DeviceArrayMock();
                 DeviceArray array1d2 = new DeviceArrayMock();
                 ArrayCopyFunctionExecutionInitializer init = new ArrayCopyFunctionExecutionInitializer(array1d, array1d2, DeviceArrayCopyFunction.CopyDirection.FROM_POINTER);
