@@ -1,7 +1,6 @@
 package com.nvidia.grcuda.test;
 
-import com.nvidia.grcuda.GrCUDALanguage;
-import com.nvidia.grcuda.gpu.executioncontext.ExecutionPolicyEnum;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Test;
@@ -11,7 +10,6 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static com.nvidia.grcuda.test.GrCUDATestUtil.buildTestContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeNoException;
 

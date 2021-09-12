@@ -1,9 +1,9 @@
 package com.nvidia.grcuda.test;
 
-import com.nvidia.grcuda.gpu.computation.dependency.DependencyPolicyEnum;
-import com.nvidia.grcuda.gpu.executioncontext.ExecutionPolicyEnum;
-import com.nvidia.grcuda.gpu.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.gpu.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 import org.graalvm.polyglot.Context;
 
 import java.util.ArrayList;

@@ -33,25 +33,21 @@ import static org.junit.Assert.assertTrue;
 
 import com.nvidia.grcuda.ComputationArgumentWithValue;
 import com.nvidia.grcuda.Type;
-import com.nvidia.grcuda.array.AbstractArray;
 import com.nvidia.grcuda.array.DeviceArray;
 import com.nvidia.grcuda.array.MultiDimDeviceArray;
 import com.nvidia.grcuda.array.MultiDimDeviceArrayView;
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
-import com.nvidia.grcuda.gpu.computation.ArrayCopyFunctionExecutionInitializer;
-import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.computation.ArrayCopyFunctionExecutionInitializer;
 import com.nvidia.grcuda.test.mock.GrCUDAExecutionContextMock;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Test;
-import com.nvidia.grcuda.gpu.LittleEndianNativeArrayView;
-import com.nvidia.grcuda.gpu.OffheapMemory;
+import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;
+import com.nvidia.grcuda.runtime.OffheapMemory;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 

@@ -30,7 +30,7 @@ package com.nvidia.grcuda;
 
 import java.util.ArrayList;
 
-import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
+import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.oracle.truffle.api.CompilerAsserts;
 
 /**

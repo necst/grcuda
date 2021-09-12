@@ -5,16 +5,12 @@ import com.nvidia.grcuda.MemberSet;
 import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
-import com.nvidia.grcuda.gpu.LittleEndianNativeArrayView;
-import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
-import com.nvidia.grcuda.gpu.executioncontext.ExecutionDAG;
-import com.nvidia.grcuda.gpu.executioncontext.ExecutionPolicyEnum;
-import com.nvidia.grcuda.gpu.stream.CUDAStream;
-import com.nvidia.grcuda.gpu.stream.DefaultStream;
-import com.oracle.truffle.api.Assumption;
+import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;
+import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
+import com.nvidia.grcuda.runtime.stream.CUDAStream;
+import com.nvidia.grcuda.runtime.stream.DefaultStream;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.TruffleRuntime;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropLibrary;
@@ -68,7 +64,7 @@ public abstract class AbstractArray implements TruffleObject {
 
     /**
      * Tracks whether the last operation done on the native memory underlying this array is a read/write operation
-     * handled by the CPU. If so, we can avoid creating {@link com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement}
+     * handled by the CPU. If so, we can avoid creating {@link com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement}
      * for array accesses that are immediately following the last one, as they are performed synchronously and there is no
      * reason to explicitly model them in the {@link ExecutionDAG};
      */
@@ -221,7 +217,7 @@ public abstract class AbstractArray implements TruffleObject {
     }
 
     /**
-     * Check if this array can be accessed by the host (read/write) without having to schedule a {@link com.nvidia.grcuda.gpu.computation.ArrayAccessExecution}.
+     * Check if this array can be accessed by the host (read/write) without having to schedule a {@link com.nvidia.grcuda.runtime.computation.ArrayAccessExecution}.
      * This is possible if the last computation on this array was also a host array access,
      * and the array is not exposed on the default stream while other GPU computations are running.
      * @return if this array can be accessed by the host without scheduling a computation

@@ -2,8 +2,8 @@ package com.nvidia.grcuda.test.mock;
 
 import com.nvidia.grcuda.ComputationArgumentWithValue;
 import com.nvidia.grcuda.NoneValue;
-import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
-import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
+import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 
 import java.util.List;
 import java.util.stream.Collectors;

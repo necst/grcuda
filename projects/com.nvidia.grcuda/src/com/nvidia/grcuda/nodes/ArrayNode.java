@@ -37,7 +37,7 @@ import com.nvidia.grcuda.GrCUDALanguage;
 import com.nvidia.grcuda.array.AbstractArray;
 import com.nvidia.grcuda.array.DeviceArray;
 import com.nvidia.grcuda.array.MultiDimDeviceArray;
-import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.CachedContext;
 import com.oracle.truffle.api.dsl.Specialization;

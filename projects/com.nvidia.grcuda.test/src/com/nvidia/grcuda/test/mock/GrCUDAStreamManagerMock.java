@@ -1,12 +1,12 @@
 package com.nvidia.grcuda.test.mock;
 
-import com.nvidia.grcuda.gpu.CUDARuntime;
-import com.nvidia.grcuda.gpu.executioncontext.ExecutionDAG;
-import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
-import com.nvidia.grcuda.gpu.stream.CUDAStream;
-import com.nvidia.grcuda.gpu.stream.GrCUDAStreamManager;
-import com.nvidia.grcuda.gpu.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.gpu.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.CUDARuntime;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
+import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
+import com.nvidia.grcuda.runtime.stream.CUDAStream;
+import com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager;
+import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 
 import java.util.HashMap;
 import java.util.List;

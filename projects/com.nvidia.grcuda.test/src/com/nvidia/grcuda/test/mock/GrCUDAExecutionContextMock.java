@@ -1,12 +1,12 @@
 package com.nvidia.grcuda.test.mock;
 
-import com.nvidia.grcuda.gpu.computation.ArrayStreamArchitecturePolicy;
-import com.nvidia.grcuda.gpu.computation.PrePascalArrayStreamAssociation;
-import com.nvidia.grcuda.gpu.computation.dependency.DependencyPolicyEnum;
-import com.nvidia.grcuda.gpu.computation.prefetch.PrefetcherEnum;
-import com.nvidia.grcuda.gpu.executioncontext.GrCUDAExecutionContext;
-import com.nvidia.grcuda.gpu.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.gpu.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.computation.ArrayStreamArchitecturePolicy;
+import com.nvidia.grcuda.runtime.computation.PrePascalArrayStreamAssociation;
+import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
+import com.nvidia.grcuda.runtime.computation.prefetch.PrefetcherEnum;
+import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 
 /**
  * Mock class to test the GrCUDAExecutionContextTest, it has a null CUDARuntime;

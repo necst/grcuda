@@ -38,7 +38,7 @@ import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.Namespace;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
-import com.nvidia.grcuda.gpu.UnsafeHelper;
+import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.GrCUDAException;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;

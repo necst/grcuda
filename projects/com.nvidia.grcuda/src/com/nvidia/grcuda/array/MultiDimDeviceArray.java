@@ -29,20 +29,14 @@
 package com.nvidia.grcuda.array;
 
 import com.nvidia.grcuda.GrCUDAException;
-import com.nvidia.grcuda.GrCUDAInternalException;
-import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.Type;
-import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
-import com.nvidia.grcuda.gpu.LittleEndianNativeArrayView;
+import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.Cached.Shared;
-import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.InvalidArrayIndexException;
 import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.api.interop.UnknownIdentifierException;
-import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;

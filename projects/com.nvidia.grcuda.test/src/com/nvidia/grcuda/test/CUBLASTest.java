@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Function;
 
-import com.nvidia.grcuda.gpu.executioncontext.ExecutionPolicyEnum;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
