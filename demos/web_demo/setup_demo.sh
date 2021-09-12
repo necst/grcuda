@@ -4,7 +4,7 @@
 ## setup_machine_from_scratch.sh script
 
 echo "Building GrCUDA"
-cd ../../../
+cd ../../
 ./install.sh
 
 cd -
@@ -15,7 +15,7 @@ sudo apt-get install cmake libopencv-dev -y
 # For grcuda-data repo
 echo "Initializing and downloading GrCUDA Data store repo"
 git submodule init
-cd ../../../grcuda-data
+cd ../../grcuda-data
 git submodule update --remote
 
 cd -
@@ -23,7 +23,7 @@ cd -
 # Create symbolic link for the images
 echo "Creating symbolic link for the images"
 cd frontend
-ln -s ../../../../grcuda-data/datasets/web_demo/images images
+ln -s ../../../grcuda-data/datasets/web_demo/images images
 cd -
 
 # Compile cuda binary
@@ -40,11 +40,5 @@ echo "Building and running backend"
 cd backend 
 npm i
 npm run build
-npm run runall &
-
-# Run frontend
-echo "Starting frontend"
-python3 -m http.server 8085 --directory ../frontend
-
 
 
