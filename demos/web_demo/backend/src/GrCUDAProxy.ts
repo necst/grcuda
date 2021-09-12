@@ -285,7 +285,7 @@ export class GrCUDAProxy {
 
     const beginComputeAllImages = System.nanoTime()
 
-    for (let imageId = 0; imageId < MAX_PHOTOS; ++imageId) {
+    for (let imageId = 0; imageId < MAX_PHOTOS + 1; ++imageId) {
       try {
         const imageName = ("0000" + imageId).slice(-4)
         const blackAndWhite = BW ? "-w" : ""
