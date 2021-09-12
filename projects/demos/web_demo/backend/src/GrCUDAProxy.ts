@@ -6,7 +6,7 @@ import {
   _gaussianKernel,
   loadImage,
   storeImage,
-  LUT, 
+  LUT,
   copyFrom
 } from './utils'
 
@@ -101,7 +101,6 @@ export class GrCUDAProxy {
     }
 
     throw new Error(`Could not recognize computation type: ${computationType}`)
-
   }
 
   private communicateAll(imageId: number, computationType: string) {
@@ -119,10 +118,8 @@ export class GrCUDAProxy {
   }
 
   async processImageColor(img: cv.Mat) {
-    // Possibly not the most efficient way to do this,
-    // we should process the 3 channels concurrently, and avoid creation of temporary cv.Mat;
     let channels = img.splitChannels()
-    
+
     const buffers = await Promise.all([
       this.processImage(channels[0].getData(), img.rows, 0),
       this.processImage(channels[1].getData(), img.rows, 1),
@@ -130,9 +127,9 @@ export class GrCUDAProxy {
     ])
 
     channels = buffers.map(buffer => new cv.Mat(buffer, img.rows, img.cols, cv.CV_8UC1))
-    
-    return new cv.Mat(channels);  
-}
+
+    return new cv.Mat(channels);
+  }
 
   private async processImage(img: Buffer, size: number, channel: number, debug: boolean = DEBUG) {
     // Allocate image data;
@@ -157,16 +154,15 @@ export class GrCUDAProxy {
     const blurred_large = cu.DeviceArray("float", size, size);
     const blurred_unsharpen = cu.DeviceArray("float", size, size);
 
-    const lut = cu.DeviceArray("int", CDEPTH);  
+    const lut = cu.DeviceArray("int", CDEPTH);
 
     // Initialize the right LUT;
     copyFrom(LUT[channel], lut);
     // Fill the image data;
     const s1 = System.nanoTime();
     copyFrom(img, image);
-    //image.copyFrom(img, size * size);
     const e1 = System.nanoTime();
-    if(debug) console.log("--img to device array=" + _intervalToMs(s1, e1) + " ms");
+    if (debug) console.log("--img to device array=" + _intervalToMs(s1, e1) + " ms");
 
     const start = System.nanoTime();
 
@@ -178,18 +174,18 @@ export class GrCUDAProxy {
     // Main GPU computation;
     // Blur - Small;
     GAUSSIAN_BLUR_KERNEL([BLOCKS, BLOCKS], [THREADS_2D, THREADS_2D], 4 * KERNEL_SMALL_DIAMETER * KERNEL_SMALL_DIAMETER)(
-        image, blurred_small, size, size, kernel_small, KERNEL_SMALL_DIAMETER);
+      image, blurred_small, size, size, kernel_small, KERNEL_SMALL_DIAMETER);
     // Blur - Large;
     GAUSSIAN_BLUR_KERNEL([BLOCKS, BLOCKS], [THREADS_2D, THREADS_2D], 4 * KERNEL_LARGE_DIAMETER * KERNEL_LARGE_DIAMETER)(
-        image, blurred_large, size, size, kernel_large, KERNEL_LARGE_DIAMETER);
+      image, blurred_large, size, size, kernel_large, KERNEL_LARGE_DIAMETER);
     // Blur - Unsharpen;
     GAUSSIAN_BLUR_KERNEL([BLOCKS, BLOCKS], [THREADS_2D, THREADS_2D], 4 * KERNEL_UNSHARPEN_DIAMETER * KERNEL_UNSHARPEN_DIAMETER)(
-        image, blurred_unsharpen, size, size, kernel_unsharpen, KERNEL_UNSHARPEN_DIAMETER);
+      image, blurred_unsharpen, size, size, kernel_unsharpen, KERNEL_UNSHARPEN_DIAMETER);
     // Sobel filter (edge detection);
     SOBEL_KERNEL([BLOCKS, BLOCKS], [THREADS_2D, THREADS_2D])(
-        blurred_small, mask_small, size, size);
+      blurred_small, mask_small, size, size);
     SOBEL_KERNEL([BLOCKS, BLOCKS], [THREADS_2D, THREADS_2D])(
-        blurred_large, mask_large, size, size);
+      blurred_large, mask_large, size, size);
     // Ensure that the output of Sobel is in [0, 1];
     MAXIMUM_KERNEL(BLOCKS * 2, THREADS_1D)(mask_small, maximum_1, size * size);
     MINIMUM_KERNEL(BLOCKS * 2, THREADS_1D)(mask_small, minimum_1, size * size);
@@ -200,21 +196,21 @@ export class GrCUDAProxy {
     EXTEND_KERNEL(BLOCKS * 2, THREADS_1D)(mask_large, minimum_2, maximum_2, size * size, 5);
     // Unsharpen;
     UNSHARPEN_KERNEL(BLOCKS * 2, THREADS_1D)(
-        image, blurred_unsharpen, image_unsharpen, UNSHARPEN_AMOUNT, size * size);
+      image, blurred_unsharpen, image_unsharpen, UNSHARPEN_AMOUNT, size * size);
     // Combine results;
     COMBINE_KERNEL(BLOCKS * 2, THREADS_1D)(
-        image_unsharpen, blurred_large, mask_large, image2, size * size);
+      image_unsharpen, blurred_large, mask_large, image2, size * size);
     COMBINE_KERNEL_LUT(BLOCKS * 2, THREADS_1D)(
-        image2, blurred_small, mask_small, image3, size * size, lut);
+      image2, blurred_small, mask_small, image3, size * size, lut);
 
     const tmp = image3[0]; // Required only to "sync" the GPU computation and obtain the precise GPU execution time;
     const end = System.nanoTime();
-    if(debug) console.log("--cuda time=" + _intervalToMs(start, end) + " ms");
+    if (debug) console.log("--cuda time=" + _intervalToMs(start, end) + " ms");
     const s2 = System.nanoTime();
     img.set(image3);
     //image3.copyTo(img, size * size);
     const e2 = System.nanoTime();
-    if(debug) console.log("--device array to image=" + _intervalToMs(s2, e2) + " ms");
+    if (debug) console.log("--device array to image=" + _intervalToMs(s2, e2) + " ms");
 
     image.free()
     image2.free()
@@ -230,9 +226,9 @@ export class GrCUDAProxy {
     blurred_unsharpen.free()
 
     return img;
-}
+  }
 
-  private async runGrCUDAInner(imageName: string, computationType: string, imageId: number, debug: boolean = DEBUG){
+  private async runGrCUDAInner(imageName: string, computationType: string, imageId: number, debug: boolean = DEBUG) {
     const image = await loadImage(imageName)
     const processedImage = BW ? await this.processImageBW(image) : await this.processImageColor(image)
     await storeImage(processedImage, imageName)
@@ -260,7 +256,7 @@ export class GrCUDAProxy {
         const begin = System.nanoTime();
         await this.runGrCUDAInner(imageName, computationType, imageId)
         const end = System.nanoTime();
-        if(debug){
+        if (debug) {
           console.log(`One image took ${_intervalToMs(begin, end)}`)
         }
       } catch (e) {
@@ -270,9 +266,6 @@ export class GrCUDAProxy {
     }
 
     const endComputeAllImages = System.nanoTime()
-
-    //this.communicateExecutionTime(_intervalToMs(beginComputeAllImages, endComputeAllImages), computationType)
-    //this.communicateAll(MAX_PHOTOS, computationType)
 
     console.log(`[${this.computationType}] Whole computation took ${_intervalToMs(beginComputeAllImages, endComputeAllImages)}`)
   }
@@ -302,7 +295,7 @@ export class GrCUDAProxy {
         )
         this.communicateAll(imageId, computationType)
         const end = System.nanoTime();
-        if(debug){
+        if (debug) {
           console.log(`One image took ${_intervalToMs(begin, end)}`)
         }
       } catch (e) {
@@ -313,14 +306,9 @@ export class GrCUDAProxy {
 
     const endComputeAllImages = System.nanoTime()
 
-    //this.communicateExecutionTime(_intervalToMs(beginComputeAllImages, endComputeAllImages), computationType)
     this.communicateAll(MAX_PHOTOS, computationType)
 
     console.log(`[${this.computationType}] Whole computation took ${_intervalToMs(beginComputeAllImages, endComputeAllImages)}`)
-
-
-    //console.log("Computing using mode Native")
-    //await this.mockCompute(computationType)
   }
 
   /* Mock the computation of the kernels 
@@ -346,18 +334,7 @@ export class GrCUDAProxy {
       await _sleep(DELAY + Math.random() * delay_jitter)
       this.communicateAll(imageId, computationType)
     }
-    //this.communicateAll(MAX_PHOTOS, computationType)
-
-
   }
-
-  // private communicateExecutionTime(executionTime: number, computationType: string){
-  //   this.ws.send(JSON.stringify({
-  //     type: "executionTime",
-  //     data: executionTime,
-  //     computationType
-  //   }))
-  // }
 
   private communicateProgress(data: number, computationType: string) {
     const {
@@ -388,9 +365,7 @@ export class GrCUDAProxy {
       }))
 
       this.imagesToSend[computationType] = []
-
     }
   }
-
 }
 
