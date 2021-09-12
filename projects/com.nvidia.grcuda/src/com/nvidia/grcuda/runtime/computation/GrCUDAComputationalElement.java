@@ -2,7 +2,7 @@ package com.nvidia.grcuda.runtime.computation;
 
 import com.nvidia.grcuda.CUDAEvent;
 import com.nvidia.grcuda.ComputationArgumentWithValue;
-import com.nvidia.grcuda.array.AbstractArray;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyComputation;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
@@ -51,7 +51,7 @@ public abstract class GrCUDAComputationalElement {
      */
     private boolean computationStarted = false;
     /**
-     * Specify if this computational element represents an array access (read or write) on an {@link com.nvidia.grcuda.array.AbstractArray}
+     * Specify if this computational element represents an array access (read or write) on an {@link com.nvidia.grcuda.runtime.array.AbstractArray}
      * performed synchronously by the CPU. By default it returns false;
      */
     protected boolean isComputationArrayAccess = false;
@@ -195,7 +195,7 @@ public abstract class GrCUDAComputationalElement {
     public DependencyComputation getDependencyComputation() { return dependencyComputation; }
 
     /**
-     * Set for all the {@link com.nvidia.grcuda.array.AbstractArray} in the computation if this computation is an array access;
+     * Set for all the {@link com.nvidia.grcuda.runtime.array.AbstractArray} in the computation if this computation is an array access;
      */
     public void updateIsComputationArrayAccess() {
         for (ComputationArgumentWithValue o : this.argumentList) {

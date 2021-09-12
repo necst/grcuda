@@ -1,7 +1,7 @@
 package com.nvidia.grcuda.runtime.computation;
 
 import com.nvidia.grcuda.NoneValue;
-import com.nvidia.grcuda.array.DeviceArray;
+import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.profiles.ValueProfile;

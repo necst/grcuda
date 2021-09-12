@@ -44,7 +44,7 @@ import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.Namespace;
 import com.nvidia.grcuda.NoneValue;
-import com.nvidia.grcuda.array.AbstractArray;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.functions.CUDAFunction;
 import com.nvidia.grcuda.runtime.UnsafeHelper.Integer32Object;
 import com.nvidia.grcuda.runtime.UnsafeHelper.Integer64Object;

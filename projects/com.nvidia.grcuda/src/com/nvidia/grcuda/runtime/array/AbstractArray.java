@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.array;
+package com.nvidia.grcuda.runtime.array;
 
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.MemberSet;

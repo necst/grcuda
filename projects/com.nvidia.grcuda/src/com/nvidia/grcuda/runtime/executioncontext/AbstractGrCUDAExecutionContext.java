@@ -2,7 +2,7 @@ package com.nvidia.grcuda.runtime.executioncontext;
 
 import com.nvidia.grcuda.Binding;
 import com.nvidia.grcuda.GrCUDAContext;
-import com.nvidia.grcuda.array.AbstractArray;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Kernel;
 import com.nvidia.grcuda.runtime.computation.ArrayStreamArchitecturePolicy;

@@ -1,6 +1,6 @@
 package com.nvidia.grcuda.runtime.computation;
 
-import com.nvidia.grcuda.array.DeviceArray;
+import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
 public class DeviceArrayReadExecution extends ArrayAccessExecution<DeviceArray> {

@@ -30,7 +30,7 @@ package com.nvidia.grcuda.functions;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.nvidia.grcuda.array.DeviceArray;
+import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAException;

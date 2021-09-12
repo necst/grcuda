@@ -1,6 +1,6 @@
 package com.nvidia.grcuda.runtime.computation;
 
-import com.nvidia.grcuda.array.AbstractArray;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.InteropLibrary;

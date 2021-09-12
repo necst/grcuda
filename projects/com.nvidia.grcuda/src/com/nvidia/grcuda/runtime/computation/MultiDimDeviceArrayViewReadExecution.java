@@ -1,6 +1,6 @@
 package com.nvidia.grcuda.runtime.computation;
 
-import com.nvidia.grcuda.array.MultiDimDeviceArrayView;
+import com.nvidia.grcuda.runtime.array.MultiDimDeviceArrayView;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
 public class MultiDimDeviceArrayViewReadExecution extends ArrayAccessExecution<MultiDimDeviceArrayView> {

@@ -33,9 +33,9 @@ import static org.junit.Assert.assertTrue;
 
 import com.nvidia.grcuda.ComputationArgumentWithValue;
 import com.nvidia.grcuda.Type;
-import com.nvidia.grcuda.array.DeviceArray;
-import com.nvidia.grcuda.array.MultiDimDeviceArray;
-import com.nvidia.grcuda.array.MultiDimDeviceArrayView;
+import com.nvidia.grcuda.runtime.array.DeviceArray;
+import com.nvidia.grcuda.runtime.array.MultiDimDeviceArray;
+import com.nvidia.grcuda.runtime.array.MultiDimDeviceArrayView;
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
 import com.nvidia.grcuda.runtime.computation.ArrayCopyFunctionExecutionInitializer;
 import com.nvidia.grcuda.test.mock.GrCUDAExecutionContextMock;

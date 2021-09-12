@@ -28,8 +28,8 @@
 package com.nvidia.grcuda.functions;
 
 import com.nvidia.grcuda.GrCUDALanguage;
-import com.nvidia.grcuda.array.AbstractArray;
-import com.nvidia.grcuda.array.MultiDimDeviceArrayView;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
+import com.nvidia.grcuda.runtime.array.MultiDimDeviceArrayView;
 import com.nvidia.grcuda.runtime.computation.ArrayCopyFunctionExecutionDefault;
 import com.nvidia.grcuda.runtime.computation.ArrayCopyFunctionExecutionInitializer;
 import com.nvidia.grcuda.runtime.computation.ArrayCopyFunctionExecutionMemcpy;

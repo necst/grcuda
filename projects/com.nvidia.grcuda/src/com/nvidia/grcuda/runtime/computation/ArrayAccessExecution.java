@@ -1,6 +1,6 @@
 package com.nvidia.grcuda.runtime.computation;
 
-import com.nvidia.grcuda.array.AbstractArray;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 
