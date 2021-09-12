@@ -1113,14 +1113,14 @@ public final class CUDARuntime {
             module = cuModuleLoad(cubinFile);
             loadedModules.get(0).put(cubinFile, module);
         }
-        long kernelFunction = cuModuleGetFunction(module, symbolName);
-        return new Kernel(grCUDAExecutionContext, kernelName, symbolName, List.of(kernelFunction), signature, List.of(module));
+        long kernelFunctionHandle = cuModuleGetFunction(module, symbolName);
+        return new Kernel(grCUDAExecutionContext, kernelName, symbolName, List.of(kernelFunctionHandle), signature, List.of(module));
     }
 
     @TruffleBoundary
     public Kernel loadKernelMultiGPU(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature) {
 
-        ArrayList<Long> functionHandles = new ArrayList<>();
+        ArrayList<Long> kernelFunctionHandles = new ArrayList<>();
         ArrayList<CUModule> modules = new ArrayList<>();
         int currentDevice = cudaGetDevice();
 
@@ -1133,12 +1133,12 @@ public final class CUDARuntime {
             }
             modules.add(module);
 
-            long kernelFunction = cuModuleGetFunction(module, symbolName);
-            functionHandles.add(kernelFunction);
+            long kernelFunctionHandle = cuModuleGetFunction(module, symbolName);
+            kernelFunctionHandles.add(kernelFunctionHandle);
         }
         cudaSetDevice(currentDevice);
 
-        return new Kernel(grCUDAExecutionContext, kernelName, symbolName, functionHandles, signature, modules);
+        return new Kernel(grCUDAExecutionContext, kernelName, symbolName, kernelFunctionHandles, signature, modules);
     }
 
     @TruffleBoundary
@@ -1162,7 +1162,7 @@ public final class CUDARuntime {
     }
 
     public Kernel buildKernelMultiGPU(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String signature, String moduleName, PTXKernel ptx) {
-        ArrayList<Long> functionHandles = new ArrayList<>();
+        ArrayList<Long> kernelFunctionHandles = new ArrayList<>();
         ArrayList<CUModule> modules = new ArrayList<>();
         int currentDevice = cudaGetDevice();
 
@@ -1170,12 +1170,12 @@ public final class CUDARuntime {
             cudaSetDevice(i);
             CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
             long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
-            functionHandles.add(kernelFunctionHandle);
+            kernelFunctionHandles.add(kernelFunctionHandle);
             modules.add(module);
             loadedModules.get(i).put(moduleName, module);
         }
         cudaSetDevice(currentDevice);
-        return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), functionHandles,
+        return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), kernelFunctionHandles,
                 signature, modules, ptx.getPtxSource());
     }
 
