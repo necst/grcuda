@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.runtime.computation;
+package com.nvidia.grcuda.runtime.computation.arraycomputation;
 
 import com.nvidia.grcuda.runtime.array.MultiDimDeviceArrayView;
 import com.oracle.truffle.api.profiles.ValueProfile;

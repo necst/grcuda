@@ -1,8 +1,9 @@
-package com.nvidia.grcuda.runtime.computation;
+package com.nvidia.grcuda.runtime.computation.arraycomputation;
 
 import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
+import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.oracle.truffle.api.CompilerDirectives;
 

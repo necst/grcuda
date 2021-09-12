@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.runtime.computation;
+package com.nvidia.grcuda.runtime.computation.arraycomputation;
 
 import com.oracle.truffle.api.exception.AbstractTruffleException;
 import com.oracle.truffle.api.nodes.Node;

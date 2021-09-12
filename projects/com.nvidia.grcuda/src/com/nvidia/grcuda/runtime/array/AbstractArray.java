@@ -6,6 +6,7 @@ import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
 import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;
+import com.nvidia.grcuda.runtime.computation.arraycomputation.ArrayAccessExecution;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
@@ -217,7 +218,7 @@ public abstract class AbstractArray implements TruffleObject {
     }
 
     /**
-     * Check if this array can be accessed by the host (read/write) without having to schedule a {@link com.nvidia.grcuda.runtime.computation.ArrayAccessExecution}.
+     * Check if this array can be accessed by the host (read/write) without having to schedule a {@link ArrayAccessExecution}.
      * This is possible if the last computation on this array was also a host array access,
      * and the array is not exposed on the default stream while other GPU computations are running.
      * @return if this array can be accessed by the host without scheduling a computation

@@ -1,8 +1,11 @@
-package com.nvidia.grcuda.runtime.computation;
+package com.nvidia.grcuda.runtime.computation.arraycomputation;
 
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
+import com.nvidia.grcuda.runtime.computation.ComputationArgument;
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
+import com.nvidia.grcuda.runtime.computation.InitializeDependencyList;
 
 import java.util.ArrayList;
 import java.util.List;

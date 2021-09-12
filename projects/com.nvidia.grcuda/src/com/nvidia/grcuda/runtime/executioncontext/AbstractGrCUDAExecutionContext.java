@@ -5,7 +5,7 @@ import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Kernel;
-import com.nvidia.grcuda.runtime.computation.ArrayStreamArchitecturePolicy;
+import com.nvidia.grcuda.runtime.computation.streamassociation.ArrayStreamArchitecturePolicy;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.dependency.DefaultDependencyComputationBuilder;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyComputationBuilder;

@@ -37,7 +37,7 @@ import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.MultiDimDeviceArray;
 import com.nvidia.grcuda.runtime.array.MultiDimDeviceArrayView;
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
-import com.nvidia.grcuda.runtime.computation.ArrayCopyFunctionExecutionInitializer;
+import com.nvidia.grcuda.runtime.computation.arraycomputation.ArrayCopyFunctionExecutionInitializer;
 import com.nvidia.grcuda.test.mock.GrCUDAExecutionContextMock;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;

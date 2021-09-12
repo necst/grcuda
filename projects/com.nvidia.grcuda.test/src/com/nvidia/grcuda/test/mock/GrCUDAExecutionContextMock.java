@@ -1,7 +1,7 @@
 package com.nvidia.grcuda.test.mock;
 
-import com.nvidia.grcuda.runtime.computation.ArrayStreamArchitecturePolicy;
-import com.nvidia.grcuda.runtime.computation.PrePascalArrayStreamAssociation;
+import com.nvidia.grcuda.runtime.computation.streamassociation.ArrayStreamArchitecturePolicy;
+import com.nvidia.grcuda.runtime.computation.streamassociation.PrePascalArrayStreamAssociation;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.computation.prefetch.PrefetcherEnum;
 import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;

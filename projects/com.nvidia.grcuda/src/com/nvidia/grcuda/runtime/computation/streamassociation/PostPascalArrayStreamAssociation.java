@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.runtime.computation;
+package com.nvidia.grcuda.runtime.computation.streamassociation;
 
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 

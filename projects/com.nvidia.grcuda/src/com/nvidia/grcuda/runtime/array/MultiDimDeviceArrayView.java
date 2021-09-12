@@ -29,8 +29,8 @@
 package com.nvidia.grcuda.runtime.array;
 
 import com.nvidia.grcuda.GrCUDAException;
-import com.nvidia.grcuda.runtime.computation.MultiDimDeviceArrayViewReadExecution;
-import com.nvidia.grcuda.runtime.computation.MultiDimDeviceArrayViewWriteExecution;
+import com.nvidia.grcuda.runtime.computation.arraycomputation.MultiDimDeviceArrayViewReadExecution;
+import com.nvidia.grcuda.runtime.computation.arraycomputation.MultiDimDeviceArrayViewWriteExecution;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
