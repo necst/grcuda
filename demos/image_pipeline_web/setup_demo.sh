@@ -31,8 +31,8 @@ cd -
 
 # Compile cuda binary
 echo "Compiling CUDA binary"
-mkdir ../image_pipeline/cuda/build
-cd ../image_pipeline/cuda/build
+mkdir ../image_pipeline_local/cuda/build
+cd ../image_pipeline_local/cuda/build
 cmake ..
 make
 
