@@ -2,7 +2,7 @@ package com.nvidia.grcuda.runtime.computation;
 
 import com.nvidia.grcuda.CUDAEvent;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
-import com.nvidia.grcuda.runtime.computation.streamassociation.ArrayStreamArchitecturePolicy;
+import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyComputation;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
@@ -221,7 +221,7 @@ public abstract class GrCUDAComputationalElement {
      * that might not be directly used by this computation, but that have to be synchronized for this computation
      * to take place correctly. For example, in pre-Pascal GPUs it is required to ensure that no kernel is running if
      * the array accessed is visible to the global stream.
-     * The actual invocation is wrapped by a {@link ArrayStreamArchitecturePolicy},
+     * The actual invocation is wrapped by a {@link StreamAttachArchitecturePolicy},
      * as the invocation depends on the GPU architecture;
      * @return An additional stream to synchronize
      */

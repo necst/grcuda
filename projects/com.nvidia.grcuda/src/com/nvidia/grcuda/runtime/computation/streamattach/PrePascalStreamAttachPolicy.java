@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.runtime.computation.streamassociation;
+package com.nvidia.grcuda.runtime.computation.streamattach;
 
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
@@ -13,7 +13,7 @@ import java.util.concurrent.Callable;
  * asynchronous host access to managed memory while a kernel is running.
  * This interface wraps and executes the array association function specified in {@link GrCUDAComputationalElement}
  */
-public class PrePascalArrayStreamAssociation implements ArrayStreamArchitecturePolicy {
+public class PrePascalStreamAttachPolicy implements StreamAttachArchitecturePolicy {
 
     @Override
     public void execute(Runnable runnable) {

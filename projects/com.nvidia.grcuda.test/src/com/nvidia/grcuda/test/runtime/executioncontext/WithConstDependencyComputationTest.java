@@ -5,11 +5,11 @@ import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
-import com.nvidia.grcuda.test.mock.ArgumentMock;
-import com.nvidia.grcuda.test.mock.GrCUDAExecutionContextMock;
-import com.nvidia.grcuda.test.mock.GrCUDAExecutionContextMockBuilder;
-import com.nvidia.grcuda.test.mock.KernelExecutionMock;
-import com.nvidia.grcuda.test.mock.SyncExecutionMock;
+import com.nvidia.grcuda.test.util.mock.ArgumentMock;
+import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMock;
+import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
+import com.nvidia.grcuda.test.util.mock.KernelExecutionMock;
+import com.nvidia.grcuda.test.util.mock.SyncExecutionMock;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import org.junit.Test;
 

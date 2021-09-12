@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.test;
+package com.nvidia.grcuda.test.runtime;
 
 import com.nvidia.grcuda.runtime.computation.ComputationArgument;
 import com.nvidia.grcuda.Type;

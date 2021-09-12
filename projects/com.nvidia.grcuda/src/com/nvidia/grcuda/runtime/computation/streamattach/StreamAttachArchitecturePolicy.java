@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.runtime.computation.streamassociation;
+package com.nvidia.grcuda.runtime.computation.streamattach;
 
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
@@ -13,7 +13,7 @@ import java.util.concurrent.Callable;
  * This interface wraps and executes the array association function specified in {@link GrCUDAComputationalElement}.
  * The array association function will be done only if the available GPU has compute capability < 6.0;
  */
-public interface ArrayStreamArchitecturePolicy {
+public interface StreamAttachArchitecturePolicy {
     void execute(Runnable runnable);
 
     Optional<CUDAStream> execute(Callable<Optional<CUDAStream>> callable);

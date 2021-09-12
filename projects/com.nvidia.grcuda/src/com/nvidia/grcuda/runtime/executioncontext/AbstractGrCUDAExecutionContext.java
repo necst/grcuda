@@ -5,7 +5,7 @@ import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Kernel;
-import com.nvidia.grcuda.runtime.computation.streamassociation.ArrayStreamArchitecturePolicy;
+import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.dependency.DefaultDependencyComputationBuilder;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyComputationBuilder;
@@ -143,7 +143,7 @@ public abstract class AbstractGrCUDAExecutionContext {
         return cudaRuntime.buildKernel(this, code, kernelName, signature);
     }
 
-    public ArrayStreamArchitecturePolicy getArrayStreamArchitecturePolicy() {
+    public StreamAttachArchitecturePolicy getArrayStreamArchitecturePolicy() {
         return cudaRuntime.getArrayStreamArchitecturePolicy();
     }
 

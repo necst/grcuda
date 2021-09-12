@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.runtime.computation.streamassociation;
+package com.nvidia.grcuda.runtime.computation.streamattach;
 
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 
@@ -11,7 +11,7 @@ import java.util.concurrent.Callable;
  * asynchronous host access to managed memory while a kernel is running.
  * As such, no stream association is performed;
  */
-public class PostPascalArrayStreamAssociation implements ArrayStreamArchitecturePolicy {
+public class PostPascalStreamAttachPolicy implements StreamAttachArchitecturePolicy {
 
     @Override
     public void execute(Runnable callable) {

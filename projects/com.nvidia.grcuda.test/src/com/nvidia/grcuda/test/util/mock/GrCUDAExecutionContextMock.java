@@ -1,7 +1,7 @@
-package com.nvidia.grcuda.test.mock;
+package com.nvidia.grcuda.test.util.mock;
 
-import com.nvidia.grcuda.runtime.computation.streamassociation.ArrayStreamArchitecturePolicy;
-import com.nvidia.grcuda.runtime.computation.streamassociation.PrePascalArrayStreamAssociation;
+import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
+import com.nvidia.grcuda.runtime.computation.streamattach.PrePascalStreamAttachPolicy;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.computation.prefetch.PrefetcherEnum;
 import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
@@ -30,7 +30,7 @@ public class GrCUDAExecutionContextMock extends GrCUDAExecutionContext {
                 new GrCUDAStreamManagerMock(null, retrieveStreamPolicy, parentStreamPolicyEnum), dependencyPolicy, PrefetcherEnum.NONE);
     }
 
-    public ArrayStreamArchitecturePolicy getArrayStreamArchitecturePolicy() {
-        return new PrePascalArrayStreamAssociation();
+    public StreamAttachArchitecturePolicy getArrayStreamArchitecturePolicy() {
+        return new PrePascalStreamAttachPolicy();
     }
 }

@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.test;
+package com.nvidia.grcuda.test.util;
 
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;

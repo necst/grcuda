@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.test.mock;
+package com.nvidia.grcuda.test.util.mock;
 
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;

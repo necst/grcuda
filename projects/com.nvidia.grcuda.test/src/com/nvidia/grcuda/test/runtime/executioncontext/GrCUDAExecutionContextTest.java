@@ -1,7 +1,7 @@
 package com.nvidia.grcuda.test.runtime.executioncontext;
 
-import com.nvidia.grcuda.test.GrCUDATestOptionsStruct;
-import com.nvidia.grcuda.test.GrCUDATestUtil;
+import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
+import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Test;

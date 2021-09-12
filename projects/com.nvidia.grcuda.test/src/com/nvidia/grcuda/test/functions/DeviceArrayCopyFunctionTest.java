@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.nvidia.grcuda.test;
+package com.nvidia.grcuda.test.functions;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,7 +38,10 @@ import com.nvidia.grcuda.runtime.array.MultiDimDeviceArray;
 import com.nvidia.grcuda.runtime.array.MultiDimDeviceArrayView;
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.ArrayCopyFunctionExecutionInitializer;
-import com.nvidia.grcuda.test.mock.GrCUDAExecutionContextMock;
+import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
+import com.nvidia.grcuda.test.util.GrCUDATestUtil;
+import com.nvidia.grcuda.test.util.TestLogHandler;
+import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMock;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Test;

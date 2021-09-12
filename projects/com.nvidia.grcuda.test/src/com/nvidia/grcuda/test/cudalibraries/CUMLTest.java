@@ -1,6 +1,7 @@
-package com.nvidia.grcuda.test;
+package com.nvidia.grcuda.test.cudalibraries;
 
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
+import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Test;

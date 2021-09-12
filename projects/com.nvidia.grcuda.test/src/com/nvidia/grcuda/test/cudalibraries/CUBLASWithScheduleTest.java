@@ -25,13 +25,15 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.nvidia.grcuda.test;
+package com.nvidia.grcuda.test.cudalibraries;
 
 import static org.junit.Assert.assertEquals;
 
 import java.util.Collection;
 import java.util.function.Function;
 
+import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
+import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

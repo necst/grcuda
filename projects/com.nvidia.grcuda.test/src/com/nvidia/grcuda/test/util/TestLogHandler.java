@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.test;
+package com.nvidia.grcuda.test.util;
 
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
@@ -6,7 +6,7 @@ import java.util.logging.LogRecord;
 public final class TestLogHandler extends Handler {
     private volatile boolean closed;
 
-    TestLogHandler() {
+    public TestLogHandler() {
     }
 
     @Override

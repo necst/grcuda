@@ -48,9 +48,9 @@ import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.functions.CUDAFunction;
 import com.nvidia.grcuda.runtime.UnsafeHelper.Integer32Object;
 import com.nvidia.grcuda.runtime.UnsafeHelper.Integer64Object;
-import com.nvidia.grcuda.runtime.computation.streamassociation.ArrayStreamArchitecturePolicy;
-import com.nvidia.grcuda.runtime.computation.streamassociation.PostPascalArrayStreamAssociation;
-import com.nvidia.grcuda.runtime.computation.streamassociation.PrePascalArrayStreamAssociation;
+import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
+import com.nvidia.grcuda.runtime.computation.streamattach.PostPascalStreamAttachPolicy;
+import com.nvidia.grcuda.runtime.computation.streamattach.PrePascalStreamAttachPolicy;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
@@ -110,9 +110,9 @@ public final class CUDARuntime {
 
     /**
      * Depending on the available GPU, use a different policy to associate managed memory arrays to streams,
-     * as specified in {@link ArrayStreamArchitecturePolicy}
+     * as specified in {@link StreamAttachArchitecturePolicy}
      */
-    private final ArrayStreamArchitecturePolicy arrayStreamArchitecturePolicy;
+    private final StreamAttachArchitecturePolicy streamAttachArchitecturePolicy;
 
     /**
      * True if the GPU architecture is Pascal or newer;
@@ -143,7 +143,7 @@ public final class CUDARuntime {
         architectureIsPascalOrNewer = architectureCode >= 6;
 
         // Use pre-Pascal stream attachment policy if the CC is < 6 or if the attachment is forced by options;
-        this.arrayStreamArchitecturePolicy = (!architectureIsPascalOrNewer || context.isForceStreamAttach()) ? new PrePascalArrayStreamAssociation() : new PostPascalArrayStreamAssociation();
+        this.streamAttachArchitecturePolicy = (!architectureIsPascalOrNewer || context.isForceStreamAttach()) ? new PrePascalStreamAttachPolicy() : new PostPascalStreamAttachPolicy();
     }
 
     // using this slow/uncached instance since all calls are non-critical
@@ -610,8 +610,8 @@ public final class CUDARuntime {
         }
     }
 
-    public ArrayStreamArchitecturePolicy getArrayStreamArchitecturePolicy() {
-        return arrayStreamArchitecturePolicy;
+    public StreamAttachArchitecturePolicy getArrayStreamArchitecturePolicy() {
+        return streamAttachArchitecturePolicy;
     }
 
     public enum CUDARuntimeFunction implements CUDAFunction.Spec, CallSupport {
