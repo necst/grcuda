@@ -195,8 +195,8 @@ window.getRaceModeTemplate = () => `
 `
 
 
-window.getImageLightBoxTemplate = (paddedImageId, imageId) => `<img src="./images/full_res/${paddedImageId}.jpg" id="${imageId}-full-res" onclick="openLightBox(${imageId})">`
-window.getGalleryImageContentTemplate = (image, imageId) => `<img class="image-pad image" src="${image}" id="${imageId}" onclick="openLightBox(${imageId})">`
+window.getImageLightBoxTemplate = (paddedImageId, imageId) => `<img src="./images/full_res/${paddedImageId}.jpg" id="${imageId}-full-res" onclick="openLightBox('${imageId}')">`
+window.getGalleryImageContentTemplate = (image, imageId) => `<img class="image-pad image" src="${image}" id="${imageId}" onclick="openLightBox('${imageId}')">`
 
 window.getProgressBarTemplate = (progressData, completed) => {
   if (!completed) {

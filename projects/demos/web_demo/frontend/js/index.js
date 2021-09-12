@@ -162,7 +162,6 @@ openLightBox = (imageId) => {
   overlayImage.style.display = 'block';
   mainContainer.setAttribute('class', 'blur');
   const currentImage = document.getElementById(`${imageId}-full-res`)
-  //currentImage.style.width = '512px';
   currentImage.onclick = () => {
     const mainContainer = document.getElementById("main-container")
     const overlayImage = document.getElementById('overlay');
