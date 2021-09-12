@@ -109,13 +109,13 @@ public class DeviceArrayCopyFunction implements TruffleObject {
                 // Fast memcpy path;
                 return new ArrayCopyFunctionExecutionMemcpy(array, direction, numElements, pointer, dependencyInitializer).schedule();
             } catch (UnsupportedMessageException e) {
-                GrCUDALanguage.LOGGER.warning("cannot extract a native pointer; falling back to slow copy");
+                GrCUDALanguage.LOGGER.info("cannot extract a native pointer; falling back to slow copy");
             }
         }
         // Perform the slow memcpy, if no other option is available;
         return slowCopyPath(pointerAccess, arguments[0], numElements, dependencyInitializer);
     }
-    
+
     private Object slowCopyPath(@CachedLibrary(limit = "3") InteropLibrary pointerAccess, Object otherArray,
                                 long numElements, ArrayCopyFunctionExecutionInitializer dependencyInitializer) throws UnsupportedTypeException {
         // Slow array copy, suitable for generic arrays or incompatible memory layouts;
