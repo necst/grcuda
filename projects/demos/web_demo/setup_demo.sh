@@ -10,7 +10,7 @@ cd ../../../
 cd -
 
 # Base Dependency Install 
-sudo apt-get install cmake libopencv-dev
+sudo apt-get install cmake libopencv-dev -y
 
 # For grcuda-data repo
 echo "Initializing and downloading GrCUDA Data store repo"

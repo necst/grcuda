@@ -3,7 +3,7 @@
 # Build backend 
 echo "Starting backend"
 cd backend 
-npm run runall
+npm run runall &
 
 # Run frontend
 echo "Starting frontend"
