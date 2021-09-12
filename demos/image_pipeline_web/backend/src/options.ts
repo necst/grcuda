@@ -44,7 +44,7 @@ export const IMAGE_OUT_SMALL_DIRECTORY = "../frontend/images/thumb"
 export const IMAGE_OUT_BIG_DIRECTORY = "../frontend/images/full_res"
 
 export const CUDA_NATIVE_IMAGE_IN_DIRECTORY = IMAGE_IN_DIRECTORY
-export const CUDA_NATIVE_EXEC_FILE = "../../image_pipeline/cuda/build/image_pipeline"
+export const CUDA_NATIVE_EXEC_FILE = "../../image_pipeline_local/cuda/build/image_pipeline"
 export const CUDA_NATIVE_IMAGE_OUT_SMALL_DIRECTORY = IMAGE_OUT_SMALL_DIRECTORY // "$HOME/grcuda/projects/demos/web_demo/frontend/images/thumb/"
 export const CUDA_NATIVE_IMAGE_OUT_BIG_DIRECTORY = IMAGE_OUT_BIG_DIRECTORY //"$HOME/grcuda/projects/demos/web_demo/frontend/images/full_res/"
 
