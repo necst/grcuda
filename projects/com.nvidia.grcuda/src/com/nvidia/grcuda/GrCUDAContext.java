@@ -82,6 +82,7 @@ public final class GrCUDAContext {
     private final RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum;
     private final boolean forceStreamAttach;
     private final boolean inputPrefetch;
+    private final boolean enableMultiGPU;
 
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
     private final ConcurrentHashMap<Class<?>, CallTarget> uncachedMapCallTargets = new ConcurrentHashMap<>();
@@ -94,6 +95,9 @@ public final class GrCUDAContext {
 
         // Retrieve if we should prefetch input data to GPU;
         inputPrefetch = env.getOptions().get(GrCUDAOptions.InputPrefetch);
+
+        // See if we allow the use of multiple GPUs in the system;
+        enableMultiGPU = env.getOptions().get(GrCUDAOptions.EnableMultiGPU);
 
         // Retrieve the stream retrieval policy;
         retrieveNewStreamPolicy = parseRetrieveStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveNewStreamPolicy));
@@ -202,6 +206,10 @@ public final class GrCUDAContext {
 
     public boolean isForceStreamAttach() {
         return forceStreamAttach;
+    }
+
+    public boolean isEnableMultiGPU() {
+        return enableMultiGPU;
     }
 
     /**

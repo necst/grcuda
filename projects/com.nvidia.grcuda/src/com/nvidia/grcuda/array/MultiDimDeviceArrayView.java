@@ -77,7 +77,7 @@ public final class MultiDimDeviceArrayView extends AbstractArray implements Truf
 
     // FIXME: when column-major, low-level memcpy is accessing columns instead of rows!
     @Override
-    public final long getPointer() {
+    public long getPointer() {
         return mdDeviceArray.getPointer() + offset * elementType.getSizeBytes();
     }
 
@@ -114,7 +114,7 @@ public final class MultiDimDeviceArrayView extends AbstractArray implements Truf
     }
 
     @Override
-    final public long getSizeBytes() {
+    public long getSizeBytes() {
         if (arrayFreed) {
             CompilerDirectives.transferToInterpreter();
             throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);

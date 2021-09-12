@@ -37,6 +37,7 @@ import com.nvidia.grcuda.gpu.stream.CUDAStream;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import com.nvidia.grcuda.ComputationArgument;
 import com.nvidia.grcuda.GrCUDAException;
@@ -63,11 +64,11 @@ public class Kernel implements TruffleObject {
     private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
     private final String kernelName;
     private final String kernelSymbol;
-    private final ArrayList<Long> nativeKernelFunctionHandle;
-    private final ArrayList<CUModule> modules;
+    private final List<Long> nativeKernelFunctionHandle;
+    private final List<CUModule> modules;
     private final ComputationArgument[] kernelComputationArguments;
     private int launchCount = 0;
-    private String ptxCode;
+    private final String ptxCode;
 
     /**
      * Create a kernel without PTX code.
@@ -75,13 +76,14 @@ public class Kernel implements TruffleObject {
      * @param grCUDAExecutionContext captured reference to the GrCUDA execution context
      * @param kernelName name of the kernel as exposed through Truffle
      * @param kernelSymbol name of the kernel symbol*
-     * @param kernelFunction native pointer to the kernel function (CUfunction), one pointer for each device on which it is loaded
+     * @param kernelFunction native pointer to the kernel function (CUfunction), one pointer for
+     *            each device on which it is loaded
      * @param kernelSignature signature string of the kernel (NFI or NIDL)
-     * @param modules CUmodule that contains the kernel function
+     * @param modules CUmodules that contains the kernel function, one for each device
      */
     public Kernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName,
-                    String kernelSymbol, ArrayList<Long> kernelFunction,
-                    String kernelSignature, ArrayList<CUModule> modules) {
+                    String kernelSymbol, List<Long> kernelFunction,
+                    String kernelSignature, List<CUModule> modules) {
         this(grCUDAExecutionContext, kernelName, kernelSymbol, kernelFunction, kernelSignature, modules, "");
     }
 
@@ -91,16 +93,16 @@ public class Kernel implements TruffleObject {
      * @param grCUDAExecutionContext captured reference to the GrCUDA execution context
      * @param kernelName name of kernel as exposed through Truffle
      * @param kernelSymbol name of the kernel symbol
-     * @param kernelFunction native pointer to the kernel function (CUfunction), one pointer for each device on which it is loaded
+     * @param kernelFunction native pointer to the kernel function (CUfunction), one pointer for
+     *            each device on which it is loaded
      * @param kernelSignature signature string of the kernel (NFI or NIDL)
-     * @param modules CUmodule that contains the kernel function
+     * @param modules CUmodules that contains the kernel function, one for each device
      * @param ptx PTX source code for the kernel.
      */
     public Kernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String kernelSymbol,
-                    ArrayList<Long> kernelFunction, String kernelSignature, ArrayList<CUModule> modules, String ptx) {
-//        parseSignature(kernelSignature);
+                    List<Long> kernelFunction, String kernelSignature, List<CUModule> modules, String ptx) {
         try {
-            ArrayList<ComputationArgument> paramList = ComputationArgument.parseParameterSignature(kernelSignature);
+            List<ComputationArgument> paramList = ComputationArgument.parseParameterSignature(kernelSignature);
             ComputationArgument[] params = new ComputationArgument[paramList.size()];
             this.kernelComputationArguments = paramList.toArray(params);
         } catch (TypeException e) {
@@ -115,7 +117,6 @@ public class Kernel implements TruffleObject {
         this.ptxCode = ptx;
         this.grCUDAExecutionContext.registerKernel(this);
     }
-
 
     public void incrementLaunchCount() {
         launchCount++;
@@ -156,7 +157,7 @@ public class Kernel implements TruffleObject {
                         MultiDimDeviceArray deviceArray = (MultiDimDeviceArray) arg;
                         if (!param.isSynonymousWithPointerTo(deviceArray.getElementType())) {
                             throw new GrCUDAException("multi-dimensional device array of " +
-                                    deviceArray.getElementType() + " cannot be used as pointer argument " + paramType);
+                                            deviceArray.getElementType() + " cannot be used as pointer argument " + paramType);
                         }
                         UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();
                         pointer.setValueOfPointer(deviceArray.getPointer());
@@ -256,13 +257,13 @@ public class Kernel implements TruffleObject {
                         default:
                             CompilerDirectives.transferToInterpreter();
                             throw UnsupportedTypeException.create(new Object[]{arg},
-                                    "unsupported by-value parameter type: " + paramType);
+                                            "unsupported by-value parameter type: " + paramType);
                     }
                 }
             } catch (UnsupportedMessageException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw UnsupportedTypeException.create(new Object[]{arg},
-                        "expected type " + paramType + " in argument " + arg);
+                                "expected type " + paramType + " in argument " + arg);
             }
         }
         return kernelArgs;
@@ -396,7 +397,7 @@ public class Kernel implements TruffleObject {
         }
         return new Dim3(extractNumber(valueObj, argumentName, access));
     }
-    
+
     private static CUDAStream extractStream(Object streamObj) throws UnsupportedTypeException {
         if (streamObj instanceof CUDAStream) {
             return (CUDAStream) streamObj;
@@ -419,7 +420,8 @@ public class Kernel implements TruffleObject {
                     @CachedLibrary(limit = "3") InteropLibrary blockSizeAccess,
                     @CachedLibrary(limit = "3") InteropLibrary blockSizeElementAccess,
                     @CachedLibrary(limit = "3") InteropLibrary sharedMemoryAccess) throws UnsupportedTypeException, ArityException {
-        // FIXME: ArityException allows to specify only 1 arity, and cannot be subclassed! We might want to use a custom exception here;
+        // FIXME: ArityException allows to specify only 1 arity, and cannot be subclassed! We might
+        // want to use a custom exception here;
         if (arguments.length < 2 || arguments.length > 4) {
             CompilerDirectives.transferToInterpreter();
             throw ArityException.create(2, arguments.length);
@@ -444,4 +446,3 @@ public class Kernel implements TruffleObject {
         return new ConfiguredKernel(this, configBuilder.build());
     }
 }
-
