@@ -22,8 +22,11 @@ cd -
 
 # Create symbolic link for the images
 echo "Creating symbolic link for the images"
-cd frontend
-ln -s ../../../grcuda-data/datasets/web_demo/images images
+cd frontend/images
+ln -s ../../../../grcuda-data/datasets/web_demo/images/dataset512 dataset512
+ln -s ../../../../grcuda-data/datasets/web_demo/images/dataset1024 dataset1024
+mkdir full_res 
+mkdir thumb
 cd -
 
 # Compile cuda binary
