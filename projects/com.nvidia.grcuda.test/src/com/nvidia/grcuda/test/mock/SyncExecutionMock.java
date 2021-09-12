@@ -1,6 +1,6 @@
 package com.nvidia.grcuda.test.mock;
 
-import com.nvidia.grcuda.ComputationArgumentWithValue;
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;

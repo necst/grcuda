@@ -1,6 +1,6 @@
 package com.nvidia.grcuda.runtime.executioncontext;
 
-import com.nvidia.grcuda.ComputationArgumentWithValue;
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.oracle.truffle.api.interop.TruffleObject;

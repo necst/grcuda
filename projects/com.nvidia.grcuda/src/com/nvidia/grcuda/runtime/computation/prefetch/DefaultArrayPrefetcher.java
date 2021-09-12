@@ -1,6 +1,6 @@
 package com.nvidia.grcuda.runtime.computation.prefetch;
 
-import com.nvidia.grcuda.ComputationArgumentWithValue;
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;

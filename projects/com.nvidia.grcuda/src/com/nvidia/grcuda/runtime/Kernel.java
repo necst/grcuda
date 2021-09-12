@@ -36,7 +36,7 @@ import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.nvidia.grcuda.ComputationArgument;
+import com.nvidia.grcuda.runtime.computation.ComputationArgument;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.TypeException;
 import com.nvidia.grcuda.runtime.CUDARuntime.CUModule;

@@ -28,7 +28,7 @@
  */
 package com.nvidia.grcuda.functions;
 
-import com.nvidia.grcuda.ComputationArgument;
+import com.nvidia.grcuda.runtime.computation.ComputationArgument;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import java.util.ArrayList;
 

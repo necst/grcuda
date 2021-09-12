@@ -1,7 +1,7 @@
 package com.nvidia.grcuda.test.mock;
 
 import com.nvidia.grcuda.Type;
-import com.nvidia.grcuda.ComputationArgumentWithValue;
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 
 public class ArgumentMock extends ComputationArgumentWithValue {
     public ArgumentMock(Object value) {

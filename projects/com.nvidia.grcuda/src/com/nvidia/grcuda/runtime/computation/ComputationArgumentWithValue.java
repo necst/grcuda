@@ -1,6 +1,6 @@
-package com.nvidia.grcuda;
+package com.nvidia.grcuda.runtime.computation;
 
-import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
+import com.nvidia.grcuda.Type;
 
 import java.util.Objects;
 

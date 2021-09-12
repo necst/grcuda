@@ -1,6 +1,6 @@
 package com.nvidia.grcuda.test;
 
-import com.nvidia.grcuda.ComputationArgument;
+import com.nvidia.grcuda.runtime.computation.ComputationArgument;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.TypeException;
 import org.junit.Test;

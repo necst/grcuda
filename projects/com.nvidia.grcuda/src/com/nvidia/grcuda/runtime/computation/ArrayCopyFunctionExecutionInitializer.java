@@ -1,7 +1,5 @@
 package com.nvidia.grcuda.runtime.computation;
 
-import com.nvidia.grcuda.ComputationArgument;
-import com.nvidia.grcuda.ComputationArgumentWithValue;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;

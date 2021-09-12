@@ -1,6 +1,6 @@
 package com.nvidia.grcuda.runtime.computation.dependency;
 
-import com.nvidia.grcuda.ComputationArgumentWithValue;
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 
 import java.util.ArrayList;

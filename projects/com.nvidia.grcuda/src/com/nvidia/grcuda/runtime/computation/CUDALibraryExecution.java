@@ -1,7 +1,5 @@
 package com.nvidia.grcuda.runtime.computation;
 
-import com.nvidia.grcuda.ComputationArgument;
-import com.nvidia.grcuda.ComputationArgumentWithValue;
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;

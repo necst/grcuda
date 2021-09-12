@@ -1,7 +1,7 @@
 package com.nvidia.grcuda.runtime;
 
-import com.nvidia.grcuda.ComputationArgument;
-import com.nvidia.grcuda.ComputationArgumentWithValue;
+import com.nvidia.grcuda.runtime.computation.ComputationArgument;
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 
 import java.io.Closeable;
 import java.io.IOException;
