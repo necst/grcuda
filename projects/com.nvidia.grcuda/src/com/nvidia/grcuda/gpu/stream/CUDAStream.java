@@ -41,7 +41,7 @@ public class CUDAStream extends GPUPointer {
 
     @Override
     public String toString() {
-        return "CUDAStream(streamNumber=" + this.streamNumber + "; address=0x" + Long.toHexString(this.getRawPointer()) + ")";
+        return "CUDAStream(streamNumber=" + this.streamNumber + "; address=0x" + Long.toHexString(this.getRawPointer()) + "; device=" + this.deviceId + ")";
     }
 
     @ExportMessage
@@ -53,8 +53,9 @@ public class CUDAStream extends GPUPointer {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         CUDAStream that = (CUDAStream) o;
-        return (streamNumber == that.streamNumber && this.getRawPointer() == that.getRawPointer());
+        return streamNumber == that.streamNumber && this.getRawPointer() == that.getRawPointer();
     }
 
     @Override

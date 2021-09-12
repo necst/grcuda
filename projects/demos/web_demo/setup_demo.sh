@@ -3,7 +3,6 @@
 ## This script assumes that the current machine was set up using the 
 ## setup_machine_from_scratch.sh script
 
-
 echo "Building GrCUDA"
 cd ../../../
 ./install.sh
