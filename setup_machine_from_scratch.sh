@@ -16,12 +16,12 @@ git clone https://github.com/AlbertoParravicini/grcuda.git
 
 # checkout commit of GraalVM corresponding to the release;
 cd graal
-git checkout e9c54823b71cdca08e392f6b8b9a283c01c96571 # 21.1: 192eaf62331679907449ee60dad9d6d6661a3dc8
+git checkout 192eaf62331679907449ee60dad9d6d6661a3dc8
 cd ..
 
 # checkout commit of mx compatible with versions of other tools;
 cd mx
-git checkout b39c4a551c4e99909f2e83722472329324ed4e42 # 21.1: dcfdd847c5b808ffd1a519713e0598242f28ecd1
+git checkout dcfdd847c5b808ffd1a519713e0598242f28ecd1
 cd ..
 
 # download the GraalVM release build (21.1.0) and the corresponding JVM;
