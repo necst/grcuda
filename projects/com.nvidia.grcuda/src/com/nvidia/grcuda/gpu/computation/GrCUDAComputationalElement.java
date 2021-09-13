@@ -232,6 +232,21 @@ public abstract class GrCUDAComputationalElement {
                 ((AbstractArray) o.getArgumentValue()).setLastComputationArrayAccess(isComputationArrayAccess);
             }
         }
+
+        for (ComputationArgumentWithValue arg : this.argumentList) {
+            if (!arg.isConst()) {
+                // Reset lista di roba aggiornata
+            }
+            if (arg.getArgumentValue() instanceof AbstractArray) {
+                if (this.isComputationArrayAccess) {
+                    // Gestione CPU
+                    ((AbstractArray) arg.getArgumentValue()).setArrayLocation(Device.CPU_ID);
+                } else {
+                    // Gestione GPU
+                    ((AbstractArray) arg.getArgumentValue()).setArrayLocation(this.getStream().getStreamDeviceId());
+                }
+            }
+        }
     }
 
     public List<AbstractArray> getArgumentArray(){

@@ -75,9 +75,9 @@ public class StreamPolicy {
             for(AbstractArray a : arguments){
                 if(a.getArrayLocation() == -1){
                     // last position of the array represents the CPU
-                    argumentSize[devicesManager.getNumberOfGPUs()] = argumentSize[devicesManager.getNumberOfGPUs()] + a.getArraySize();
+                    argumentSize[devicesManager.getNumberOfGPUs()] += a.getSizeBytes();
                 }else{
-                    argumentSize[a.getArrayLocation()] = argumentSize[a.getArrayLocation()] + a.getArraySize();
+                    argumentSize[a.getArrayLocation()] += a.getSizeBytes();
                 }
             }
             //System.out.println("argument for vertex: "+vertex.getId());

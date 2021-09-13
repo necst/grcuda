@@ -28,6 +28,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
     private final KernelArguments args;
 
     public KernelExecution(ConfiguredKernel configuredKernel, KernelArguments args) {
+
         super(
             configuredKernel.getKernel().getGrCUDAExecutionContext(),
             new KernelExecutionInitializer(configuredKernel.getKernel(), args)
@@ -138,6 +139,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
 
         @Override
         public List<ComputationArgumentWithValue> initialize() {
+
             // TODO: what about scalars? We cannot treat them in the same way, as they are copied and not referenced
             //   There should be a semantic to manually specify scalar dependencies? For now we have to skip them;
             return this.args.getKernelArgumentWithValues().stream()
