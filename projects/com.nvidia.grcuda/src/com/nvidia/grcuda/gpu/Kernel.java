@@ -130,8 +130,8 @@ public class Kernel implements TruffleObject {
         return kernelComputationArguments;
     }
 
-    public long getKernelFunctionHandle() {
-        if (module.isClosed()) {
+    public long getKernelFunctionHandle(int deviceId) {
+        if (modules.get(deviceId).isClosed()) {
             CompilerDirectives.transferToInterpreter();
             throw new GrCUDAException("CUmodule containing kernel " + kernelName + " is already closed");
         }
