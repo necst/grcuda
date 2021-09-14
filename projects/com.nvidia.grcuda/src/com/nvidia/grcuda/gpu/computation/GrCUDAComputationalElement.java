@@ -8,6 +8,8 @@ import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.gpu.executioncontext.GrCUDAExecutionContext;
 import com.nvidia.grcuda.gpu.stream.CUDAStream;
 import com.nvidia.grcuda.gpu.stream.DefaultStream;
+import com.oracle.truffle.api.interop.ArityException;
+import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
 import java.util.Collection;
