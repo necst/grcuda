@@ -163,7 +163,12 @@ extern "C" __global__ void combine(const float *x, const float *y, const float *
 
 extern "C" __global__ void combine_lut(const float *x, const float *y, const float *mask, int *res, int n, int* lut) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) { 
+<<<<<<< HEAD
         res[i] = lut[min(CDEPTH - 1, int(CDEPTH * (x[i] * mask[i] + y[i] * (1 - mask[i]))))];
+=======
+        int res_tmp = min(CDEPTH - 1, int(CDEPTH * (x[i] * mask[i] + y[i] * (1 - mask[i]))));
+        res[i] = lut[res_tmp];
+>>>>>>> master
     }
 }
 
@@ -206,16 +211,25 @@ void ImagePipeline::init(unsigned char* input_image, int channel) {
     gaussian_kernel(kernel_small, kernel_small_diameter, kernel_small_variance);
     gaussian_kernel(kernel_large, kernel_large_diameter, kernel_large_variance);
     gaussian_kernel(kernel_unsharpen, kernel_unsharpen_diameter, kernel_unsharpen_variance);
+<<<<<<< HEAD
     // memset(image3, 0, image_width * image_width * sizeof(int));
+=======
+>>>>>>> master
     *maximum_1 = 0;
     *minimum_1 = 0;
     *maximum_2 = 0;
     *minimum_2 = 0;
 
     // Initialize LUTs;
+<<<<<<< HEAD
     lut_r(lut[0]);
     lut_b(lut[1]);
     lut_g(lut[2]);
+=======
+    lut_b(lut[0]);
+    lut_g(lut[1]);
+    lut_r(lut[2]);
+>>>>>>> master
 
     // Copy input data on the GPU managed memory;
     for (int i = 0; i < image_width * image_width; i++) {
@@ -427,6 +441,16 @@ void ImagePipeline::run_inner(unsigned char* input_image, int channel) {
 }
 
 void ImagePipeline::run(unsigned char* input_image) {
+<<<<<<< HEAD
+=======
+
+    int deviceCount = 1;
+    cudaGetDeviceCount(&deviceCount);
+    if (deviceCount >= 4) {
+        cudaSetDevice(3);
+    }
+
+>>>>>>> master
     for (int channel = 0; channel < (black_and_white ? 1 : 3); channel++) {
         // Access individual channels;
         run_inner(input_image, channel);

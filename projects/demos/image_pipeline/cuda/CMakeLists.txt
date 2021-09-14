@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 cmake_minimum_required(VERSION 3.17)
 project(image_pipeline_cuda LANGUAGES CXX CUDA)
 find_package(CUDAToolkit)
@@ -5,6 +6,19 @@ include_directories("/usr/local/include" "${CUDA_DIR}/include")
 find_package( OpenCV REQUIRED )
 find_package(CUDA REQUIRED)
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+=======
+cmake_minimum_required(VERSION 3.16)
+project(image_pipeline_cuda LANGUAGES CXX CUDA)
+set(CMAKE_CUDA_ARCHITECTURES 70)
+
+find_package(CUDA REQUIRED)
+include_directories("${CUDA_INCLUDE_DIRS}")
+include_directories("/usr/local/include") 
+
+find_package(OpenCV REQUIRED)
+find_package(CUDA REQUIRED)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+>>>>>>> master
 
 # Pass options to NVCC
 set(

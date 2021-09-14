@@ -178,7 +178,15 @@ function lut_b(lut) {
     spline5(lut_tmp, lut, P2);
 }
 
+<<<<<<< HEAD
 const LUT = [lut_r, lut_g, lut_b];
+=======
+// Initialize LUTs;
+const LUT = [new Array(CDEPTH).fill(0), new Array(CDEPTH).fill(0), new Array(CDEPTH).fill(0)];
+lut_r(LUT[0]);
+lut_r(LUT[1]);
+lut_r(LUT[2]);
+>>>>>>> master
 
 async function storeImageInner(img, imgName, resolution, kind) {
     
@@ -237,9 +245,18 @@ async function processImage(img, size, channel) {
     
     const lut = cu.DeviceArray("int", CDEPTH);  
 
+<<<<<<< HEAD
     // Initialize the right LUT;
     LUT[channel](lut);
     
+=======
+    const s0 = System.nanoTime();
+    // Initialize the LUT;
+    copy_array(LUT[channel], lut);
+    const e0 = System.nanoTime();
+    console.log("--lut=" + intervalToMs(s0, e0) + " ms");
+
+>>>>>>> master
     // Fill the image data;
     const s1 = System.nanoTime();
     // image.copyFrom(img, size * size);
