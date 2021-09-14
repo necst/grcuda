@@ -19,7 +19,7 @@ import numpy as np
 from typing import Callable
 import time
 
-BW = True
+BW = False
 KERNEL_SMALL = 0.1
 KERNEL_LARGE = 2
 KERNEL_UNSHARPEN = 0.7
