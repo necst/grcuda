@@ -126,22 +126,23 @@ Documentation on [polyglot kernel launches](docs/launchkernel.md).
 
 ## Installation
 
-GrCUDA can be downloaded as a binary JAR from [grcuda/releases](https://github.com/NVIDIA/grcuda/releases) and manually copied into a GraalVM installation.
+The original GrCUDA can be downloaded as a binary JAR from [grcuda/releases](https://github.com/NVIDIA/grcuda/releases) and manually copied into a GraalVM installation.
 
-1. Download GraalVM CE 21.1.0 for Linux `graalvm-ce-java11-linux-amd64-21.1.0.tar.gz`
-   from [GitHub](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.1.0/graalvm-ce-java11-linux-amd64-21.1.0.tar.gz) and untar it in your
+1. Download GraalVM CE 21.2.0 for Linux `graalvm-ce-java11-linux-amd64-21.2.0.tar.gz`
+   from [GitHub](https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java11-linux-amd64-21.2.0.tar.gz) and untar it in your
    installation directory.
 
    ```console
    cd <your installation directory>
-   tar xfz graalvm-ce-java11-linux-amd64-21.1.0.tar.gz
-   export GRAALVM_DIR=`pwd`/graalvm-ce-java11-21.1.0
+   tar xfz graalvm-ce-java11-linux-amd64-21.2.0.tar.gz
+   rm graalvm-ce-java11-linux-amd64-21.2.0.tar.gz
+   export GRAALVM_DIR=`pwd`/graalvm-ce-java11-21.2.0
    ```
 
 2. Download the GrCUDA JAR from [grcuda/releases](https://github.com/NVIDIA/grcuda/releases). If using the official release, the latest features (e.g. the asynchronous scheduler) are not available. Instead, follow the guide below to install GrCUDA from the source code.
 
    ```console
-   cd $GRAALVM_DIR/jre/languages
+   cd $GRAALVM_DIR/languages
    mkdir grcuda
    cp <download folder>/grcuda-0.1.0.jar grcuda
    ```
@@ -188,7 +189,7 @@ mx unittest com.nvidia
 
 ## Using GrCUDA in a JDK
 
-Make sure that you use the [OpenJDK+JVMCI-21.1](https://github.com/graalvm/labs-openjdk-11/releases/download/jvmci-21.1-b05/labsjdk-ce-11.0.11+8-jvmci-21.1-b05-linux-amd64.tar.gz).
+Make sure that you use the [OpenJDK+JVMCI-21.2](https://github.com/graalvm/labs-openjdk-11/releases/download/jvmci-21.2-b08/labsjdk-ce-11.0.12+6-jvmci-21.2-b08-linux-amd64.tar.gz).
 
 To use the CUDA language from Python:
 
@@ -215,19 +216,37 @@ mx --dynamicimports graalpython --cp-sfx `pwd`/mxbuild/dists/jdk1.8/grcuda.jar \
 
 ```
 git clone https://github.com/oracle/graal.git
+cd graal
+git checkout e9c54823b71cdca08e392f6b8b9a283c01c96571
+cd ..
 git clone https://github.com/graalvm/mx.git
-git clone https://github.com/AlbertoParravicini/grcuda.githttps://github.com/graalvm/labs-openjdk-11/releases/download/jvmci-21.1-b05/labsjdk-ce-11.0.11+8-jvmci-21.1-b05-linux-amd64.tar.gz
+cd mx
+git checkout d6831ca0130e21b55b2675f7c931da7da10266cb
+cd ..
+git clone https://github.com/AlbertoParravicini/grcuda.git
 ```
 
 2. **Download the right JDK**
-* [Here](https://github.com/graalvm/labs-openjdk-11/releases) you can find releases for GraalVM 21.1 or newer, but other versions are available on the same repository
+* [Here](https://github.com/graalvm/labs-openjdk-11/releases) you can find releases for GraalVM 21.2 or newer, but other versions are available on the same repository
+
+```
+wget https://github.com/graalvm/labs-openjdk-11/releases/download/jvmci-21.2-b08/labsjdk-ce-11.0.12+6-jvmci-21.2-b08-linux-amd64.tar.gz
+tar xfz labsjdk-ce-11.0.12+6-jvmci-21.2-b08-linux-amd64.tar.gz
+rm labsjdk-ce-11.0.12+6-jvmci-21.2-b08-linux-amd64.tar.gz
+```
 
 3. **Download the right build for GraalVM**
-* [Here](hhttps://github.com/graalvm/graalvm-ce-builds/releases) you can find releases for GraalVM 21.1, and more recent versions once they will become available
+* [Here](hhttps://github.com/graalvm/graalvm-ce-builds/releases) you can find releases for GraalVM 21.2, and more recent versions once they will become available
+
+```
+wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.2.0/graalvm-ce-java11-linux-amd64-21.2.0.tar.gz
+tar xfz graalvm-ce-java11-linux-amd64-21.2.0.tar.gz
+rm graalvm-ce-java11-linux-amd64-21.2.0.tar.gz
+```
 
 4. **Setup your CUDA environment**
-* Install CUDA and Nvidia drivers, for example following the steps [here](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&target_distro=CentOS&target_version=7&target_type=rpmnetwork)
-* Add the following to your environment (assuming you have installed CUDA in the default `/usr/local` location, and using the `nvcc` compiler
+* Install CUDA and Nvidia drivers, for example following the steps [here](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=20.04&target_type=deb_local)
+* Add the following to your environment (assuming you have installed CUDA in the default `/usr/local` location, and using the `nvcc` compiler. Add these lines to `~/.bashrc` to make them permanent.
 
 ```
 export CUDA_DIR=/usr/local/cuda
@@ -235,16 +254,18 @@ export PATH=$PATH:$CUDA_DIR/bin
 ```
 
 5. **Setup your GraalVM and GrCUDA environment**
-* Add the following to your environment (assuming you have installed the releases mentioned in step 2 and 3)
+* Add the following to your environment (assuming you have installed the releases mentioned in step 2 and 3). Add these lines to `~/.bashrc` to make them permanent.
 
 ```
 export PATH=~/mx:$PATH
-export JAVA_HOME=~/labsjdk-ce-11.0.11-jvmci-21.1-b05
-export GRAAL_HOME=~/graalvm-ce-java11-21.1.0
+export JAVA_HOME=~/labsjdk-ce-11.0.12-jvmci-21.2-b08
+export GRAAL_HOME=~/graalvm-ce-java11-21.2.0
 export GRAALVM_HOME=$GRAAL_HOME
 export PATH=$GRAAL_HOME/bin:$PATH
 export PATH=$JAVA_HOME/bin:$PATH
+export GRCUDA_HOME=~/grcuda
 ```
+* `source ~/.bashrc` to make changes available.
 
 6. **Install languages for GraalVM** (optional, but recommended)
 
@@ -263,7 +284,7 @@ graalpython -m venv ~/graalpython_venv
 source ~/graalpython_venv/bin/activate
 ```
 
-* Recommended: install 'numpy` in Graalpython (required for performance benchmarking)
+* Recommended: install 'numpy` in Graalpython (required for running GrCUDA benchmarks)
 
 ```
 graalpython -m ginstall install setuptools;
