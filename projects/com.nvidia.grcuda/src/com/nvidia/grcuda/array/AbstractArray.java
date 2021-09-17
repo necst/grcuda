@@ -1,5 +1,6 @@
 package com.nvidia.grcuda.array;
 
+import java.util.*;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.MemberSet;
 import com.nvidia.grcuda.NoneValue;
@@ -75,7 +76,9 @@ public abstract class AbstractArray implements TruffleObject {
      * arrayLocation default location is -1 which represents CPU
      */
     private int arrayLocation = -1;
-
+    // new 
+    private Set<Integer> arrayLocations = new HashSet<Integer>(Collections.singleton(-1));
+    
     public Type getElementType() {
         return elementType;
     }
@@ -119,8 +122,34 @@ public abstract class AbstractArray implements TruffleObject {
         return this.arrayLocation;
     }
 
+    // new
+    public Set<Integer> getArrayLocations(){
+        return arrayLocations;
+    }
+
     public void setArrayLocation(int deviceId){
         this.arrayLocation = deviceId;
+    }
+    
+    // new
+    public void addArrayLocation(int deviceId){
+        arrayLocations.add(deviceId);
+    }
+
+    // new
+    public void removeArrayLocation(int deviceId){
+        arrayLocations.remove(deviceId);
+    }
+
+    // new
+    public void clearArrayLocation(){
+        arrayLocations.clear();
+    }
+
+    // new
+    public void setArrayLocations(Set<Integer> deviceIds){
+        arrayLocations.clear();
+        arrayLocations.addAll(deviceIds);
     }
 
     public boolean isLastComputationArrayAccess() { return isLastComputationArrayAccess; }

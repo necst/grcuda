@@ -70,7 +70,7 @@ public final class GrCUDAContext {
     public static final Integer DEFAULT_NUMBER_GPUs = 1;
     public static final ExecutionPolicyEnum DEFAULT_EXECUTION_POLICY = ExecutionPolicyEnum.DEFAULT;
     public static final DependencyPolicyEnum DEFAULT_DEPENDENCY_POLICY = DependencyPolicyEnum.DEFAULT;
-    public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.FIFO;
+    public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
     public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.DATA_AWARE;
     public static final boolean DEFAULT_FORCE_STREAM_ATTACH = false;
     public static final String DEFAULT_MEM_ADVISE = "none";
