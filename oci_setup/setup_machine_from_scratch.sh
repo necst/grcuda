@@ -7,6 +7,7 @@
 # Installation flags (change them to customize your installation);
 INSTALL_CUML=false
 INSTALL_RECENT_CMAKE=false
+ACTIVATE_GRAALPYTHON_ENV=true
 
 # basic update on a newly created machine;
 sudo apt update
@@ -94,6 +95,11 @@ source ~/graalpython_venv/bin/activate
 graalpython -m ginstall install setuptools
 graalpython -m ginstall install Cython
 graalpython -m ginstall install numpy
+
+if [ "$ACTIVATE_GRAALPYTHON_ENV" = true ] ; then
+    echo 'source ~/graalpython_venv/bin/activate' >> ~/.bashrc
+    source  ~/.bashrc
+fi
 
 # install miniconda (Python is required to build with mx);
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
