@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <nvml.h>
 #include <cuda_runtime.h>
+#include <iomanip>
 #include <fstream>
 
 #define N 500000000 // 500 MB
@@ -80,20 +81,22 @@ int main(){
 	nvmlDeviceGetCount (&NGPU);  
 	printf("N_Devices = %d\n", NGPU);
 
-	float **bands = (float**)malloc(NGPU * sizeof(float*));
+	double **bands = (double**)malloc(NGPU * sizeof(double*));
 	for(int i=0; i<NGPU; i++)
-		bands[i] = (float*)malloc(NGPU * sizeof(float));
+		bands[i] = (double*)malloc(NGPU * sizeof(double));
 
 	std::ofstream out_file;
-	out_file.open("../../../connection_graph.csv");
+	
+	out_file.open("/usr/tmp/GrCUDA/connection_graph.csv");
 	out_file << "From,To,Bandwidth\n";
 
 	for(int i=0; i<NGPU; i++){
-		float time_H2D = HToD_copy(size, 1);
+		double time_H2D = HToD_copy(size, 1);
 		printf("\nfrom: Host, to: %d, time spent: %f, transfer rate: %f GB/s \n",i, time_H2D, (float(N)/1000000000.0)/time_H2D);
+		out_file<< std::setprecision (15) << "-1" << "," << i << "," <<(double(N)/1000000000.0)/time_H2D << "\n";
 		for(int j=0 ; j<NGPU; j++){
-			float time_D2D = D2D_copy(size, i, j);
-			bands[i][j] = (float(N)/1000000000.0)/time_D2D;
+			double time_D2D = D2D_copy(size, i, j);
+			bands[i][j] = (double(N)/1000000000.0)/time_D2D;
 			printf("from: %d, to: %d, time spent: %f, transfer rate: %f GB/s \n",i, j, time_D2D, bands[i][j]);
 			out_file << i << "," << j << "," << bands[i][j] << "\n";
 		}

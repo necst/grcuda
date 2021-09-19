@@ -6,11 +6,18 @@ import com.nvidia.grcuda.gpu.GrCUDADevicesManager;
 import com.nvidia.grcuda.gpu.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.gpu.executioncontext.ExecutionDAG;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -21,13 +28,13 @@ public class StreamPolicy {
     private final GrCUDADevicesManager devicesManager;
     private final CUDARuntime runtime;
     private int streamCount;
-    private final ChooseDeviceHeuristic finder;
+    private ChooseDeviceHeuristic chooseDeviceHeuristic;
     private final StartingVertexPolicy startingVertexPolicy;
 
-    public StreamPolicy(RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum, RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager, CUDARuntime runtime){
+    public StreamPolicy(RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum, RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager, CUDARuntime runtime) {
         this.devicesManager = devicesManager;
         this.runtime = runtime;
-        switch(retrieveNewStreamPolicyEnum) {
+        switch (retrieveNewStreamPolicyEnum) {
             case FIFO:
                 this.retrieveNewStream = new FifoRetrieveStream();
                 break;
@@ -38,7 +45,7 @@ public class StreamPolicy {
                 this.retrieveNewStream = new AlwaysNewRetrieveStream();
         }
         // Get how streams are retrieved for computations with parents;
-        switch(retrieveParentStreamPolicyEnum) {
+        switch (retrieveParentStreamPolicyEnum) {
             case DATA_AWARE:
                 this.retrieveParentStream = new DataAwareRetrieveParentStream(this.retrieveNewStream);
                 break;
@@ -58,118 +65,71 @@ public class StreamPolicy {
                 this.retrieveParentStream = new DefaultRetrieveParentStream();
         }
         this.streamCount = 0;
-        finder = new ChooseDeviceHeuristic();
+        if (retrieveParentStreamPolicyEnum == RetrieveParentStreamPolicyEnum.DATA_AWARE || retrieveParentStreamPolicyEnum == RetrieveParentStreamPolicyEnum.DISJOINT_DATA_AWARE) {
+            this.chooseDeviceHeuristic = new DeviceMoveLessArgument();
+        }
         startingVertexPolicy = new StartingVertexPolicy();
     }
 
-    public GrCUDADevicesManager getDevicesManager(){
-        return this.devicesManager;
+    public StreamPolicy(RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum, RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, ChooseDeviceHeuristicEnum chooseDeviceHeuristicEnum, GrCUDADevicesManager devicesManager, CUDARuntime runtime) {
+        this.devicesManager = devicesManager;
+        this.runtime = runtime;
+        switch (retrieveNewStreamPolicyEnum) {
+            case FIFO:
+                this.retrieveNewStream = new FifoRetrieveStream();
+                break;
+            case ALWAYS_NEW:
+                this.retrieveNewStream = new AlwaysNewRetrieveStream();
+                break;
+            default:
+                this.retrieveNewStream = new AlwaysNewRetrieveStream();
+        }
+        // Get how streams are retrieved for computations with parents;
+        switch (retrieveParentStreamPolicyEnum) {
+            case DATA_AWARE:
+                this.retrieveParentStream = new DataAwareRetrieveParentStream(this.retrieveNewStream);
+                break;
+            case STREAM_AWARE:
+                this.retrieveParentStream = new StreamAwareRetrieveParentStream(this.retrieveNewStream);
+                break;
+            case DISJOINT_DATA_AWARE:
+                this.retrieveParentStream = new DisjointDataAwareRetrieveParentStream(this.retrieveNewStream);
+                break;
+            case DISJOINT:
+                this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
+                break;
+            case DEFAULT:
+                this.retrieveParentStream = new DefaultRetrieveParentStream();
+                break;
+            default:
+                this.retrieveParentStream = new DefaultRetrieveParentStream();
+        }
+        this.streamCount = 0;
+        if (retrieveParentStreamPolicyEnum == RetrieveParentStreamPolicyEnum.DATA_AWARE || retrieveParentStreamPolicyEnum == RetrieveParentStreamPolicyEnum.DISJOINT_DATA_AWARE) {
+            switch (chooseDeviceHeuristicEnum) {
+                case DATA_LOCALITY:
+                    this.chooseDeviceHeuristic = new DeviceMoveLessArgument();
+                    break;
+                case TRANSFER_TIME_MIN:
+                    this.chooseDeviceHeuristic = new FastestDataTransferMin();
+                    break;
+                case TRANSFER_TIME_MAX:
+                    this.chooseDeviceHeuristic = new FastestDataTransferMax();
+                    break;
+                default:
+                    this.chooseDeviceHeuristic = new DeviceMoveLessArgument();
+            }
+        }
+        startingVertexPolicy = new StartingVertexPolicy();
     }
 
-    private class ChooseDeviceHeuristic{
-        public int deviceMoveLessArgument(ExecutionDAG.DAGVertex vertex){
-            
-            long[] argumentSize = new long[devicesManager.getNumberOfGPUs()+1];
-            List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
-
-            for(AbstractArray a : arguments){
-                if(a.getArrayLocation() == -1){
-                    // last position of the array represents the CPU
-                    argumentSize[devicesManager.getNumberOfGPUs()] += a.getSizeBytes();
-                }else{
-                    argumentSize[a.getArrayLocation()] += a.getSizeBytes();
-                }
-            }
-            //System.out.println("argument for vertex: "+vertex.getId());
-            int maxAt = 0;
-            for (int i = 0; i < argumentSize.length; i++) {
-                maxAt = argumentSize[i] > argumentSize[maxAt] ? i : maxAt;
-                //System.out.println("argument size : "+argumentSize[i]+" device id: "+ i);
-            }
-
-            if(maxAt == argumentSize.length-1){
-                return devicesManager.deviceWithLessActiveStream();
-            }else{
-                return maxAt;
-                // return devicesManager.deviceWithLessActiveStream();
-            }
-        }
-
-        // new
-        public int deviceMoveLessArgumentNew(ExecutionDAG.DAGVertex vertex){
-            
-            long[] presentArgumentSize = new long[devicesManager.getNumberOfGPUs()+1];
-            List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
-
-            for(AbstractArray a : arguments){
-                for(int location : a.getArrayLocations()){
-                    if(location == -1){
-                        // last position of the array represents the CPU
-                        presentArgumentSize[devicesManager.getNumberOfGPUs()] += a.getSizeBytes();
-                    }else{
-                        presentArgumentSize[location] += a.getSizeBytes();
-                    }
-                }
-            }
-            //System.out.println("argument for vertex: "+vertex.getId());
-            int maxAt = 0;
-            for (int i = 0; i < presentArgumentSize.length; i++) {
-                maxAt = presentArgumentSize[i] > presentArgumentSize[maxAt] ? i : maxAt;
-                //System.out.println("argument size : "+argumentSize[i]+" device id: "+ i);
-            }
-
-            if(maxAt == presentArgumentSize.length-1){
-                return devicesManager.deviceWithLessActiveStream();
-            }else{
-                return maxAt;
-                // return devicesManager.deviceWithLessActiveStream();
-            }
-        }
-
-        // new
-        public int deviceFastestDataTransfer(ExecutionDAG.DAGVertex vertex){
-            // last position of the arrays represents the CPU
-            long[] presentArgumentSize = new long[devicesManager.getNumberOfGPUs()+1];
-            // linkBandwidth è costante e va inserito in qualche classe opportuna
-            // sarebbe veramente stupido ricaricare da disco ogni volta
-            double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUs()+1][devicesManager.getNumberOfGPUs()+1];
-            double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUs()+1];
-            List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
-
-            double band;
-            // for each argument array
-            for(AbstractArray a : arguments){
-                // check all available GPUs and compute the tentative transfer time for each of them 
-                for (int i = 0; i < presentArgumentSize.length-1; i++) {
-                    // hypoteses: we consider the max bandwith towards the device i
-                    // initialization: min possible value 
-                    band = 0.0;
-                    // if array a already present in device i, band is infinity
-                    if(a.getArrayLocations().contains(i)){
-                        band = Double.POSITIVE_INFINITY; 
-                    // else we consider the max band to move array a to device i
-                    }else{
-                        // from each possible location containing the array a
-                        for (int location : a.getArrayLocations()) {
-                            band = linkBandwidth[location][i] > band ? linkBandwidth[location][i] : band;
-                        }
-                    }
-                    argumentTransferTime[i] += a.getSizeBytes() / band;
-                }
-            }
-            //System.out.println("argument for vertex: "+vertex.getId());
-            // best device has minimum transfer time
-            int minAt = 0;
-            for (int i = 0; i < argumentTransferTime.length-1; i++) {
-                minAt = argumentTransferTime[i] < argumentTransferTime[minAt] ? i : minAt;
-                //System.out.println("argument size : "+argumentSize[i]+" device id: "+ i);
-            }
-            return minAt;
-        }
+    public GrCUDADevicesManager getDevicesManager() {
+        return this.devicesManager;
     }
 
     /**
      * Create a new {@link CUDAStream} associated to the deviceId and add it to this manager, then return it;
+     *
      * @param deviceId
      * @return {@link CUDAStream}
      */
@@ -182,11 +142,11 @@ public class StreamPolicy {
         return newStream;
     }
 
-    public void updateStreamCount(){
+    public void updateStreamCount() {
         this.streamCount++;
     }
 
-    public CUDAStream getStream(ExecutionDAG.DAGVertex vertex){
+    public CUDAStream getStream(ExecutionDAG.DAGVertex vertex) {
         CUDAStream stream;
 
         if (vertex.isStart()) {
@@ -201,24 +161,24 @@ public class StreamPolicy {
         return stream;
     }
 
-    public void printPartialGraph(ExecutionDAG.DAGVertex vertex, CUDAStream stream){
+    public void printPartialGraph(ExecutionDAG.DAGVertex vertex, CUDAStream stream) {
         StringBuilder children = new StringBuilder();
-        for(ExecutionDAG.DAGVertex child : vertex.getParentVertices()){
+        for (ExecutionDAG.DAGVertex child : vertex.getParentVertices()) {
             children.append(".");
             children.append(child.getId());
         }
         System.out.println(stream.getStreamDeviceId() + "." + vertex.getId() + children.toString());
     }
 
-    public void cleanup(){
+    public void cleanup() {
 
     }
 
-    public void update(List<CUDAStream> streams){
+    public void update(List<CUDAStream> streams) {
         retrieveNewStream.update(streams);
     }
 
-    public void update(CUDAStream streams){
+    public void update(CUDAStream streams) {
         retrieveNewStream.update(streams);
     }
 
@@ -235,7 +195,7 @@ public class StreamPolicy {
     /**
      * Keep a queue of free (currently not utilized) streams for each device, and retrieve the oldest one added to the queue with respect to the device;
      */
-    private class FifoRetrieveStream extends RetrieveNewStream{
+    private class FifoRetrieveStream extends RetrieveNewStream {
         /**
          * Keep a queue of free streams;
          */
@@ -264,7 +224,7 @@ public class StreamPolicy {
         }
     }
 
-    private class LessBusyRetrieveStream extends RetrieveNewStream{
+    private class LessBusyRetrieveStream extends RetrieveNewStream {
         @Override
         void update(CUDAStream stream) {
             devicesManager.updateStreams(stream);
@@ -377,8 +337,8 @@ public class StreamPolicy {
             }
         }
     }
-    */ 
-    
+    */
+
 
     /**
      * If a vertex has more than one children, each children is independent (otherwise the dependency would be added
@@ -409,8 +369,8 @@ public class StreamPolicy {
                 // Return the stream associated to this computation;
                 return availableParentsStream.get(0).getComputation().getStream();
 
-            }else{
-                return retrieveNewStream.retrieve(finder.deviceMoveLessArgument(vertex));
+            } else {
+                return retrieveNewStream.retrieve(chooseDeviceHeuristic.getDevice(vertex));
             }
             //return retrieveNewStream.retrieve(finder.deviceMoveLessArgument(vertex));
         }
@@ -429,27 +389,27 @@ public class StreamPolicy {
         public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
             // Keep only parent vertices for which we haven't reused the stream yet;
             List<ExecutionDAG.DAGVertex> availableParentsStream = vertex.getParentVertices().stream()
-            .filter(v -> !reusedComputations.contains(v))
-            .collect(Collectors.toList());
-            int chosenDevice = finder.deviceMoveLessArgument(vertex);
+                    .filter(v -> !reusedComputations.contains(v))
+                    .collect(Collectors.toList());
+            int chosenDevice = chooseDeviceHeuristic.getDevice(vertex);
 
             if (!availableParentsStream.isEmpty()) {
-                for(ExecutionDAG.DAGVertex v : availableParentsStream){
-                    if(v.getComputation().getStream().getStreamDeviceId() == chosenDevice){       
+                for (ExecutionDAG.DAGVertex v : availableParentsStream) {
+                    if (v.getComputation().getStream().getStreamDeviceId() == chosenDevice) {
                         reusedComputations.add(v);
                         return v.getComputation().getStream();
                     }
                 }
             }
 
-            return retrieveNewStream.retrieve(finder.deviceMoveLessArgument(vertex));
+            return retrieveNewStream.retrieve(chooseDeviceHeuristic.getDevice(vertex));
         }
     }
 
     private class StreamAwareRetrieveParentStream extends RetrieveParentStream {
         private final RetrieveNewStream retrieveNewStream;
         int n = 0;
-        
+
         public StreamAwareRetrieveParentStream(RetrieveNewStream retrieveNewStream) {
             this.retrieveNewStream = retrieveNewStream;
         }
@@ -465,15 +425,211 @@ public class StreamPolicy {
      * Handle the assignment of the stream if the vertex considered is a starting vertex,
      * which is to say that it has no parent computation. It is possible to consider various kind of heuristics can be
      * applied to have the best scheduling, i.e. move less arguments, device with smallest number of running computation.
-     * */
-    private class StartingVertexPolicy{
+     */
+    private class StartingVertexPolicy {
         // public CUDAStream getStream(ExecutionDAG.DAGVertex vertex){
         //     int cheapestDevice = finder.deviceMoveLessArgument(vertex);
         //     return retrieveNewStream.retrieve(cheapestDevice);
         // }
 
-        public CUDAStream getStream(ExecutionDAG.DAGVertex vertex){
+        public CUDAStream getStream(ExecutionDAG.DAGVertex vertex) {
             return retrieveNewStream.retrieve(devicesManager.deviceWithLessActiveStream());
+        }
+    }
+
+    private class DeviceMoveLessArgument extends ChooseDeviceHeuristic {
+        @Override
+        public int getDevice(ExecutionDAG.DAGVertex vertex) {
+            long[] argumentSize = new long[devicesManager.getNumberOfGPUs() + 1];
+            List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
+            for (AbstractArray a : arguments) {
+                if (a.getArrayLocation() == -1) {
+                    // last position of the array represents the CPU
+                    argumentSize[devicesManager.getNumberOfGPUs()] += a.getSizeBytes();
+                } else {
+                    argumentSize[a.getArrayLocation()] += a.getSizeBytes();
+                }
+            }
+
+            //System.out.println("argument for vertex: "+vertex.getId());
+            int maxAt = 0;
+            for (int i = 0; i < argumentSize.length; i++) {
+                maxAt = argumentSize[i] > argumentSize[maxAt] ? i : maxAt;
+                //System.out.println("argument size : "+argumentSize[i]+" device id: "+ i);
+            }
+            if (maxAt == argumentSize.length - 1) {
+                return devicesManager.deviceWithLessActiveStream();
+            } else {
+                return maxAt;
+                // return devicesManager.deviceWithLessActiveStream();
+            }
+        }
+    }
+
+    private class DeviceMoveLessArgumentNew extends ChooseDeviceHeuristic {
+        @Override
+        public int getDevice(ExecutionDAG.DAGVertex vertex) {
+            long[] presentArgumentSize = new long[devicesManager.getNumberOfGPUs()+1];
+            List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
+            for(AbstractArray a : arguments){
+                for(int location : a.getArrayLocations()){
+                    if(location == -1){
+                        // last position of the array represents the CPU
+                        presentArgumentSize[devicesManager.getNumberOfGPUs()] += a.getSizeBytes();
+                    }else{
+                        presentArgumentSize[location] += a.getSizeBytes();
+                    }
+                }
+            }
+
+            //System.out.println("argument for vertex: "+vertex.getId());
+            int maxAt = 0;
+            for (int i = 0; i < presentArgumentSize.length; i++) {
+                maxAt = presentArgumentSize[i] > presentArgumentSize[maxAt] ? i : maxAt;
+                //System.out.println("argument size : "+argumentSize[i]+" device id: "+ i);
+            }
+
+            if(maxAt == presentArgumentSize.length-1){
+                return devicesManager.deviceWithLessActiveStream();
+            }else{
+                return maxAt;
+                // return devicesManager.deviceWithLessActiveStream();
+            }
+        }
+    }
+
+    // new
+    private class FastestDataTransferMax extends ChooseDeviceHeuristic {
+
+        private double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUs() + 1][devicesManager.getNumberOfGPUs() + 1];
+
+        public FastestDataTransferMax() {
+            List<List<String>> records = new ArrayList<>();
+            try (BufferedReader br = new BufferedReader(new FileReader("connection_graph.csv"))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] values = line.split(",");
+                    records.add(Arrays.asList(values));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.println(records);
+
+            for (int il = 1; il<records.size(); il++) {
+                if (Integer.parseInt(records.get(il).get(0)) != -1) {
+                    this.linkBandwidth[Integer.parseInt(records.get(il).get(0))][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
+                } else {
+                    this.linkBandwidth[2][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
+                    this.linkBandwidth[Integer.parseInt(records.get(il).get(1))][2] = Double.parseDouble(records.get(il).get(2));
+                }
+            }
+        }
+
+        @Override
+        public int getDevice(ExecutionDAG.DAGVertex vertex) {
+            // last position of the arrays represents the CPU
+            long[] presentArgumentSize = new long[devicesManager.getNumberOfGPUs() + 1];
+            double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUs() + 1];
+            List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
+
+            double band;
+            // for each argument array
+            for (AbstractArray a : arguments) {
+                // check all available GPUs and compute the tentative transfer time for each of them
+                for (int i = 0; i < presentArgumentSize.length - 1; i++) {
+                    // hypoteses: we consider the max bandwith towards the device i
+                    // initialization: min possible value
+                    band = 0.0;
+                    // if array a already present in device i, band is infinity
+                    if (a.getArrayLocations().contains(i)) {
+                        band = Double.POSITIVE_INFINITY;
+                        // else we consider the max band to move array a to device i
+                    } else {
+                        // from each possible location containing the array a
+                        for (int location : a.getArrayLocations()) {
+                            band = linkBandwidth[location][i] > band ? linkBandwidth[location][i] : band;
+                        }
+                    }
+                    argumentTransferTime[i] += a.getSizeBytes() / band;
+                }
+            }
+
+            //System.out.println("argument for vertex: "+vertex.getId());
+            // best device has minimum transfer time
+            int minAt = 0;
+            for (int i = 0; i < argumentTransferTime.length - 1; i++) {
+                minAt = argumentTransferTime[i] < argumentTransferTime[minAt] ? i : minAt;
+                //System.out.println("argument size : "+argumentSize[i]+" device id: "+ i);
+            }
+            return minAt;
+        }
+    }
+
+    private class FastestDataTransferMin extends ChooseDeviceHeuristic {
+
+        private double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUs() + 1][devicesManager.getNumberOfGPUs() + 1];
+
+        public FastestDataTransferMin () {
+            List<List<String>> records = new ArrayList<>();
+            try (BufferedReader br = new BufferedReader(new FileReader("connection_graph.csv"))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] values = line.split(",");
+                    records.add(Arrays.asList(values));
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.println(records);
+
+            for (int il = 1; il<records.size(); il++) {
+                if (Integer.parseInt(records.get(il).get(0)) != -1) {
+                    this.linkBandwidth[Integer.parseInt(records.get(il).get(0))][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
+                } else {
+                    this.linkBandwidth[2][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
+                    this.linkBandwidth[Integer.parseInt(records.get(il).get(1))][2] = Double.parseDouble(records.get(il).get(2));
+                }
+            }
+        }
+
+        @Override
+        public int getDevice(ExecutionDAG.DAGVertex vertex) {
+            // last position of the arrays represents the CPU
+            long[] presentArgumentSize = new long[devicesManager.getNumberOfGPUs() + 1];
+            double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUs() + 1];
+            List<AbstractArray> arguments = vertex.getComputation().getArgumentArray();
+
+            double band;
+            // for each argument array
+            for (AbstractArray a :arguments) {
+                // check all available GPUs and compute the tentative transfer time for each of them
+                for (int i = 0; i < presentArgumentSize.length - 1; i++) {
+                    // hypotesis: we consider the min bandwidth towards the device i
+                    // initialization: max possible value
+                    band = Double.POSITIVE_INFINITY;
+                    // if array a already present in device i, band is infinity
+                    // else we consider the min band to move array a to device i
+                    if (!a.getArrayLocations().contains(i)) {
+                        // from each possible location containing the array a
+                        for (int location : a.getArrayLocations()) {
+                            band = linkBandwidth[location][i] < band ? linkBandwidth[location][i] : band;
+                        }
+                    }
+                    argumentTransferTime[i] += a.getSizeBytes() / band;
+                }
+            }
+
+            //System.out.println("argument for vertex: "+vertex.getId());
+            // best device has minimum transfer time
+            int minAt = 0;
+            for(int i = 0; i<argumentTransferTime.length-1; i++) {
+                minAt = argumentTransferTime[i] < argumentTransferTime[minAt] ? i : minAt;
+                //System.out.println("argument size : "+argumentSize[i]+" device id: "+ i);
+            }
+            return minAt;
         }
     }
 }
