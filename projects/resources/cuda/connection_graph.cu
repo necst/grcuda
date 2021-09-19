@@ -85,7 +85,7 @@ int main(){
 		bands[i] = (float*)malloc(NGPU * sizeof(float));
 
 	std::ofstream out_file;
-	out_file.open("connection_graph.csv");
+	out_file.open("../../../connection_graph.csv");
 	out_file << "From,To,Bandwidth\n";
 
 	for(int i=0; i<NGPU; i++){
