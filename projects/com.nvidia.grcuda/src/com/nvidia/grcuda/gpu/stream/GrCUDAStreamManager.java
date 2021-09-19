@@ -47,6 +47,14 @@ public class GrCUDAStreamManager {
     public GrCUDAStreamManager(
             CUDARuntime runtime,
             RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
+            RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
+            ChooseDeviceHeuristicEnum chooseDeviceHeuristicEnum, GrCUDADevicesManager devicesManager) {
+        this(new StreamPolicy(retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, chooseDeviceHeuristicEnum, devicesManager, runtime), runtime);
+    }
+
+    public GrCUDAStreamManager(
+            CUDARuntime runtime,
+            RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
             RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager) {
         this(new StreamPolicy(retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, devicesManager, runtime), runtime);
     }
