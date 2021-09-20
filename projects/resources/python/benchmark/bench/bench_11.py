@@ -19,10 +19,15 @@ from benchmark_result import BenchmarkResult
 
 MATRIX_VECTOR_MULT_KERNEL = """   
 extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, float* z, int n, int m, int z_offset) {
+    extern __shared__ float y_tmp[];
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < m; i += blockDim.x * gridDim.x) {
+        y_tmp[i] = y[i];
+    }
+
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
         float sum = 0;
         for (int j = 0; j < m; j++) {                
-            sum += x[i * m + j] * y[j];
+            sum += x[i * m + j] * y_tmp[j];
         }
         z[z_offset + i] = sum;
     }
@@ -117,7 +122,7 @@ class Benchmark11(Benchmark):
 
         # Compute all partitions;
         for p in range(self.P):
-            self.execute_phase("mmul_{p}", self.matrix_vector_mult_kernel(self.num_blocks, self.block_size),
+            self.execute_phase("mmul_{p}", self.matrix_vector_mult_kernel(self.num_blocks, self.block_size, self.M * self.y_cpu.itemsize),
                                self.x[p], self.y, self.z, min(self.S, self.N - p * self.S), self.M, p * self.S)
 
         # Add a final sync step to measure the real computation time;
