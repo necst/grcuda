@@ -296,6 +296,7 @@ Here, we explain how to setup IntelliJ Idea.
   1. `mx ideinit` from `$GRCUDA_HOME`, to setup the IDE
   2. Open Idea and select *"open project"*, then open GrCUDA
   3. See this [guide](https://github.com/graalvm/mx/blob/master/docs/IDE.md) to configure the syntax checker
+     * `File -> Settings -> Plugins -> Marketplace -> Search "Eclipse Code Formatter" and install it`
   4. In IntelliJ Idea, install the Python plugin with `Settings -> Plugin -> Search "Python"`, then do `Project Structure -> SDKs -> Create a new Python 3.8 Virtual Environment`, it is used by `mx`
   5. Select the right JVM. It should select automatically your `$JAVA_HOME`. Othewise, `Project Structures -> Modules -> Set the Module SDK (under Dependencies)` of `mx` and submodules to your Java SDK (e.g. `11`). You can pick either the `labsjdk` or `graalvm`.
       * This is also given by the `configure` option if you try to build the project in IntelliJ Idea before setting these options. Set your project Java SDK (e.g. `11`) for those missing modules
@@ -304,16 +305,18 @@ Here, we explain how to setup IntelliJ Idea.
 
           a. For those packages (look at the log to find them), manually specify a more recent SDK (e.g. `11`) as you did in step above. If you get errors of missing symbols, follow IntelliJ's hints and export the requested packages
 
-          b. Remove the exports. `File -> Settings -> Build ... -> Java Compiler`, then remove all the `--export` flags.
+          b. Remove the exports. `File -> Settings -> Build ... -> Compiler -> Java Compiler`, then remove all the `--export` flags.
   7. To run tests:
 
       a. Go to `Run (top bar) -> Edit Configurations -> Edit configuration templates -> Junit`
 
       b. (Not always necessary) By default, Idea should use your `env`. If not, make sure to have the same. Update the `PATH` variable so that it can find `nvcc`, and export `$GRAAL_HOME`. See `setup_machine_from_scratch.sh` to find all the environment variables.
 
-      c. Modify the template Junit test configuration adding `-Djava.library.path="$GRAAL_HOME/lib` (in Java 11) to the VM options to find `trufflenfi`
+      c. Modify the template Junit test configuration adding `-Djava.library.path="$GRAAL_HOME/lib"` (in Java 11) to the VM options to find `trufflenfi`
 
       d. In IntelliJ Idea, `Run -> Edit Configurations`. Create a new JUnit configuration set to `All in package` with `com.nvidia.grcuda` as module and `com.nvidia.grcuda.test` selected below. Add `-Djava.library.path="$GRAAL_HOME/lib"` (or your version of GraalVM) if it's not already in VM options. Specify the SDK by setting the GraalVM JRE in e.g. `$GRAAL_HOME`, if not specified already.   
+      
+      e. If you change something in GrCUDA, rebuild it with `./install.sh` before running tests. That's because tests that use the GPU load the `.jar` in `$GRAAL_HOME`, which is updated by `./install.sh`    
 
 ## Execute performance tests using Graalpython
 

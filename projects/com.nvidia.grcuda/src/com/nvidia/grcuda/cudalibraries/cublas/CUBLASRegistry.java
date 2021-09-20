@@ -56,7 +56,7 @@ import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
 public class CUBLASRegistry {
-    public static final String DEFAULT_LIBRARY = "libcublas.so";
+    public static final String DEFAULT_LIBRARY = (System.getenv("LIBCUBLAS_DIR") != null ? System.getenv("LIBCUBLAS_DIR") : "") + "libcublas.so";
     public static final String DEFAULT_LIBRARY_HINT = " (CuBLAS library location can be set via the --grcuda.CuBLASLibrary= option. " +
                     "CuBLAS support can be disabled via --grcuda.CuBLASEnabled=false.";
     public static final String NAMESPACE = "BLAS";
