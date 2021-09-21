@@ -32,7 +32,9 @@ public class GrCUDADevicesManager {
         this.currentDeviceId = currentDeviceId;
         this.deviceList = deviceList;
         for(int i = 0; i<this.numberOfGPUs; i++){
-            System.out.println("device cudaDevAttrConcurrentManagedAccess "+runtime.cudaDeviceGetAttribute(CUDADeviceAttribute.CONCURRENT_MANAGED_ACCESS, i));
+            if (runtime!=null){
+                System.out.println("device cudaDevAttrConcurrentManagedAccess "+runtime.cudaDeviceGetAttribute(CUDADeviceAttribute.CONCURRENT_MANAGED_ACCESS, i));
+            }
         }
         // System.out.println("can access peer api 0 -> 1 :"+runtime.cudaDeviceCanAccessPeer(0, 1));
         // System.out.println("can access peer api 1 -> 0 :"+runtime.cudaDeviceCanAccessPeer(1, 0));

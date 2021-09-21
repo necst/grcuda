@@ -209,8 +209,9 @@ public class ExecutionWithMultipleGPU {
 
             // Perform the computation;
             configuredK2.execute(y, numElements);
-            System.out.println(configuredK0.getArraySize());
-
+            if (configuredK0.hasArrayElements()) {
+                System.out.println(configuredK0.getArraySize());
+            }
 //          // Verify the output;
             assertEquals(4.0, x.getArrayElement(0).asFloat(), 0.1);
             assertEquals(256.0, y.getArrayElement(0).asFloat(), 0.1);
