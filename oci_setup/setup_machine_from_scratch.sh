@@ -16,7 +16,8 @@ sudo apt upgrade -y
 sudo apt install build-essential -y
 sudo apt install lib32z1-dev -y
 sudo apt install unzip -y
-sudo apt-get install -y python-ctypes
+sudo apt install -y python-ctypes
+sudo apt install -y curl
 
 # clone repositories (GraalVM, MX, GrCUDA).
 #   We use the freely available GraalVM CE.
