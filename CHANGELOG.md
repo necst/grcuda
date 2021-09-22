@@ -1,5 +1,12 @@
 # 2021-09-30, Release 1
 
+## API Changes
+
+* Added option to specify arguments in NFI kernel signatures as `const`.
+    * The effect is the same as marking them as `in` in the NIDL syntax.
+    * It is not strictly required to have the corresponding arguments in the CUDA kernel marked as `const`, although that's recommended
+    * Marking arguments as `const` or `in` enables the async scheduler to overlap kernels that use the same read-only arguments
+
 ## New asynchronous scheduler
 
 **TODO**
