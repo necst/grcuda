@@ -1,7 +1,6 @@
 package com.nvidia.grcuda.runtime.executioncontext;
 
 import com.nvidia.grcuda.GrCUDAContext;
-import com.nvidia.grcuda.GrCUDAThreadManager;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
@@ -23,19 +22,19 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
     private final GrCUDAStreamManager streamManager;
 
     public GrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        this(new CUDARuntime(context, env), new GrCUDAThreadManager(context), dependencyPolicy, inputPrefetch);
+        this(new CUDARuntime(context, env), dependencyPolicy, inputPrefetch);
     }
 
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        this(cudaRuntime, threadManager, new GrCUDAStreamManager(cudaRuntime), dependencyPolicy, inputPrefetch);
+    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
+        this(cudaRuntime, new GrCUDAStreamManager(cudaRuntime), dependencyPolicy, inputPrefetch);
     }
 
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy) {
+    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy) {
         super(cudaRuntime, dependencyPolicy, PrefetcherEnum.NONE, ExecutionPolicyEnum.ASYNC);
         this.streamManager = streamManager;
     }
 
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAThreadManager threadManager, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
+    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
         super(cudaRuntime, dependencyPolicy, inputPrefetch, ExecutionPolicyEnum.ASYNC);
         this.streamManager = streamManager;
     }
