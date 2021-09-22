@@ -2,29 +2,37 @@
 
 ## API Changes
 
-* Added option to specify arguments in NFI kernel signatures as `const`.
-    * The effect is the same as marking them as `in` in the NIDL syntax.
+* Added option to specify arguments in NFI kernel signatures as `const`
+    * The effect is the same as marking them as `in` in the NIDL syntax
     * It is not strictly required to have the corresponding arguments in the CUDA kernel marked as `const`, although that's recommended
     * Marking arguments as `const` or `in` enables the async scheduler to overlap kernels that use the same read-only arguments
 
 ## New asynchronous scheduler
 
-**TODO**
+* Added a new asynchronous scheduler for GrCUDA, enable it with `--experimental-options --grcuda.ExecutionPolicy=async`
+    * With this scheduler, GPU kernels are executed asynchronously. Once they are launched, the host execution resumes immediately
+    * The computation is synchronized (i.e. the host thread is stalled and waits for the kernel to finish) only once GPU data are accessed by the host thread
+    * Execution of multiple kernels (operating on different data, e.g. distinct DeviceArrays) is overlapped using different streams
+    * Data transfer and execution (on different data, e.g. distinct DeviceArrays) is overlapped using different streams
+    * The scheduler supports different options, see `README.md` for the full list
+    * It is the scheduler presented in "DAG-based Scheduling with Resource Sharing for Multi-task Applications in a Polyglot GPU Runtime" (IPDPS 2021)
 
-* Enabled partial support for cuBLAS and cuML.
-    * Known limitation: functions in these libraries work with the async scheduler, although they still run on the default stream (i.e. they are not asynchronous)
+* Enabled partial support for cuBLAS and cuML in the aync scheduler
+    * **Known limitation:** functions in these libraries work with the async scheduler, although they still run on the default stream (i.e. they are not asynchronous)
     * They do benefit from prefetching
 * Set TensorRT support to experimental
-    * TensorRT is currently not supported on CUDA 11.4, making it impossible to use along a recent version of cuML.
-    * Known limitation: due to this incompatibility, TensorRT is currently not available on the async scheduler. 
+    * TensorRT is currently not supported on CUDA 11.4, making it impossible to use along a recent version of cuML
+    * **Known limitation:** due to this incompatibility, TensorRT is currently not available on the async scheduler 
 
 ## New features
 
 * Added generic AbstractArray data structure, which is extended by DeviceArray, MultiDimDeviceArray, MultiDimDeviceArrayView, and provides high-level array interfaces
 * Added API for prefetching 
-**TODO**
+    * If enabled (and using a GPU with architecture newer or equal than Pascal), it prefetches data to the GPU before executing a kernel, instead of relying on page-faults for data transfer. It can greatly improve performance
 * Added API for stream attachment
-**TODO**
+    * Automatically enabled in GPUs with with architecture older than Pascal
+    * It restricst the visibility of GPU data to the specified stream
+    * In architectures newer or equal than Pascal it can provide a small performance benefit
 * Added `copyTo/copyFrom` functions on generic arrays (Truffle interoperable objects that expose the array API)
     * Internally, the copy is implemented as a for loop, instead of using CUDA's `memcpy`
     * It is still faster than copying using loops in the host languages, in many cases, and especially if host code is not JIT-ted
@@ -32,8 +40,8 @@
 
 ## Demos, benchmarks and code samples
 
-* Added demo used at SeptembeRSE 2021 (`demos/image_pipeline_local` and `demos/image_pipeline_web`). 
-    * It shows an image processing pipeline that applies a retro look to images. We have a local version and a web version that displays results a in web page.
+* Added demo used at SeptembeRSE 2021 (`demos/image_pipeline_local` and `demos/image_pipeline_web`)
+    * It shows an image processing pipeline that applies a retro look to images. We have a local version and a web version that displays results a in web page
 * Added benchmark suite written in Graalpython, used in "DAG-based Scheduling with Resource Sharing for Multi-task Applications in a Polyglot GPU Runtime" (IPDPS 2021)
     * It is a collection of complex multi-kernel benchmarks meant to show the benefits of asynchronous scheduling.
 
