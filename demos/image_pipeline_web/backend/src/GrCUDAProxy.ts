@@ -185,7 +185,7 @@ export class GrCUDAProxy {
 
     const lut = cu.DeviceArray("int", CDEPTH);
 
-    // Initialize the right LUT;
+    // Load the right LUT;
     copyFrom(LUT[channel], lut);
     // Fill the image data;
     const s1 = System.nanoTime();
@@ -237,7 +237,6 @@ export class GrCUDAProxy {
     if (debug) console.log("--cuda time=" + _intervalToMs(start, end) + " ms");
     const s2 = System.nanoTime();
     img.set(image3);
-    //image3.copyTo(img, size * size);
     const e2 = System.nanoTime();
     if (debug) console.log("--device array to image=" + _intervalToMs(s2, e2) + " ms");
 
@@ -295,8 +294,9 @@ export class GrCUDAProxy {
     }
 
     const endComputeAllImages = System.nanoTime()
-
-    console.log(`[${this.computationType}] Whole computation took ${_intervalToMs(beginComputeAllImages, endComputeAllImages)}`)
+    const executionTime = _intervalToMs(beginComputeAllImages, endComputeAllImages)
+    this.communicateExecTime(executionTime, computationType)
+    console.log(`[${this.computationType}] Whole computation took ${executionTime}`)
   }
 
   /*
@@ -336,8 +336,20 @@ export class GrCUDAProxy {
     const endComputeAllImages = System.nanoTime()
 
     this.communicateAll(MAX_PHOTOS, computationType)
+    const executionTime = _intervalToMs(beginComputeAllImages, endComputeAllImages)
+    this.communicateExecTime(executionTime, computationType)
 
-    console.log(`[${this.computationType}] Whole computation took ${_intervalToMs(beginComputeAllImages, endComputeAllImages)}`)
+    console.log(`[${this.computationType}] Whole computation took ${executionTime}`)
+  }
+
+  private async communicateExecTime(executionTime: number, computationType: string) {
+
+    this.ws.send(JSON.stringify({
+      type: "time",
+      data: executionTime,
+      computationType
+    }))
+
   }
 
   /* Mock the computation of the kernels 
@@ -366,10 +378,6 @@ export class GrCUDAProxy {
   }
 
   private communicateProgress(data: number, computationType: string) {
-    const {
-      MAX_PHOTOS
-    } = CONFIG_OPTIONS
-
     this.ws.send(JSON.stringify({
       type: "progress",
       data: data,

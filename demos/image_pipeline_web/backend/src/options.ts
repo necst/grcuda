@@ -35,7 +35,7 @@ export const MOCK_OPTIONS = {
 }
 
 export const CONFIG_OPTIONS = {
-  MAX_PHOTOS: 60,
+  MAX_PHOTOS: 30,
   SEND_BATCH_SIZE: 1
 }
 
