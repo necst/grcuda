@@ -112,7 +112,7 @@ for(const wsKey of Object.keys(websockets)) {
       processImageMessage(evt)
     }
 
-    if (data.type === "executionTime"){
+    if (data.type === "time"){
       processExecutionTimeMessage(evt)
     }
   })
@@ -205,7 +205,7 @@ const processExecutionTimeMessage = (evt) => {
   console.log(`${computationType} took: ${executionTime / 1000}s`)
   const formattedExecutionTime = executionTime / 1000
   document.getElementById(`${labelMap[computationType]}-execution-time`).innerHTML = `
-    <b>Took ${formattedExecutionTime.toFixed(2)}s</b>
+    <b> took ${formattedExecutionTime.toFixed(2)}s</b>
   `
 }
 
