@@ -282,11 +282,14 @@ graalpython -m ginstall install numpy;
 
 4. **Run GrCUDA Unit tests** using 
 
-```bash
+```
 mx unittest com.nvidia
 # To run a specific test, you can use
 mx unittest com.nvidia.grcuda.test.BuildKernelTest#testBuildKernelwithNFILegacytSignature
 ```
+
+5. **Setup the grcuda-data sumbodule**
+The `grcuda-data` repository is used as a `git` submodule to store data, results, and plots for demos, benchmarks, and publications. You will need this submodule to run the full benchmark suite, and some of the demos. To setup the submodule, follow this [`README`](https://github.com/AlbertoParravicini/grcuda-data/tree/master).
 
 ### Setup your IDE
 
