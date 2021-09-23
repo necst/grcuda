@@ -30,7 +30,7 @@
 * Added API for prefetching 
     * If enabled (and using a GPU with architecture newer or equal than Pascal), it prefetches data to the GPU before executing a kernel, instead of relying on page-faults for data transfer. It can greatly improve performance
 * Added API for stream attachment
-    * Automatically enabled in GPUs with with architecture older than Pascal
+    * Always enabled in GPUs with with architecture older than Pascal, and the async scheduler is active. With the sync scheduler, it can be manually enabled
     * It restricts the visibility of GPU data to the specified stream
     * In architectures newer or equal than Pascal it can provide a small performance benefit
 * Added `copyTo/copyFrom` functions on generic arrays (Truffle interoperable objects that expose the array API)
