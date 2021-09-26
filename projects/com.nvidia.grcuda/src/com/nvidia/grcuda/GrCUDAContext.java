@@ -138,8 +138,6 @@ public final class GrCUDAContext {
                 this.grCUDAExecutionContext = new SyncGrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.SYNC : PrefetcherEnum.NONE, memAdvise);
                 break;
             case DEFAULT:
-                this.grCUDAExecutionContext = new GrCUDAExecutionContext(this, env ,dependencyPolicy, inputPrefetch ? PrefetcherEnum.DEFAULT : PrefetcherEnum.NONE, memAdvise);
-                break;
             default:
                 this.grCUDAExecutionContext = new GrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.DEFAULT : PrefetcherEnum.NONE, memAdvise);
         }
@@ -230,6 +228,10 @@ public final class GrCUDAContext {
         return retrieveParentStreamPolicyEnum;
     }
 
+    public ChooseDeviceHeuristicEnum getChooseDeviceHeuristicEnum() {
+        return chooseDeviceHeuristicEnum;
+    }
+
     public boolean isForceStreamAttach() {
         return forceStreamAttach;
     }
@@ -270,7 +272,7 @@ public final class GrCUDAContext {
         switch(policyString) {
             case "read-mostly":
                 return AdviserEnum.ADVISE_READ_MOSTLY;
-            case "preffered-location":
+            case "preferred-location":
                 return AdviserEnum.ADVISE_PREFERRED_LOCATION;
             default:
                 return AdviserEnum.NONE;
@@ -295,7 +297,7 @@ public final class GrCUDAContext {
         switch(policyString) {
             case "fifo":
                 return RetrieveNewStreamPolicyEnum.FIFO;
-            case "always-new":
+            case "always_new":
                 return RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
             default:
                 System.out.println("Warning: unknown new stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY);
@@ -330,7 +332,7 @@ public final class GrCUDAContext {
             case "best_transfer_time_min":
                 return ChooseDeviceHeuristicEnum.TRANSFER_TIME_MIN;
             default:
-                System.out.println("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_CHOOSE_DEVICE_HEURISTIC);
+                System.out.println("Warning: unknown heuristic for choosing devices=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_CHOOSE_DEVICE_HEURISTIC);
                 return GrCUDAContext.DEFAULT_CHOOSE_DEVICE_HEURISTIC;
         }
     }

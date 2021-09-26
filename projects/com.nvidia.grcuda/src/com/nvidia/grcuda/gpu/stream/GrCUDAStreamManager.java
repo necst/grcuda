@@ -40,6 +40,7 @@ public class GrCUDAStreamManager {
     
     public GrCUDAStreamManager(CUDARuntime runtime) {
         this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum(), new GrCUDADevicesManager(runtime, runtime.getContext().getNumberOfGPUs()));
+        //this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum(), runtime.getContext().getChooseDeviceHeuristicEnum(), new GrCUDADevicesManager(runtime, runtime.getContext().getNumberOfGPUs()));
     }
     /**
      * With DeviceManager
