@@ -196,7 +196,7 @@ def execute_grcuda_benchmark(benchmark, size, block_sizes, exec_policy, new_stre
     start = System.nanoTime()
     result = subprocess.run(benchmark_cmd,
                             shell=True,
-                            stdout=subprocess.STDOUT,
+                            stdout=None, #subprocess.STDOUT,
                             cwd=f"{os.getenv('GRCUDA_HOME')}/projects/resources/python/benchmark")
     result.check_returncode()
     end = System.nanoTime()
