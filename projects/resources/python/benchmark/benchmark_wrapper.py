@@ -11,8 +11,8 @@ from java.lang import System
 ##############################
 
 DEFAULT_NUM_BLOCKS = 32  # GTX 960, 8 SM
-DEFAULT_NUM_BLOCKS = 448  # P100, 56 SM
-DEFAULT_NUM_BLOCKS = 176  # GTX 1660 Super, 22 SM
+#DEFAULT_NUM_BLOCKS = 448  # P100, 56 SM
+#DEFAULT_NUM_BLOCKS = 176  # GTX 1660 Super, 22 SM
 
 HEAP_SIZE = 26 
 #HEAP_SIZE = 140 # P100
@@ -28,14 +28,14 @@ benchmarks = [
 ]
 
 # GTX 960
-# num_elem = {
-#     "b1": [1000],#[20_000_000, 60_000_000, 80_000_000, 100_000_000, 120_000_000],
-#     "b5": [2000],#[2_000_000, 6_000_000, 8_000_000, 10_000_000, 12_000_000],
-#     "b6": [200],#[200_000, 500_000, 800_000, 1_000_000, 1_200_000],
-#     "b7": [4000],#[4_000_000, 7_000_000, 10_000_000, 15_000_000, 20_000_000], 
-#     "b8": [800],#[1600, 2400, 3200, 4000, 4800],
-#     "b10": [300],#[3000, 4000, 5000, 6000, 7000],
-# }
+num_elem = {
+    "b1": [1000],#[20_000_000, 60_000_000, 80_000_000, 100_000_000, 120_000_000],
+    "b5": [2000],#[2_000_000, 6_000_000, 8_000_000, 10_000_000, 12_000_000],
+    "b6": [200],#[200_000, 500_000, 800_000, 1_000_000, 1_200_000],
+    "b7": [4000],#[4_000_000, 7_000_000, 10_000_000, 15_000_000, 20_000_000], 
+    "b8": [800],#[1600, 2400, 3200, 4000, 4800],
+    "b10": [300],#[3000, 4000, 5000, 6000, 7000],
+}
 
 # P100
 #num_elem = {
@@ -48,24 +48,24 @@ benchmarks = [
 #}
 
 # GTX 1660 Super
-num_elem = {
-    "b1": [60_000_000, 80_000_000, 100_000_000, 120_000_000, 200_000_000],
-    "b5": [6_000_000, 8_000_000, 10_000_000, 12_000_000, 20_000_000],
-    "b6": [500_000, 800_000, 1_000_000, 1_200_000, 2_000_000],
-    "b7": [7_000_000, 10_000_000, 15_000_000, 20_000_000, 40_000_000],
-    "b8": [3200, 4000, 4800, 8000, 10000],
-    "b10": [6000, 7000, 10000, 12000, 14000],
-}
+# num_elem = {
+#     "b1": [60_000_000, 80_000_000, 100_000_000, 120_000_000, 200_000_000],
+#     "b5": [6_000_000, 8_000_000, 10_000_000, 12_000_000, 20_000_000],
+#     "b6": [500_000, 800_000, 1_000_000, 1_200_000, 2_000_000],
+#     "b7": [7_000_000, 10_000_000, 15_000_000, 20_000_000, 40_000_000],
+#     "b8": [3200, 4000, 4800, 8000, 10000],
+#     "b10": [6000, 7000, 10000, 12000, 14000],
+# }
 
 exec_policies = ["default"]#, "sync"]
 
 cuda_exec_policies = ["default", "sync", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
 
-new_stream_policies = ["always-new"]
+new_stream_policies = ["always_new"]#, "fifo"]
 
-parent_stream_policies = ["disjoint"]
+parent_stream_policies = ["disjoint"]#, "default", "data_aware", "disjoint_data_aware", "stream_aware"]
 
-dependency_policies = ["with-const"]
+dependency_policies = ["with_const"]#, "default"
 
 prefetch = [True, False]
 
@@ -73,14 +73,14 @@ block_sizes_1d = [32]#[32, 128, 256, 1024]
 block_sizes_2d = [8]#[8, 8, 8, 8]
 
 # 960
-# block_dim_dict = {
-#     "b1": DEFAULT_NUM_BLOCKS,
-#     "b5": DEFAULT_NUM_BLOCKS,
-#     "b6": 32,
-#     "b7": DEFAULT_NUM_BLOCKS,
-#     "b8": 12,
-#     "b10": 16,
-# }
+block_dim_dict = {
+    "b1": DEFAULT_NUM_BLOCKS,
+    "b5": DEFAULT_NUM_BLOCKS,
+    "b6": 32,
+    "b7": DEFAULT_NUM_BLOCKS,
+    "b8": 12,
+    "b10": 16,
+}
 
 # P100
 # block_dim_dict = {
@@ -93,14 +93,14 @@ block_sizes_2d = [8]#[8, 8, 8, 8]
 # }
 
 # 1660
-block_dim_dict = {
-    "b1": DEFAULT_NUM_BLOCKS,
-    "b5": DEFAULT_NUM_BLOCKS,
-    "b6": 32,
-    "b7": DEFAULT_NUM_BLOCKS,
-    "b8": 16,
-    "b10": DEFAULT_NUM_BLOCKS,
-}
+# block_dim_dict = {
+#     "b1": DEFAULT_NUM_BLOCKS,
+#     "b5": DEFAULT_NUM_BLOCKS,
+#     "b6": 32,
+#     "b7": DEFAULT_NUM_BLOCKS,
+#     "b8": 16,
+#     "b10": DEFAULT_NUM_BLOCKS,
+# }
 
 ##############################
 ##############################
@@ -150,14 +150,14 @@ def execute_cuda_benchmark(benchmark, size, block_size, exec_policy, num_iter, d
 ##############################
 ##############################
 
-GRAALPYTHON_CMD = "graalpython --vm.XX:MaxHeapSize={}G --jvm --polyglot " \
+GRAALPYTHON_CMD = "graalpython --vm.XX:MaxHeapSize={}G --jvm --polyglot --experimental-options " \
                   "--grcuda.RetrieveNewStreamPolicy={} {} --grcuda.ForceStreamAttach --grcuda.ExecutionPolicy={} --grcuda.DependencyPolicy={} " \
-                  "--grcuda.RetrieveParentStreamPolicy={} benchmark_main.py  -i {} -n {} -g {} " \
+                  "--grcuda.RetrieveParentStreamPolicy={} --grcuda.ChooseDeviceHeuristic={} benchmark_main.py  -i {} -n {} -g {} " \
                   "--reinit false --realloc false  -b {} --block_size_1d {} --block_size_2d {} --no_cpu_validation {} {} -o {}"
 
 
 def execute_grcuda_benchmark(benchmark, size, block_sizes, exec_policy, new_stream_policy,
-                      parent_stream_policy, dependency_policy, num_iter, debug, time_phases, num_blocks=DEFAULT_NUM_BLOCKS, prefetch=False, output_date=None):
+                      parent_stream_policy, choose_device_heuristic, dependency_policy, num_iter, debug, time_phases, num_blocks=DEFAULT_NUM_BLOCKS, prefetch=False, output_date=None):
     if debug:
         BenchmarkResult.log_message("")
         BenchmarkResult.log_message("")
@@ -169,6 +169,7 @@ def execute_grcuda_benchmark(benchmark, size, block_sizes, exec_policy, new_stre
                                     f"exec policy={exec_policy}, "
                                     f"new stream policy={new_stream_policy}, "
                                     f"parent stream policy={parent_stream_policy}, "
+                                    f"choose-device heuristic={choose_device_heuristic}, "
                                     f"dependency policy={dependency_policy}, "
                                     f"prefetch={prefetch}, "
                                     f"time_phases={time_phases}")
@@ -179,7 +180,7 @@ def execute_grcuda_benchmark(benchmark, size, block_sizes, exec_policy, new_stre
     if not output_date:
         output_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     file_name = f"{output_date}_{benchmark}_{exec_policy}_{new_stream_policy}_{parent_stream_policy}_" \
-                f"{dependency_policy}_{prefetch}_{size}_{num_iter}_{num_blocks}.json"
+                f"{choose_device_heuristic}_{dependency_policy}_{prefetch}_{size}_{num_iter}_{num_blocks}.json"
     # Create a folder if it doesn't exist;
     output_folder_path = os.path.join(BenchmarkResult.DEFAULT_RES_FOLDER, output_date + "_grcuda")
     if not os.path.exists(output_folder_path):
@@ -190,7 +191,8 @@ def execute_grcuda_benchmark(benchmark, size, block_sizes, exec_policy, new_stre
     b1d_size = " ".join([str(b['block_size_1d']) for b in block_sizes])
     b2d_size = " ".join([str(b['block_size_2d']) for b in block_sizes])
 
-    benchmark_cmd = GRAALPYTHON_CMD.format(HEAP_SIZE, new_stream_policy, "--grcuda.InputPrefetch" if prefetch else "", exec_policy, dependency_policy, parent_stream_policy,
+    benchmark_cmd = GRAALPYTHON_CMD.format(HEAP_SIZE, new_stream_policy, "--grcuda.InputPrefetch" if prefetch else "",
+                                           exec_policy, dependency_policy, parent_stream_policy, choose_device_heuristic,
                                            num_iter, size, num_blocks, benchmark, b1d_size, b2d_size,
                                            "-d" if debug else "",  "-p" if time_phases else "", output_path)
     start = System.nanoTime()
@@ -267,6 +269,7 @@ if __name__ == "__main__":
                 for exec_policy in exec_policies:
                     for new_stream_policy in new_stream_policies:
                         for parent_stream_policy in parent_stream_policies:
+                            for 
                             for dependency_policy in dependency_policies:
                                 for p in prefetch:
                                     nb = num_blocks if num_blocks else block_dim_dict[b]

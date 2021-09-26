@@ -25,10 +25,10 @@ public class StreamPolicy {
 
     private final RetrieveNewStream retrieveNewStream;
     private final RetrieveParentStream retrieveParentStream;
+    private ChooseDeviceHeuristic chooseDeviceHeuristic;
     private final GrCUDADevicesManager devicesManager;
     private final CUDARuntime runtime;
     private int streamCount;
-    private ChooseDeviceHeuristic chooseDeviceHeuristic;
     private final StartingVertexPolicy startingVertexPolicy;
 
     public StreamPolicy(RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum, RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum, GrCUDADevicesManager devicesManager, CUDARuntime runtime) {
@@ -39,8 +39,6 @@ public class StreamPolicy {
                 this.retrieveNewStream = new FifoRetrieveStream();
                 break;
             case ALWAYS_NEW:
-                this.retrieveNewStream = new AlwaysNewRetrieveStream();
-                break;
             default:
                 this.retrieveNewStream = new AlwaysNewRetrieveStream();
         }
@@ -59,8 +57,6 @@ public class StreamPolicy {
                 this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
                 break;
             case DEFAULT:
-                this.retrieveParentStream = new DefaultRetrieveParentStream();
-                break;
             default:
                 this.retrieveParentStream = new DefaultRetrieveParentStream();
         }
@@ -79,8 +75,6 @@ public class StreamPolicy {
                 this.retrieveNewStream = new FifoRetrieveStream();
                 break;
             case ALWAYS_NEW:
-                this.retrieveNewStream = new AlwaysNewRetrieveStream();
-                break;
             default:
                 this.retrieveNewStream = new AlwaysNewRetrieveStream();
         }
@@ -99,23 +93,19 @@ public class StreamPolicy {
                 this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
                 break;
             case DEFAULT:
-                this.retrieveParentStream = new DefaultRetrieveParentStream();
-                break;
             default:
                 this.retrieveParentStream = new DefaultRetrieveParentStream();
         }
         this.streamCount = 0;
         if (retrieveParentStreamPolicyEnum == RetrieveParentStreamPolicyEnum.DATA_AWARE || retrieveParentStreamPolicyEnum == RetrieveParentStreamPolicyEnum.DISJOINT_DATA_AWARE) {
             switch (chooseDeviceHeuristicEnum) {
-                case DATA_LOCALITY:
-                    this.chooseDeviceHeuristic = new DeviceMoveLessArgument();
-                    break;
                 case TRANSFER_TIME_MIN:
                     this.chooseDeviceHeuristic = new FastestDataTransferMin();
                     break;
                 case TRANSFER_TIME_MAX:
                     this.chooseDeviceHeuristic = new FastestDataTransferMax();
                     break;
+                case DATA_LOCALITY:
                 default:
                     this.chooseDeviceHeuristic = new DeviceMoveLessArgument();
             }
