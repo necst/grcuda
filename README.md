@@ -288,7 +288,7 @@ mx unittest com.nvidia
 mx unittest com.nvidia.grcuda.test.BuildKernelTest#testBuildKernelwithNFILegacytSignature
 ```
 
-5. **Setup the grcuda-data sumbodule**
+5. **Setup the grcuda-data submodule**
 The `grcuda-data` repository is used as a `git` submodule to store data, results, and plots for demos, benchmarks, and publications. You will need this submodule to run the full benchmark suite, and some of the demos. To setup the submodule, follow this [`README`](https://github.com/AlbertoParravicini/grcuda-data/tree/master).
 
 ### Setup your IDE
@@ -334,6 +334,12 @@ graalpython --jvm --polyglot --experimental-options --grcuda.InputPrefetch --grc
 Run all benchmarks
 ```console
 graalpython --jvm --polyglot benchmark_wrapper.py -d -i 30 
+```
+
+To run the CUDA version of all benchmarks, build it as
+```console
+cd $GRCUDA_HOME/projects/resources/cuda;
+make
 ```
 
 Run the CUDA version of all benchmarks
