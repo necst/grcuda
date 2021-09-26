@@ -73,6 +73,9 @@ public final class GrCUDAOptions {
     @Option(category = OptionCategory.USER, help = "Choose how streams for new GrCUDA computations are obtained from parent computations", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> RetrieveParentStreamPolicy = new OptionKey<>(GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY.getName());
 
+    @Option(category = OptionCategory.USER, help = "Choose the heuristic managing how streams for new GrCUDA computations are allocated to available devices", stability = OptionStability.EXPERIMENTAL) //
+    public static final OptionKey<String> ChooseDeviceHeuristic = new OptionKey<>(GrCUDAContext.DEFAULT_CHOOSE_DEVICE_HEURISTIC.getName());
+
     @Option(category = OptionCategory.USER, help = "Enable and select a memAdvise function", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> memAdviseOption = new OptionKey<>(GrCUDAContext.DEFAULT_MEM_ADVISE);
 

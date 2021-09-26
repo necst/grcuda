@@ -49,6 +49,7 @@ import com.nvidia.grcuda.gpu.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.gpu.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.gpu.executioncontext.GrCUDAExecutionContext;
 import com.nvidia.grcuda.gpu.executioncontext.SyncGrCUDAExecutionContext;
+import com.nvidia.grcuda.gpu.stream.ChooseDeviceHeuristicEnum;
 import com.nvidia.grcuda.gpu.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.gpu.stream.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.tensorrt.TensorRTRegistry;
@@ -72,6 +73,7 @@ public final class GrCUDAContext {
     public static final DependencyPolicyEnum DEFAULT_DEPENDENCY_POLICY = DependencyPolicyEnum.DEFAULT;
     public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
     public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.DATA_AWARE;
+    public static final ChooseDeviceHeuristicEnum DEFAULT_CHOOSE_DEVICE_HEURISTIC = ChooseDeviceHeuristicEnum.DATA_LOCALITY;
     public static final boolean DEFAULT_FORCE_STREAM_ATTACH = false;
     public static final String DEFAULT_MEM_ADVISE = "none";
 
@@ -85,6 +87,7 @@ public final class GrCUDAContext {
     private volatile boolean cudaInitialized = false;
     private final RetrieveNewStreamPolicyEnum retrieveNewStreamPolicy;
     private final RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum;
+    private final ChooseDeviceHeuristicEnum chooseDeviceHeuristicEnum;
     private final boolean forceStreamAttach;
     private final boolean inputPrefetch;
 
@@ -116,6 +119,9 @@ public final class GrCUDAContext {
         
         // Retrieve how streams are obtained from parent computations;
         retrieveParentStreamPolicyEnum = parseParentStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveParentStreamPolicy));
+
+        // Retrieve how streams are obtained from parent computations;
+        chooseDeviceHeuristicEnum = parseChooseDeviceHeuristic(env.getOptions().get(GrCUDAOptions.ChooseDeviceHeuristic));
 
         // Retrieve the dependency computation policy;
         DependencyPolicyEnum dependencyPolicy = parseDependencyPolicy(env.getOptions().get(GrCUDAOptions.DependencyPolicy));
@@ -312,6 +318,20 @@ public final class GrCUDAContext {
             default:
                 System.out.println("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY);
                 return GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY;
+        }
+    }
+    @TruffleBoundary
+    private static ChooseDeviceHeuristicEnum parseChooseDeviceHeuristic (String policyString) {
+        switch(policyString) {
+            case "data_locality":
+                return ChooseDeviceHeuristicEnum.DATA_LOCALITY;
+            case "best_transfer_time_max":
+                return ChooseDeviceHeuristicEnum.TRANSFER_TIME_MAX;
+            case "best_transfer_time_min":
+                return ChooseDeviceHeuristicEnum.TRANSFER_TIME_MIN;
+            default:
+                System.out.println("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_CHOOSE_DEVICE_HEURISTIC);
+                return GrCUDAContext.DEFAULT_CHOOSE_DEVICE_HEURISTIC;
         }
     }
 
