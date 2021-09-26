@@ -336,7 +336,7 @@ Run all benchmarks
 graalpython --jvm --polyglot benchmark_wrapper.py -d -i 30 
 ```
 
-To run the CUDA version of all benchmarks, build it as
+To run the CUDA version of all benchmarks, build it as follows. You might want to update the GPU architecture inside `$GRCUDA_HOME/projects/resources/cuda/Makefile` to reflect the hardware at your disposal.
 ```console
 cd $GRCUDA_HOME/projects/resources/cuda;
 make
