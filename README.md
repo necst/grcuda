@@ -325,6 +325,7 @@ Here, we explain how to setup IntelliJ Idea.
 
 To measure the performance of GrCUDA on complex GPU applications, we have developed a custom benchmark suite, found in `projects/resources/python/benchmark`.
 These are the same benchmarks used in the [DAG-based Scheduling with Resource Sharing for Multi-task Applications in a Polyglot GPU Runtime](https://ieeexplore.ieee.org/abstract/document/9460491) paper.
+All commands are executed from `$GRCUDA_HOME/projects/resources/python/benchmark`;
 
 Run a single benchmark with custom settings
 ```console
@@ -336,10 +337,11 @@ Run all benchmarks
 graalpython --jvm --polyglot benchmark_wrapper.py -d -i 30 
 ```
 
-To run the CUDA version of all benchmarks, build it as follows. You might want to update the GPU architecture inside `$GRCUDA_HOME/projects/resources/cuda/Makefile` to reflect the hardware at your disposal.
+To run the CUDA version of all benchmarks, build it as follows. You might want to update the GPU architecture (the `-arch` flag) inside `$GRCUDA_HOME/projects/resources/cuda/Makefile` to reflect the hardware at your disposal.
 ```console
 cd $GRCUDA_HOME/projects/resources/cuda;
 make
+cd -;
 ```
 
 Run the CUDA version of all benchmarks
