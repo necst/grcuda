@@ -77,13 +77,13 @@ public final class GrCUDAOptions {
     public static final OptionKey<String> ChooseDeviceHeuristic = new OptionKey<>(GrCUDAContext.DEFAULT_CHOOSE_DEVICE_HEURISTIC.getName());
 
     @Option(category = OptionCategory.USER, help = "Enable and select a memAdvise function", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<String> memAdviseOption = new OptionKey<>(GrCUDAContext.DEFAULT_MEM_ADVISE);
+    public static final OptionKey<String> memAdviseOption = new OptionKey<>(GrCUDAContext.DEFAULT_MEM_ADVISE.getName());
 
     @Option(category = OptionCategory.USER, help = "Force the use of array stream attaching even when not required (e.g. post-Pascal GPUs)", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<Boolean> ForceStreamAttach = new OptionKey<>(false);
 
     @Option(category = OptionCategory.USER, help = "Always prefetch input arrays to GPU if possible (e.g. post-Pascal GPUs)", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<Boolean> InputPrefetch = new OptionKey<>(false);
+    public static final OptionKey<String> InputPrefetch = new OptionKey<>(GrCUDAContext.DEFAULT_PREFETCHER.getName());
 
     @Option(category = OptionCategory.USER, help = "Enable TensorRT support.", stability = OptionStability.STABLE) //
     public static final OptionKey<Boolean> TensorRTEnabled = new OptionKey<>(true);

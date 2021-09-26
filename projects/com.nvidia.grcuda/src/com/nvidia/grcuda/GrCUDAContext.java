@@ -40,8 +40,6 @@ import com.nvidia.grcuda.functions.GetDevicesFunction;
 import com.nvidia.grcuda.functions.map.MapFunction;
 import com.nvidia.grcuda.functions.map.ShredFunction;
 import com.nvidia.grcuda.gpu.CUDARuntime;
-import com.nvidia.grcuda.gpu.Device;
-import com.nvidia.grcuda.gpu.GrCUDADevicesManager;
 import com.nvidia.grcuda.gpu.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.gpu.computation.prefetch.PrefetcherEnum;
 import com.nvidia.grcuda.gpu.computation.memAdvise.AdviserEnum;
@@ -74,8 +72,9 @@ public final class GrCUDAContext {
     public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
     public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.DATA_AWARE;
     public static final ChooseDeviceHeuristicEnum DEFAULT_CHOOSE_DEVICE_HEURISTIC = ChooseDeviceHeuristicEnum.DATA_LOCALITY;
+    public static final AdviserEnum DEFAULT_MEM_ADVISE = AdviserEnum.NONE;
+    public static final PrefetcherEnum DEFAULT_PREFETCHER = PrefetcherEnum.NONE;
     public static final boolean DEFAULT_FORCE_STREAM_ATTACH = false;
-    public static final String DEFAULT_MEM_ADVISE = "none";
 
     private static final String ROOT_NAMESPACE = "CU";
 
@@ -88,9 +87,9 @@ public final class GrCUDAContext {
     private final RetrieveNewStreamPolicyEnum retrieveNewStreamPolicy;
     private final RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum;
     private final ChooseDeviceHeuristicEnum chooseDeviceHeuristicEnum;
+    private final AdviserEnum memAdvise;
+    private final PrefetcherEnum inputPrefetch;
     private final boolean forceStreamAttach;
-    private final boolean inputPrefetch;
-
     private final int numberOfGPUs;
     private final boolean timeComputation;
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
@@ -103,10 +102,10 @@ public final class GrCUDAContext {
         forceStreamAttach = env.getOptions().get(GrCUDAOptions.ForceStreamAttach);
 
         // Retrieve if we should prefetch input data to GPU;
-        inputPrefetch = env.getOptions().get(GrCUDAOptions.InputPrefetch);
+        inputPrefetch = parsePrefetcher(env.getOptions().get(GrCUDAOptions.InputPrefetch));
 
         // Retrieve if we should implement memAdvise function during computation;
-        AdviserEnum memAdvise = parseMemAdvise(env.getOptions().get(GrCUDAOptions.memAdviseOption));
+        memAdvise = parseMemAdvise(env.getOptions().get(GrCUDAOptions.memAdviseOption));
 
         // Retrieve the number of GPUs to be used;
         numberOfGPUs = Integer.parseInt(env.getOptions().get(GrCUDAOptions.NumberOfGPUs));
@@ -135,11 +134,11 @@ public final class GrCUDAContext {
 
         switch (executionPolicy) {
             case SYNC:
-                this.grCUDAExecutionContext = new SyncGrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.SYNC : PrefetcherEnum.NONE, memAdvise);
+                this.grCUDAExecutionContext = new SyncGrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch, memAdvise);
                 break;
             case DEFAULT:
             default:
-                this.grCUDAExecutionContext = new GrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.DEFAULT : PrefetcherEnum.NONE, memAdvise);
+                this.grCUDAExecutionContext = new GrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch, memAdvise);
         }
 
         Namespace namespace = new Namespace(ROOT_NAMESPACE);
@@ -228,9 +227,7 @@ public final class GrCUDAContext {
         return retrieveParentStreamPolicyEnum;
     }
 
-    public ChooseDeviceHeuristicEnum getChooseDeviceHeuristicEnum() {
-        return chooseDeviceHeuristicEnum;
-    }
+    public ChooseDeviceHeuristicEnum getChooseDeviceHeuristicEnum() { return chooseDeviceHeuristicEnum; }
 
     public boolean isForceStreamAttach() {
         return forceStreamAttach;
@@ -270,12 +267,26 @@ public final class GrCUDAContext {
     @TruffleBoundary
     private static AdviserEnum parseMemAdvise(String policyString) {
         switch(policyString) {
-            case "read-mostly":
+            case "read_mostly":
                 return AdviserEnum.ADVISE_READ_MOSTLY;
-            case "preferred-location":
+            case "preferred":
                 return AdviserEnum.ADVISE_PREFERRED_LOCATION;
+            case "none":
             default:
                 return AdviserEnum.NONE;
+        }
+    }
+
+    @TruffleBoundary
+    private static PrefetcherEnum parsePrefetcher(String policyString) {
+        switch(policyString) {
+            case "default":
+                return PrefetcherEnum.DEFAULT;
+            case "sync":
+                return PrefetcherEnum.SYNC;
+            case "none":
+            default:
+                return PrefetcherEnum.NONE;
         }
     }
 

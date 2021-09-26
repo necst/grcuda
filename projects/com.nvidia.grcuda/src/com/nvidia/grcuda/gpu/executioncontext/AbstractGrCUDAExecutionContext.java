@@ -17,6 +17,7 @@ import com.nvidia.grcuda.gpu.computation.prefetch.NoneArrayPrefetcher;
 import com.nvidia.grcuda.gpu.computation.memAdvise.AbstractMemAdvise;
 import com.nvidia.grcuda.gpu.computation.memAdvise.DefaultMemAdviser;
 import com.nvidia.grcuda.gpu.computation.memAdvise.NoneMemAdviser;
+import com.nvidia.grcuda.gpu.computation.memAdvise.ReadMostlyMemAdviser;
 import com.nvidia.grcuda.gpu.computation.memAdvise.AdviserEnum;
 import com.nvidia.grcuda.gpu.computation.prefetch.PrefetcherEnum;
 import com.nvidia.grcuda.gpu.computation.prefetch.SyncArrayPrefetcher;
@@ -97,6 +98,7 @@ public abstract class AbstractGrCUDAExecutionContext {
                 pascalGpu = this.cudaRuntime.isArchitectureIsPascalOrNewer();
                 arrayPrefetcher = pascalGpu ? new SyncArrayPrefetcher(this.cudaRuntime) : new NoneArrayPrefetcher(this.cudaRuntime);
                 break;
+            case NONE:
             default:
                 arrayPrefetcher = new NoneArrayPrefetcher(this.cudaRuntime);
         }
@@ -108,8 +110,9 @@ public abstract class AbstractGrCUDAExecutionContext {
                 break;
             case ADVISE_READ_MOSTLY:
                 System.out.println("read mostly advise");
-                memAdviser = new DefaultMemAdviser(this.cudaRuntime);
+                memAdviser = new ReadMostlyMemAdviser(this.cudaRuntime);
                 break;
+            case NONE:
             default:
                 memAdviser = new NoneMemAdviser(this.cudaRuntime);
         }
