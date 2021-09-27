@@ -19,12 +19,12 @@ HEAP_SIZE = 26
 
 # Benchmark settings;
 benchmarks = [
-    # "b1",
-    # "b5",
-    # "b6",
-    # "b7",
-    # "b8",
-    # "b10",
+    "b1",
+    "b5",
+    "b6",
+    "b7",
+    "b8",
+    "b10",
     "b11",
 ]
 
