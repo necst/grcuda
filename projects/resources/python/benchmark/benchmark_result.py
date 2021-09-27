@@ -6,7 +6,7 @@ import numpy as np
 class BenchmarkResult:
 
     DEFAULT_RES_FOLDER = "../../../../data/results"
-    DEFAULT_NUM_ITER = 30
+    DEFAULT_NUM_ITER = 3
     DEFAULT_DEBUG = False
     DEFAULT_CPU_VALIDATION = True
     DEFAULT_REALLOC = False
