@@ -84,6 +84,8 @@ public final class GrCUDAContext {
     private final ArrayList<Runnable> disposables = new ArrayList<>();
     private final AtomicInteger moduleId = new AtomicInteger(0);
     private volatile boolean cudaInitialized = false;
+    private final ExecutionPolicyEnum executionPolicy;
+    private final DependencyPolicyEnum dependencyPolicy;
     private final RetrieveNewStreamPolicyEnum retrieveNewStreamPolicy;
     private final RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum;
     private final ChooseDeviceHeuristicEnum chooseDeviceHeuristicEnum;
@@ -98,39 +100,38 @@ public final class GrCUDAContext {
     public GrCUDAContext(Env env) {
         this.env = env;
 
-        // Retrieve if we should force array stream attachment;
-        forceStreamAttach = env.getOptions().get(GrCUDAOptions.ForceStreamAttach);
-
-        // Retrieve if we should prefetch input data to GPU;
-        inputPrefetch = parsePrefetcher(env.getOptions().get(GrCUDAOptions.InputPrefetch));
-
-        // Retrieve if we should implement memAdvise function during computation;
-        memAdvise = parseMemAdvise(env.getOptions().get(GrCUDAOptions.memAdviseOption));
-
-        // Retrieve the number of GPUs to be used;
-        numberOfGPUs = Integer.parseInt(env.getOptions().get(GrCUDAOptions.NumberOfGPUs));
-
-        // Retrieve if we should time the computation;
-        timeComputation = env.getOptions().get(GrCUDAOptions.TimeComputation);
-
         // Retrieve the stream retrieval policy;
         retrieveNewStreamPolicy = parseRetrieveStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveNewStreamPolicy));
         
         // Retrieve how streams are obtained from parent computations;
         retrieveParentStreamPolicyEnum = parseParentStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveParentStreamPolicy));
 
+        // Retrieve the number of GPUs to be used;
+        numberOfGPUs = Integer.parseInt(env.getOptions().get(GrCUDAOptions.NumberOfGPUs));
+
         // Retrieve how streams are obtained from parent computations;
         chooseDeviceHeuristicEnum = parseChooseDeviceHeuristic(env.getOptions().get(GrCUDAOptions.ChooseDeviceHeuristic));
 
+        // Retrieve if we should time the computation;
+        timeComputation = env.getOptions().get(GrCUDAOptions.TimeComputation);
+
+        // Retrieve if we should force array stream attachment;
+        forceStreamAttach = env.getOptions().get(GrCUDAOptions.ForceStreamAttach);
+
+        // Retrieve if we should prefetch input data to GPU;
+        inputPrefetch = parsePrefetcher(env.getOptions().get(GrCUDAOptions.InputPrefetch),env.getOptions().get(GrCUDAOptions.ExecutionPolicy));
+
+        // Retrieve if we should implement memAdvise function during computation;
+        memAdvise = parseMemAdvise(env.getOptions().get(GrCUDAOptions.memAdviseOption));
+
         // Retrieve the dependency computation policy;
-        DependencyPolicyEnum dependencyPolicy = parseDependencyPolicy(env.getOptions().get(GrCUDAOptions.DependencyPolicy));
+        dependencyPolicy = parseDependencyPolicy(env.getOptions().get(GrCUDAOptions.DependencyPolicy));
         System.out.println("-- using " + dependencyPolicy.getName() + " dependency policy");
 
         // Retrieve the execution policy;
-        ExecutionPolicyEnum executionPolicy = parseExecutionPolicy(env.getOptions().get(GrCUDAOptions.ExecutionPolicy));
+        executionPolicy = parseExecutionPolicy(env.getOptions().get(GrCUDAOptions.ExecutionPolicy));
         // Initialize the execution policy;
         System.out.println("-- using " + executionPolicy.getName() + " execution policy");
-
 
         switch (executionPolicy) {
             case SYNC:
@@ -140,6 +141,7 @@ public final class GrCUDAContext {
             default:
                 this.grCUDAExecutionContext = new GrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch, memAdvise);
         }
+
 
         Namespace namespace = new Namespace(ROOT_NAMESPACE);
         namespace.addNamespace(namespace);
@@ -278,12 +280,16 @@ public final class GrCUDAContext {
     }
 
     @TruffleBoundary
-    private static PrefetcherEnum parsePrefetcher(String policyString) {
+    private static PrefetcherEnum parsePrefetcher(String policyString, String execPolicyString) {
         switch(policyString) {
-            case "default":
-                return PrefetcherEnum.DEFAULT;
-            case "sync":
-                return PrefetcherEnum.SYNC;
+            case "active":
+                switch (execPolicyString){
+                    case "sync":
+                        return PrefetcherEnum.SYNC;
+                    case "default":
+                    default:
+                        return PrefetcherEnum.DEFAULT;
+                }
             case "none":
             default:
                 return PrefetcherEnum.NONE;
