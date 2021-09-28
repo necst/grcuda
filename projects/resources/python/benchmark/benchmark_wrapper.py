@@ -59,19 +59,21 @@ num_elem = {
 #     "b10": [6000, 7000, 10000, 12000, 14000],
 # }
 
-cuda_exec_policies = ["default", "sync", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
+# cuda_exec_policies = ["default", "sync", "cudagraph", "cudagraphmanual", "cudagraphsingle"] single gpu
+# multi gpu
+cuda_exec_policies = ["best_case_multiGPU"]
 
 exec_policies = ["default"]#, "sync"]
 
-dependency_policies = ["default"]#, "with_const"]
+dependency_policies = ["with_const"]#, "default"]
 
 new_stream_policies = ["always_new"]#, "fifo"]
 
-parent_stream_policies = ["data_aware"]#, "default", "disjoint", "disjoint_data_aware", "stream_aware"]
+parent_stream_policies = ["data_aware"]#, "default"(anche no), "disjoint", "disjoint_data_aware", "stream_aware"] # to be tested
 
-choose_device_heuristics = ["data_locality"]#, "best_transfer_time_min", "best_transfer_time_max"]
+choose_device_heuristics = ["data_locality"]#, "best_transfer_time_min", "best_transfer_time_max"] # to be tested only with data aware policies
 
-memAdvisers = ["none"]#, "read_mostly", "preferred"]
+memAdvisers = ["none"]#, "read_mostly", "preferred"] # not to be tested for now
 
 prefetches = ["none"]#, "default", "sync"]
 
