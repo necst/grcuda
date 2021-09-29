@@ -20,9 +20,9 @@ HEAP_SIZE = 140 # P100
 
 # Benchmark settings;
 benchmarks = [
-    "b1",
-    "b5",
-    "b6",
+    #"b1",
+    #"b5",
+    #"b6",
     "b7",
     "b8",
     "b10",
