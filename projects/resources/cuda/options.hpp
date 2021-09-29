@@ -69,6 +69,7 @@ enum BenchmarkEnum {
     B7,
     B8,
     B10,
+    B11,
     ERR
 };
 
@@ -101,6 +102,8 @@ inline BenchmarkEnum get_benchmark(std::string benchmark) {
         return BenchmarkEnum::B8;
     else if (benchmark == "b10")
         return BenchmarkEnum::B10;
+    else if (benchmark == "b11")
+        return BenchmarkEnum::B11;
     else
         return BenchmarkEnum::ERR;
 }
@@ -128,7 +131,7 @@ struct Options {
 
     Options(int argc, char *argv[]) {
         map_init(policy_map)(Policy::Sync, "sync")(Policy::Async, "async")(Policy::CudaGraph, "cudagraph")(Policy::CudaGraphAsync, "cudagraphmanual")(Policy::CudaGraphSingle, "cudagraphsingle");
-        map_init(benchmark_map)(BenchmarkEnum::B1, "b1")(BenchmarkEnum::B5, "b5")(BenchmarkEnum::B6, "b6")(BenchmarkEnum::B7, "b7")(BenchmarkEnum::B8, "b8")(BenchmarkEnum::B10, "b10");
+        map_init(benchmark_map)(BenchmarkEnum::B1, "b1")(BenchmarkEnum::B5, "b5")(BenchmarkEnum::B6, "b6")(BenchmarkEnum::B7, "b7")(BenchmarkEnum::B8, "b8")(BenchmarkEnum::B10, "b10")(BenchmarkEnum::B11, "b11");
 
         int opt;
         static struct option long_options[] = {{"debug", no_argument, 0, 'd'},

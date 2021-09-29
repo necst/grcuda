@@ -37,7 +37,7 @@ FLAGS = -std=c++11 -O3 -arch=sm_70
 # FLAGS = --cuda-gpu-arch=sm_70 -L/usr/local/cuda/lib64 -lcudart_static -ldl -lrt -pthread -std=c++11 -O3
 
 BIN_FOLDER=bin
-FILES=main.cu benchmark.cu b1.cu b5.cu b6.cu b7.cu b8.cu b10.cu
+FILES=main.cu benchmark.cu b1.cu b5.cu b6.cu b7.cu b8.cu b10.cu b11.cu
 
 .PHONY: all clean
 
