@@ -104,8 +104,8 @@ if __name__ == "__main__":
                         help="Validate the result of each benchmark using the CPU")
     parser.add_argument("-b", "--benchmark", nargs="*",
                         help="If present, run the benchmark only for the specified kernel")
-    parser.add_argument("--policy",
-                        help="If present, run the benchmark only with the selected policy")
+    parser.add_argument("--execP",
+                        help="If present, run the benchmark only with the selected execution policy")
     parser.add_argument("-n", "--size", metavar="N", type=int, nargs="*",
                         help="Override the input data size used for the benchmarks")
     parser.add_argument("--block_size_1d", metavar="N", type=int, nargs="*",

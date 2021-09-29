@@ -106,8 +106,12 @@ class Benchmark(ABC):
         else:
             return function(*args)
 
-    def run(self, num_iter: int, policy: str, size: int, realloc: bool, reinit: bool,
-            time_phases: bool, block_size: dict = None, prevent_reinit=False, number_of_blocks=DEFAULT_NUM_BLOCKS) -> None:
+    def run(self, num_iter: int,size: int, numGPU: int,
+                block_size: dict, exec_policy: str,
+                dep_policy: str, nstr_policy: str, pstr_policy: str,
+                heuristic: str, mem_advise: str, prefetch: str,
+                str_attach: str, timing: bool, iteration: int, 
+                time_phases: bool, realloc: bool, reinit: bool, prevent_reinit=False, number_of_blocks=DEFAULT_NUM_BLOCKS) -> None:
 
         # Fix missing block size;
         if "block_size_1d" not in block_size:
@@ -118,13 +122,23 @@ class Benchmark(ABC):
             self.num_blocks = number_of_blocks
 
         self.benchmark.start_new_benchmark(name=self.name,
-                                           policy=policy,
-                                           size=size,
-                                           realloc=realloc,
-                                           reinit=reinit,
-                                           block_size=block_size,
-                                           iteration=num_iter,
-                                           time_phases=time_phases)
+                                          size=size,
+                                          numGPU=numGPU,
+                                          block_size=block_size,
+                                          num_blocks=number_of_blocks,
+                                          exec_policy=exec_policy,
+                                          dep_policy=dep_policy,
+                                          nstr_policy=nstr_policy,
+                                          pstr_policy=pstr_policy,
+                                          heuristic=heuristic,
+                                          mem_advise=mem_advise,
+                                          prefetch=prefetch,
+                                          str_attach=str_attach,
+                                          timing=timing,
+                                          realloc=realloc,
+                                          reinit=reinit,
+                                          iteration=num_iter,
+                                          time_phases=time_phases)
         self.current_iter = num_iter
         self.time_phases = time_phases
         self._block_size = block_size

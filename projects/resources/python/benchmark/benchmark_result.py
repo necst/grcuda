@@ -50,9 +50,12 @@ class BenchmarkResult:
         file_name = f"{output_date}_{self.num_iterations}.json"
         return os.path.join(self.DEFAULT_RES_FOLDER, file_name)
 
-    def start_new_benchmark(self, name: str, policy: str, size: int,
-                            realloc: bool, reinit: bool, block_size: dict,
-                            iteration: int, time_phases: bool) -> None:
+    def start_new_benchmark(self, name: str, size: int, numGPU: int,
+                            block_size: dict, num_blocks: int, exec_policy: str,
+                            dep_policy: str, nstr_policy: str, pstr_policy: str,
+                            heuristic: str, mem_advise: str, prefetch: str,
+                            str_attach: str, timing: bool, iteration: int, 
+                            time_phases: bool, realloc: bool, reinit: bool) -> None:
         """
         Benchmark results are stored in a nested dictionary with the following structure.
         self.results["benchmarks"]->{benchmark_name}->{policy}->{size}->{realloc}->{reinit}->{actual result}
@@ -70,35 +73,83 @@ class BenchmarkResult:
 
         # 1. Benchmark name;
         if name in self._results["benchmarks"]:
-            dict_policy = self._results["benchmarks"][name]
-        else:
-            dict_policy = {}
-            self._results["benchmarks"][name] = dict_policy
-        # 2. Policy name;
-        if policy in dict_policy:
-            dict_size = dict_policy[policy]
+            dict_size = self._results["benchmarks"][name]
         else:
             dict_size = {}
-            dict_policy[policy] = dict_size
-        # 3. Input size;
+            self._results["benchmarks"][name] = dict_size
+        # 2. Input size;
         if size in dict_size:
-            dict_realloc = dict_size[size]
+            dict_nGPU = dict_size[size]
+        else:
+            dict_nGPU = {}
+            dict_size[size] = dict_nGPU
+        # 3. Number of GPUs;
+        if numGPU in dict_nGPU:
+            dict_nblock = dict_nGPU[numGPU]
+        else:
+            dict_nblock = {}
+            dict_nGPU[numGPU] = dict_nblock
+        # 4. Number of blocks; 
+        if num_blocks in dict_nblock:
+            dict_exeP = dict_nblock[num_blocks]
+        else:
+            dict_exeP = {}
+            dict_nblock[num_blocks] = dict_exeP
+        # 5. Execution policy
+        if exec_policy in dict_exeP:
+            dict_depP = dict_exeP[exec_policy]
+        else:
+            dict_depP = {}
+            dict_exeP[exec_policy] = dict_depP
+        # 6. Dependency policy
+        if dep_policy in dict_depP:
+            dict_nstr = dict_depP[dep_policy]
+        else:
+            dict_nstr = {}
+            dict_depP[dep_policy] = dict_nstr
+        # 7. New stream policy
+        if nstr_policy in dict_nstr:
+            dict_pstr = dict_nstr[nstr_policy]
+        else:
+            dict_pstr = {}
+            dict_nstr[nstr_policy] = dict_pstr
+        # 8. Parent stream policy
+        if pstr_policy in dict_pstr:
+            dict_prefetch = dict_pstr[pstr_policy]
+        else:
+            dict_prefetch = {}
+            dict_pstr[pstr_policy] = dict_prefetch
+        # 9. Prefetcher 
+        if prefetch in dict_prefetch:
+            dict_sAtt = dict_prefetch[prefetch]
+        else:
+            dict_sAtt = {}
+            dict_prefetch[prefetch] = dict_sAtt
+        # 10. Stream Attachment
+        if str_attach in dict_sAtt:
+            dict_time = dict_sAtt[str_attach]
+        else:
+            dict_time = {}
+            dict_sAtt[str_attach] = dict_time
+        # 11. Kernel timing
+        if timing in dict_time:
+            dict_realloc = dict_time[timing]
         else:
             dict_realloc = {}
-            dict_size[size] = dict_realloc
-        # 4. Realloc options;
+            dict_time[timing] = dict_realloc
+        # 12. Realloc options;
         if realloc in dict_realloc:
             dict_reinit = dict_realloc[realloc]
         else:
             dict_reinit = {}
             dict_realloc[realloc] = dict_reinit
-        # 5. Reinit options;
+        # 13. Reinit options;
         if reinit in dict_reinit:
             dict_block = dict_reinit[reinit]
         else:
             dict_block = {}
             dict_reinit[reinit] = dict_block
-        # 6. Block size options;
+        # 14. Block size options;
         self._dict_current = {"phases": [], "iteration": iteration, "time_phases": time_phases}
         if BenchmarkResult.create_block_size_key(block_size) in dict_block:
             dict_block[BenchmarkResult.create_block_size_key(block_size)] += [self._dict_current]
