@@ -12,6 +12,12 @@ class BenchmarkResult:
     DEFAULT_REALLOC = False
     DEFAULT_REINIT = True
     DEFAULT_RANDOM_INIT = False
+    DEFAULT_NUM_GPU = 1
+    DEFAULT_EXEC_POLICY = "default"
+    DEFAULT_DEPE_POLICY = "with_const"
+    DEFAULT_MEM_ADVISE = "none"
+    DEFAULT_PREFETCH = "default"
+
 
     def __init__(self,
                  num_iterations: int = DEFAULT_NUM_ITER,
@@ -159,8 +165,8 @@ class BenchmarkResult:
         if self.debug:
             BenchmarkResult.log_message(
                 f"starting benchmark={name}, iter={iteration + 1}/{self.num_iterations}, "
-                f"policy={policy}, size={size}, realloc={realloc}, reinit={reinit}, block_size={BenchmarkResult.create_block_size_key(block_size)}, "
-                f"time_phases={time_phases}")
+                f"exec_policy={exec_policy}, dep_policy={dep_policy}, size={size}, realloc={realloc}, reinit={reinit}, "
+                f"block_size={BenchmarkResult.create_block_size_key(block_size)}, time_phases={time_phases}")
 
     def add_to_benchmark(self, key: str, message: object) -> None:
         """

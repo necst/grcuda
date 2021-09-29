@@ -110,7 +110,7 @@ class Benchmark(ABC):
                 block_size: dict, exec_policy: str,
                 dep_policy: str, nstr_policy: str, pstr_policy: str,
                 heuristic: str, mem_advise: str, prefetch: str,
-                str_attach: str, timing: bool, iteration: int, 
+                str_attach: str, timing: bool,
                 time_phases: bool, realloc: bool, reinit: bool, prevent_reinit=False, number_of_blocks=DEFAULT_NUM_BLOCKS) -> None:
 
         # Fix missing block size;

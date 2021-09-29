@@ -106,8 +106,22 @@ if __name__ == "__main__":
                         help="If present, run the benchmark only for the specified kernel")
     parser.add_argument("--execP",
                         help="If present, run the benchmark only with the selected execution policy")
+    parser.add_argument("--depeP",
+                        help="If present, run the benchmark only with the selected dependency policy")
+    parser.add_argument("--new_stream",
+                        help="If present, run the benchmark only with the selected new stream policy")
+    parser.add_argument("--parent_stream",
+                        help="If present, run the benchmark only with the selected parent stream policy")
+    parser.add_argument("--heuristic",
+                        help="If present and parent policy is data aware, run the benchmark only with the selected heuristic")
+    parser.add_argument("--memAdviser",
+                        help="If present run the benchmark only with the selected memory adviser")
+    parser.add_argument("--prefetch",
+                        help="If present run the benchmark only with the selected prefetcher")
     parser.add_argument("-n", "--size", metavar="N", type=int, nargs="*",
                         help="Override the input data size used for the benchmarks")
+    parser.add_argument("--numGPU", metavar="N", type=int, nargs="*",
+                        help="Number of GPU employed for computation")
     parser.add_argument("--block_size_1d", metavar="N", type=int, nargs="*",
                         help="Number of threads per block when using 1D kernels")
     parser.add_argument("--block_size_2d", metavar="N", type=int, nargs="*",
@@ -116,6 +130,10 @@ if __name__ == "__main__":
                         help="Number of blocks in the computation")
     parser.add_argument("-r", "--random", action="store_true",
                         help="Initialize benchmarks randomly whenever possible")
+    parser.add_argument("--strAttach", action="store_true",
+                        help="Force stream attachment")
+    parser.add_argument("--timing", action="store_true",
+                        help="Measure the execution time of each kernel")
     parser.add_argument("-p", "--time_phases", action="store_true",
                         help="Measure the execution time of each phase of the benchmark;"
                              " note that this introduces overheads, and might influence the total execution time")
@@ -136,6 +154,17 @@ if __name__ == "__main__":
     cpu_validation = args.cpu_validation
     time_phases = args.time_phases
     nvprof_profile = args.nvprof
+    timing = args.timing
+    prefetch = args.prefetch 
+    str_attach = args.strAttach
+    nstr_policy = args.new_stream
+    pstr_policy = args.parent_stream
+    heuristic = args.heuristic
+    numGPU = args.numGPU if args.numGPU else BenchmarkResult.DEFAULT_NUM_GPU
+    exec_policy = args.execP if args.execP else BenchmarkResult.DEFAULT_EXEC_POLICY
+    dep_policy = args.depeP if args.depeP else BenchmarkResult.DEFAULT_DEPE_POLICY
+    mem_advise = args.memAdviser if args.memAdviser else BenchmarkResults.DEFAULT_MEM_ADVISE
+    
 
     # Create a new benchmark result instance;
     benchmark_res = BenchmarkResult(debug=debug, num_iterations=num_iter, output_path=output_path,
@@ -148,10 +177,10 @@ if __name__ == "__main__":
             BenchmarkResult.log_message(f"using only benchmark: {args.benchmark}")
         benchmarks = {b: benchmarks[b] for b in args.benchmark}
 
-    if args.policy:
-        if benchmark_res.debug:
-            BenchmarkResult.log_message(f"using only type: {args.policy}")
-        policies = {n: [args.policy] for n in policies.keys()}
+    # if args.policy:
+    #     if benchmark_res.debug:
+    #         BenchmarkResult.log_message(f"using only type: {args.policy}")
+    #     policies = {n: [args.policy] for n in policies.keys()}
 
     if args.size:
         if benchmark_res.debug:
@@ -176,8 +205,11 @@ if __name__ == "__main__":
                     for ri in reinit:
                         for block_size in block_sizes:
                             for i in range(num_iter):
-                                benchmark.run(num_iter=i, policy=p, size=n, realloc=re, reinit=ri,
-                                              block_size=block_size, time_phases=time_phases, prevent_reinit=prevent_reinit, number_of_blocks=number_of_blocks)
+                                benchmark.run(num_iter=i, size=n, numGPU=numGPU[0], block_size=block_size, exec_policy=exec_policy,
+                                          dep_policy=dep_policy, nstr_policy=nstr_policy, pstr_policy=pstr_policy, heuristic=heuristic,
+                                          mem_advise=mem_advise, prefetch=prefetch, str_attach=str_attach, timing=timing,
+                                          realloc=re, reinit=ri, time_phases=time_phases, prevent_reinit=prevent_reinit,
+                                          number_of_blocks=number_of_blocks)
                                 prevent_reinit = True
                             # Print the summary of this block;
                             if benchmark_res.debug:

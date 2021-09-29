@@ -42,13 +42,13 @@ benchmarks = [
 
 #P100
 num_elem = {
-    "b1": [120_000_000], #, 200_000_000, 500_000_000, 600_000_000, 700_000_000],
-    "b5": [12_000_000], #, 20_000_000, 50_000_000, 60_000_000, 70_000_000],
-    "b6": [1_200_000], #, 2_000_000, 4_000_000, 5_000_000, 6_000_000],
-    "b7": [20_000_000], #, 40_000_000, 60_000_000, 100_000_000, 140_000_000],
-    "b8": [4800, 8000], #, 10000, 12000, 16000],
-    "b10": [7000, 10000], #, 12000, 14000, 16000],
-    "b11": [5000, 7000 ],#, 9000, 11000 ,13000]
+    "b1": [20_000_000], # 120_000_000], #, 200_000_000, 500_000_000, 600_000_000, 700_000_000],
+    "b5": [2_000_000], #12_000_000], #, 20_000_000, 50_000_000, 60_000_000, 70_000_000],
+    "b6": [200_000], #1_200_000], #, 2_000_000, 4_000_000, 5_000_000, 6_000_000],
+    "b7": [2_000_000], #20_000_000], #, 40_000_000, 60_000_000, 100_000_000, 140_000_000],
+    "b8": [1000], # 4000, 8000], #, 10000, 12000, 16000],
+    "b10": [3000], # 7000, 10000], #, 12000, 14000, 16000],
+    "b11": [3000], #5000, 7000 ],#, 9000, 11000 ,13000]
 }
 
 # GTX 1660 Super
@@ -191,8 +191,9 @@ GRAALPYTHON_CMD = "graalpython --vm.XX:MaxHeapSize={}G --jvm --polyglot --experi
                   "--grcuda.ExecutionPolicy={} --grcuda.DependencyPolicy={} --grcuda.RetrieveNewStreamPolicy={} " \
                   "--grcuda.NumberOfGPUs={} --grcuda.RetrieveParentStreamPolicy={} " \
                   "--grcuda.ChooseDeviceHeuristic={} --grcuda.memAdviseOption={} --grcuda.InputPrefetch={} {} {} " \
-                  "benchmark_main.py -i {} -n {} -g {} --reinit false --realloc false " \
-                  "-b {} --block_size_1d {} --block_size_2d {} --no_cpu_validation {} {} -o {}"
+                  "benchmark_main.py -i {} -n {} -g {} --numGPU {} --reinit false --realloc false " \
+                  "-b {} --block_size_1d {} --block_size_2d {} --execP {} --depeP {} --new_stream {} "\
+                  "--parent_stream {} --heuristic {} --memAdviser {} --prefetch {} --no_cpu_validation {} {} {} {} -o {}"
 
 
 def execute_grcuda_benchmark(benchmark, size, numGPUs, block_sizes, exec_policy, dependency_policy, new_stream_policy,
@@ -223,9 +224,9 @@ def execute_grcuda_benchmark(benchmark, size, numGPUs, block_sizes, exec_policy,
 
     if not output_date:
         output_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    file_name = f"{output_date}_{benchmark}_{size}_{numGPUs}_{num_blocks}_exe-{exec_policy}_dep-{dependency_policy}_" \
-                f"new-{new_stream_policy}_par-{parent_stream_policy}_heu-{choose_device_heuristic}_" \
-                f"adv-{memAdviser}_prf-{prefetch}_att-{streamAttach}.json"
+    file_name = f"{output_date}_{benchmark}_{size}_{numGPUs}_{num_blocks}_{exec_policy}_{dependency_policy}_" \
+                f"{new_stream_policy}_{parent_stream_policy}_{choose_device_heuristic}_" \
+                f"{memAdviser}_{prefetch}_{streamAttach}.json"
     # Create a folder if it doesn't exist;
     output_folder_path = os.path.join(BenchmarkResult.DEFAULT_RES_FOLDER, output_date + "_grcuda")
     if not os.path.exists(output_folder_path):
@@ -239,8 +240,9 @@ def execute_grcuda_benchmark(benchmark, size, numGPUs, block_sizes, exec_policy,
     benchmark_cmd = GRAALPYTHON_CMD.format(HEAP_SIZE, exec_policy, dependency_policy, new_stream_policy,
                                            numGPUs, parent_stream_policy, choose_device_heuristic, memAdviser, prefetch,
                                            "--grcuda.ForceStreamAttach" if streamAttach else "", "--grcuda.TimeComputation" if timeCompute else "",
-                                           num_iter, size, num_blocks, benchmark, b1d_size, b2d_size,
-                                           "-d" if debug else "",  "-p" if time_phases else "", output_path)
+                                           num_iter, size, num_blocks, numGPUs, benchmark, b1d_size, b2d_size, exec_policy, dependency_policy,
+                                           new_stream_policy, parent_stream_policy, choose_device_heuristic, memAdviser, prefetch,
+                                           "-d" if debug else "",  "-p" if time_phases else "", "--strAttach" if streamAttach else "", "--timing" if timeCompute else "", output_path)    
     print(benchmark_cmd)
     start = System.nanoTime()
     result = subprocess.run(benchmark_cmd,
