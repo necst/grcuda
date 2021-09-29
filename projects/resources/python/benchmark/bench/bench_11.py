@@ -85,6 +85,9 @@ class Benchmark11(Benchmark):
             self.x[p] = polyglot.eval(language="grcuda", string=f"float[{self.S * self.M}]")
         self.y = polyglot.eval(language="grcuda", string=f"float[{self.M}]")
         self.z = polyglot.eval(language="grcuda", string=f"float[{self.N}]")
+        self.x_cpu = np.zeros(self.N * self.M, dtype=np.float32)
+        self.y_cpu = np.zeros(self.N, dtype=np.float32)
+
 
         # Build the kernels;
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
@@ -94,8 +97,14 @@ class Benchmark11(Benchmark):
     def init(self):
         self.random_seed = 10 # randint(0, 10000000)
         seed(self.random_seed)
-        self.x_cpu = np.random.random_sample(self.N * self.M).astype(dtype=np.float32)
-        self.y_cpu = np.random.random_sample(self.N).astype(dtype=np.float32)
+
+        #self.x_cpu = np.random.random_sample(self.N * self.M).astype(dtype=np.float32)
+        #self.y_cpu = np.random.random_sample(self.N).astype(dtype=np.float32)
+        for i in range(0,len(self.x_cpu)):
+            self.x_cpu[i] = random()
+        for i in range(0,len(self.y_cpu)):
+            self.y_cpu[i] = random()
+
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
