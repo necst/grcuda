@@ -50,6 +50,7 @@
 #define DEFAULT_POLICY "async"
 #define DEFAULT_PREFETCH false
 #define DEFAULT_STREAM_ATTACH false
+#define DEFAULT_MAX_DEVICES 1
 
 //////////////////////////////
 //////////////////////////////
@@ -116,6 +117,7 @@ struct Options {
     int block_size_2d = DEFAULT_BLOCK_SIZE_2D;
     int num_blocks = DEFAULT_NUM_BLOCKS;
     int N = 0;
+    int max_devices = DEFAULT_MAX_DEVICES;
     int skip_iterations = DEFAULT_SKIP;
     bool prefetch = DEFAULT_PREFETCH;
     bool stream_attach = DEFAULT_STREAM_ATTACH;
@@ -145,11 +147,12 @@ struct Options {
                                                {"policy", required_argument, 0, 'p'},
                                                {"prefetch", required_argument, 0, 'r'},
                                                {"attach", required_argument, 0, 'a'},
+                                               {"max_devices", required_argument, 0, 'm'},
                                                {0, 0, 0, 0}};
         // getopt_long stores the option index here;
         int option_index = 0;
 
-        while ((opt = getopt_long(argc, argv, "dt:n:b:c:g:s:k:p:ra", long_options, &option_index)) != EOF) {
+        while ((opt = getopt_long(argc, argv, "dt:n:b:c:g:s:k:p:ram:", long_options, &option_index)) != EOF) {
             switch (opt) {
                 case 'd':
                     debug = true;
@@ -183,6 +186,9 @@ struct Options {
                     break;
                 case 'a':
                     stream_attach = true;
+                    break;
+                 case 'm':
+                    max_devices = atoi(optarg);
                     break;
                 default:
                     break;
