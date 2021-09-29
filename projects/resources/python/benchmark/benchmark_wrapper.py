@@ -22,11 +22,11 @@ HEAP_SIZE = 140 # P100
 benchmarks = [
     "b1",
     "b5",
-    "b6", 
+    "b6",
     "b7",
-    #"b8", chiedere a parra con che block sizes runnarli 
-    #"b10", chiedere a parra con che block sizes runnarli 
-    #"b11",
+    "b8",
+    "b10",
+    "b11",
 ]
 
 # GTX 960
@@ -42,13 +42,13 @@ benchmarks = [
 
 #P100
 num_elem = {
-    "b1": [20_000_000], # 120_000_000], #, 200_000_000, 500_000_000, 600_000_000, 700_000_000],
-    "b5": [2_000_000], #12_000_000], #, 20_000_000, 50_000_000, 60_000_000, 70_000_000],
-    "b6": [200_000], #1_200_000], #, 2_000_000, 4_000_000, 5_000_000, 6_000_000],
-    "b7": [2_000_000], #20_000_000], #, 40_000_000, 60_000_000, 100_000_000, 140_000_000],
-    "b8": [1000], # 4000, 8000], #, 10000, 12000, 16000],
-    "b10": [3000], # 7000, 10000], #, 12000, 14000, 16000],
-    "b11": [3000], #5000, 7000 ],#, 9000, 11000 ,13000]
+    "b1": [160_000_000, 250_000_000, 500_000_000, 800_000_000, 950_000_000],
+    "b5": [16_000_000, 25_000_000, 50_000_000, 80_000_000, 95_000_000],
+    "b6": [1_600_000, 2_500_000, 5_000_000, 6_500_000, 8_000_000],
+    "b7": [25_000_000, 50_000_000, 80_000_000, 130_000_000, 180_000_000],
+    "b8": [6400, 10000, 13000, 16000, 20000],
+    "b10": [9000, 12000, 16000, 18000, 20000],
+    "b11": [10000, 20000, 30000],
 }
 
 # GTX 1660 Super
@@ -65,34 +65,34 @@ num_elem = {
 # multi gpu
 cuda_exec_policies = ["best_case_multiGPU"]
 
-exec_policies = ["default"]#, "sync"]
+exec_policies = ["sync"]#, "default"]
 
-dependency_policies = ["with_const"]#, "default"]
+dependency_policies = ["default"]#, "with_const"]
 
 new_stream_policies = ["always_new"]#, "fifo"]
 
-parent_stream_policies = ["data_aware", "disjoint", "disjoint_data_aware", "stream_aware"] # to be tested, "default" not to be tested
+parent_stream_policies = ["data_aware"] #, "disjoint", "disjoint_data_aware", "stream_aware"] # to be tested, "default" not to be tested
 
 choose_device_heuristics = ["data_locality"]#, "best_transfer_time_min", "best_transfer_time_max"] # to be tested only with data aware policies
 
 memAdvisers = ["none"]#, "read_mostly", "preferred"] # not to be tested for now
 
-prefetches = ["none", "default"]#, "sync"]
+prefetches = ["none"]#, "default", "sync"]
 
-streamAttachs =  [False, True]
+streamAttachs =  [False] #, True]
 
-timeComputes = [False, True]
+timeComputes = [False] #, True]
 
-numGPUs = [1, 2]#, 2]
+numGPUs = [1]#, 2]
 
 block_sizes1d_dict = {
     "b1": 32,
     "b5": 1024,
     "b6": 32,
     "b7": 32,
-    # "b8":
-    # "b10":
-    # "b11": 
+    "b8": 32,
+    "b10": 32,
+    "b11": 256, 
 }
 
 
@@ -101,9 +101,9 @@ block_sizes2d_dict = {
     "b5": 8,
     "b6": 8,
     "b7": 8,
-    # "b8":
-    # "b10":
-    # "b11": 
+    "b8": 8,
+    "b10": 8,
+    "b11": 8,
 }
 
 # # 960
