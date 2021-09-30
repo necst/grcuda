@@ -105,11 +105,11 @@ public abstract class AbstractGrCUDAExecutionContext {
         this.dag = new ExecutionDAG(dependencyPolicy);
         switch (memAdvise) {
             case ADVISE_PREFERRED_LOCATION:
-                System.out.println("preferred location advise");
+                // System.out.println("preferred location advise");
                 memAdviser = new DefaultMemAdviser(this.cudaRuntime);
                 break;
             case ADVISE_READ_MOSTLY:
-                System.out.println("read mostly advise");
+                // System.out.println("read mostly advise");
                 memAdviser = new ReadMostlyMemAdviser(this.cudaRuntime);
                 break;
             case NONE:

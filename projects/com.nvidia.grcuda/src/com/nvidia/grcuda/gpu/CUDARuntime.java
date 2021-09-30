@@ -494,7 +494,7 @@ public final class CUDARuntime {
      */
     @TruffleBoundary
     public void cudaStreamAttachMemAsync(CUDAStream stream, AbstractArray array) {
-        System.out.println("attach mem");
+        // System.out.println("attach mem");
         final int MEM_ATTACH_SINGLE = 0x04;
         final int MEM_ATTACH_GLOBAL = 0x01;
         try {

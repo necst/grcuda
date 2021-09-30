@@ -126,12 +126,12 @@ public final class GrCUDAContext {
 
         // Retrieve the dependency computation policy;
         dependencyPolicy = parseDependencyPolicy(env.getOptions().get(GrCUDAOptions.DependencyPolicy));
-        System.out.println("-- using " + dependencyPolicy.getName() + " dependency policy");
+        // System.out.println("-- using " + dependencyPolicy.getName() + " dependency policy");
 
         // Retrieve the execution policy;
         executionPolicy = parseExecutionPolicy(env.getOptions().get(GrCUDAOptions.ExecutionPolicy));
         // Initialize the execution policy;
-        System.out.println("-- using " + executionPolicy.getName() + " execution policy");
+        // System.out.println("-- using " + executionPolicy.getName() + " execution policy");
 
         switch (executionPolicy) {
             case SYNC:
