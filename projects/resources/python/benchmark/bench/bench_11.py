@@ -85,33 +85,32 @@ class Benchmark11(Benchmark):
             self.x[p] = polyglot.eval(language="grcuda", string=f"float[{self.S * self.M}]")
         self.y = polyglot.eval(language="grcuda", string=f"float[{self.M}]")
         self.z = polyglot.eval(language="grcuda", string=f"float[{self.N}]")
-        self.x_cpu = np.zeros(self.N * self.M, dtype=np.float32)
-        self.y_cpu = np.zeros(self.N, dtype=np.float32)
-
+        self.x_cpu = [0.0] * self.N * self.M
+        self.y_cpu = [0.0] * self.M
 
         # Build the kernels;
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
         self.matrix_vector_mult_kernel = build_kernel(MATRIX_VECTOR_MULT_KERNEL, "matrix_vector_mult_1", "const pointer, const pointer, pointer, sint32, sint32, sint32")
 
+        self.initialize_rand = polyglot.eval(language="js", string="x => { for (let i = 0; i < x.length; i++) { x[i] = Math.random() }}")
+
     @time_phase("initialization")
     def init(self):
         self.random_seed = 10 # randint(0, 10000000)
         seed(self.random_seed)
-
-        #self.x_cpu = np.random.random_sample(self.N * self.M).astype(dtype=np.float32)
-        #self.y_cpu = np.random.random_sample(self.N).astype(dtype=np.float32)
-        for i in range(0,len(self.x_cpu)):
-            self.x_cpu[i] = random()
-        for i in range(0,len(self.y_cpu)):
-            self.y_cpu[i] = random()
-
+        self.initialize_rand(self.x_cpu)
+        self.initialize_rand(self.y_cpu)
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
         self.gpu_result = 0.0
         for p in range(self.P):
-            self.x[p].copyFrom(int(np.int64(self.x_cpu.ctypes.data) + p * self.S * self.M * self.x_cpu.itemsize), self.S * self.M)
-        self.y.copyFrom(int(np.int64(self.y_cpu.ctypes.data)), len(self.y))
+            for i in range(min(len(self.x[p]), len(self.x_cpu) - p * self.S * self.M)):
+                self.x[p][i] = self.x_cpu[i]
+            # self.x[p].copyFrom(int(np.int64(self.x_cpu.ctypes.data) + p * self.S * self.M * self.x_cpu.itemsize), self.S * self.M)
+        for i in range(self.M):
+            self.y[i] = self.y_cpu[i]
+        # self.y.copyFrom(int(np.int64(self.y_cpu.ctypes.data)), len(self.y))
         # for p in range(self.P):
         #     for i in range(len(self.x[p])):
         #         print(f"p={p}, x[{p}][{i}]={self.x[p][i]}")
@@ -147,7 +146,7 @@ class Benchmark11(Benchmark):
 
     def cpu_validation(self, gpu_result: object, reinit: bool) -> None:
         start = System.nanoTime()
-        z_cpu = self.x_cpu.reshape((self.N, self.M)) @ self.y_cpu
+        z_cpu = np.array(self.x_cpu).reshape((self.N, self.M)) @ np.array(self.y_cpu)
         cpu_time = System.nanoTime() - start
         
         self.cpu_result = sum(z_cpu[:10])
