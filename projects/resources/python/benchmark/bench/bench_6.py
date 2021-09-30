@@ -183,6 +183,7 @@ class Benchmark6(Benchmark):
 
         self.num_features = 200  # self.nb_feat_log_prob_np.shape[1]
         self.num_classes = 10  # self.nb_feat_log_prob_np.shape[0]
+        self.max_occurrence_of_ngram = 10
 
         self.num_blocks_size = self.num_blocks # 64  # DEFAULT_NUM_BLOCKS
         self.num_blocks_feat = self.num_blocks # 64  # DEFAULT_NUM_BLOCKS
@@ -230,6 +231,7 @@ class Benchmark6(Benchmark):
 
         self.softmax = build_kernel(ENSEMBLE_KERNEL, "softmax", "pointer, sint32, sint32")
         self.argmax = build_kernel(ENSEMBLE_KERNEL, "argmax", "pointer, pointer, pointer, sint32, sint32")
+        self.initialize_rand = polyglot.eval(language="js", string="(x, m) => { for (let i = 0; i < x.length; i++) { x[i] = Math.floor(Math.random() * m) }}")
 
     @time_phase("initialization")
     def init(self):
@@ -237,26 +239,26 @@ class Benchmark6(Benchmark):
         seed(self.random_seed)
 
         # Create a random input;
-        max_occurrence_of_ngram = 10
-        self.x_cpu = np.random.randint(0, max_occurrence_of_ngram, (self.size, self.num_features), dtype=np.int32)
+        # self.x_cpu = np.random.randint(0, max_occurrence_of_ngram, (self.size, self.num_features), dtype=np.int32)
 
         self.nb_feat_log_prob_cpu = np.random.random_sample((self.num_classes, self.num_features)).astype(dtype=np.float32)
         self.ridge_coeff_cpu = np.random.random_sample((self.num_classes, self.num_features)).astype(dtype=np.float32)
         self.nb_class_log_prior_cpu = np.random.random_sample(self.num_classes).astype(dtype=np.float32)
         self.ridge_intercept_cpu = np.random.random_sample(self.num_classes).astype(dtype=np.float32)
 
-        self.r1_cpu = np.zeros((self.size, self.num_classes))
-        for j in range(self.num_classes):
-            self.r1_cpu[:, j] = self.nb_class_log_prior_cpu[j]
-        self.r2_cpu = np.zeros((self.size, self.num_classes))
+        # self.r1_cpu = np.zeros((self.size, self.num_classes))
+        # for j in range(self.num_classes):
+            # self.r1_cpu[:, j] = self.nb_class_log_prior_cpu[j]
+        # self.r2_cpu = np.zeros((self.size, self.num_classes))
 
-        self.x.copyFrom(int(np.int64(self.x_cpu.ctypes.data)), len(self.x))
+        self.initialize_rand(self.x, self.max_occurrence_of_ngram)
+        # self.x.copyFrom(int(np.int64(self.x_cpu.ctypes.data)), len(self.x))
         self.nb_feat_log_prob.copyFrom(int(np.int64(self.nb_feat_log_prob_cpu.ctypes.data)), len(self.nb_feat_log_prob))
         self.ridge_coeff.copyFrom(int(np.int64(self.ridge_coeff_cpu.ctypes.data)), len(self.ridge_coeff))
         self.nb_class_log_prior.copyFrom(int(np.int64(self.nb_class_log_prior_cpu.ctypes.data)), len(self.nb_class_log_prior))
         self.ridge_intercept.copyFrom(int(np.int64(self.ridge_intercept_cpu.ctypes.data)), len(self.ridge_intercept))
-        self.r1.copyFrom(int(np.int64(self.r1_cpu.ctypes.data)), len(self.r1))
-        self.r2.copyFrom(int(np.int64(self.r2_cpu.ctypes.data)), len(self.r2))
+        # self.r1.copyFrom(int(np.int64(self.r1_cpu.ctypes.data)), len(self.r1))
+        # self.r2.copyFrom(int(np.int64(self.r2_cpu.ctypes.data)), len(self.r2))
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
@@ -351,8 +353,13 @@ class Benchmark6(Benchmark):
             # Re-initialize the random number generator with the same seed as the GPU to generate the same values;
             seed(self.random_seed)
 
-            r1_g = naive_bayes_predict(self.x_cpu, self.nb_feat_log_prob_cpu, self.nb_class_log_prior_cpu)
-            r2_g = ridge_pred(normalize(self.x_cpu), self.ridge_coeff_cpu, self.ridge_intercept_cpu)
+            x_cpu = np.zeros((self.size, self.num_features), dtype=np.int32)
+            for i in range(self.size):
+                for j in range(self.num_features):
+                    x_cpu[i, j] = self.x[i * self.num_features + j]
+
+            r1_g = naive_bayes_predict(x_cpu, self.nb_feat_log_prob_cpu, self.nb_class_log_prior_cpu)
+            r2_g = ridge_pred(normalize(x_cpu), self.ridge_coeff_cpu, self.ridge_intercept_cpu)
             r_g = np.argmax(softmax(r1_g) + softmax(r2_g), axis=1)
             self.cpu_result = r_g
 

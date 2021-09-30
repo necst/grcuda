@@ -160,12 +160,11 @@ if __name__ == "__main__":
     nstr_policy = args.new_stream
     pstr_policy = args.parent_stream
     heuristic = args.heuristic
-    numGPU = args.numGPU if args.numGPU else BenchmarkResult.DEFAULT_NUM_GPU
+    numGPU = args.numGPU if args.numGPU else [BenchmarkResult.DEFAULT_NUM_GPU]
     exec_policy = args.execP if args.execP else BenchmarkResult.DEFAULT_EXEC_POLICY
     dep_policy = args.depeP if args.depeP else BenchmarkResult.DEFAULT_DEPE_POLICY
-    mem_advise = args.memAdviser if args.memAdviser else BenchmarkResults.DEFAULT_MEM_ADVISE
+    mem_advise = args.memAdviser if args.memAdviser else BenchmarkResult.DEFAULT_MEM_ADVISE
     
-
     # Create a new benchmark result instance;
     benchmark_res = BenchmarkResult(debug=debug, num_iterations=num_iter, output_path=output_path,
                                     cpu_validation=cpu_validation, random_init=random_init)
