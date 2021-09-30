@@ -55,7 +55,7 @@ class Benchmark11(Benchmark):
         self.y_cpu = None
         
         # The GPU matrix is stored using P arrays;
-        self.x = [None for p in range(self.P)]
+        self.x = [None for _ in range(self.P)]
         # Dense vector;
         self.y = None
         # Result;
@@ -85,32 +85,25 @@ class Benchmark11(Benchmark):
             self.x[p] = polyglot.eval(language="grcuda", string=f"float[{self.S * self.M}]")
         self.y = polyglot.eval(language="grcuda", string=f"float[{self.M}]")
         self.z = polyglot.eval(language="grcuda", string=f"float[{self.N}]")
-        self.x_cpu = [0.0] * self.N * self.M
-        self.y_cpu = [0.0] * self.M
 
         # Build the kernels;
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
         self.matrix_vector_mult_kernel = build_kernel(MATRIX_VECTOR_MULT_KERNEL, "matrix_vector_mult_1", "const pointer, const pointer, pointer, sint32, sint32, sint32")
 
-        self.initialize_rand = polyglot.eval(language="js", string="x => { for (let i = 0; i < x.length; i++) { x[i] = Math.random() }}")
+        self.initialize = polyglot.eval(language="js", string="x => { for (let i = 0; i < x.length; i++) { x[i] = i / x.length }}")
 
     @time_phase("initialization")
     def init(self):
-        self.random_seed = 10 # randint(0, 10000000)
+        self.random_seed = 10
         seed(self.random_seed)
-        self.initialize_rand(self.x_cpu)
-        self.initialize_rand(self.y_cpu)
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
         self.gpu_result = 0.0
         for p in range(self.P):
-            for i in range(min(len(self.x[p]), len(self.x_cpu) - p * self.S * self.M)):
-                self.x[p][i] = self.x_cpu[i]
-            # self.x[p].copyFrom(int(np.int64(self.x_cpu.ctypes.data) + p * self.S * self.M * self.x_cpu.itemsize), self.S * self.M)
+            self.initialize(self.x[p])
         for i in range(self.M):
-            self.y[i] = self.y_cpu[i]
-        # self.y.copyFrom(int(np.int64(self.y_cpu.ctypes.data)), len(self.y))
+            self.y[i] = i / self.M
         # for p in range(self.P):
         #     for i in range(len(self.x[p])):
         #         print(f"p={p}, x[{p}][{i}]={self.x[p][i]}")
@@ -146,13 +139,18 @@ class Benchmark11(Benchmark):
 
     def cpu_validation(self, gpu_result: object, reinit: bool) -> None:
         start = System.nanoTime()
-        z_cpu = np.array(self.x_cpu).reshape((self.N, self.M)) @ np.array(self.y_cpu)
-        cpu_time = System.nanoTime() - start
-        
+        x_cpu = [0.0] * self.N * self.M
+        y_cpu = [self.y[i] for i in range(len(self.y))]
+        for i in range(self.P):
+            for j in range(self.S * self.M):
+                if i * self.S * self.M + j < len(x_cpu):
+                    x_cpu[i * self.S * self.M + j] = j / (self.S * self.M)
+        z_cpu = np.array(x_cpu).reshape((self.N, self.M)) @ np.array(y_cpu)
         self.cpu_result = sum(z_cpu[:10])
-        
+        cpu_time = System.nanoTime() - start
+            
         # Compare GPU and CPU results;
-        difference = np.abs(self.cpu_result - self.gpu_result)
+        difference = np.abs(self.cpu_result - gpu_result)
 
         self.benchmark.add_to_benchmark("cpu_time_sec", cpu_time)
         self.benchmark.add_to_benchmark("cpu_gpu_res_difference", str(difference))
