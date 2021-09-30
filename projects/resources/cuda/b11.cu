@@ -33,6 +33,18 @@
 //////////////////////////////
 
 #define P 16
+#define GPU_ORDER_8 {0, 6, 3, 1, 4, 2, 5, 7}
+#define GPU_ORDER_4 {0, 3, 1, 2}
+
+inline int select_gpu(int i, int max_devices) {
+    if (max_devices > 4) {
+        return GPU_ORDER_8[i % 8] % max_devices;
+    } else if (max_devices > 2) {
+        return GPU_ORDER_4[i % 4] % max_devices;
+    } else {
+        return i % max_devices;
+    }
+}
 
 extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, float* z, int n, int m, int z_offset) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
@@ -61,7 +73,7 @@ void Benchmark11::alloc() {
     // Create P streams;
     s = (cudaStream_t *) malloc(sizeof(cudaStream_t) * P);
     for (int i = 0; i < P; i++) {
-        cudaSetDevice(i % max_devices);
+        cudaSetDevice(select_gpu(i, max_devices));
         err = cudaStreamCreate(&s[i]);
     }
 }
@@ -100,7 +112,7 @@ void Benchmark11::execute_sync(int iter) {
 
 void Benchmark11::execute_async(int iter) {
     for (int p = 0; p < P; p++) {
-        cudaSetDevice(p % max_devices);
+        cudaSetDevice(select_gpu(p, max_devices));
         if (!pascalGpu || stream_attach) {
             cudaStreamAttachMemAsync(s[p], x[p], sizeof(float) * S * M);
         }
