@@ -212,5 +212,7 @@ if __name__ == "__main__":
                                 prevent_reinit = True
                             # Print the summary of this block;
                             if benchmark_res.debug:
-                                benchmark_res.print_current_summary(name=b_name, policy=p, size=n,
-                                                                    realloc=re, reinit=ri, block_size=block_size, skip=3)
+                                benchmark_res.print_current_summary(name=b_name, size=n, numGPU=numGPU[0], block_size=block_size, exec_policy=exec_policy,
+                                          dep_policy=dep_policy, nstr_policy=nstr_policy, pstr_policy=pstr_policy, heuristic=heuristic,
+                                          mem_advise=mem_advise, prefetch=prefetch, str_attach=str_attach, timing=timing,
+                                          realloc=re, reinit=ri, time_phases=time_phases, num_blocks=number_of_blocks, skip=3)
