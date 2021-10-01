@@ -84,7 +84,7 @@ dependency_policies = ["with_const"]#, "default"]
 
 new_stream_policies = ["always_new"]#, "fifo"]
 
-parent_stream_policies = ["disjoint"] #, "data_aware", "disjoint_data_aware", "stream_aware"] # to be tested, "default" not to be tested
+parent_stream_policies = ["disjoint" , "data_aware", "disjoint_data_aware", "stream_aware"] # to be tested, "default" not to be tested
 
 choose_device_heuristics = ["data_locality"]#, "best_transfer_time_min", "best_transfer_time_max"] # to be tested only with data aware policies
 
@@ -96,7 +96,7 @@ streamAttachs =  [False] #, True]
 
 timeComputes = [False] #, True]
 
-numGPUs = [1]#, 2]
+numGPUs = [2]#, 1]
 
 block_sizes1d_dict = {
     "b1": 32,
