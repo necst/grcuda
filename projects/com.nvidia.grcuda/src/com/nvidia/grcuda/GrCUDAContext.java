@@ -299,7 +299,7 @@ public final class GrCUDAContext {
     @TruffleBoundary
     private static DependencyPolicyEnum parseDependencyPolicy(String policyString) {
         switch(policyString) {
-            case "with-const":
+            case "with_const":
                 return DependencyPolicyEnum.WITH_CONST;
             case "default":
                 return DependencyPolicyEnum.DEFAULT;
