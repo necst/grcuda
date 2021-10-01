@@ -72,6 +72,7 @@ enum BenchmarkEnum {
     B10,
     B1M,
     B5M,
+    B6M,
     B11M,
     ERR
 };
@@ -109,6 +110,8 @@ inline BenchmarkEnum get_benchmark(std::string benchmark) {
         return BenchmarkEnum::B1M;
     else if (benchmark == "b5m")
         return BenchmarkEnum::B5M;
+    else if (benchmark == "b6m")
+        return BenchmarkEnum::B6M;
     else if (benchmark == "b11m")
         return BenchmarkEnum::B11M;
     else
@@ -148,6 +151,7 @@ struct Options {
             (BenchmarkEnum::B10, "b10")
             (BenchmarkEnum::B1M, "b1m")
             (BenchmarkEnum::B5M, "b5m")
+            (BenchmarkEnum::B6M, "b6m")
             (BenchmarkEnum::B11M, "b11m")
             ;
 
