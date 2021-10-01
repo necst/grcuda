@@ -1,164 +1,135 @@
+// Copyright (c) 2021, NECSTLab, Politecnico di Milano. All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+//  * Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+//  * Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+//  * Neither the name of NECSTLab nor the names of its
+//    contributors may be used to endorse or promote products derived
+//    from this software without specific prior written permission.
+//  * Neither the name of Politecnico di Milano nor the names of its
+//    contributors may be used to endorse or promote products derived
+//    from this software without specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #include "b11.cuh"
-#include <thread>
-#include <vector>
+
 //////////////////////////////
 //////////////////////////////
 
-__global__ void squareMulti(const float *x, float *y, int n)
-{
-    for (int i  = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
-    {
-        // float tmp = x[i];
-        // float sum = 0;
-        // for (int j = 0; j < 4; j++) {
-        //     sum += tmp + j;
-        // }
+#define P 16
+#define ITER 1
 
-        y[i] = x[i] * x[i]; // tmp + tmp * tmp / 2 + tmp * tmp * tmp / 6;
+extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, float* z, int n, int m, int z_offset) {
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
+        float sum = 0;
+        for (int j = 0; j < m; j++) {                
+            sum += x[i * m + j] * y[j];
+        }
+        z[z_offset + i] = sum;
     }
-}
-
-__inline__ __device__ float warp_reduceMulti(float val)
-{
-    int warp_size = 32;
-    for (int offset = warp_size / 2; offset > 0; offset /= 2)
-        val += __shfl_down_sync(0xFFFFFFFF, val, offset);
-    return val;
-}
-
-// __device__ float atomicAddDouble(float* address, float val) {
-//     unsigned long long int* address_as_ull = (unsigned long long int*) address;
-//     unsigned long long int old = *address_as_ull, assumed;
-//     do {
-//         assumed = old;
-//         old = atomicCAS(address_as_ull, assumed, __float_as_longlong(val + __longlong_as_float(assumed)));
-//     } while (assumed != old);
-//     return __longlong_as_float(old);
-// }
-
-__global__ void reduceMulti(const float *x, const float *y, float *z, int N)
-{
-    int warp_size = 32;
-    float sum = float(0);
-    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x)
-    {
-        sum += x[i] - y[i];
-    }
-    sum = warp_reduceMulti(sum);                   // Obtain the sum of values in the current warp;
-    if ((threadIdx.x & (warp_size - 1)) == 0) // Same as (threadIdx.x % warp_size) == 0 but faster
-        atomicAdd(z, sum);                    // The first thread in the warp updates the output;
 }
 
 //////////////////////////////
 //////////////////////////////
 
-void Benchmark11::alloc()
-{
-    // cudaSetDevice(0);            // Set device 0 as current
-    err = cudaMallocManaged(&x, sizeof(float) * N);
-    err = cudaMallocManaged(&x1, sizeof(float) * N);
+void Benchmark11::alloc() {
+    M = N;
+    S = (N + P - 1) / P;
+    x_cpu = (float *) malloc(sizeof(float) * N * M);
+    x = (float **) malloc(sizeof(float*) * P);
+    for (int i = 0; i < P; i++) {
+        err = cudaMallocManaged(&x[i], sizeof(float) * S * M);
+    }
+    err = cudaMallocManaged(&y, sizeof(float) * M);
+    err = cudaMallocManaged(&z, sizeof(float) * N);
 
-          // Set device 1 as current
-    err = cudaMallocManaged(&y, sizeof(float) * N);
-    err = cudaMallocManaged(&y1, sizeof(float) * N);
-    err = cudaMallocManaged(&res, sizeof(float));
-    cudaSetDevice(0); 
-    err = cudaStreamCreate(&s1);
-    cudaSetDevice(1);  
-    err = cudaStreamCreate(&s2);
-}
-
-void Benchmark11::init()
-{
-    for (int i = 0; i < N; i++)
-    {
-        x[i] = 1.0 / (i + 1);
-        y[i] = 2.0 / (i + 1);
+    // Create P streams;
+    s = (cudaStream_t *) malloc(sizeof(cudaStream_t) * P);
+    for (int i = 0; i < P; i++) {
+        cudaSetDevice(select_gpu(i, max_devices));
+        err = cudaStreamCreate(&s[i]);
     }
 }
 
-void Benchmark11::reset()
-{
-    for (int i = 0; i < N; i++)
-    {
-        x[i] = 1.0 / (i + 1);
-        y[i] = 2.0 / (i + 1);
+void Benchmark11::init() {
+    for (int i = 0; i < N * M; i++) {
+        x_cpu[i] = (float)(rand()) / (float)(RAND_MAX);
     }
-    res[0] = 0.0;
 }
 
-void Benchmark11::execute_sync(int iter)
-{
-    cudaSetDevice(0); 
-    squareMulti<<<num_blocks, block_size_1d>>>(x, x1, N);
-    err = cudaDeviceSynchronize();
-    cudaSetDevice(1); 
-    squareMulti<<<num_blocks, block_size_1d>>>(y, y1, N);
-    err = cudaDeviceSynchronize();
-    cudaSetDevice(0); 
-    reduceMulti<<<num_blocks, block_size_1d>>>(x1, y1, res, N);
-    err = cudaDeviceSynchronize();
+void Benchmark11::reset() {
+    for (int i = 0; i < M; i++) {
+        y[i] = (float)(rand()) / (float)(RAND_MAX);
+    }
+    for (int i = 0; i < P; i++) {
+        for (int j = 0; j < S * M; j++) {
+            x[i][j] = x_cpu[i * S * M + j];
+        }
+    }
 }
 
-
-void Benchmark11::execute_async(int iter)
-{
-
-    if (!pascalGpu || stream_attach) {
-        cudaStreamAttachMemAsync(s1, x, sizeof(float) * N);
-        cudaStreamAttachMemAsync(s1, x1, sizeof(float) * N);
-        cudaStreamAttachMemAsync(s2, y, sizeof(float) * N);
-        cudaStreamAttachMemAsync(s2, y1, sizeof(float) * N);
+void Benchmark11::execute_sync(int iter) {
+    if (do_prefetch && pascalGpu) {
+        for (int p = 0; p < P; p++) {
+            cudaMemPrefetchAsync(x[p], sizeof(float) * S * M, 0, 0);
+            cudaDeviceSynchronize();
+        }
+        cudaMemPrefetchAsync(y, sizeof(float) * M, 0, 0);
     }
-    if (pascalGpu && do_prefetch) {
-        cudaMemPrefetchAsync(x, sizeof(float) * N, 0, s1);
-        cudaMemPrefetchAsync(x1, sizeof(float) * N, 0, s1);
-        cudaMemPrefetchAsync(y, sizeof(float) * N, 1, s2);
-        cudaMemPrefetchAsync(y1, sizeof(float) * N, 1, s2);
-        cudaMemPrefetchAsync(res, sizeof(float), 0, s1);
+    cudaDeviceSynchronize();
+    for (int i = 0; i < ITER; i++) {
+        for (int p = 0; p < P; p++) {
+            matrix_vector_mult_1<<<num_blocks, block_size_1d>>>(x[p], i % 2 ? z : y, i % 2 ? y : z, std::min(S, N - p * S), M, p * S);
+            cudaDeviceSynchronize();
+        } 
     }
-
-
-    cudaSetDevice(0);            // Set device 0 as current
-
-    squareMulti<<<num_blocks, block_size_1d, 0, s1>>>(x, x1, N);
-
-    cudaSetDevice(1);            // Set device 1 as current
-
-    squareMulti<<<num_blocks, block_size_1d, 0, s2>>>(y, y1, N);
-
-    // Stream 1 waits stream 2;
-    cudaEvent_t e1;
-    cudaEventCreate(&e1);
-    cudaEventRecord(e1, s2);
-    cudaStreamWaitEvent(s1, e1, 0);
-    cudaSetDevice(0);
-
-    if (!pascalGpu || stream_attach) {
-        cudaStreamAttachMemAsync(s1, y1, sizeof(float) * N);
-    }
-
-    if (pascalGpu && do_prefetch) {
-        cudaMemPrefetchAsync(y1, sizeof(float) * N, 0, s1);
-    }
-    // cudaMemAdvise(y1, sizeof(float) * N, cudaMemAdviseSetReadMostly, 0);
-    // cudaMemAdvise(x1, sizeof(float) * N, cudaMemAdviseSetReadMostly, 0);
-    reduceMulti<<<num_blocks, block_size_1d, 0, s1>>>(x1, y1, res, N);
-    cudaStreamSynchronize(s1);
-
 }
 
+void Benchmark11::execute_async(int iter) {
+    for (int p = 0; p < P; p++) {
+        cudaSetDevice(select_gpu(p, max_devices));
+        if (!pascalGpu || stream_attach) {
+            cudaStreamAttachMemAsync(s[p], x[p], sizeof(float) * S * M);
+        }
+        if (pascalGpu && do_prefetch) {
+            cudaMemPrefetchAsync(x[p], sizeof(float) * S * M, select_gpu(p, max_devices), s[p]);
+            cudaMemPrefetchAsync(y, sizeof(float) * M, select_gpu(p, max_devices), s[p]);
+        }
+    }
+    for (int i = 0; i < ITER; i++) {
+        for (int p = 0; p < P; p++) {
+            matrix_vector_mult_1<<<num_blocks, block_size_1d, 0, s[p]>>>(x[p], i % 2 ? z : y, i % 2 ? y : z, std::min(S, N - p * S), M, p * S);
+        }
+        for (int p = 0; p < P; p++) {
+            err = cudaStreamSynchronize(s[p]);
+        }
+    }
+}
 
-
-
-
-void Benchmark11::execute_cudagraph(int iter) {}
-
-void Benchmark11::execute_cudagraph_manual(int iter) {}
-
-void Benchmark11::execute_cudagraph_single(int iter) {}
-
-std::string Benchmark11::print_result(bool short_form)
-{
-    return std::to_string(res[0]);
+std::string Benchmark11::print_result(bool short_form) {
+    if (short_form) {
+        return std::to_string(z[0]);
+    } else {
+        std::string res = "[";
+        for (int i = 0; i < std::min(100, N); i++) {
+            res += std::to_string(z[i]) + ", ";
+        }
+        return res + "...]";
+    }
 }

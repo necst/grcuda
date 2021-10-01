@@ -1,85 +1,49 @@
-# Use NVCC;
+# Copyright (c) 2020, 2021, NECSTLab, Politecnico di Milano. All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NECSTLab nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#  * Neither the name of Politecnico di Milano nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Use NVCC.
+# Set the appropriate GPU architecture, check https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/
 CXX=nvcc
 FLAGS = -std=c++11 -O3 -arch=sm_70
-FLAG_NVML = -lnvidia-ml
-# Use Clang;
+
+# (Experimental) Use Clang;
 # CXX=$(CLANG_DIR)/clang++
 # FLAGS = --cuda-gpu-arch=sm_70 -L/usr/local/cuda/lib64 -lcudart_static -ldl -lrt -pthread -std=c++11 -O3
 
 BIN_FOLDER=bin
-FILES= main.cu benchmark.cu b1.cu b5.cu b6.cu b7.cu b8.cu b10.cu b11.cu b15.cu b16.cu b17.cu b18.cu b20.cu b21.cu b22.cu
-#FILES= main.cu benchmark.cu b22.cu
-.PHONY: full all b1 b5 b6 b7 b8 b10 b11 b15 b16 b17 b18 b20 b21 b22
-#.PHONY: full all b22
+FILES=main.cu benchmark.cu b1.cu b5.cu b6.cu b7.cu b8.cu b10.cu b11.cu b1_multigpu.cu
 
-#data_transfer: data_transfer.cu
-#	$(CXX) -o data_transfer data_transfer.cu $(FLAG_NVML)
-#LU: LU_v2.cu
-#	$(CXX) -o LU LU_v2.cu
+.PHONY: all clean
 
-full:
+all:
+	mkdir -p $(BIN_FOLDER);
 	$(CXX) $(FILES) $(FLAGS) -o $(BIN_FOLDER)/b;
 
-all: \
-    full \
-	b1 \
-	b5 \
-	b6 \
-	b7 \
-	b8 \
-	b10 \
-	b11 \
-    b15 \
-    b16 \
-    b17 \
-    b18 \
-    b20 \
-	b21 \
-	b22 \
-
-b1: b1*
-	$(CXX) old/b1_default.cu $(FLAGS) -o $(BIN_FOLDER)/b1_default;
-	$(CXX) old/b1_sync.cu $(FLAGS) -o $(BIN_FOLDER)/b1_sync
-
-b5: b5*
-	$(CXX) old/b5_default.cu $(FLAGS) -o $(BIN_FOLDER)/b5_default;
-	$(CXX) old/b5_sync.cu $(FLAGS) -o $(BIN_FOLDER)/b5_sync
-
-b6: b6*
-	$(CXX) old/b6_default.cu $(FLAGS) -o $(BIN_FOLDER)/b6_default;
-	$(CXX) old/b6_sync.cu $(FLAGS) -o $(BIN_FOLDER)/b6_sync
-
-b7: b7*
-	$(CXX) old/b7_default.cu $(FLAGS) -o $(BIN_FOLDER)/b7_default;
-	$(CXX) old/b7_sync.cu $(FLAGS) -o $(BIN_FOLDER)/b7_sync
-
-b8: b8*
-	$(CXX) old/b8_default.cu $(FLAGS) -o $(BIN_FOLDER)/b8_default;
-	$(CXX) old/b8_sync.cu $(FLAGS) -o $(BIN_FOLDER)/b8_sync
-
-b10: b10*
-	$(CXX) old/b10_default.cu $(FLAGS) -o $(BIN_FOLDER)/b10_default;
-	$(CXX) old/b10_sync.cu $(FLAGS) -o $(BIN_FOLDER)/b10_sync
-b11: b11*
-	$(CXX) b11.cu $(FLAGS) -o $(BIN_FOLDER)/b11;
-
-b15: b15*
-	$(CXX) b15.cu $(FLAGS) -o $(BIN_FOLDER)/b15;
-
-b16: b16*
-	$(CXX) b16.cu $(FLAGS) -o $(BIN_FOLDER)/b16;
-
-b17: b17*
-	$(CXX) b17.cu $(FLAGS) -o $(BIN_FOLDER)/b17;
-
-b18: b18*
-	$(CXX) b18.cu $(FLAGS) -o $(BIN_FOLDER)/b18;
-
-b20: b20*
-	$(CXX) b20.cu $(FLAGS) -o $(BIN_FOLDER)/b20;
-
-b21: b21*
-	$(CXX) b21.cu $(FLAGS) -o $(BIN_FOLDER)/b21;
-
-b22: b22*
-	$(CXX) b22.cu $(FLAGS) -o $(BIN_FOLDER)/b22;
+clean:
+	rm $(BIN_FOLDER)/*;
