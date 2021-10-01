@@ -70,8 +70,9 @@ enum BenchmarkEnum {
     B7,
     B8,
     B10,
-    B11,
     B1M,
+    B5M,
+    B11M,
     ERR
 };
 
@@ -104,10 +105,12 @@ inline BenchmarkEnum get_benchmark(std::string benchmark) {
         return BenchmarkEnum::B8;
     else if (benchmark == "b10")
         return BenchmarkEnum::B10;
-    else if (benchmark == "b11")
-        return BenchmarkEnum::B11;
     else if (benchmark == "b1m")
         return BenchmarkEnum::B1M;
+    else if (benchmark == "b5m")
+        return BenchmarkEnum::B5M;
+    else if (benchmark == "b11m")
+        return BenchmarkEnum::B11M;
     else
         return BenchmarkEnum::ERR;
 }
@@ -143,8 +146,10 @@ struct Options {
             (BenchmarkEnum::B7, "b7")
             (BenchmarkEnum::B8, "b8")
             (BenchmarkEnum::B10, "b10")
-            (BenchmarkEnum::B11, "b11")
-            (BenchmarkEnum::B1M, "b1m");
+            (BenchmarkEnum::B1M, "b1m")
+            (BenchmarkEnum::B5M, "b5m")
+            (BenchmarkEnum::B11M, "b11m")
+            ;
 
         int opt;
         static struct option long_options[] = {{"debug", no_argument, 0, 'd'},

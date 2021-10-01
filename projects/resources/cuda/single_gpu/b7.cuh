@@ -28,11 +28,20 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
-#include "benchmark.cuh"
+#include <set>
 
-class Benchmark10 : public Benchmark {
+#include "../benchmark.cuh"
+
+typedef struct callBackData {
+    float *n1;
+    float *n2;
+    int *r1;
+    int *r2;
+} callBackData_t;
+
+class Benchmark7 : public Benchmark {
    public:
-    Benchmark10(Options &options) : Benchmark(options) {}
+    Benchmark7(Options &options) : Benchmark(options) {}
     void alloc();
     void init();
     void reset();
@@ -44,30 +53,23 @@ class Benchmark10 : public Benchmark {
     std::string print_result(bool short_form = false);
 
    private:
-    int K = 3;
-    int channels = 1;
-    int stride = 2;
-    int kn1 = 8;
-    int kn2 = 16;
-    int pooling_diameter = 5;
+    int degree = 3;
+    int iterations = 5;
+    int nnz;
 
-    float *x, *x1, *x2, *x3, *y, *y1, *y2, *y3, *kernel_1, *kernel_2, *kernel_3, *kernel_4, *z, *dense_weights, *res;
-    float *x11, *y11;
-    float *x_cpu;
-    float *y_cpu;
-    int x_len;
-    int x1_len;
-    int pooled_len;
-    int x2_len;
-    int x3_len;
-    int k1_len, k2_len, z_len;
+    int *ptr, *idx, *val, *ptr2, *idx2, *val2, *rowCounter1, *rowCounter2, *x, *y, *v;
+    int *ptr_tmp, *idx_tmp, *val_tmp, *ptr2_tmp, *idx2_tmp, *val2_tmp;
+    float *auth1, *auth2, *hub1, *hub2, *auth_norm, *hub_norm;
 
     cudaStream_t s1, s2;
     cudaGraph_t graph;
     cudaGraphExec_t graphExec;
 
     std::vector<cudaGraphNode_t> nodeDependencies;
-    cudaGraphNode_t k_1, k_2, k_3, k_4, k_5, k_6, k_7, k_8;
+    cudaGraphNode_t kernel_1, kernel_2, kernel_3, kernel_4, kernel_5, kernel_6, kernel_7;
+    cudaGraphNode_t host_node;
+    callBackData_t callback_data;
+    cudaHostNodeParams host_params;
     cudaKernelNodeParams kernel_1_params;
     cudaKernelNodeParams kernel_2_params;
     cudaKernelNodeParams kernel_3_params;
@@ -75,5 +77,19 @@ class Benchmark10 : public Benchmark {
     cudaKernelNodeParams kernel_5_params;
     cudaKernelNodeParams kernel_6_params;
     cudaKernelNodeParams kernel_7_params;
-    cudaKernelNodeParams kernel_8_params;
+
+    inline void random_coo(int *x, int *y, int *val, int N, int degree) {
+        for (int i = 0; i < N; i++) {
+            std::set<int> edges;
+            while (edges.size() < degree) {
+                edges.insert(rand() % N);
+            }
+            int j = 0;
+            for (auto iter = edges.begin(); iter != edges.end(); iter++, j++) {
+                x[i * degree + j] = i;
+                y[i * degree + j] = *iter;
+                val[i * degree + j] = 1;
+            }
+        }
+    }
 };

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, NECSTLab, Politecnico di Milano. All rights reserved.
+// Copyright (c) 2021, NECSTLab, Politecnico di Milano. All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
@@ -27,66 +27,26 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <string>
-#include <iostream>
-#include <ctime>    // For time()
-#include <cstdlib>  // For srand()
-#include "options.hpp"
-#include "benchmark.cuh"
-#include "single_gpu/b1.cuh"
-#include "single_gpu/b5.cuh"
-#include "single_gpu/b6.cuh"
-#include "single_gpu/b7.cuh"
-#include "single_gpu/b8.cuh"
-#include "single_gpu/b10.cuh"
-#include "multi_gpu/b1.cuh"
-#include "multi_gpu/b5.cuh"
-#include "multi_gpu/b11.cuh"
+#pragma once
+#include "../benchmark.cuh"
 
-int main(int argc, char *argv[])
-{
-    srand(time(0));
-//    srand(12);
-    
-    Options options = Options(argc, argv);
-    BenchmarkEnum benchmark_choice = options.benchmark_choice;
-    Benchmark *b;
+class Benchmark11M : public Benchmark {
+   public:
+    Benchmark11M(Options &options) : Benchmark(options) {}
+    void alloc();
+    void init();
+    void reset();
+    void execute_sync(int iter);
+    void execute_async(int iter);
+    std::string print_result(bool short_form = false);
 
-    switch (benchmark_choice)
-    {
-    case BenchmarkEnum::B1:
-        b = new Benchmark1(options);
-        break;
-    case BenchmarkEnum::B5:
-        b = new Benchmark5(options);
-        break;
-    case BenchmarkEnum::B6:
-        b = new Benchmark6(options);
-        break;
-    case BenchmarkEnum::B7:
-        b = new Benchmark7(options);
-        break;
-    case BenchmarkEnum::B8:
-        b = new Benchmark8(options);
-        break;
-    case BenchmarkEnum::B10:
-        b = new Benchmark10(options);
-        break;
-    case BenchmarkEnum::B1M:
-        b = new Benchmark1M(options);
-        break;
-    case BenchmarkEnum::B5M:
-        b = new Benchmark5M(options);
-        break;
-    case BenchmarkEnum::B11M:
-        b = new Benchmark11M(options);
-        break;
-    default:
-        break;
-    }
-    if (b != nullptr) {
-        b->run();
-    } else {
-        std::cout << "ERROR = benchmark is null" << std::endl;
-    }
-}
+   private:
+    int M;
+    int S;
+
+    float **x;
+    float *y, *z;
+    float *x_cpu;
+
+    cudaStream_t *s;
+};

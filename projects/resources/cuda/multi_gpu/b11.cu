@@ -48,7 +48,7 @@ extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, 
 //////////////////////////////
 //////////////////////////////
 
-void Benchmark11::alloc() {
+void Benchmark11M::alloc() {
     M = N;
     S = (N + P - 1) / P;
     x_cpu = (float *) malloc(sizeof(float) * N * M);
@@ -67,13 +67,13 @@ void Benchmark11::alloc() {
     }
 }
 
-void Benchmark11::init() {
+void Benchmark11M::init() {
     for (int i = 0; i < N * M; i++) {
         x_cpu[i] = (float)(rand()) / (float)(RAND_MAX);
     }
 }
 
-void Benchmark11::reset() {
+void Benchmark11M::reset() {
     for (int i = 0; i < M; i++) {
         y[i] = (float)(rand()) / (float)(RAND_MAX);
     }
@@ -84,7 +84,7 @@ void Benchmark11::reset() {
     }
 }
 
-void Benchmark11::execute_sync(int iter) {
+void Benchmark11M::execute_sync(int iter) {
     if (do_prefetch && pascalGpu) {
         for (int p = 0; p < P; p++) {
             cudaMemPrefetchAsync(x[p], sizeof(float) * S * M, 0, 0);
@@ -101,7 +101,7 @@ void Benchmark11::execute_sync(int iter) {
     }
 }
 
-void Benchmark11::execute_async(int iter) {
+void Benchmark11M::execute_async(int iter) {
     for (int p = 0; p < P; p++) {
         cudaSetDevice(select_gpu(p, max_devices));
         if (!pascalGpu || stream_attach) {
@@ -122,7 +122,7 @@ void Benchmark11::execute_async(int iter) {
     }
 }
 
-std::string Benchmark11::print_result(bool short_form) {
+std::string Benchmark11M::print_result(bool short_form) {
     if (short_form) {
         return std::to_string(z[0]);
     } else {
