@@ -5,10 +5,10 @@ import numpy as np
 
 class BenchmarkResult:
 
-    DEFAULT_RES_FOLDER = "../../../../data/results"
-    DEFAULT_NUM_ITER = 3
-    DEFAULT_DEBUG = False
-    DEFAULT_CPU_VALIDATION = True
+    DEFAULT_RES_FOLDER = "../../../../grcuda-data/results/scheduling_multiGPU"
+    DEFAULT_NUM_ITER = 20
+    DEFAULT_DEBUG = True
+    DEFAULT_CPU_VALIDATION = False
     DEFAULT_REALLOC = False
     DEFAULT_REINIT = True
     DEFAULT_RANDOM_INIT = False

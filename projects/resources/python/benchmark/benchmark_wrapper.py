@@ -66,13 +66,13 @@ num_elem = {
 # multi gpu
 cuda_exec_policies = ["best_case_multiGPU"]
 
-exec_policies = ["sync"]#, "default"]
+exec_policies = ["default"]#, "sync"]
 
-dependency_policies = ["default"]#, "with_const"]
+dependency_policies = ["with_const"]#, "default"]
 
 new_stream_policies = ["always_new"]#, "fifo"]
 
-parent_stream_policies = ["data_aware"] #, "disjoint", "disjoint_data_aware", "stream_aware"] # to be tested, "default" not to be tested
+parent_stream_policies = ["disjoint"] #, "data_aware", "disjoint_data_aware", "stream_aware"] # to be tested, "default" not to be tested
 
 choose_device_heuristics = ["data_locality"]#, "best_transfer_time_min", "best_transfer_time_max"] # to be tested only with data aware policies
 
@@ -138,8 +138,6 @@ block_dim_dict = {
 #     "b8": 16,
 #     "b10": DEFAULT_NUM_BLOCKS,
 # }
-
-# BEST 1GPU
 
 ##############################
 ##############################
