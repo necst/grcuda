@@ -40,6 +40,7 @@
 #include "b8.cuh"
 #include "b10.cuh"
 #include "b11.cuh"
+#include "b1_multigpu.cuh"
 
 int main(int argc, char *argv[])
 {
@@ -72,6 +73,9 @@ int main(int argc, char *argv[])
         break;
     case BenchmarkEnum::B11:
         b = new Benchmark11(options);
+        break;
+    case BenchmarkEnum::B1M:
+        b = new Benchmark1M(options);
         break;
     default:
         break;

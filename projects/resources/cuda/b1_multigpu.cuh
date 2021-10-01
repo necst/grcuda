@@ -1,4 +1,4 @@
-// Copyright (c) 2021, NECSTLab, Politecnico di Milano. All rights reserved.
+// Copyright (c) 2020, 2021, NECSTLab, Politecnico di Milano. All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
@@ -30,9 +30,11 @@
 #pragma once
 #include "benchmark.cuh"
 
-class Benchmark11 : public Benchmark {
+// Implement B1 using multi-GPU. 
+// Partition the computation across D devices, compute D partial results and aggregate them on the CPU
+class Benchmark1M : public Benchmark {
    public:
-    Benchmark11(Options &options) : Benchmark(options) {}
+    Benchmark1M(Options &options) : Benchmark(options) {}
     void alloc();
     void init();
     void reset();
@@ -41,12 +43,8 @@ class Benchmark11 : public Benchmark {
     std::string print_result(bool short_form = false);
 
    private:
-    int M;
     int S;
-
-    float **x;
-    float *y, *z;
-    float *x_cpu;
-
+    float **x, **y, **x1, **y1, **res;
+    float res_tot = 0.0;
     cudaStream_t *s;
 };

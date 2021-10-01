@@ -40,14 +40,15 @@ struct Benchmark {
     virtual void alloc() = 0;
     virtual void init() = 0;
     virtual void reset() = 0;
-    virtual void execute_async(int iter) = 0;
-    virtual void execute_sync(int iter) = 0;
-    virtual void execute_cudagraph(int iter) = 0;
-    virtual void execute_cudagraph_manual(int iter) = 0;
-    virtual void execute_cudagraph_single(int iter) = 0;
+    virtual void execute_async(int iter);
+    virtual void execute_sync(int iter);
+    virtual void execute_cudagraph(int iter);
+    virtual void execute_cudagraph_manual(int iter);
+    virtual void execute_cudagraph_single(int iter);
     virtual std::string print_result(bool short_form = false) = 0;
     void run();
     int add_node(void **paramarray, cudaKernelNodeParams &param, void *func, dim3 gridsize, dim3 threads, cudaGraph_t &g, cudaGraphNode_t *n, std::vector<cudaGraphNode_t> &dependencies, int shared_memory = 0);
+    int select_gpu(int i, int max_devices);
 
     Benchmark(Options &options) : debug(options.debug),
                                   num_executions(options.num_iter),

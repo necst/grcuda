@@ -33,18 +33,7 @@
 //////////////////////////////
 
 #define P 16
-#define GPU_ORDER_8 {0, 6, 3, 1, 4, 2, 5, 7}
-#define GPU_ORDER_4 {0, 3, 1, 2}
-
-inline int select_gpu(int i, int max_devices) {
-    if (max_devices > 4) {
-        return GPU_ORDER_8[i % 8] % max_devices;
-    } else if (max_devices > 2) {
-        return GPU_ORDER_4[i % 4] % max_devices;
-    } else {
-        return i % max_devices;
-    }
-}
+#define ITER 1
 
 extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, float* z, int n, int m, int z_offset) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
@@ -104,9 +93,11 @@ void Benchmark11::execute_sync(int iter) {
         cudaMemPrefetchAsync(y, sizeof(float) * M, 0, 0);
     }
     cudaDeviceSynchronize();
-    for (int p = 0; p < P; p++) {
-        matrix_vector_mult_1<<<num_blocks, block_size_1d>>>(x[p], y, z, std::min(S, N - p * S), M, p * S);
-        cudaDeviceSynchronize();
+    for (int i = 0; i < ITER; i++) {
+        for (int p = 0; p < P; p++) {
+            matrix_vector_mult_1<<<num_blocks, block_size_1d>>>(x[p], i % 2 ? z : y, i % 2 ? y : z, std::min(S, N - p * S), M, p * S);
+            cudaDeviceSynchronize();
+        } 
     }
 }
 
@@ -117,27 +108,18 @@ void Benchmark11::execute_async(int iter) {
             cudaStreamAttachMemAsync(s[p], x[p], sizeof(float) * S * M);
         }
         if (pascalGpu && do_prefetch) {
-            cudaMemPrefetchAsync(x[p], sizeof(float) * S * M, 0, s[p]);
-            cudaMemPrefetchAsync(y, sizeof(float) * M, 0, s[p]);
+            cudaMemPrefetchAsync(x[p], sizeof(float) * S * M, select_gpu(p, max_devices), s[p]);
+            cudaMemPrefetchAsync(y, sizeof(float) * M, select_gpu(p, max_devices), s[p]);
         }
-        matrix_vector_mult_1<<<num_blocks, block_size_1d, 0, s[p]>>>(x[p], y, z, std::min(S, N - p * S), M, p * S);
     }
-
-    for (int p = 0; p < P; p++) {
-        err = cudaStreamSynchronize(s[p]);
+    for (int i = 0; i < ITER; i++) {
+        for (int p = 0; p < P; p++) {
+            matrix_vector_mult_1<<<num_blocks, block_size_1d, 0, s[p]>>>(x[p], i % 2 ? z : y, i % 2 ? y : z, std::min(S, N - p * S), M, p * S);
+        }
+        for (int p = 0; p < P; p++) {
+            err = cudaStreamSynchronize(s[p]);
+        }
     }
-}
-
-void Benchmark11::execute_cudagraph(int iter) {
-    std::cout << "cudagraph (standard) not implemented for b11" << std::endl;
-}
-
-void Benchmark11::execute_cudagraph_manual(int iter) {
-    std::cout << "cudagraph (manual) not implemented for b11" << std::endl;
-}
-
-void Benchmark11::execute_cudagraph_single(int iter) {
-    std::cout << "cudagraph (single) not implemented for b11" << std::endl;
 }
 
 std::string Benchmark11::print_result(bool short_form) {
