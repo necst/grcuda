@@ -13,8 +13,7 @@ import numpy as np
 import functools
 from scipy.stats.mstats import gmean
 
-DEFAULT_RES_DIR = "../../../../data/results"
-
+DEFAULT_RES_DIR = "../../../../grcuda-data/results/scheduling_multiGPU"
 
 def load_data(input_date: str, skip_iter=0, remove_inf=True, remove_time_zero=True, benchmark="", phases=None) -> pd.DataFrame:
     """
@@ -43,51 +42,72 @@ def load_data(input_date: str, skip_iter=0, remove_inf=True, remove_time_zero=Tr
     for k, v in data_dict.items():
         row = []
         # Parse filename;
-        benchmark, exec_policy, new_stream_policy, parent_stream_policy, dependency_policy, force_prefetch = k.split("_")[6:12]
         
-        force_prefetch = force_prefetch == "True"
-       
-        row += [benchmark, exec_policy, new_stream_policy, parent_stream_policy, dependency_policy, force_prefetch, 0, 0, ""]
+        benchmark = k.split("_")[6] 
+        row += [benchmark]
 
         # Retrieve other information;
         total_iterations = v["num_iterations"]
         cpu_validation = v["cpu_validation"]
         random_init = v["random_init"]
-        size_dict = v["benchmarks"][benchmark]["default"]
-        row += [int(total_iterations), bool(cpu_validation), bool(random_init)]
+        size_dict = v["benchmarks"][benchmark]
 
         # Parse data for each input data size, and other settings;;
         for size, val_size in size_dict.items():
-            for realloc, val_realloc in val_size.items():
-                for reinit, val_reinit in val_realloc.items():
-                    for block_size, val_block_size in val_reinit.items():
-                        # Process each iteration;
-                        block_size_1d, block_size_2d = block_size.split(",")
-                        row[-6] = int(block_size_1d)
-                        row[-5] = int(block_size_2d)
-                        row[-4] = block_size_1d + ",8" # block_size_1d + "," + block_size_2d]
-                        for curr_iteration in val_block_size:
-                            num_iter = curr_iteration["iteration"]
-                            gpu_result = curr_iteration["gpu_result"]
-                            total_time_sec = curr_iteration["total_time_sec"]
-                            overhead_sec = curr_iteration["overhead_sec"]
-                            computation_sec = curr_iteration["computation_sec"]
-                            
-                            # Process phases;
-                            phases_time = []
-                            if phases:
-                                phases_time = [p["time_sec"] for p in curr_iteration["phases"] if p["name"] in phases]
-                                if not phases_names:
-                                    phases_names = [p["name"] for p in curr_iteration["phases"] if p["name"] in phases]
-                            
-                            # Add a new row;
-                            if (num_iter >= skip_iter):
-                                rows += [row + [int(size), bool(realloc), bool(reinit), num_iter - skip_iter, gpu_result, total_time_sec, overhead_sec, computation_sec] + phases_time]
+            row += [int(size)]
+            for numGPU, val_numGPU in val_size.items():
+                row += [int(numGPU)]
+                for numBlocks, val_numBlocks in val_numGPU.items():
+                    for execPolicy, val_execPolicy in val_numBlocks.items():
+                        row += [execPolicy]
+                        for depPolicy, val_depPolicy in val_execPolicy.items():
+                            row += [depPolicy]
+                            for newStrPolicy, val_newStrPolicy in val_depPolicy.items():
+                                row += [newStrPolicy]
+                                for parStrPolicy, val_parStrPolicy in val_newStrPolicy.items():
+                                    row += [parStrPolicy]
+                                    for heuristic, val_heuristic in val_parStrPolicy.items():
+                                        row += [heuristic]
+                                        for prefetch, val_prefetch in val_heuristic.items():
+                                            row += [prefetch]
+                                            for strAttach, val_strAttach in val_prefetch.items():
+                                                row += [bool(strAttach)]
+                                                for kTiming, val_kTiming in val_strAttach.items():
+                                                    row += [bool(kTiming)]
+                                                    for realloc, val_realloc in val_kTiming.items():
+                                                        row += [bool(realloc)]
+                                                        for reinit, val_reinit in val_realloc.items():
+                                                            row += [bool(reinit)]
+                                                            for block_size, val_block_size in val_reinit.items():
+                                                                # Process each iteration;
+                                                                block_size_1d = int(block_size.split(",")[0])
+                                                                block_size_2d = int(block_size.split(",")[1])
+                                                                block_size_str = str(block_size_1d) + "," + str(block_size_2d)
+                                                                row += [int(numBlocks), block_size_1d, block_size_2d, block_size_str]
+                                                                
+                                                                for curr_iteration in val_block_size:
+                                                                    num_iter = curr_iteration["iteration"]
+                                                                    gpu_result = curr_iteration["gpu_result"]
+                                                                    total_time_sec = curr_iteration["total_time_sec"]
+                                                                    overhead_sec = curr_iteration["overhead_sec"]
+                                                                    computation_sec = curr_iteration["computation_sec"]
+                                                                    
+                                                                    # Process phases;
+                                                                    phases_time = []
+                                                                    if phases:
+                                                                        phases_time = [p["time_sec"] for p in curr_iteration["phases"] if p["name"] in phases]
+                                                                        if not phases_names:
+                                                                            phases_names = [p["name"] for p in curr_iteration["phases"] if p["name"] in phases]
+                                                                    
+                                                                    # Add a new row;
+                                                                    if (num_iter >= skip_iter):
+                                                                        rows += [row + [total_iterations, bool(cpu_validation), bool(random_init), num_iter - skip_iter, gpu_result, total_time_sec, overhead_sec, computation_sec] + phases_time]
 
-    columns = ["benchmark", "exec_policy", "new_stream_policy", "parent_stream_policy",
-               "dependency_policy", "force_prefetch", "block_size_1d", "block_size_2d", "block_size_str",
-               "total_iterations", "cpu_validation", "random_init", "size", "realloc", "reinit",
+    columns = ["benchmark", "size", "number_GPU", "exec_policy", "dependency_policy", "new_stream_policy", "parent_stream_policy",
+               "choose_device_heuristic", "prefetcher", "force_stream_attach", "kernel_timing", "realloc", "reinit",
+               "num_blocks", "block_size_1d", "block_size_2d", "block_size_str", "total_iterations", "cpu_validation", "random_init",
                "num_iter", "gpu_result", "total_time_sec", "overhead_sec", "computation_sec"] + (phases_names if phases else [])
+    
     data = pd.DataFrame(rows, columns=columns).sort_values(by=columns[:14], ignore_index=True)
     
     # Clean columns with 0 computation time;
@@ -96,7 +116,7 @@ def load_data(input_date: str, skip_iter=0, remove_inf=True, remove_time_zero=Tr
     
     # Compute speedups;
     compute_speedup(data, ["benchmark", "new_stream_policy", "parent_stream_policy",
-               "dependency_policy", "force_prefetch", "block_size_1d", "block_size_2d",
+               "dependency_policy", "prefetcher", "block_size_1d", "block_size_2d",
                "total_iterations", "cpu_validation", "random_init", "size", "realloc", "reinit"])
     # Clean columns with infinite speedup;
     if remove_inf:
@@ -176,7 +196,6 @@ def compute_speedup(data, key, speedup_col_name="computation_speedup", time_colu
     data[speedup_col_name] = 1
     data[baseline_col_name] = 0
     
-    updated_groups = []
     grouped_data = data.groupby(key, as_index=False)
     for group_key, group in grouped_data:
         # Compute the median baseline computation time;
@@ -227,10 +246,10 @@ def join_tables_baseline(data_cuda_in, data_grcuda_in):
 
 
 if __name__ == "__main__":
-    input_date = "2020_06_20_20_26_03"
+    input_date = "2021_10_01_13_04_05_grcuda"
     data = load_data(input_date, skip_iter=3)
     
-    input_date2 = "2020_06_21_14_05_38_cuda"
-    data2 = load_data_cuda(input_date2, skip_iter=3)   
+    #input_date2 = "2020_06_21_14_05_38_cuda"
+    #data2 = load_data_cuda(input_date2, skip_iter=3)   
     
-    data3 = join_tables(data[data["benchmark"] == "b1"], data2)
+    #data3 = join_tables(data[data["benchmark"] == "b1"], data2)
