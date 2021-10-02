@@ -42,6 +42,7 @@
 #include "multi_gpu/b1.cuh"
 #include "multi_gpu/b5.cuh"
 #include "multi_gpu/b6.cuh"
+#include "multi_gpu/b9.cuh"
 #include "multi_gpu/b11.cuh"
 
 int main(int argc, char *argv[])
@@ -81,6 +82,9 @@ int main(int argc, char *argv[])
         break;
     case BenchmarkEnum::B6M:
         b = new Benchmark6M(options);
+        break;
+    case BenchmarkEnum::B9M:
+        b = new Benchmark9M(options);
         break;
     case BenchmarkEnum::B11M:
         b = new Benchmark11M(options);

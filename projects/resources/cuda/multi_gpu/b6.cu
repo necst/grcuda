@@ -382,8 +382,8 @@ void Benchmark6M::execute_async(int iter) {
     cudaEvent_t e3;
     cudaEventCreate(&e3);
     cudaEventRecord(e3, s2);
+    cudaSetDevice(select_gpu(0, max_devices));
     cudaStreamWaitEvent(s1, e3, 0);
-
     argmax_m<<<num_blocks, block_size_1d, 0, s1>>>(r1, r2, r, N, num_classes);
     cudaDeviceSynchronize();
 }

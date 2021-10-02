@@ -136,6 +136,7 @@ void Benchmark1M::execute_sync(int iter) {
 void Benchmark1M::execute_async(int iter) {
     for (int i = 0; i < P; i++) {
         int gpu = select_gpu(i, max_devices);
+        cudaSetDevice(gpu);
         if (!pascalGpu || stream_attach) {
             cudaStreamAttachMemAsync(s[i], x[i], sizeof(float) * S);
             cudaStreamAttachMemAsync(s[i], x1[i], sizeof(float) * S);
