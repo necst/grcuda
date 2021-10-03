@@ -32,7 +32,7 @@
 //////////////////////////////
 //////////////////////////////
 
-#define P 16
+#define P 1
 #define ITER 10
 
 // z = x @ y;
@@ -108,7 +108,10 @@ extern "C" __global__ void cpy(float *y, const float *x, int n) {
 
 void Benchmark9M::alloc() {
     S = (N + P - 1) / P;
-    err = cudaMallocManaged(&A, sizeof(float) * N * N);
+    A = (float **) malloc(sizeof(float*) * P);
+    for (int i = 0; i < P; i++) {
+        err = cudaMallocManaged(&A[i], sizeof(float) * S * N);
+    }
     err = cudaMallocManaged(&x, sizeof(float) * N);
     err = cudaMallocManaged(&b, sizeof(float) * N);
     err = cudaMallocManaged(&p, sizeof(float) * N);
@@ -121,33 +124,25 @@ void Benchmark9M::alloc() {
     cudaStream_t s1, s2;
     err = cudaStreamCreate(&s1);
     err = cudaStreamCreate(&s2);
-
-    // x_cpu = (float *) malloc(sizeof(float) * N * M);
-    // x = (float **) malloc(sizeof(float*) * P);
-    // for (int i = 0; i < P; i++) {
-    //     err = cudaMallocManaged(&x[i], sizeof(float) * S * M);
-    // }
-    // err = cudaMallocManaged(&y, sizeof(float) * M);
-    // err = cudaMallocManaged(&z, sizeof(float) * N);
-
-    // // Create P streams;
-    // s = (cudaStream_t *) malloc(sizeof(cudaStream_t) * P);
-    // for (int i = 0; i < P; i++) {
-    //     cudaSetDevice(select_gpu(i, max_devices));
-    //     err = cudaStreamCreate(&s[i]);
-    // }
+    // Create P streams;
+    s = (cudaStream_t *) malloc(sizeof(cudaStream_t) * P);
+    for (int i = 0; i < P; i++) {
+        cudaSetDevice(select_gpu(i, max_devices));
+        err = cudaStreamCreate(&s[i]);
+    }
 }
 
 void Benchmark9M::init() {
-    // for (int i = 0; i < N * N; i++) {
-    //     x_cpu[i] = (float)(rand()) / (float)(RAND_MAX);
-    // }
-
     // Random input matrix;
     float max = float(RAND_MAX);
-    for (int i = 0; i < N * N; i++) {
-        A[i] = float(rand()) / max;
+    for (int i = 0; i < P; i++) {
+        for (int j = 0; j < S * N; j++) {
+            A[i][j] = float(rand()) / max;
+        }
     }
+    // for (int i = 0; i < N * N; i++) {
+    //     A[i] = float(rand()) / max;
+    // }
     // Random input b;
     for (int i = 0; i < N; i++) {
         b[i] = float(rand()) / max;
@@ -173,22 +168,28 @@ void Benchmark9M::reset() {
 void Benchmark9M::execute_sync(int iter) { 
 
     if (pascalGpu && do_prefetch) {
-        cudaMemPrefetchAsync(A, sizeof(float) * N * N, 0);
+        for (int i = 0; i < P; i++) {
+            cudaMemPrefetchAsync(A[i], sizeof(float) * S * N, 0);
+        }
         cudaMemPrefetchAsync(x, sizeof(float) * N, 0);
         cudaMemPrefetchAsync(b, sizeof(float) * N, 0);
         cudaMemPrefetchAsync(r, sizeof(float) * N, 0);
         cudaMemPrefetchAsync(p, sizeof(float) * N, 0);
     }
 
-    matrix_vector_mult_axpy<<<num_blocks, block_size_1d>>>(A, x, b, -1, r, N, N, 0);
-    cudaDeviceSynchronize();
+    for (int i = 0; i < P; i++) {
+        matrix_vector_mult_axpy<<<num_blocks, block_size_1d>>>(A[i], x, b, -1, r, S, N, i * S);
+        cudaDeviceSynchronize();
+    }
     cpy<<<num_blocks, block_size_1d>>>(p, r, N);
     cudaDeviceSynchronize();
     l2_norm<<<num_blocks, block_size_1d>>>(r, t1, N);
     cudaDeviceSynchronize();
     for (int i = 0; i < ITER; i++) {
-        matrix_vector_mult<<<num_blocks, block_size_1d>>>(A, p, y, N, N, 0);
-        cudaDeviceSynchronize();
+        for (int i = 0; i < P; i++) {
+            matrix_vector_mult<<<num_blocks, block_size_1d>>>(A[i], p, y, S, N, i * S);
+            cudaDeviceSynchronize();
+        }
         dot<<<num_blocks, block_size_1d>>>(p, y, t2, N);
         cudaDeviceSynchronize();
         float alpha = *t1 / *t2;
@@ -209,22 +210,45 @@ void Benchmark9M::execute_sync(int iter) {
 
 void Benchmark9M::execute_async(int iter) {
     if (pascalGpu && do_prefetch) {
-        cudaMemPrefetchAsync(A, sizeof(float) * N * N, 0, s1);
+        for (int i = 0; i < P; i++) {
+            cudaSetDevice(select_gpu(i, max_devices));
+            cudaMemPrefetchAsync(A[i], sizeof(float) * S * N, 0, s[i]);
+        }
+        cudaSetDevice(select_gpu(0, max_devices));
         cudaMemPrefetchAsync(x, sizeof(float) * N, 0, s1);
         cudaMemPrefetchAsync(b, sizeof(float) * N, 0, s1);
         cudaMemPrefetchAsync(r, sizeof(float) * N, 0, s1);
         cudaMemPrefetchAsync(p, sizeof(float) * N, 0, s1);
     }
 
-    matrix_vector_mult_axpy<<<num_blocks, block_size_1d, 0, s1>>>(A, x, b, -1, r, N, N, 0);
-    cudaEvent_t e1;
-    cudaEventCreate(&e1);
-    cudaEventRecord(e1, s1);
+    cudaEvent_t e[P];
+    for (int i = 0; i < P; i++) {
+        cudaSetDevice(select_gpu(i, max_devices));
+        matrix_vector_mult_axpy<<<num_blocks, block_size_1d, 0, s[i]>>>(A[i], x, b, -1, r, S, N, i * S);
+        cudaEventCreate(&e[i]);
+        cudaEventRecord(e[i], s[i]);
+    }
+    cudaSetDevice(select_gpu(0, max_devices));
+    for (int i = 0; i < P; i++) {
+        cudaStreamWaitEvent(s1, e[i], 0);
+    }
     cpy<<<num_blocks, block_size_1d, 0, s1>>>(p, r, N);
-    cudaStreamWaitEvent(s2, e1, 0);
+    for (int i = 0; i < P; i++) {
+        cudaStreamWaitEvent(s2, e[i], 0);
+    }
     l2_norm<<<num_blocks, block_size_1d, 0, s2>>>(r, t1, N);
     for (int i = 0; i < ITER; i++) {
-        matrix_vector_mult<<<num_blocks, block_size_1d, 0, s1>>>(A, p, y, N, N, 0);
+        cudaEvent_t e2[P];
+        for (int i = 0; i < P; i++) {
+            cudaSetDevice(select_gpu(i, max_devices));
+            matrix_vector_mult<<<num_blocks, block_size_1d, 0, s[i]>>>(A[i], p, y, S, N, i * S);
+            cudaEventCreate(&e2[i]);
+            cudaEventRecord(e2[i], s[i]);
+        }
+        cudaSetDevice(select_gpu(0, max_devices));
+        for (int i = 0; i < P; i++) {
+            cudaStreamWaitEvent(s1, e2[i], 0);
+        }
         dot<<<num_blocks, block_size_1d, 0, s1>>>(p, y, t2, N);
         cudaStreamSynchronize(s1);
         cudaStreamSynchronize(s2);
@@ -246,9 +270,14 @@ std::string Benchmark9M::print_result(bool short_form) {
         return std::to_string(x[0]);
     } else {
         std::string res = "[";
-        for (int i = 0; i < std::min(100, N); i++) {
-            res += std::to_string(x[i]) + ", ";
+        for (int j = 0; j < std::min(10, N); j++) {
+            res += std::to_string(x[j]) + ", ";
         }
-        return res + "...]";
+
+        float sum = 0;
+        for (int j = 0; j < N; j++) {
+            sum += x[j];
+        }
+        return res + "...], sum=" + std::to_string(sum);
     }
 }
