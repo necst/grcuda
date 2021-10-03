@@ -497,7 +497,7 @@ public class StreamPolicy {
 
         public FastestDataTransferMax() {
             List<List<String>> records = new ArrayList<>();
-            try (BufferedReader br = new BufferedReader(new FileReader("connection_graph.csv"))) {
+            try (BufferedReader br = new BufferedReader(new FileReader("/usr/tmp/GrCUDA/connection_graph.csv"))) {
                 String line;
                 while ((line = br.readLine()) != null) {
                     String[] values = line.split(",");
@@ -564,7 +564,7 @@ public class StreamPolicy {
 
         public FastestDataTransferMin () {
             List<List<String>> records = new ArrayList<>();
-            try (BufferedReader br = new BufferedReader(new FileReader("connection_graph.csv"))) {
+            try (BufferedReader br = new BufferedReader(new FileReader("/usr/tmp/GrCUDA/connection_graph.csv"))) {
                 String line;
                 while ((line = br.readLine()) != null) {
                     String[] values = line.split(",");
