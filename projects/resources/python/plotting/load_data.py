@@ -13,7 +13,7 @@ import numpy as np
 import functools
 from scipy.stats.mstats import gmean
 
-DEFAULT_RES_DIR = "../../../../grcuda-data/results/scheduling_multiGPU"
+DEFAULT_RES_DIR = "../../../../grcuda-data/results/scheduling_multiGPU/V100"
 
 def load_data(input_date: str, skip_iter=0, remove_inf=True, remove_time_zero=True, benchmark="", phases=None) -> pd.DataFrame:
     """
@@ -71,13 +71,13 @@ def load_data(input_date: str, skip_iter=0, remove_inf=True, remove_time_zero=Tr
                                         for prefetch, val_prefetch in val_heuristic.items():
                                             row += [prefetch]
                                             for strAttach, val_strAttach in val_prefetch.items():
-                                                row += [bool(strAttach)]
+                                                row += [strAttach=='true' or strAttach=='True']
                                                 for kTiming, val_kTiming in val_strAttach.items():
-                                                    row += [bool(kTiming)]
+                                                    row += [kTiming=='true' or kTiming=='True']
                                                     for realloc, val_realloc in val_kTiming.items():
-                                                        row += [bool(realloc)]
+                                                        row += [realloc=='true' or realloc=='True']
                                                         for reinit, val_reinit in val_realloc.items():
-                                                            row += [bool(reinit)]
+                                                            row += [reinit=='true' or reinit=='True']
                                                             for block_size, val_block_size in val_reinit.items():
                                                                 # Process each iteration;
                                                                 block_size_1d = int(block_size.split(",")[0])
@@ -115,12 +115,12 @@ def load_data(input_date: str, skip_iter=0, remove_inf=True, remove_time_zero=Tr
         data = data[data["computation_sec"] > 0].reset_index(drop=True)
     
     # Compute speedups;
-    compute_speedup(data, ["benchmark", "new_stream_policy", "parent_stream_policy",
-               "dependency_policy", "prefetcher", "block_size_1d", "block_size_2d",
-               "total_iterations", "cpu_validation", "random_init", "size", "realloc", "reinit"])
+    compute_speedup(data, ["benchmark", "size", "exec_policy", "dependency_policy", "new_stream_policy",
+               "choose_device_heuristic", "prefetcher", "force_stream_attach", "kernel_timing", "realloc", "reinit",
+               "num_blocks", "block_size_1d", "block_size_2d", "total_iterations", "cpu_validation", "random_init"])
     # Clean columns with infinite speedup;
-    if remove_inf:
-        data = data[data["computation_speedup"] != np.inf].reset_index(drop=True)
+    # if remove_inf:
+    #     data = data[data["computation_speedup"] != np.inf].reset_index(drop=True)
     
     return data
 
@@ -189,7 +189,7 @@ def load_data_cuda(input_date: str, skip_iter=0, remove_inf=True, remove_time_ze
 
 
 def compute_speedup(data, key, speedup_col_name="computation_speedup", time_column="computation_sec",
-                    baseline_filter_col="exec_policy", baseline_filter_val="sync", baseline_col_name="baseline_time_sec",
+                    baseline_filter_col="number_GPU", baseline_filter_val=1, baseline_col_name="baseline_time_sec",
                     correction=True, aggregation=np.median):
     
     # Initialize speedup values;
@@ -246,9 +246,9 @@ def join_tables_baseline(data_cuda_in, data_grcuda_in):
 
 
 if __name__ == "__main__":
-    input_date = "2021_10_01_13_04_05_grcuda"
-    data = load_data(input_date, skip_iter=3)
-    
+    input_date = "2021_10_01_20_43_33_grcuda_b5_b8_b10_b11_2GPU_noPrefetch_noStrAttach_allParents_dataLocality"
+    data = load_data(input_date, skip_iter=5)
+    data.to_csv("2GPU_allParents_vs_1GPU_Async.csv", sep = ';')
     #input_date2 = "2020_06_21_14_05_38_cuda"
     #data2 = load_data_cuda(input_date2, skip_iter=3)   
     
