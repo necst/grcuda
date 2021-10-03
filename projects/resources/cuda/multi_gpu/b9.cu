@@ -91,7 +91,7 @@ extern "C" __global__ void dot(const float *x, const float *y, float* z, int N) 
 }
 
 // y = val + alpha * x;
-extern "C" __global__ void saxpy(float* y, float *val, float *x, float alpha, int n) {
+extern "C" __global__ void saxpy(float* y, const float *val, const float *x, float alpha, int n) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
         y[i] = val[i] + alpha * x[i];
     }
@@ -154,7 +154,7 @@ void Benchmark9M::init() {
 void Benchmark9M::reset() {
     // Default init of solution x;
     for (int i = 0; i < N; i++) {
-        x[i] = 1.0 / N;
+        x[i] = 1.0;
     }
     // Reset norms;
     *t1 = 0.0;
