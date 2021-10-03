@@ -29,6 +29,7 @@
 
 #include "b6.cuh"
 
+#define BLOCK_SIZE_V100 64 // Just a recommendation of optimal block size for the V100;
 #define P 16
 
 //////////////////////////////

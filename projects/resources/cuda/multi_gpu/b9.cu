@@ -32,8 +32,9 @@
 //////////////////////////////
 //////////////////////////////
 
+#define BLOCK_SIZE_V100 64 // Just a recommendation of optimal block size for the V100;
 #define P 16
-#define ITER 10
+#define ITER 50
 
 // z = x @ y;
 extern "C" __global__ void matrix_vector_mult(const float* x, const float* y, float* z, int n, int m, int z_offset) {
@@ -130,6 +131,7 @@ void Benchmark9M::alloc() {
         cudaSetDevice(select_gpu(i, max_devices));
         err = cudaStreamCreate(&s[i]);
     }
+    cudaSetDevice(select_gpu(0, max_devices));
 }
 
 void Benchmark9M::init() {
@@ -152,7 +154,7 @@ void Benchmark9M::init() {
 void Benchmark9M::reset() {
     // Default init of solution x;
     for (int i = 0; i < N; i++) {
-        x[i] = 1.0;
+        x[i] = 1.0 / N;
     }
     // Reset norms;
     *t1 = 0.0;
@@ -185,7 +187,7 @@ void Benchmark9M::execute_sync(int iter) {
     cudaDeviceSynchronize();
     l2_norm<<<num_blocks, block_size_1d>>>(r, t1, N);
     cudaDeviceSynchronize();
-    for (int i = 0; i < ITER; i++) {
+    for (int iter = 0; iter < ITER; iter++) {
         for (int i = 0; i < P; i++) {
             matrix_vector_mult<<<num_blocks, block_size_1d>>>(A[i], p, y, S, N, i * S);
             cudaDeviceSynchronize();
@@ -232,15 +234,19 @@ void Benchmark9M::execute_async(int iter) {
     for (int i = 0; i < P; i++) {
         cudaStreamWaitEvent(s1, e[i], 0);
     }
+    cudaEvent_t e_c;
+    cudaEventCreate(&e_c);
     cpy<<<num_blocks, block_size_1d, 0, s1>>>(p, r, N);
+    cudaEventRecord(e_c, s1);
     for (int i = 0; i < P; i++) {
         cudaStreamWaitEvent(s2, e[i], 0);
     }
     l2_norm<<<num_blocks, block_size_1d, 0, s2>>>(r, t1, N);
-    for (int i = 0; i < ITER; i++) {
+    for (int iter = 0; iter < ITER; iter++) {
         cudaEvent_t e2[P];
         for (int i = 0; i < P; i++) {
             cudaSetDevice(select_gpu(i, max_devices));
+            cudaStreamWaitEvent(s[i], e_c, 0);
             matrix_vector_mult<<<num_blocks, block_size_1d, 0, s[i]>>>(A[i], p, y, S, N, i * S);
             cudaEventCreate(&e2[i]);
             cudaEventRecord(e2[i], s[i]);
