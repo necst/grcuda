@@ -44,13 +44,14 @@ def load_data(input_date: str, skip_iter=0, remove_inf=True, remove_time_zero=Tr
         # Parse filename;
         
         benchmark = k.split("_")[6] 
-        row += [benchmark]
+        clean_benchmark = benchmark.split("m")[0]
+        row += [clean_benchmark]
 
         # Retrieve other information;
         total_iterations = v["num_iterations"]
         cpu_validation = v["cpu_validation"]
         random_init = v["random_init"]
-        size_dict = v["benchmarks"][benchmark]
+        size_dict = v["benchmarks"][clean_benchmark]
 
         # Parse data for each input data size, and other settings;;
         for size, val_size in size_dict.items():
@@ -117,7 +118,7 @@ def load_data(input_date: str, skip_iter=0, remove_inf=True, remove_time_zero=Tr
     # Compute speedups;
     compute_speedup(data, ["benchmark", "size", "exec_policy", "dependency_policy", "new_stream_policy",
                "choose_device_heuristic", "prefetcher", "force_stream_attach", "kernel_timing", "realloc", "reinit",
-               "num_blocks", "block_size_1d", "block_size_2d", "total_iterations", "cpu_validation", "random_init"])
+               "total_iterations", "cpu_validation", "random_init"])
     # Clean columns with infinite speedup;
     # if remove_inf:
     #     data = data[data["computation_speedup"] != np.inf].reset_index(drop=True)
@@ -246,7 +247,7 @@ def join_tables_baseline(data_cuda_in, data_grcuda_in):
 
 
 if __name__ == "__main__":
-    input_date = "2021_10_01_20_43_33_grcuda_b5_b8_b10_b11_2GPU_noPrefetch_noStrAttach_allParents_dataLocality"
+    input_date = "2021_10_03_12_30_18_grcuda_b5(new)_2GPU_noPrefetch_noStrAttach_allParents_dataLocality"
     data = load_data(input_date, skip_iter=5)
     data.to_csv("2GPU_allParents_vs_1GPU_Async.csv", sep = ';')
     #input_date2 = "2020_06_21_14_05_38_cuda"

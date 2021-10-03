@@ -82,6 +82,7 @@ for var in ["computation_sec"]:
     g.add_legend(legend_data, loc="center left", bbox_to_anchor=(0., 0.6), fontsize=11, ncol=1, handletextpad=0.2, columnspacing=0.4, fancybox=True)
     g.legend.set_title("Parent Stream Policy")
     #g._legend_box.align = "left"
+    g.figure.suptitle("2 GPU All Parent Policies vs 1 GPU Async Baseline")
     g.legend.get_frame().set_facecolor('white')
     plt.subplots_adjust(left=0.07, bottom=0.065, right=0.98, top=0.96, hspace=0.2, wspace=0.14)
     # plt.savefig(f"Total{var}.pdf")
