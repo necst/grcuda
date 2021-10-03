@@ -21,13 +21,13 @@ HEAP_SIZE = 170 # 2 x V100
 
 # Benchmark settings;
 benchmarks = [
-    "b1",
+    # "b1",
     "b5",
-    "b6",
-    #"b7",
-    "b8",
-    "b10",
-    "b11",
+    # "b6",
+    # "b7",
+    # "b8",
+    # "b10",
+    # "b11",
 ]
 
 # GTX 960
@@ -69,7 +69,7 @@ num_elem = {
     "b7": [25_000_000, 50_000_000, 80_000_000, 130_000_000, 180_000_000], 
     "b8": [6400, 10000, 13000, 16000, 20000],
     "b10": [12000, 16000, 18000, 20000, 22000], 
-    "b11": [20000, 30000, 40000, 50000, 60000],
+    "b11": [20000, 30000, 40000, 50000, 60000], 
 }
 
 
@@ -84,9 +84,9 @@ dependency_policies = ["with_const"]#, "default"]
 
 new_stream_policies = ["always_new"]#, "fifo"]
 
-parent_stream_policies = ["disjoint" , "data_aware", "disjoint_data_aware", "stream_aware"] # to be tested, "default" not to be tested
+parent_stream_policies = ["disjoint", "data_aware", "disjoint_data_aware", "stream_aware"] # to be tested, "default" not to be tested
 
-choose_device_heuristics = ["data_locality"]#, "best_transfer_time_min", "best_transfer_time_max"] # to be tested only with data aware policies
+choose_device_heuristics = ["data_locality"] # "data_locality", "data_locality_new", "best_transfer_time_min", "best_transfer_time_max", to be tested only with data aware policies
 
 memAdvisers = ["none"]#, "read_mostly", "preferred"] # not to be tested for now
 
