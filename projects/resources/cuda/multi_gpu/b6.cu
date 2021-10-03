@@ -34,8 +34,8 @@
 //////////////////////////////
 //////////////////////////////
 
-extern "C" __global__ void nb_1_m(const int* x, const float* y, float* z, int partition_rows, int n_feat, int n_classes, int partition_num) {
-    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < partition_rows; i += blockDim.x * gridDim.x) {
+extern "C" __global__ void nb_1_m(const int* x, const float* y, float* z, int n, int partition_rows, int n_feat, int n_classes, int partition_num) {
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < min(partition_rows, n - partition_num * partition_rows); i += blockDim.x * gridDim.x) {
         for (int j = 0; j < n_classes; j++) {
             for (int q = 0; q < n_feat; q++) {
                 z[partition_num * partition_rows * n_classes + i * n_classes + j] += x[i * n_feat + q] * y[j * n_feat + q];
@@ -125,19 +125,67 @@ extern "C" __global__ void rr_1_m(const int* x, float* mean, float *std, int n_r
     }
 }
 
+// extern "C" __global__ void rr_1_m(const int* x, float* mean, float *std, int n_row_x, int n_col_x, int partition, int partition_size) {
+//     extern __shared__ volatile float scratch[];
+//     if (threadIdx.x == 0) {
+//         for (int k = 0; k < blockDim.x; k++) { 
+//             scratch[k] = 0;
+//         }
+//     }
+//     __syncthreads();
+//     for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < partition_size; i += blockDim.x * gridDim.x) {
+//         // Compute sum and sum of squares for mean and variance;
+//         for (int j = 0; j < n_col_x; j++) {
+//             float x_tmp = x[i * n_col_x + j];
+//             scratch[threadIdx.x] = x_tmp;
+//             // We read blockDim.x values at the same time, let the first thread do the reduction;
+//             __syncthreads();
+//             if (threadIdx.x == 0) {
+//                 float mean_tmp = 0;
+//                 float std_tmp = 0;
+//                 for (int k = 0; k < blockDim.x; k++) { 
+//                     mean_tmp += scratch[k];
+//                     std_tmp += scratch[k] * scratch[k];
+//                 }
+//                 mean[j] += mean_tmp;
+//                 std[j] += std_tmp;
+//             }
+//         }
+//     }
+// }
+
+extern "C" __global__ void rr_1_1_m(float* mean, float *std, const float *mean_curr, const float *std_curr, int n_row_x, int n_col_x, int partition_index, int partition_size) {
+    // We use partition 0 to accumulate, so skip it;
+    if (partition_index == 0) return;
+
+    // Aggregate mean and std from different partitions;
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n_col_x; i += blockDim.x * gridDim.x) {
+        mean[i] += mean_curr[i];
+        std[i] += std_curr[i];
+        // When processing the last partition, compute the final mean and std;
+        if (partition_index == P - 1) {
+            mean[i] /= n_row_x;
+            std[i] = sqrtf(std[i] / n_row_x - mean[i] * mean[i]);
+        }
+    }
+}
+
 extern "C" __global__ void rr_1_2_m(const int *x, float *y, const float* mean, const float *std, int n_row_x, int n_col_x, int partition_size) {
     // Normalize each row;
     for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < partition_size; i += blockDim.x * gridDim.x) {
         for (int j = 0; j < n_col_x; j++) {
-            float mean_curr = mean[j] / n_row_x;
-            float std_curr = sqrtf(std[j] / n_row_x - mean_curr * mean_curr);
+            // if (i == 0) printf("[i=%d][j=%d] mean=%f std=%f\n", i, j, mean[j], mean[j] * mean[j]);
+            // float mean_curr = mean[j] / n_row_x;
+            // float std_curr = sqrtf(std[j] / n_row_x - mean_curr * mean_curr);
+            float mean_curr = mean[j];
+            float std_curr = std[j];
             y[i * n_col_x + j] = (x[i * n_col_x + j] - mean_curr) / std_curr;
         }
     }
 }
 
-extern "C" __global__ void rr_2_m(const float* x, const float* y, float* z, int partition_rows, int n_feat, int n_classes, int partition_num) {
-    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < partition_rows; i += blockDim.x * gridDim.x) {
+extern "C" __global__ void rr_2_m(const float* x, const float* y, float* z, int n, int partition_rows, int n_feat, int n_classes, int partition_num) {
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < min(partition_rows, n - partition_num * partition_rows); i += blockDim.x * gridDim.x) {
         for (int j = 0; j < n_classes; j++) {
             for (int q = 0; q < n_feat; q++) {
                 z[partition_num * partition_rows * n_classes + i * n_classes + j] += x[i * n_feat + q] * y[j * n_feat + q];
@@ -195,8 +243,12 @@ void Benchmark6M::alloc() {
     for (int i = 0; i < P; i++) {
         err = cudaMallocManaged(&z[i], sizeof(float) * S * num_features);
     }
-    err = cudaMallocManaged(&mean, sizeof(float) * num_features);
-    err = cudaMallocManaged(&std, sizeof(float) * num_features);
+    mean = (float**) malloc(sizeof(float*) * P);
+    std = (float**) malloc(sizeof(float*) * P);
+    for (int i = 0; i < P; i++) {
+        err = cudaMallocManaged(&mean[i], sizeof(float) * num_features);
+        err = cudaMallocManaged(&std[i], sizeof(float) * num_features);
+    }
     err = cudaMallocManaged(&nb_feat_log_prob, sizeof(float) * num_classes * num_features);
     err = cudaMallocManaged(&nb_class_log_prior, sizeof(float) * num_classes);
     err = cudaMallocManaged(&ridge_coeff, sizeof(float) * num_classes * num_features);
@@ -264,9 +316,11 @@ void Benchmark6M::reset() {
             r2[i * num_classes + j] = 0;
         }
     }
-    for (int i = 0; i < num_features; i++) {
-        mean[i] = 0;
-        std[i] = 0;
+    for (int p = 0; p < P; p++) {
+        for (int i = 0; i < num_features; i++) {
+            mean[p][i] = 0;
+            std[p][i] = 0;
+        }
     }
 }
 
@@ -277,13 +331,17 @@ void Benchmark6M::execute_sync(int iter) {
         cudaMemPrefetchAsync(r, sizeof(int) * N, 0, 0);
     }
     for (int i = 0; i < P; i++) {
-        rr_1_m<<<num_blocks, block_size_1d>>>(x[i], mean, std, N, num_features, i, S);
+        rr_1_m<<<num_blocks, block_size_1d>>>(x[i], mean[i], std[i], N, num_features, i, S);
         cudaDeviceSynchronize();
     }
     for (int i = 0; i < P; i++) {
-        rr_1_2_m<<<num_blocks, block_size_1d>>>(x[i], z[i], mean, std, N, num_features, S);
+        rr_1_1_m<<<num_blocks, block_size_1d>>>(mean[0], std[0], mean[i], std[i], N, num_features, i, S);
         cudaDeviceSynchronize();
-        rr_2_m<<<num_blocks, block_size_1d>>>(z[i], ridge_coeff, r2, S, num_features, num_classes, i);
+    }
+    for (int i = 0; i < P; i++) {
+        rr_1_2_m<<<num_blocks, block_size_1d>>>(x[i], z[i], mean[0], std[0], N, num_features, S);
+        cudaDeviceSynchronize();
+        rr_2_m<<<num_blocks, block_size_1d>>>(z[i], ridge_coeff, r2, N, S, num_features, num_classes, i);
         cudaDeviceSynchronize();
     }
     rr_3_m<<<num_blocks, block_size_1d>>>(r2, ridge_intercept, N, num_classes);
@@ -292,7 +350,7 @@ void Benchmark6M::execute_sync(int iter) {
     cudaDeviceSynchronize();
 
     for (int i = 0; i < P; i++) {
-        nb_1_m<<<num_blocks, block_size_1d>>>(x[i], nb_feat_log_prob, r1, S, num_features, num_classes, i);
+        nb_1_m<<<num_blocks, block_size_1d>>>(x[i], nb_feat_log_prob, r1, N, S, num_features, num_classes, i);
         cudaDeviceSynchronize();
     }
     nb_2_m<<<num_blocks, block_size_1d>>>(r1, nb_amax, N, num_classes);
@@ -322,25 +380,34 @@ void Benchmark6M::execute_async(int iter) {
         cudaMemPrefetchAsync(r2, sizeof(float) * N * num_classes, gpu, s1);
         cudaMemPrefetchAsync(r, sizeof(int) * N, gpu, s1);
     }
+    cudaEvent_t e_r0[P];
     for (int i = 0; i < P; i++) {
-        rr_1_m<<<num_blocks, block_size_1d, 0, s1>>>(x[i], mean, std, N, num_features, i, S);
+        cudaSetDevice(select_gpu(i, max_devices));
+        rr_1_m<<<num_blocks, block_size_1d, 0, s_r[i]>>>(x[i], mean[i], std[i], N, num_features, i, S);
+        cudaEventCreate(&e_r0[i]);
+        cudaEventRecord(e_r0[i], s_r[i]);
+    }
+    cudaSetDevice(select_gpu(0, max_devices));
+    for (int i = 0; i < P; i++) {
+        cudaStreamWaitEvent(s1, e_r0[i], 0);
+        rr_1_1_m<<<num_blocks, block_size_1d, 0, s1>>>(mean[0], std[0], mean[i], std[i], N, num_features, i, S);
     }
     cudaEvent_t e1;
     cudaEventCreate(&e1);
     cudaEventRecord(e1, s1);
-    cudaEvent_t e_r[P];
+    cudaEvent_t e_r1[P];
     for (int i = 0; i < P; i++) {
         cudaSetDevice(select_gpu(i, max_devices));
         cudaStreamWaitEvent(s_r[i], e1, 0);
-        rr_1_2_m<<<num_blocks, block_size_1d, 0, s_r[i]>>>(x[i], z[i], mean, std, N, num_features, S);
-        rr_2_m<<<num_blocks, block_size_1d, 0, s_r[i]>>>(z[i], ridge_coeff, r2, S, num_features, num_classes, i);
-        cudaEventCreate(&e_r[i]);
-        cudaEventRecord(e_r[i], s_r[i]);
+        rr_1_2_m<<<num_blocks, block_size_1d, 0, s_r[i]>>>(x[i], z[i], mean[0], std[0], N, num_features, S);
+        rr_2_m<<<num_blocks, block_size_1d, 0, s_r[i]>>>(z[i], ridge_coeff, r2, N, S, num_features, num_classes, i);
+        cudaEventCreate(&e_r1[i]);
+        cudaEventRecord(e_r1[i], s_r[i]);
     }
     // Stream 1 waits all other streams;
     cudaSetDevice(gpu);
     for (int i = 0; i < P; i++) {
-        cudaStreamWaitEvent(s1, e_r[i], 0);
+        cudaStreamWaitEvent(s1, e_r1[i], 0);
     }
     rr_3_m<<<num_blocks, block_size_1d, 0, s1>>>(r2, ridge_intercept, N, num_classes);
     softmax_m<<<num_blocks, block_size_1d, 0, s1>>>(r2, N, num_classes);
@@ -364,7 +431,7 @@ void Benchmark6M::execute_async(int iter) {
     for (int i = 0; i < P; i++) {
         cudaSetDevice(select_gpu(i, max_devices));
         cudaStreamWaitEvent(s_n[i], e2, 0);
-        nb_1_m<<<num_blocks, block_size_1d, 0, s_n[i]>>>(x[i], nb_feat_log_prob, r1, S, num_features, num_classes, i);
+        nb_1_m<<<num_blocks, block_size_1d, 0, s_n[i]>>>(x[i], nb_feat_log_prob, r1, N, S, num_features, num_classes, i);
         cudaEventCreate(&e_n[i]);
         cudaEventRecord(e_n[i], s_n[i]);
     }

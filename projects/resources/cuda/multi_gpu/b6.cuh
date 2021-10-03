@@ -42,13 +42,13 @@ class Benchmark6M : public Benchmark {
 
    private:
     int S;
-    int num_features = 200;
-    int num_classes = 10;
+    int num_features = 1024;
+    int num_classes = 16;
     int max_occurrence_of_ngram = 10;
     int **x;
     int *x_o;
     float **z;
-    float *mean, *std;
+    float **mean, **std;
     float *nb_feat_log_prob, *nb_class_log_prior, *ridge_coeff, *ridge_intercept, *nb_amax, *nb_l, *r1, *r2;
     int *r;
     cudaStream_t s1, s2;
