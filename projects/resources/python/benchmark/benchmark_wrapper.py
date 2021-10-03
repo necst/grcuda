@@ -34,7 +34,7 @@ benchmarks = [
     "b5m",
     "b6m",
     "b9m",
-    "b11m",
+    # "b11m",
 ]
 
 # GTX 960
@@ -72,7 +72,7 @@ benchmarks = [
 num_elem = {
     # Single GPU;
     "b1": [160_000_000, 250_000_000, 500_000_000, 800_000_000, 950_000_000],
-    "b5": [16_000_000, 25_000_000, 50_000_000, 80_000_000, 95_000_000],
+    "b5": [10_000_000, 16_000_000, 21_000_000, 28_000_000, 35_000_000], # out of core 50_000_000, 80_000_000, 95_000_000],
     "b6": [1_600_000, 2_500_000, 5_000_000, 6_500_000, 8_000_000],
     "b7": [25_000_000, 50_000_000, 80_000_000, 130_000_000, 180_000_000], 
     "b8": [6400, 10000, 13000, 16000, 20000],
@@ -80,7 +80,7 @@ num_elem = {
     "b11": [20000, 30000, 40000, 50000, 60000],
     # Multi GPU;
     "b1m": [160_000_000, 250_000_000, 500_000_000, 800_000_000, 950_000_000],
-    "b5m": [16_000_000, 25_000_000, 50_000_000, 80_000_000, 95_000_000]
+    "b5m": [10_000_000, 16_000_000, 21_000_000, 28_000_000, 35_000_000],  # out of core 50_000_000, 80_000_000, 95_000_000]
     "b6m": [1_600_000, 2_500_000, 5_000_000, 6_500_000, 8_000_000],
     "b9m": [20000, 30000, 40000, 50000, 60000],
     "b11m": [20000, 30000, 40000, 50000, 60000],
@@ -96,7 +96,7 @@ dependency_policies = ["with_const"]#, "default"]
 
 new_stream_policies = ["always_new"]#, "fifo"]
 
-parent_stream_policies = ["disjoint", "data_aware", "disjoint_data_aware", "stream_aware"] # to be tested, "default" not to be tested
+parent_stream_policies = ["disjoint"] # "data_aware", "disjoint_data_aware", "stream_aware" to be tested, "default" not to be tested
 
 choose_device_heuristics = ["data_locality"] # "data_locality", "data_locality_new", "best_transfer_time_min", "best_transfer_time_max", to be tested only with data aware policies
 
@@ -108,7 +108,7 @@ streamAttachs =  [False] #, True]
 
 timeComputes = [False] #, True]
 
-numGPUs = [2]#, 1]
+numGPUs = [1]#, 2]
 
 block_sizes1d_dict = {
     "b1": 32,
