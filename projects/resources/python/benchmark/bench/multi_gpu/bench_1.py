@@ -10,18 +10,13 @@ from benchmark_result import BenchmarkResult
 ##############################
 ##############################
 
-SQUARE_KERNEL = """
-extern "C" __global__ void square(float* x, float* y, int n) {
-    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
-        y[i] = x[i] * x[i];
-    }
-}
-"""
+# Number of partitions;
+P = 16
 
-DIFF_KERNEL = """
-extern "C" __global__ void diff(const float* x, const float* y, float* z, int n) {
-    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
-        z[i] = x[i] - y[i];
+SQUARE_KERNEL = """
+extern "C" __global__ void square(const float *x, float *y, int n) {
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
+        y[i] = x[i] * x[i];  
     }
 }
 """
@@ -37,15 +32,15 @@ __inline__ __device__ float warp_reduce(float val) {
     return val;
 }
 
-__global__ void reduce(float *x, float *y, float* z, int N) {
+extern "C" __global__ void reduce(const float *x, const float *y, float *z, int N) {
     int warp_size = 32;
     float sum = float(0);
-    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {
         sum += x[i] - y[i];
     }
-    sum = warp_reduce(sum); // Obtain the sum of values in the current warp;
-    if ((threadIdx.x & (warp_size - 1)) == 0) // Same as (threadIdx.x % warp_size) == 0 but faster
-        atomicAdd(z, sum); // The first thread in the warp updates the output;
+    sum = warp_reduce(sum);                    // Obtain the sum of values in the current warp;
+    if ((threadIdx.x & (warp_size - 1)) == 0)  // Same as (threadIdx.x % warp_size) == 0 but faster
+        atomicAdd(z, sum);                     // The first thread in the warp updates the output;
 }
 """
 
@@ -56,15 +51,25 @@ __global__ void reduce(float *x, float *y, float* z, int N) {
 class Benchmark1M(Benchmark):
     """
     Compute the sum of difference of squares of 2 vectors, using multiple GrCUDA kernels.
+    Parallelize the computation on multiple GPUs, by computing a chunk of the output on each.
+    Then aggregate results on the CPU;
     Structure of the computation:
+    * GPU0:
        A: x^2 ──┐
-                ├─> C: z=sum(x-y)
+                ├─> C: z0=sum(x-y)
        B: x^2 ──┘
+    * GPU1:
+       A: x^2 ──┐
+                ├─> C: z1=sum(x-y)
+       B: x^2 ──┘
+    * GPU2: [...]
+    * CPU: z = z0 + z1 + ...
     """
 
     def __init__(self, benchmark: BenchmarkResult, nvprof_profile: bool = False):
         super().__init__("b1", benchmark, nvprof_profile)
         self.size = 0
+        self.S = 0
         self.x = None
         self.y = None
         self.x1 = None
@@ -74,6 +79,7 @@ class Benchmark1M(Benchmark):
         self.square_kernel = None
         self.diff_kernel = None
         self.reduce_kernel = None
+        self.res_tot = 0
         self.cpu_result = 0
 
         # self.num_blocks = DEFAULT_NUM_BLOCKS
@@ -84,14 +90,22 @@ class Benchmark1M(Benchmark):
         self.size = size
         self.block_size = block_size["block_size_1d"]
 
-        # Allocate 2 vectors;
-        self.x = polyglot.eval(language="grcuda", string=f"float[{size}]")
-        self.y = polyglot.eval(language="grcuda", string=f"float[{size}]")
-        self.x1 = polyglot.eval(language="grcuda", string=f"float[{size}]")
-        self.y1 = polyglot.eval(language="grcuda", string=f"float[{size}]")
+        # Number of items in each partition;
+        self.S = (self.size + P - 1 // P)
 
-        # Allocate a support vector;
-        self.res = polyglot.eval(language="grcuda", string=f"float[1]")
+        self.x = [None for _ in range(P)]
+        self.y = [None for _ in range(P)]
+        self.x1 = [None for _ in range(P)]
+        self.y1 = [None for _ in range(P)]
+        self.res = [None for _ in range(P)]
+
+        # Allocate 2 vectors;
+        for i in range(P):
+            self.x[i] = polyglot.eval(language="grcuda", string=f"float[{self.S}]")
+            self.y[i] = polyglot.eval(language="grcuda", string=f"float[{self.S}]")
+            self.x1[i] = polyglot.eval(language="grcuda", string=f"float[{self.S}]")
+            self.y1[i] = polyglot.eval(language="grcuda", string=f"float[{self.S}]")
+            self.res[i] = polyglot.eval(language="grcuda", string=f"float[1]")
 
         # Build the kernels;
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
@@ -100,29 +114,23 @@ class Benchmark1M(Benchmark):
 
     @time_phase("initialization")
     def init(self):
-        self.random_seed = randint(0, 10000000)
-        seed(self.random_seed)
-        for i in range(self.size):
-            if self.benchmark.random_init:
-                self.x[i] = random()
-                self.y[i] = 2 * random()
-            else:
-                self.x[i] = 1 / (i + 1)
-                self.y[i] = 2 / (i + 1)
+        for i in range(P):
+            for j in range(self.S):
+                index = i * self.S + j
+                if index < self.size:
+                    self.x[i][j] = 1 / (index + 1)
+                    self.y[i][j] = 2 / (index + 1)
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
-        if self.benchmark.random_init:
-            seed(self.random_seed)
-            for i in range(self.size):
-                self.x[i] = random()
-                self.y[i] = 2 * random()
-        else:
-            for i in range(self.size):
-                self.x[i] = 1 / (i + 1)
-                self.y[i] = 2 / (i + 1)
-        self.res[0] = 0.0
-
+        for i in range(P):
+            for j in range(self.S):
+                index = i * self.S + j
+                if index < self.size:
+                    self.x[i][j] = 1 / (index + 1)
+                    self.y[i][j] = 2 / (index + 1)
+            self.res[i][0] = 0.0
+        self.res_tot = 0
 
     def execute(self) -> object:
         self.block_size = self._block_size["block_size_1d"]
@@ -130,25 +138,27 @@ class Benchmark1M(Benchmark):
         start = 0
 
         # A, B. Call the kernel. The 2 computations are independent, and can be done in parallel;
-        self.execute_phase("square_1", self.square_kernel(self.num_blocks, self.block_size), self.x, self.x1, self.size)
-        self.execute_phase("square_2", self.square_kernel(self.num_blocks, self.block_size), self.y, self.y1, self.size)
+        for i in range(P):
+            self.execute_phase("square_1", self.square_kernel(self.num_blocks, self.block_size), self.x[i], self.x1[i], self.S)
+            self.execute_phase("square_2", self.square_kernel(self.num_blocks, self.block_size), self.y[i], self.y1[i], self.S)
 
-        # C. Compute the sum of the result;
-        self.execute_phase("reduce", self.reduce_kernel(self.num_blocks, self.block_size), self.x1, self.y1, self.res, self.size)
+            # C. Compute the sum of the result;
+            self.execute_phase("reduce", self.reduce_kernel(self.num_blocks, self.block_size), self.x1[i], self.y1[i], self.res[i], self.S)
 
         # Add a final sync step to measure the real computation time;
         if self.time_phases:
             start = System.nanoTime()
-        result = self.res[0]
+        for i in range(P):
+            self.res_tot += self.res[i][0]
         end = System.nanoTime()
         if self.time_phases:
             self.benchmark.add_phase({"name": "sync", "time_sec": (end - start) / 1_000_000_000})
         self.benchmark.add_computation_time((end - start_comp) / 1_000_000_000)
-        self.benchmark.add_to_benchmark("gpu_result", result)
+        self.benchmark.add_to_benchmark("gpu_result", self.res_tot)
         if self.benchmark.debug:
-            BenchmarkResult.log_message(f"\tgpu result: {result:.4f}")
+            BenchmarkResult.log_message(f"\tgpu result: {self.res_tot:.4f}")
 
-        return result
+        return self.res_tot
 
     def cpu_validation(self, gpu_result: object, reinit: bool) -> None:
         # Recompute the CPU result only if necessary;

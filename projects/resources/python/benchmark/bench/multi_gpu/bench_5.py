@@ -76,7 +76,7 @@ class Benchmark5M(Benchmark):
         self.cpu_result = 0
         self.block_size = DEFAULT_BLOCK_SIZE_1D
 
-        self.K = 10
+        self.K = 24
         self.x = [[]] * self.K
         self.x_tmp = None
         self.y = [[]] * self.K
@@ -88,7 +88,6 @@ class Benchmark5M(Benchmark):
         self.size = size
         self.block_size = block_size["block_size_1d"]
         self.x_tmp = None
-        # self.x_tmp = [0] * self.size
 
         # Allocate vectors;
         for i in range(self.K):
@@ -102,22 +101,15 @@ class Benchmark5M(Benchmark):
     @time_phase("initialization")
     def init(self):
         self.random_seed = randint(0, 10000000)
-        # seed(self.random_seed)
-        # if self.benchmark.random_init:
-        #     self.x_tmp = np.random.uniform(-0.5, 0.5, self.size).astype(np.float64) + K
-        # else:
-        #     self.x_tmp = np.zeros(self.size, dtype=np.float64) + K
         seed(self.random_seed)
         self.x_tmp = [K] * self.size
         if self.benchmark.random_init:
-            # self.x_tmp = np.random.uniform(-0.5, 0.5, self.size).astype(float) + K
             for i in range(len(self.x_tmp)):
                 self.x_tmp[i] = random() - 0.5 + K
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
         for i in range(self.K):
-            # self.x[i].copyFrom(int(np.int64(self.x_tmp.ctypes.data)), self.size)
             for j in range(self.size):
                 self.x[i][j] = self.x_tmp[j]
 
