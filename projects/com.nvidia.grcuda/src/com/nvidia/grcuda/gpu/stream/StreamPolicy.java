@@ -99,6 +99,8 @@ public class StreamPolicy {
         this.streamCount = 0;
         if (retrieveParentStreamPolicyEnum == RetrieveParentStreamPolicyEnum.DATA_AWARE || retrieveParentStreamPolicyEnum == RetrieveParentStreamPolicyEnum.DISJOINT_DATA_AWARE) {
             switch (chooseDeviceHeuristicEnum) {
+                case DATA_LOCALITY_NEW:
+                    this.chooseDeviceHeuristic = new DeviceMoveLessArgumentNew();
                 case TRANSFER_TIME_MIN:
                     this.chooseDeviceHeuristic = new FastestDataTransferMin();
                     break;
@@ -504,7 +506,7 @@ public class StreamPolicy {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            System.out.println(records);
+            //System.out.println(records);
 
             for (int il = 1; il<records.size(); il++) {
                 if (Integer.parseInt(records.get(il).get(0)) != -1) {
@@ -573,7 +575,7 @@ public class StreamPolicy {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            System.out.println(records);
+            //System.out.println(records);
 
             for (int il = 1; il<records.size(); il++) {
                 if (Integer.parseInt(records.get(il).get(0)) != -1) {

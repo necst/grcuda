@@ -344,6 +344,8 @@ public final class GrCUDAContext {
         switch(policyString) {
             case "data_locality":
                 return ChooseDeviceHeuristicEnum.DATA_LOCALITY;
+            case "data_locality_new":
+                return ChooseDeviceHeuristicEnum.DATA_LOCALITY_NEW;
             case "best_transfer_time_max":
                 return ChooseDeviceHeuristicEnum.TRANSFER_TIME_MAX;
             case "best_transfer_time_min":

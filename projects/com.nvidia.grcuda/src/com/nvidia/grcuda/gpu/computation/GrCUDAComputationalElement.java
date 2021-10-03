@@ -234,10 +234,10 @@ public abstract class GrCUDAComputationalElement {
         }
 
         for (ComputationArgumentWithValue arg : this.argumentList) {
-            /*if (!arg.isConst()) {
+            if (!arg.isConst() && arg.getArgumentValue() instanceof AbstractArray) {
                 // Reset lista di roba aggiornata
                 ((AbstractArray) arg.getArgumentValue()).clearArrayLocation();
-            }*/
+            }
             if (arg.getArgumentValue() instanceof AbstractArray) {
                 if (this.isComputationArrayAccess) {
                     // Gestione CPU
