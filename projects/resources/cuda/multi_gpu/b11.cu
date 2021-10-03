@@ -51,7 +51,7 @@ extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, 
 void Benchmark11M::alloc() {
     M = N;
     S = (N + P - 1) / P;
-    x_cpu = (float *) malloc(sizeof(float) * N * M);
+    // x_cpu = (float *) malloc(sizeof(float) * N * M);
     x = (float **) malloc(sizeof(float*) * P);
     for (int i = 0; i < P; i++) {
         err = cudaMallocManaged(&x[i], sizeof(float) * S * M);
@@ -68,18 +68,18 @@ void Benchmark11M::alloc() {
 }
 
 void Benchmark11M::init() {
-    for (int i = 0; i < N * M; i++) {
-        x_cpu[i] = (float)(rand()) / (float)(RAND_MAX);
-    }
+    // for (int i = 0; i < N * M; i++) {
+    //     x_cpu[i] = (float)(rand()) / (float)(RAND_MAX);
+    // }
 }
 
 void Benchmark11M::reset() {
     for (int i = 0; i < M; i++) {
-        y[i] = (float)(rand()) / (float)(RAND_MAX);
+        y[i] = 1.0 / M; // (float)(rand()) / (float)(RAND_MAX);
     }
     for (int i = 0; i < P; i++) {
         for (int j = 0; j < S * M; j++) {
-            x[i][j] = x_cpu[i * S * M + j];
+            x[i][j] = 1.0 / (S * M) // x_cpu[i * S * M + j];
         }
     }
 }

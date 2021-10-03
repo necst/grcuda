@@ -28,8 +28,6 @@ extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, 
 }
 """
 
-'''THIS IS EMPLOYED AS DEFAULT BENCHMARK FOR MULTIGPU TEST'''
-
 class Benchmark11(Benchmark):
     """
     Dense matrix-vector multiplication, partitioning the matrix in blocks of rows;

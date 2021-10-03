@@ -96,9 +96,9 @@ dependency_policies = ["with_const"]#, "default"]
 
 new_stream_policies = ["always_new"]#, "fifo"]
 
-parent_stream_policies = ["disjoint" , "data_aware", "disjoint_data_aware", "stream_aware"] # to be tested, "default" not to be tested
+parent_stream_policies = ["disjoint", "data_aware", "disjoint_data_aware", "stream_aware"] # to be tested, "default" not to be tested
 
-choose_device_heuristics = ["data_locality"]#, "best_transfer_time_min", "best_transfer_time_max"] # to be tested only with data aware policies
+choose_device_heuristics = ["data_locality"] # "data_locality", "data_locality_new", "best_transfer_time_min", "best_transfer_time_max", to be tested only with data aware policies
 
 memAdvisers = ["none"]#, "read_mostly", "preferred"] # not to be tested for now
 
