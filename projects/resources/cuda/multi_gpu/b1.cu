@@ -162,6 +162,7 @@ void Benchmark1M::execute_async(int iter) {
         reduce_m<<<num_blocks, block_size_1d, 0, s[i]>>>(x1[i], y1[i], res[i], S);
     }
     for (int i = 0; i < P; i++) {
+        cudaSetDevice(select_gpu(i, max_devices));
         cudaStreamSynchronize(s[i]);
         res_tot += res[i][0];        
     }

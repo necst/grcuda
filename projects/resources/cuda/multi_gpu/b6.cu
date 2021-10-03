@@ -73,13 +73,6 @@ extern "C" __global__ void nb_4_m(float* x, float* y, int n_row_x, int n_col_x) 
     }
 }
 
-__inline__ __device__ float warp_reduce_m(float val) {
-    int warp_size = 32;
-    for (int offset = warp_size / 2; offset > 0; offset /= 2)
-        val += __shfl_down_sync(0xFFFFFFFF, val, offset);
-    return val;
-}
-
 // extern "C" __global__ void rr_1_m(const int* x, float* sum, float *sum_squared, int n_row_x, int n_col_x) {
 //     for (int j = blockIdx.x * blockDim.x + threadIdx.x; j < n_col_x; j += blockDim.x * gridDim.x) {
 //         float feature_mean = 0;

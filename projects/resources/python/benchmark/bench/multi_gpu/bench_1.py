@@ -109,7 +109,7 @@ class Benchmark1M(Benchmark):
 
         # Build the kernels;
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
-        self.square_kernel = build_kernel(SQUARE_KERNEL, "square", "pointer, pointer, sint32")
+        self.square_kernel = build_kernel(SQUARE_KERNEL, "square", "const pointer, pointer, sint32")
         self.reduce_kernel = build_kernel(REDUCE_KERNEL, "reduce", "const pointer, const pointer, pointer, sint32")
 
     @time_phase("initialization")
@@ -136,14 +136,12 @@ class Benchmark1M(Benchmark):
         self.block_size = self._block_size["block_size_1d"]
         start_comp = System.nanoTime()
         start = 0
-
-        # A, B. Call the kernel. The 2 computations are independent, and can be done in parallel;
         for i in range(P):
-            self.execute_phase("square_1", self.square_kernel(self.num_blocks, self.block_size), self.x[i], self.x1[i], self.S)
-            self.execute_phase("square_2", self.square_kernel(self.num_blocks, self.block_size), self.y[i], self.y1[i], self.S)
-
+            # A, B. Call the kernel. The 2 computations are independent, and can be done in parallel;
+            self.execute_phase(f"square_1_{i}", self.square_kernel(self.num_blocks, self.block_size), self.x[i], self.x1[i], self.S)
+            self.execute_phase(f"square_2_{i}", self.square_kernel(self.num_blocks, self.block_size), self.y[i], self.y1[i], self.S)
             # C. Compute the sum of the result;
-            self.execute_phase("reduce", self.reduce_kernel(self.num_blocks, self.block_size), self.x1[i], self.y1[i], self.res[i], self.S)
+            self.execute_phase(f"reduce_{i}", self.reduce_kernel(self.num_blocks, self.block_size), self.x1[i], self.y1[i], self.res[i], self.S)
 
         # Add a final sync step to measure the real computation time;
         if self.time_phases:

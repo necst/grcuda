@@ -79,7 +79,7 @@ void Benchmark11M::reset() {
     }
     for (int i = 0; i < P; i++) {
         for (int j = 0; j < S * M; j++) {
-            x[i][j] = 1.0 / (S * M) // x_cpu[i * S * M + j];
+            x[i][j] = 1.0 / (S * M); // x_cpu[i * S * M + j];
         }
     }
 }
