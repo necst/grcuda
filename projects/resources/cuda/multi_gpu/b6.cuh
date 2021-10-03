@@ -27,74 +27,31 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <string>
-#include <iostream>
-#include <ctime>    // For time()
-#include <cstdlib>  // For srand()
-#include "options.hpp"
-#include "benchmark.cuh"
-#include "single_gpu/b1.cuh"
-#include "single_gpu/b5.cuh"
-#include "single_gpu/b6.cuh"
-#include "single_gpu/b7.cuh"
-#include "single_gpu/b8.cuh"
-#include "single_gpu/b10.cuh"
-#include "multi_gpu/b1.cuh"
-#include "multi_gpu/b5.cuh"
-#include "multi_gpu/b6.cuh"
-#include "multi_gpu/b9.cuh"
-#include "multi_gpu/b11.cuh"
+#pragma once
+#include "../benchmark.cuh"
 
-int main(int argc, char *argv[])
-{
-    // srand(time(0));
-    srand(12);
-    
-    Options options = Options(argc, argv);
-    BenchmarkEnum benchmark_choice = options.benchmark_choice;
-    Benchmark *b;
+class Benchmark6M : public Benchmark {
+   public:
+    Benchmark6M(Options &options) : Benchmark(options) {}
+    void alloc();
+    void init();
+    void reset();
+    void execute_sync(int iter);
+    void execute_async(int iter);
+    std::string print_result(bool short_form = false);
 
-    switch (benchmark_choice)
-    {
-    case BenchmarkEnum::B1:
-        b = new Benchmark1(options);
-        break;
-    case BenchmarkEnum::B5:
-        b = new Benchmark5(options);
-        break;
-    case BenchmarkEnum::B6:
-        b = new Benchmark6(options);
-        break;
-    case BenchmarkEnum::B7:
-        b = new Benchmark7(options);
-        break;
-    case BenchmarkEnum::B8:
-        b = new Benchmark8(options);
-        break;
-    case BenchmarkEnum::B10:
-        b = new Benchmark10(options);
-        break;
-    case BenchmarkEnum::B1M:
-        b = new Benchmark1M(options);
-        break;
-    case BenchmarkEnum::B5M:
-        b = new Benchmark5M(options);
-        break;
-    case BenchmarkEnum::B6M:
-        b = new Benchmark6M(options);
-        break;
-    case BenchmarkEnum::B9M:
-        b = new Benchmark9M(options);
-        break;
-    case BenchmarkEnum::B11M:
-        b = new Benchmark11M(options);
-        break;
-    default:
-        break;
-    }
-    if (b != nullptr) {
-        b->run();
-    } else {
-        std::cout << "ERROR = benchmark is null" << std::endl;
-    }
-}
+   private:
+    int S;
+    int num_features = 1024;
+    int num_classes = 16;
+    int max_occurrence_of_ngram = 10;
+    int **x;
+    int *x_o;
+    float **z;
+    float **mean, **std;
+    float *nb_feat_log_prob, *nb_class_log_prior, *ridge_coeff, *ridge_intercept, *nb_amax, *nb_l, *r1, *r2;
+    int *r;
+    cudaStream_t s1, s2;
+    cudaStream_t *s_r;
+    cudaStream_t *s_n;
+};

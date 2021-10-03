@@ -1,7 +1,51 @@
+// Copyright (c) 2020, 2021, NECSTLab, Politecnico di Milano. All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+//  * Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+//  * Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+//  * Neither the name of NECSTLab nor the names of its
+//    contributors may be used to endorse or promote products derived
+//    from this software without specific prior written permission.
+//  * Neither the name of Politecnico di Milano nor the names of its
+//    contributors may be used to endorse or promote products derived
+//    from this software without specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #include "benchmark.cuh"
 
 namespace chrono = std::chrono;
 using clock_type = chrono::high_resolution_clock;
+
+#define GPU_ORDER_8 {0, 6, 3, 1, 4, 2, 5, 7}
+#define GPU_ORDER_4 {0, 3, 1, 2}
+
+int Benchmark::select_gpu(int i, int max_devices) {
+    if (max_devices > 4) {
+        int gpu_order[] = GPU_ORDER_8;
+        return gpu_order[i % 8] % max_devices;
+    } else if (max_devices > 2) {
+        int gpu_order[] = GPU_ORDER_4;
+        return gpu_order[i % 4] % max_devices;
+    } else {
+        return i % max_devices;
+    }
+}
 
 int Benchmark::add_node(void **paramarray, cudaKernelNodeParams &param, void *func, dim3 gridsize, dim3 threads, cudaGraph_t &g, cudaGraphNode_t *n, std::vector<cudaGraphNode_t> &dependencies, int shared_memory) {
     param.func = func;
@@ -82,4 +126,24 @@ void Benchmark::run() {
     auto end_time = chrono::duration_cast<chrono::microseconds>(clock_type::now() - start_tot).count();
     if (debug) std::cout << "\ntotal execution time=" << end_time / 1e6 << " sec" << std::endl;
     if (debug) std::cout << "mean exec time=" << (float)tot_time / (1000 * (num_executions - skip_iterations)) << " ms" << std::endl;
+}
+
+void Benchmark::execute_async(int iter) {
+    std::cout << "execution (async) not implemented for " << benchmark_name << std::endl;
+}
+
+void Benchmark::execute_sync(int iter) {
+    std::cout << "execution (sync) not implemented for " << benchmark_name << std::endl;
+}
+
+void Benchmark::execute_cudagraph(int iter) {
+    std::cout << "cudagraph (standard) not implemented for " << benchmark_name << std::endl;
+}
+
+void Benchmark::execute_cudagraph_manual(int iter) {
+    std::cout << "cudagraph (manual) not implemented for " << benchmark_name << std::endl;
+}
+
+void Benchmark::execute_cudagraph_single(int iter) {
+    std::cout << "cudagraph (single) not implemented for " << benchmark_name << std::endl;
 }

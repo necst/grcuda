@@ -1,3 +1,32 @@
+// Copyright (c) 2020, 2021, NECSTLab, Politecnico di Milano. All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+//  * Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+//  * Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+//  * Neither the name of NECSTLab nor the names of its
+//    contributors may be used to endorse or promote products derived
+//    from this software without specific prior written permission.
+//  * Neither the name of Politecnico di Milano nor the names of its
+//    contributors may be used to endorse or promote products derived
+//    from this software without specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #pragma once
 
 #include <getopt.h>
@@ -18,9 +47,10 @@
 #define DEFAULT_NUM_BLOCKS 64
 #define DEFAULT_SKIP 3
 #define DEFAULT_BENCHMARK "b1"
-#define DEFAULT_POLICY "default"
+#define DEFAULT_POLICY "async"
 #define DEFAULT_PREFETCH false
 #define DEFAULT_STREAM_ATTACH false
+#define DEFAULT_MAX_DEVICES 1
 
 //////////////////////////////
 //////////////////////////////
@@ -40,14 +70,11 @@ enum BenchmarkEnum {
     B7,
     B8,
     B10,
-    B11,
-    B15,
-    B16,
-    B17,
-    B18,
-    B20,
-    B21,
-    B22,
+    B1M,
+    B5M,
+    B6M,
+    B9M,
+    B11M,
     ERR
 };
 
@@ -80,22 +107,16 @@ inline BenchmarkEnum get_benchmark(std::string benchmark) {
         return BenchmarkEnum::B8;
     else if (benchmark == "b10")
         return BenchmarkEnum::B10;
-    else if (benchmark == "b11")
-        return BenchmarkEnum::B11;
-    else if (benchmark == "b15")
-        return BenchmarkEnum::B15;
-    else if (benchmark == "b16")
-        return BenchmarkEnum::B16;
-    else if (benchmark == "b17")
-        return BenchmarkEnum::B17;
-    else if (benchmark == "b18")
-        return BenchmarkEnum::B18;
-    else if (benchmark == "b20")
-        return BenchmarkEnum::B20;
-    else if (benchmark == "b21")
-        return BenchmarkEnum::B21;
-    else if (benchmark == "b22")
-        return BenchmarkEnum::B22;
+    else if (benchmark == "b1m")
+        return BenchmarkEnum::B1M;
+    else if (benchmark == "b5m")
+        return BenchmarkEnum::B5M;
+    else if (benchmark == "b6m")
+        return BenchmarkEnum::B6M;
+    else if (benchmark == "b9m")
+        return BenchmarkEnum::B9M;
+    else if (benchmark == "b11m")
+        return BenchmarkEnum::B11M;
     else
         return BenchmarkEnum::ERR;
 }
@@ -108,6 +129,7 @@ struct Options {
     int block_size_2d = DEFAULT_BLOCK_SIZE_2D;
     int num_blocks = DEFAULT_NUM_BLOCKS;
     int N = 0;
+    int max_devices = DEFAULT_MAX_DEVICES;
     int skip_iterations = DEFAULT_SKIP;
     bool prefetch = DEFAULT_PREFETCH;
     bool stream_attach = DEFAULT_STREAM_ATTACH;
@@ -122,8 +144,20 @@ struct Options {
     //////////////////////////////
 
     Options(int argc, char *argv[]) {
-        map_init(policy_map)(Policy::Sync, "sync")(Policy::Async, "default")(Policy::CudaGraph, "cudagraph")(Policy::CudaGraphAsync, "cudagraphmanual")(Policy::CudaGraphSingle, "cudagraphsingle");
-        map_init(benchmark_map)(BenchmarkEnum::B1, "b1")(BenchmarkEnum::B5, "b5")(BenchmarkEnum::B6, "b6")(BenchmarkEnum::B7, "b7")(BenchmarkEnum::B8, "b8")(BenchmarkEnum::B10, "b10")(BenchmarkEnum::B11, "b11")(BenchmarkEnum::B15, "b15")(BenchmarkEnum::B16, "b16")(BenchmarkEnum::B17, "b17")(BenchmarkEnum::B18, "b18")(BenchmarkEnum::B20, "b20")(BenchmarkEnum::B21, "b21");
+        map_init(policy_map)(Policy::Sync, "sync")(Policy::Async, "async")(Policy::CudaGraph, "cudagraph")(Policy::CudaGraphAsync, "cudagraphmanual")(Policy::CudaGraphSingle, "cudagraphsingle");
+        map_init(benchmark_map)
+            (BenchmarkEnum::B1, "b1")
+            (BenchmarkEnum::B5, "b5")
+            (BenchmarkEnum::B6, "b6")
+            (BenchmarkEnum::B7, "b7")
+            (BenchmarkEnum::B8, "b8")
+            (BenchmarkEnum::B10, "b10")
+            (BenchmarkEnum::B1M, "b1m")
+            (BenchmarkEnum::B5M, "b5m")
+            (BenchmarkEnum::B6M, "b6m")
+            (BenchmarkEnum::B9M, "b9m")
+            (BenchmarkEnum::B11M, "b11m")
+            ;
 
         int opt;
         static struct option long_options[] = {{"debug", no_argument, 0, 'd'},
@@ -137,11 +171,12 @@ struct Options {
                                                {"policy", required_argument, 0, 'p'},
                                                {"prefetch", required_argument, 0, 'r'},
                                                {"attach", required_argument, 0, 'a'},
+                                               {"max_devices", required_argument, 0, 'm'},
                                                {0, 0, 0, 0}};
         // getopt_long stores the option index here;
         int option_index = 0;
 
-        while ((opt = getopt_long(argc, argv, "dt:n:b:c:g:s:k:p:ra", long_options, &option_index)) != EOF) {
+        while ((opt = getopt_long(argc, argv, "dt:n:b:c:g:s:k:p:ram:", long_options, &option_index)) != EOF) {
             switch (opt) {
                 case 'd':
                     debug = true;
@@ -175,6 +210,9 @@ struct Options {
                     break;
                 case 'a':
                     stream_attach = true;
+                    break;
+                 case 'm':
+                    max_devices = atoi(optarg);
                     break;
                 default:
                     break;
