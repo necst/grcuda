@@ -37,6 +37,8 @@ public abstract class ProfilableElement {
             // log "null"
             // -> how to import LOGGER from GrCUDAContext?
             // LOGGER.info("...");
+
+
             System.out.println("DeviceId: " + deviceId + " no exec time found.");
         }else{
             // log "execution time of deviceId: float
