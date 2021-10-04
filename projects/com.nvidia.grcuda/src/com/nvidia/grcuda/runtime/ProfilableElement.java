@@ -1,8 +1,5 @@
 package com.nvidia.grcuda.runtime;
 
-import com.nvidia.grcuda.GrCUDAContext;
-import com.nvidia.grcuda.GrCUDAOptions;
-
 import java.util.Hashtable;
 
 public abstract class ProfilableElement {
