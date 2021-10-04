@@ -335,6 +335,8 @@ if __name__ == "__main__":
                              " note that this introduces overheads, and might influence the total execution time")
     parser.add_argument("-m", "--mock", action="store_true",
                         help="If present, simply print the benchmark CMD without executing it")
+    parser.add_argument("--gpus", metavar="N", type=int, nargs="*",
+                        help="Specify the maximum number of GPUs to use in the computation")
 
     # Parse the input arguments;
     args = parser.parse_args()
@@ -345,6 +347,10 @@ if __name__ == "__main__":
     time_phases = args.time_phases
     num_blocks = args.num_blocks
     mock = args.mock
+    gpus = args.gpus
+
+    if gpus is not None:
+        num_gpus = gpus
 
     if debug:
         BenchmarkResult.log_message(f"using block sizes: {block_sizes1d_dict} {block_sizes2d_dict}; using low-level CUDA benchmarks: {use_cuda}")
@@ -353,7 +359,7 @@ if __name__ == "__main__":
         tot = 0
         if use_cuda:
             for b in benchmarks:
-                tot += len(num_elem[b]) * len(cuda_exec_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(dependency_policies) * len(prefetches)
+                tot += len(num_elem[b]) * len(cuda_exec_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(dependency_policies) * len(prefetches) * len(num_gpus)
         else:
             for b in benchmarks:
                 tot += len(num_elem[b]) * len(num_gpus) * len(exec_policies) * len(dependency_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(choose_device_heuristics) * len(memAdvisers) * len(prefetches) * len(streamAttachs) * len(timeComputes)
