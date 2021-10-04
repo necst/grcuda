@@ -327,6 +327,8 @@ To measure the performance of GrCUDA on complex GPU applications, we have develo
 These are the same benchmarks used in the [DAG-based Scheduling with Resource Sharing for Multi-task Applications in a Polyglot GPU Runtime](https://ieeexplore.ieee.org/abstract/document/9460491) paper.
 All commands are executed from `$GRCUDA_HOME/projects/resources/python/benchmark`;
 
+**Note:** Graalpython enforces a maximum limit of 2GB of allocated native memory. If you are working with `numpy` and large datasets, increase the maximum native memory limit by starting Graalpython as `graalpython --experimental-options --python.MaxNativeMemory=20000000000` (20GB in this case)
+
 Run a single benchmark with custom settings
 ```console
 graalpython --jvm --polyglot --experimental-options --grcuda.InputPrefetch --grcuda.ForceStreamAttach --grcuda.RetrieveNewStreamPolicy=always-new --grcuda.ExecutionPolicy=async --grcuda.DependencyPolicy=with-const --grcuda.RetrieveParentStreamPolicy=disjoint benchmark_main.py -d -i 10 -n 4800 --no_cpu_validation --reinit false --realloc false -b b10
