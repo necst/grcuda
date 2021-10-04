@@ -90,26 +90,6 @@ policies = {
 ##############################
 
 
-def create_block_size_list(block_size_1d, block_size_2d) -> list:
-    if (not block_size_1d) and block_size_2d:  # Only 2D block size;
-        block_size = [{"block_size_2d": b} for b in block_size_2d]
-    elif (not block_size_2d) and block_size_1d:  # Only 1D block size;
-        block_size = [{"block_size_1d": b} for b in block_size_1d]
-    elif block_size_1d and block_size_2d:  # Both 1D and 2D size;
-        # Ensure they have the same size;
-        if len(block_size_2d) > len(block_size_1d):
-            block_size_1d = block_size_1d + [block_size_1d[-1]] * (len(block_size_2d) - len(block_size_1d))
-        elif len(block_size_1d) > len(block_size_2d):
-            block_size_2d = block_size_2d + [block_size_2d[-1]] * (len(block_size_1d) - len(block_size_2d))
-        block_size = [{"block_size_1d": x[0], "block_size_2d": x[1]} for x in zip(block_size_1d, block_size_2d)]
-    else:
-        block_size = [{}]
-    return block_size
-
-##############################
-##############################
-
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="measure GrCUDA execution time")
@@ -213,7 +193,7 @@ if __name__ == "__main__":
         num_elem = {n: args.size for n in num_elem.keys()}
 
     # Setup the block size for each benchmark;
-    block_sizes = create_block_size_list(args.block_size_1d, args.block_size_2d)
+    block_sizes = BenchmarkResult.create_block_size_list(args.block_size_1d, args.block_size_2d)
     number_of_blocks = args.number_of_blocks
     if (args.block_size_1d or args.block_size_2d) and benchmark_res.debug:
         BenchmarkResult.log_message(f"using block sizes: {block_sizes}")

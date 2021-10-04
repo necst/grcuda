@@ -18,7 +18,6 @@ class BenchmarkResult:
     DEFAULT_MEM_ADVISE = "none"
     DEFAULT_PREFETCH = "default"
 
-
     def __init__(self,
                  num_iterations: int = DEFAULT_NUM_ITER,
                  cpu_validation: bool = DEFAULT_CPU_VALIDATION,
@@ -284,6 +283,27 @@ class BenchmarkResult:
         with open(self._output_path, "w+") as f:
             json_result = json.dumps(self._results, ensure_ascii=False, indent=4)
             f.write(json_result)
+
+    @staticmethod
+    def create_block_size_list(block_size_1d, block_size_2d) -> list:
+        """
+        Utility method used to create a list of dictionaries {"block_size_1d": N, "block_size_2d": N} to pass to the benchmark execution.
+        The method ensures that the output is a valid list of tuples even if one list is missing or if they have different lengths
+        """
+        if (not block_size_1d) and block_size_2d:  # Only 2D block size;
+            block_size = [{"block_size_2d": b} for b in block_size_2d]
+        elif (not block_size_2d) and block_size_1d:  # Only 1D block size;
+            block_size = [{"block_size_1d": b} for b in block_size_1d]
+        elif block_size_1d and block_size_2d:  # Both 1D and 2D size;
+            # Ensure they have the same size;
+            if len(block_size_2d) > len(block_size_1d):
+                block_size_1d = block_size_1d + [block_size_1d[-1]] * (len(block_size_2d) - len(block_size_1d))
+            elif len(block_size_1d) > len(block_size_2d):
+                block_size_2d = block_size_2d + [block_size_2d[-1]] * (len(block_size_1d) - len(block_size_2d))
+            block_size = [{"block_size_1d": x[0], "block_size_2d": x[1]} for x in zip(block_size_1d, block_size_2d)]
+        else:
+            block_size = [{}]
+        return block_size
 
     @staticmethod
     def log_message(message: str) -> None:

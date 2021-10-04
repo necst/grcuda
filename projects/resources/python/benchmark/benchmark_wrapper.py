@@ -4,8 +4,6 @@ import time
 import os
 from datetime import datetime
 from benchmark_result import BenchmarkResult
-from benchmark_main import create_block_size_list
-from java.lang import System
 
 ##############################
 ##############################
@@ -88,7 +86,7 @@ num_elem = {
 
 # cuda_exec_policies = ["default", "sync", "cudagraph", "cudagraphmanual", "cudagraphsingle"] single gpu
 # multi gpu
-cuda_exec_policies = ["best_case_multiGPU"]
+cuda_exec_policies = ["sync", "default"]
 
 exec_policies = ["default"]#, "sync"]
 
@@ -108,7 +106,7 @@ streamAttachs =  [False] #, True]
 
 timeComputes = [False] #, True]
 
-numGPUs = [1]#, 2]
+num_gpus = [1]#, 2]
 
 block_sizes1d_dict = {
     "b1": 32,
@@ -199,10 +197,9 @@ block_dim_dict = {
 ##############################
 ##############################
 
-CUDA_CMD = "./b -k {} -p {} -n {} -b {} -c {} -t {} -g {} {} {} | tee {}"
+CUDA_CMD = "./b -k {} -p {} -n {} -b {} -c {} -t {} -m {} -g {} {} {} | tee {}"
 
-
-def execute_cuda_benchmark(benchmark, size, block_size, exec_policy, num_iter, debug, prefetch=False, num_blocks=DEFAULT_NUM_BLOCKS, output_date=None):
+def execute_cuda_benchmark(benchmark, size, block_size, exec_policy, num_iter, debug, prefetch=False, stream_attach=False, num_blocks=DEFAULT_NUM_BLOCKS, num_gpus=1, output_date=None, mock=False):
     if debug:
         BenchmarkResult.log_message("")
         BenchmarkResult.log_message("")
@@ -212,14 +209,17 @@ def execute_cuda_benchmark(benchmark, size, block_size, exec_policy, num_iter, d
                                     f" block size={block_size}, "
                                     f" prefetch={prefetch}, "
                                     f" num blocks={num_blocks}, "
+                                    f" num GPUs={num_gpus}, "
                                     f" exec policy={exec_policy}")
         BenchmarkResult.log_message("#" * 30)
         BenchmarkResult.log_message("")
         BenchmarkResult.log_message("")
 
+    do_prefetch = prefetch is not None and prefetch and prefetch != "none"
+
     if not output_date:
         output_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    file_name = f"cuda_{output_date}_{benchmark}_{exec_policy}_{size}_{block_size['block_size_1d']}_{block_size['block_size_2d']}_{prefetch}_{num_iter}_{num_blocks}.csv"
+    file_name = f"cuda_{output_date}_{benchmark}_{exec_policy}_{size}_gpu{num_gpus}_{block_size['block_size_1d']}_{block_size['block_size_2d']}_{prefetch}_{num_iter}_{num_blocks}.csv"
     # Create a folder if it doesn't exist;
     output_folder_path = os.path.join(BenchmarkResult.DEFAULT_RES_FOLDER, output_date + "_cuda")
     if not os.path.exists(output_folder_path):
@@ -229,17 +229,21 @@ def execute_cuda_benchmark(benchmark, size, block_size, exec_policy, num_iter, d
     output_path = os.path.join(output_folder_path, file_name)
 
     benchmark_cmd = CUDA_CMD.format(benchmark, exec_policy, size, block_size["block_size_1d"],
-                                    block_size["block_size_2d"], num_iter, num_blocks, "-r" if prefetch else "", "-a", output_path)
-    start = System.nanoTime()
-    result = subprocess.run(benchmark_cmd,
-                            shell=True,
-                            stdout=None,
-                            cwd=f"{os.getenv('GRCUDA_HOME')}/projects/resources/cuda/bin")
-    result.check_returncode()
-    end = System.nanoTime()
-    if debug:
-        BenchmarkResult.log_message(f"Benchmark total execution time: {(end - start) / 1_000_000_000:.2f} seconds")
-
+                                    block_size["block_size_2d"], num_iter, num_gpus, num_blocks, "-r" if do_prefetch else "", "-a" if stream_attach else "", output_path)
+    if not mock:
+        start = time.time()
+        result = subprocess.run(benchmark_cmd,
+                                shell=True,
+                                stdout=None,
+                                cwd=f"{os.getenv('GRCUDA_HOME')}/projects/resources/cuda/bin")
+        result.check_returncode()
+        end = time.time()
+        if debug:
+            BenchmarkResult.log_message(f"Benchmark total execution time: {(end - start):.2f} seconds")
+    else:
+        # Just print the command, for debugging;
+        if debug:
+            BenchmarkResult.log_message(benchmark_cmd)
 
 ##############################
 ##############################
@@ -252,8 +256,7 @@ GRAALPYTHON_CMD = "graalpython --vm.XX:MaxHeapSize={}G --jvm --polyglot --experi
                   "-b {} --block_size_1d {} --block_size_2d {} --execP {} --depeP {} --new_stream {} "\
                   "--parent_stream {} --heuristic {} --memAdviser {} --prefetch {} --no_cpu_validation {} {} {} {} -o {}"
 
-
-def execute_grcuda_benchmark(benchmark, size, numGPUs, block_sizes, exec_policy, dependency_policy, new_stream_policy,
+def execute_grcuda_benchmark(benchmark, size, num_gpus, block_sizes, exec_policy, dependency_policy, new_stream_policy,
                       parent_stream_policy, choose_device_heuristic, memAdviser, prefetch, num_iter, debug, time_phases, streamAttach=False,
                       timeCompute=False, num_blocks=DEFAULT_NUM_BLOCKS, output_date=None):
     if debug:
@@ -262,7 +265,7 @@ def execute_grcuda_benchmark(benchmark, size, numGPUs, block_sizes, exec_policy,
         BenchmarkResult.log_message("#" * 30)
         BenchmarkResult.log_message(f"Benchmark {i + 1}/{tot_benchmarks}")
         BenchmarkResult.log_message(f"benchmark={benchmark}, size={n},"
-                                    f"num GPUs={numGPUs}, "
+                                    f"num GPUs={num_gpus}, "
                                     f"block sizes={block_sizes}, "
                                     f"num blocks={num_blocks}, "
                                     f"exec policy={exec_policy}, "
@@ -281,7 +284,7 @@ def execute_grcuda_benchmark(benchmark, size, numGPUs, block_sizes, exec_policy,
 
     if not output_date:
         output_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    file_name = f"{output_date}_{benchmark}_{size}_{numGPUs}_{num_blocks}_{exec_policy}_{dependency_policy}_" \
+    file_name = f"{output_date}_{benchmark}_{size}_{num_gpus}_{num_blocks}_{exec_policy}_{dependency_policy}_" \
                 f"{new_stream_policy}_{parent_stream_policy}_{choose_device_heuristic}_" \
                 f"{memAdviser}_{prefetch}_{streamAttach}.json"
     # Create a folder if it doesn't exist;
@@ -295,25 +298,24 @@ def execute_grcuda_benchmark(benchmark, size, numGPUs, block_sizes, exec_policy,
     b2d_size = " ".join([str(b['block_size_2d']) for b in block_sizes])
 
     benchmark_cmd = GRAALPYTHON_CMD.format(HEAP_SIZE, exec_policy, dependency_policy, new_stream_policy,
-                                           numGPUs, parent_stream_policy, choose_device_heuristic, memAdviser, prefetch,
+                                           num_gpus, parent_stream_policy, choose_device_heuristic, memAdviser, prefetch,
                                            "--grcuda.ForceStreamAttach" if streamAttach else "", "--grcuda.TimeComputation" if timeCompute else "",
-                                           num_iter, size, num_blocks, numGPUs, benchmark, b1d_size, b2d_size, exec_policy, dependency_policy,
+                                           num_iter, size, num_blocks, num_gpus, benchmark, b1d_size, b2d_size, exec_policy, dependency_policy,
                                            new_stream_policy, parent_stream_policy, choose_device_heuristic, memAdviser, prefetch,
                                            "-d" if debug else "",  "-p" if time_phases else "", "--strAttach" if streamAttach else "", "--timing" if timeCompute else "", output_path)    
     print(benchmark_cmd)
-    start = System.nanoTime()
+    start = time.time()
     result = subprocess.run(benchmark_cmd,
                             shell=True,
                             stdout=None, #subprocess.STDOUT,
                             cwd=f"{os.getenv('GRCUDA_HOME')}/projects/resources/python/benchmark")
     result.check_returncode()
-    end = System.nanoTime()
+    end = time.time()
     if debug:
-        BenchmarkResult.log_message(f"Benchmark total execution time: {(end - start) / 1_000_000_000:.2f} seconds")
+        BenchmarkResult.log_message(f"Benchmark total execution time: {(end - start):.2f} seconds")
 
 ##############################
 ##############################
-
 
 if __name__ == "__main__":
 
@@ -330,6 +332,8 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--time_phases", action="store_true",
                         help="Measure the execution time of each phase of the benchmark;"
                              " note that this introduces overheads, and might influence the total execution time")
+    parser.add_argument("-m", "--mock", action="store_true",
+                        help="If present, simply print the benchmark CMD without executing it")
 
     # Parse the input arguments;
     args = parser.parse_args()
@@ -339,9 +343,8 @@ if __name__ == "__main__":
     use_cuda = args.cuda_test
     time_phases = args.time_phases
     num_blocks = args.num_blocks
+    mock = args.mock
 
-    # Setup the block size for each benchmark;
-    #block_sizes = create_block_size_list(block_sizes_1d, block_sizes_2d)
     if debug:
         BenchmarkResult.log_message(f"using block sizes: {block_sizes1d_dict} {block_sizes2d_dict}; using low-level CUDA benchmarks: {use_cuda}")
 
@@ -352,7 +355,7 @@ if __name__ == "__main__":
                 tot += len(num_elem[b]) * len(cuda_exec_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(dependency_policies) * len(prefetches)
         else:
             for b in benchmarks:
-                tot += len(num_elem[b]) * len(numGPUs) * len(exec_policies) * len(dependency_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(choose_device_heuristics) * len(memAdvisers) * len(prefetches) * len(streamAttachs) * len(timeComputes)
+                tot += len(num_elem[b]) * len(num_gpus) * len(exec_policies) * len(dependency_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(choose_device_heuristics) * len(memAdvisers) * len(prefetches) * len(streamAttachs) * len(timeComputes)
         return tot
 
     output_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
@@ -365,14 +368,16 @@ if __name__ == "__main__":
             if use_cuda:
                 # CUDA Benchmarks;
                 for exec_policy in cuda_exec_policies:
-                    #for block_size in block_sizes:
-                    for p in prefetch:
-                        nb = num_blocks if num_blocks else block_dim_dict[b]
-                        execute_cuda_benchmark(b, n, block_size, exec_policy, num_iter, debug, num_blocks=nb, prefetch=p, output_date=output_date)
-                        i += 1
+                    block_sizes = BenchmarkResult.create_block_size_list([block_sizes1d_dict[b]], [block_sizes2d_dict[b]])
+                    for block_size in block_sizes:
+                        for p in prefetches:
+                            for a in streamAttachs:
+                                nb = num_blocks if num_blocks else block_dim_dict[b]
+                                execute_cuda_benchmark(b, n, block_size, exec_policy, num_iter, debug, num_blocks=nb, prefetch=p, stream_attach=a, mock=mock, output_date=output_date)
+                                i += 1
             # GrCUDA Benchmarks;
             else:
-                for numGPU in numGPUs:
+                for num_gpu in num_gpus:
                     for exec_policy in exec_policies:
                         for dependency_policy in dependency_policies:
                             for new_stream_policy in new_stream_policies:
@@ -383,8 +388,8 @@ if __name__ == "__main__":
                                                 for streamAttach in streamAttachs:
                                                     for timeCompute in timeComputes:
                                                         nb = num_blocks if num_blocks else block_dim_dict[b]
-                                                        block_sizes = create_block_size_list([block_sizes1d_dict[b]],[block_sizes2d_dict[b]])
-                                                        execute_grcuda_benchmark(b, n, numGPU, block_sizes,
+                                                        block_sizes = BenchmarkResult.create_block_size_list([block_sizes1d_dict[b]], [block_sizes2d_dict[b]])
+                                                        execute_grcuda_benchmark(b, n, num_gpu, block_sizes,
                                                               exec_policy, dependency_policy, new_stream_policy, parent_stream_policy, choose_device_heuristic, 
                                                               memAdviser, prefetch, num_iter, debug, time_phases, streamAttach, timeCompute, nb, output_date=output_date)
                                                         i += 1 
