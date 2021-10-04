@@ -4,6 +4,7 @@ import time
 import os
 from datetime import datetime
 from benchmark_result import BenchmarkResult
+from pathlib import Path
 
 ##############################
 ##############################
@@ -225,7 +226,7 @@ def execute_cuda_benchmark(benchmark, size, block_size, exec_policy, num_iter, d
     if not os.path.exists(output_folder_path):
         if debug:
             BenchmarkResult.log_message(f"creating result folder: {output_folder_path}")
-        os.mkdir(output_folder_path)
+        Path(output_folder_path).mkdir(parents=True, exist_ok=True)
     output_path = os.path.join(output_folder_path, file_name)
 
     benchmark_cmd = CUDA_CMD.format(benchmark, exec_policy, size, block_size["block_size_1d"],
@@ -292,7 +293,7 @@ def execute_grcuda_benchmark(benchmark, size, num_gpus, block_sizes, exec_policy
     if not os.path.exists(output_folder_path):
         if debug:
             BenchmarkResult.log_message(f"creating result folder: {output_folder_path}")
-        os.mkdir(output_folder_path)
+        Path(output_folder_path).mkdir(parents=True, exist_ok=True)
     output_path = os.path.join(output_folder_path, file_name)
     b1d_size = " ".join([str(b['block_size_1d']) for b in block_sizes])
     b2d_size = " ".join([str(b['block_size_2d']) for b in block_sizes])
