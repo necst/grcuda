@@ -91,7 +91,7 @@ class Benchmark1M(Benchmark):
         self.block_size = block_size["block_size_1d"]
 
         # Number of items in each partition;
-        self.S = (self.size + P - 1 // P)
+        self.S = (self.size + P - 1) // P
 
         self.x = [None for _ in range(P)]
         self.y = [None for _ in range(P)]

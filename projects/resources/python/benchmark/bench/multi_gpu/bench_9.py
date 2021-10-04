@@ -11,7 +11,7 @@ from benchmark_result import BenchmarkResult
 ##############################
 
 BLOCK_SIZE_V100 = 64  # Just a recommendation of optimal block size for the V100;
-P = 1
+P = 16
 ITER = 50
 
 MMUL_KERNEL = """
