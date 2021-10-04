@@ -373,9 +373,10 @@ if __name__ == "__main__":
                     for block_size in block_sizes:
                         for p in prefetches:
                             for a in streamAttachs:
-                                nb = num_blocks if num_blocks else block_dim_dict[b]
-                                execute_cuda_benchmark(b, n, block_size, exec_policy, num_iter, debug, num_blocks=nb, prefetch=p, stream_attach=a, mock=mock, output_date=output_date)
-                                i += 1
+                                for num_gpu in num_gpus:
+                                    nb = num_blocks if num_blocks else block_dim_dict[b]
+                                    execute_cuda_benchmark(b, n, block_size, exec_policy, num_iter, debug, num_gpus=num_gpu, num_blocks=nb, prefetch=p, stream_attach=a, mock=mock, output_date=output_date)
+                                    i += 1
             # GrCUDA Benchmarks;
             else:
                 for num_gpu in num_gpus:
