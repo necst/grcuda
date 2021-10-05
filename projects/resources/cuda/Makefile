@@ -38,8 +38,8 @@ FLAGS = -std=c++11 -O3 -arch=sm_70
 
 BIN_FOLDER=bin
 FILES=main.cu benchmark.cu
-SINGLE_GPU_FILES=single_gpu/b1.cu single_gpu/b5.cu single_gpu/b6.cu single_gpu/b7.cu single_gpu/b8.cu single_gpu/b10.cu 
-MULTI_GPU_FILES=multi_gpu/b1.cu multi_gpu/b5.cu multi_gpu/b6.cu multi_gpu/b9.cu multi_gpu/b11.cu
+SINGLE_GPU_FILES=single_gpu/b1.cu single_gpu/b5.cu single_gpu/b6.cu single_gpu/b7.cu single_gpu/b8.cu single_gpu/b10.cu
+MULTI_GPU_FILES=multi_gpu/b1.cu multi_gpu/b5.cu multi_gpu/b6.cu multi_gpu/b9.cu multi_gpu/b11.cu multi_gpu/b12.cu
 
 .PHONY: all clean
 
