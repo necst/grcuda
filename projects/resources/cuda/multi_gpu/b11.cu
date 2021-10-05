@@ -33,7 +33,6 @@
 //////////////////////////////
 
 #define P 16
-#define ITER 1
 
 extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, float* z, int n, int m, int z_offset) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
@@ -75,11 +74,11 @@ void Benchmark11M::init() {
 
 void Benchmark11M::reset() {
     for (int i = 0; i < M; i++) {
-        y[i] = 1.0 / M; // (float)(rand()) / (float)(RAND_MAX);
+        y[i] = float(i + 1) / M; // (float)(rand()) / (float)(RAND_MAX);
     }
     for (int i = 0; i < P; i++) {
         for (int j = 0; j < S * M; j++) {
-            x[i][j] = 1.0 / (S * M); // x_cpu[i * S * M + j];
+            x[i][j] = float(i + 1) / (S * M); // x_cpu[i * S * M + j];
         }
     }
 }
@@ -93,12 +92,10 @@ void Benchmark11M::execute_sync(int iter) {
         cudaMemPrefetchAsync(y, sizeof(float) * M, 0, 0);
     }
     cudaDeviceSynchronize();
-    for (int i = 0; i < ITER; i++) {
-        for (int p = 0; p < P; p++) {
-            matrix_vector_mult_1<<<num_blocks, block_size_1d>>>(x[p], i % 2 ? z : y, i % 2 ? y : z, std::min(S, N - p * S), M, p * S);
-            cudaDeviceSynchronize();
-        } 
-    }
+    for (int p = 0; p < P; p++) {
+        matrix_vector_mult_1<<<num_blocks, block_size_1d>>>(x[p], y, z, std::min(S, N - p * S), M, p * S);
+        cudaDeviceSynchronize();
+    } 
 }
 
 void Benchmark11M::execute_async(int iter) {
@@ -112,13 +109,12 @@ void Benchmark11M::execute_async(int iter) {
             cudaMemPrefetchAsync(y, sizeof(float) * M, select_gpu(p, max_devices), s[p]);
         }
     }
-    for (int i = 0; i < ITER; i++) {
-        for (int p = 0; p < P; p++) {
-            matrix_vector_mult_1<<<num_blocks, block_size_1d, 0, s[p]>>>(x[p], i % 2 ? z : y, i % 2 ? y : z, std::min(S, N - p * S), M, p * S);
-        }
-        for (int p = 0; p < P; p++) {
-            err = cudaStreamSynchronize(s[p]);
-        }
+    for (int p = 0; p < P; p++) {
+        cudaSetDevice(select_gpu(p, max_devices));
+        matrix_vector_mult_1<<<num_blocks, block_size_1d, 0, s[p]>>>(x[p], y, z, std::min(S, N - p * S), M, p * S);
+    }
+    for (int p = 0; p < P; p++) {
+        err = cudaStreamSynchronize(s[p]);
     }
 }
 
