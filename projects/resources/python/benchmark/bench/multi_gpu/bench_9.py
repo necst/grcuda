@@ -131,6 +131,7 @@ class Benchmark9M(Benchmark):
         seed(self.random_seed)
 
         # Allocate vectors;
+        self.A_CPU = [0.0] * self.size * self.size
         for i in range(P):
             self.A[i] = polyglot.eval(language="grcuda", string=f"float[{self.size * self.S}]")
         self.x = polyglot.eval(language="grcuda", string=f"float[{size}]")
@@ -149,21 +150,42 @@ class Benchmark9M(Benchmark):
         self.dp_kernel = build_kernel(DP_KERNEL, "dot", "const pointer, const pointer, pointer, sint32")
         self.saxpy_kernel = build_kernel(SAXPY_KERNEL, "saxpy", "pointer, const pointer, const pointer, float, sint32")
         self.cpy_kernel = build_kernel(SAXPY_KERNEL, "cpy", "pointer, const pointer, sint32")
-        self.initialize_rand = polyglot.eval(language="js", string="(x) => { for (let i = 0; i < x.length; i++) { x[i] = Math.random() }}")
+        self.initialize_rand_old = polyglot.eval(language="js", string="(x) => { for (let i = 0; i < x.length; i++) { x[i] =  2 * Math.random() - 1}}")        
+        self.initialize_rand = polyglot.eval(language="js", string="""
+            (X, N) => { 
+                for (let i = 0; i < N; i++) {
+                    for (let j = i; j < N; j++) {
+                        const val = 2 * Math.random() - 1; 
+                        X[i * N + j] = val;
+                        X[j * N + i] = val;
+                    }
+                    X[i * N + i] += 10e-12;
+                }
+            }
+            """)
+        self.partition_data = polyglot.eval(language="js", string="""
+            (X, Y, start) => { 
+                for (let i = 0; i < X.length; i++) {
+                    const index = start + i;
+                    if (index < Y.length) X[i] = Y[index];
+                }
+            }
+            """)
 
     @time_phase("initialization")
     def init(self):
+        self.initialize_rand(self.A_CPU, self.size)
         for i in range(P):
-            self.initialize_rand(self.A[i])
+            self.partition_data(self.A[i], self.A_CPU, i * self.S * self.size)
         for i in range(len(self.b)):
-            self.b[i] = random()
+            self.b[i] = 2 * random() - 1
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
         seed(self.random_seed)
         # Random initial solution;
         for i in range(self.size):
-            self.x[i] = 1.0
+            self.x[i] = 1.0 / self.size
         self.t1[0] = 0.0
         self.t2[0] = 0.0
 
@@ -196,6 +218,7 @@ class Benchmark9M(Benchmark):
             alpha = self.t1[0] / self.t2[0]
             old_r_norm_squared = self.t1[0]
             self.t1[0] = 0
+            self.t2[0] = 0
             if self.time_phases:
                 end = System.nanoTime()
                 self.benchmark.add_phase({"name": f"alpha_{curr_iter}", "time_sec": (end - start) / 1_000_000_000})
@@ -229,55 +252,52 @@ class Benchmark9M(Benchmark):
             self.benchmark.add_phase({"name": "sync", "time_sec": (end - start) / 1_000_000_000})
         self.benchmark.add_computation_time((end - start_comp) / 1_000_000_000)
         # Compute GPU result;
-        self.gpu_result = sum(self.x[:10])
+        for i in range(P):
+            self.mmul_axpy_kernel(self.num_blocks, self.block_size)(self.A[i], self.x, self.b, -1, self.y, min(self.S, self.size - i * self.S), self.size, i * self.S)
 
+        self.gpu_result = sum(self.y[:10])
         self.benchmark.add_to_benchmark("gpu_result", 0)
         if self.benchmark.debug:
-            BenchmarkResult.log_message(f"\tgpu result: [" + ", ".join([f"{x:.4f}" for x in self.x[:10]]) + f"...] = {self.gpu_result:.4f}")
+            BenchmarkResult.log_message(f"\tgpu result: [" + ", ".join([f"{x:.4f}" for x in self.y[:10]]) + f"...] = {self.gpu_result:.4f}")
 
         return self.gpu_result
 
     def cpu_validation(self, gpu_result: object, reinit: bool) -> None:
 
-        # def spmv(ptr, idx, val, vec):
-        #     res = np.zeros(len(ptr) - 1)
-        #     for i in range(len(ptr) - 1):
-        #         curr_sum = 0
-        #         start = int(ptr[i])
-        #         end = int(ptr[i + 1])
-        #         for j in range(start, end):
-        #             curr_sum += val[j] * vec[idx[j]]
-        #         res[i] = curr_sum
-        #     return res
-
         # Recompute the CPU result only if necessary;
         start = System.nanoTime()
         x_cpu = np.zeros(self.size)
-        # if self.current_iter == 0 or reinit:
-        #     # Re-initialize the random number generator with the same seed as the GPU to generate the same values;
-        #     seed(self.random_seed)
-        #     # Initialize the support device arrays;
-        #     N = self.size
+        A_cpu = np.zeros((self.size, self.size))
+        if self.current_iter == 0 or reinit:
+            # Re-initialize the random number generator with the same seed as the GPU to generate the same values;
+            seed(self.random_seed)
+            # Initialize the support device arrays;
+            N = self.size
 
-        #     x = np.ones(N)
-        #     # r = b - A * x
-        #     r = np.array(self.b_cpu) - np.array(spmv(self.ptr_cpu, self.idx_cpu, self.val_cpu, x))
-        #     p = r.copy()
-        #     t1 = r.T.dot(r)
+            for i in range(N):
+                p = i // self.S
+                for j in range(N):
+                    A_cpu[i, j] = self.A[p][(i % self.S) * N + j]
 
-        #     # Main iteration;
-        #     for i in range(self.num_iterations):
-        #         y = spmv(self.ptr_cpu, self.idx_cpu, self.val_cpu, p)
-        #         t2 = p.dot(y)
-        #         alpha = t1 / t2
-        #         t1_old = t1
-        #         x += alpha * p
-        #         r -= alpha * y
-        #         t1 = r.T.dot(r)
-        #         beta = t1 / t1_old
-        #         p = r + beta * p
+            b = np.random.random(N)
+            x = np.ones(N)
+            r = b - A_cpu @ x
+            p = r.copy()
+            t1 = r.T.dot(r)
 
-        #     self.cpu_result = x
+            # Main iteration;
+            for i in range(ITER):
+                y = A_cpu @ p
+                t2 = p.dot(y)
+                alpha = t1 / t2
+                t1_old = t1
+                x += alpha * p
+                r -= alpha * y
+                t1 = r.T.dot(r)
+                beta = t1 / t1_old
+                p = r + beta * p
+
+            self.cpu_result = x
 
         cpu_time = System.nanoTime() - start
 

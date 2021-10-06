@@ -152,7 +152,7 @@ void Benchmark9M::init() {
         for (int j = i; j < N; j++) {
             float val = (float(rand()) / max) * 2 - 1;
             A[p][(i % S) * N + j] = val;
-            A[j / S][(j % S) * N + i] = val;
+            // A[j / S][(j % S) * N + i] = val;
         }
         A[p][(i % S) * N + i] += 10e-12; 
     }
