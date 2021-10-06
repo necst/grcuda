@@ -30,68 +30,105 @@
 #pragma once
 #include <stdexcept>
 #include <vector>
+#include <cstdlib>
+#include <algorithm>
+#include <functional>
+#include <cassert>
+#include <thread>
+#include <ostream>
+
 #include "../benchmark.cuh"
 #include "../mmio.hpp"
 
+#define RANDOM_MATRIX_NUM_ROWS 1000
+#define RANDOM_MATRIX_AVG_NNZ_PER_ROW 10
+
 using f32 = float;
 using u32 = unsigned;
+using f64 = double;
+using u64 = long;
+using i32 = int;
 
 struct coo_matrix_t {
-    int *x;
-    int *y;
+    friend std::ostream &operator<<(std::ostream &os, const coo_matrix_t &matrix);
+
+    i32 *x;
+    i32 *y;
     float *val;
-    int begin;
-    int end;
-    int N;
-    int nnz;
+    i32 begin;
+    i32 end;
+    i32 N;
+    i32 nnz;
 
 };
+
+
+
+#define DOT_PRODUCT_NUM_BLOCKS 32
+#define DOT_PRODUCT_THREADS_PER_BLOCK 64
 
 class Benchmark12 : public Benchmark {
 public:
     Benchmark12(Options &options) : Benchmark(options) {
-        int *x, *y;
+        i32 *x, *y;
         f32 *val;
-        int N, M, nnz;
+        i32 N, M, nnz;
+/*
+        if(this->matrix_path != ""){
+            mm_read_unsymmetric_sparse(this->matrix_path.c_str(), &M, &N, &nnz, &val, &x, &y);
 
-        mm_read_unsymmetric_sparse(this->matrix_path.c_str(), &M, &N, &nnz, &val, &x, &y);
+            this->matrix.begin = 0;
+            this->matrix.end = nnz;
+            this->matrix.N = N;
+            this->matrix.x = x;
+            this->matrix.y = y;
+            this->matrix.val = val;
+            this->matrix.nnz = nnz;
+            this->num_gpus = options.max_devices;
+        }
 
-        this->matrix.begin = 0;
-        this->matrix.end = nnz;
-        this->matrix.N = N;
-        this->matrix.x = x;
-        this->matrix.y = y;
-        this->matrix.val = val;
-        this->matrix.nnz = nnz;
+*/
+
+        this->block_size = this->block_size_1d * this->block_size_2d;
         this->num_gpus = options.max_devices;
-
-
     }
     void alloc();
     void init();
     void reset();
-    void execute_sync(int);
-    void execute_async(int);
-    void execute_cudagraph(int);
-    void execute_cudagraph_manual(int);
-    void execute_cudagraph_single(int);
-    void prefetch(std::vector<cudaStream_t>);
+    void execute_sync(i32);
+    void execute_async(i32);
+    void execute_cudagraph(i32);
+    void execute_cudagraph_manual(i32);
+    void execute_cudagraph_single(i32);
     std::string print_result(bool);
 
 private:
 
     unsigned num_eigencomponents = 8;
-    int num_gpus = -1;
-    std::string matrix_path = "";
-
+    i32 num_gpus = -1;
+    std::string matrix_path;
+    bool reorthogonalize = true;
+    i32 block_size;
     coo_matrix_t matrix;
     std::vector<coo_matrix_t> coo_partitions;
-    std::vector<float*> vec_in, spmv_vec_out, intermediate_dot_product_values, alpha_intermediate, beta_intermediate, vec_next, lanczos_vectors, normalized_out;
+    std::vector<float*> vec_in, spmv_vec_out, intermediate_dot_product_values,  vec_next, lanczos_vectors, normalized_out;
+    float *alpha_intermediate, *beta_intermediate;
+    std::vector<cudaStream_t> streams;
+    std::vector<i32> offsets;
 
+    std::vector<f32> tridiagonal_matrix;
 
     void alloc_coo_partitions();
     void alloc_vectors();
-    coo_matrix_t assign_partition(unsigned, unsigned, unsigned);
+    void create_random_matrix(bool);
+    void execute(i32);
+    void create_streams();
+    coo_matrix_t *assign_partition(unsigned, unsigned, unsigned);
+
+    template<typename Function>
+    void launch_multi_kernel(Function);
+
+
 
 };
 
