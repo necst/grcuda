@@ -37,9 +37,9 @@
 #define ITER 50
 
 // z = x @ y;
-extern "C" __global__ void matrix_vector_mult(const double* x, const double* y, double* z, int n, int m, int z_offset) {
+extern "C" __global__ void matrix_vector_mult(const float* x, const float* y, float* z, int n, int m, int z_offset) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
-        double sum = 0;
+        float sum = 0;
         for (int j = 0; j < m; j++) {                
             sum += x[i * m + j] * y[j];
         }
@@ -48,9 +48,9 @@ extern "C" __global__ void matrix_vector_mult(const double* x, const double* y, 
 }
 
 // z := w + alpha * A @ y;
-extern "C" __global__ void matrix_vector_mult_axpy(const double* x, const double* y, const double *w, const double alpha, double* z, int n, int m, int z_offset) {
+extern "C" __global__ void matrix_vector_mult_axpy(const float* x, const float* y, const float *w, const float alpha, float* z, int n, int m, int z_offset) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
-        double sum = 0;
+        float sum = 0;
         for (int j = 0; j < m; j++) {                
             sum += x[i * m + j] * y[j];
         }
@@ -58,7 +58,7 @@ extern "C" __global__ void matrix_vector_mult_axpy(const double* x, const double
     }
 }
 
-__inline__ __device__ double warp_reduce(double val) {
+__inline__ __device__ float warp_reduce(float val) {
     int warp_size = 32;
     for (int offset = warp_size / 2; offset > 0; offset /= 2) 
         val += __shfl_down_sync(0xFFFFFFFF, val, offset);
@@ -66,11 +66,11 @@ __inline__ __device__ double warp_reduce(double val) {
 }
 
 // z = <x, x>;
-extern "C" __global__ void l2_norm(const double *x, double* z, int N, int offset) {
+extern "C" __global__ void l2_norm(const float *x, float* z, int N, int offset) {
     int warp_size = 32;
-    double sum = 0;
+    float sum = 0;
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {
-        double x_tmp = x[i + offset];
+        float x_tmp = x[i + offset];
         sum += x_tmp * x_tmp;
     }
     sum = warp_reduce(sum); // Obtain the sum of values in the current warp;
@@ -79,9 +79,9 @@ extern "C" __global__ void l2_norm(const double *x, double* z, int N, int offset
 }
 
 // z = <x, y>;
-extern "C" __global__ void dot(const double *x, const double *y, double* z, int N, int offset) {
+extern "C" __global__ void dot(const float *x, const float *y, float* z, int N, int offset) {
     int warp_size = 32;
-    double sum = 0;
+    float sum = 0;
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {
         sum += x[i + offset] * y[i + offset];
     }
@@ -91,14 +91,14 @@ extern "C" __global__ void dot(const double *x, const double *y, double* z, int 
 }
 
 // y = val + alpha * x;
-extern "C" __global__ void saxpy(double* y, const double *val, const double *x, double alpha, int n, int offset) {
+extern "C" __global__ void saxpy(float* y, const float *val, const float *x, float alpha, int n, int offset) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
         y[i + offset] = val[i + offset] + alpha * x[i + offset];
     }
 }
 
 // Simply copy array x into y;
-extern "C" __global__ void cpy(double *y, const double *x, int n, int offset) {
+extern "C" __global__ void cpy(float *y, const float *x, int n, int offset) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
         y[i + offset] = x[i + offset];
     }
@@ -109,19 +109,26 @@ extern "C" __global__ void cpy(double *y, const double *x, int n, int offset) {
 
 void Benchmark9M::alloc() {
     S = (N + P - 1) / P;
-    A = (double **) malloc(sizeof(double*) * P);
-    t1 = (double **) malloc(sizeof(double*) * P);
-    t2 = (double **) malloc(sizeof(double*) * P);
+    A = (float **) malloc(sizeof(float*) * P);
+
     for (int i = 0; i < P; i++) {
-        err = cudaMallocManaged(&A[i], sizeof(double) * S * N);
-        err = cudaMallocManaged(&t1[i], sizeof(double));
-        err = cudaMallocManaged(&t2[i], sizeof(double));
+        err = cudaMallocManaged(&A[i], sizeof(float) * S * N);
     }
-    err = cudaMallocManaged(&x, sizeof(double) * N);
-    err = cudaMallocManaged(&b, sizeof(double) * N);
-    err = cudaMallocManaged(&p, sizeof(double) * N);
-    err = cudaMallocManaged(&r, sizeof(double) * N);
-    err = cudaMallocManaged(&y, sizeof(double) * N);
+    err = cudaMallocManaged(&x, sizeof(float) * N);
+    err = cudaMallocManaged(&b, sizeof(float) * N);
+    err = cudaMallocManaged(&p, sizeof(float) * N);
+    err = cudaMallocManaged(&r, sizeof(float) * N);
+    err = cudaMallocManaged(&y, sizeof(float) * N);
+
+    err = cudaMallocManaged(&t1, sizeof(float));
+    err = cudaMallocManaged(&t2, sizeof(float));
+    // Other implementation;
+    // t1 = (float **) malloc(sizeof(float*) * P);
+    // t2 = (float **) malloc(sizeof(float*) * P);
+    // for (int i = 0; i < P; i++) {
+    //     err = cudaMallocManaged(&t1[i], sizeof(float));
+    //     err = cudaMallocManaged(&t2[i], sizeof(float));
+    // }
 
     // Create streams;
     cudaStream_t s1, s2;
@@ -138,21 +145,21 @@ void Benchmark9M::alloc() {
 
 void Benchmark9M::init() {
     // Random symmetric invertible input matrix;
-    double max = double(RAND_MAX);
+    float max = float(RAND_MAX);
 
     for (int i = 0; i < N; i++) {
         int p = i / S;
         for (int j = i; j < N; j++) {
-            double val = (double(rand()) / max) * 2 - 1;
+            float val = (float(rand()) / max) * 2 - 1;
             A[p][(i % S) * N + j] = val;
             A[j / S][(j % S) * N + i] = val;
         }
-        A[p][(i % S) * N + i] += 10e-9; 
+        A[p][(i % S) * N + i] += 10e-12; 
     }
 
     // Random input b;
     for (int i = 0; i < N; i++) {
-        b[i] = (double(rand()) / max) * 2 - 1;
+        b[i] = (float(rand()) / max) * 2 - 1;
     }
 }
 
@@ -162,125 +169,210 @@ void Benchmark9M::reset() {
         x[i] = 1.0;
     }
     // Reset norms;
-    t1_tot = 0.0;
-    t2_tot = 0.0;
-    for (int i = 0; i < P; i++) {
-        t1[i][0] = 0;
-        t2[i][0] = 0;
-    }
+    *t1 = 0.0;
+    *t2 = 0.0;
+    // Other implementation;
+    // t1_tot = 0.0;
+    // t2_tot = 0.0;
+    // for (int i = 0; i < P; i++) {
+    //     t1[i][0] = 0;
+    //     t2[i][0] = 0;
+    // }
 }
 
 void Benchmark9M::execute_sync(int iter) { 
 
     if (pascalGpu && do_prefetch) {
         for (int i = 0; i < P; i++) {
-            cudaMemPrefetchAsync(A[i], sizeof(double) * S * N, 0);
+            cudaMemPrefetchAsync(A[i], sizeof(float) * S * N, 0);
         }
-        cudaMemPrefetchAsync(x, sizeof(double) * N, 0);
-        cudaMemPrefetchAsync(b, sizeof(double) * N, 0);
-        cudaMemPrefetchAsync(r, sizeof(double) * N, 0);
-        cudaMemPrefetchAsync(p, sizeof(double) * N, 0);
+        cudaMemPrefetchAsync(x, sizeof(float) * N, 0);
+        cudaMemPrefetchAsync(b, sizeof(float) * N, 0);
+        cudaMemPrefetchAsync(r, sizeof(float) * N, 0);
+        cudaMemPrefetchAsync(p, sizeof(float) * N, 0);
     }
 
     for (int i = 0; i < P; i++) {
-        matrix_vector_mult_axpy<<<num_blocks, block_size_1d>>>(A[i], x, b, -1, r, std::min(S, N - i * S), N, i * S);
+        matrix_vector_mult_axpy<<<num_blocks, block_size_1d>>>(A[i], x, b, -1, r, S, N, i * S);
         cudaDeviceSynchronize();
-        cpy<<<num_blocks, block_size_1d>>>(p, r, std::min(S, N - i * S), i * S);
-        cudaDeviceSynchronize();
-        l2_norm<<<num_blocks, block_size_1d>>>(r, t1[i], std::min(S, N - i * S), i * S);
-        cudaDeviceSynchronize();
-        t1_tot += t1[i][0];
-    }   
+    }
+    cpy<<<num_blocks, block_size_1d>>>(p, r, N, 0);
+    cudaDeviceSynchronize();
+    l2_norm<<<num_blocks, block_size_1d>>>(r, t1, N, 0);
+    cudaDeviceSynchronize();
     for (int iter = 0; iter < ITER; iter++) {
         for (int i = 0; i < P; i++) {
-            matrix_vector_mult<<<num_blocks, block_size_1d>>>(A[i], p, y, std::min(S, N - i * S), N, i * S);
+            matrix_vector_mult<<<num_blocks, block_size_1d>>>(A[i], p, y, S, N, i * S);
             cudaDeviceSynchronize();
-            dot<<<num_blocks, block_size_1d>>>(p, y, t2[i], std::min(S, N - i * S), i * S);
-            cudaDeviceSynchronize();
-            t2_tot += t2[i][0];
         }
-        double alpha = t1_tot / t2_tot;
-        double old_t1 = t1_tot;
-        t1_tot = 0.0;
-        t2_tot = 0.0;
-        for (int i = 0; i < P; i++) {
-            saxpy<<<num_blocks, block_size_1d>>>(x, x, p, alpha, std::min(S, N - i * S), i * S);
-            cudaDeviceSynchronize();
-            saxpy<<<num_blocks, block_size_1d>>>(r, r, y, -1.0 * alpha, std::min(S, N - i * S), i * S);
-            cudaDeviceSynchronize();
-            t1[i][0] = 0;
-            l2_norm<<<num_blocks, block_size_1d>>>(r, t1[i], std::min(S, N - i * S), i * S);
-            cudaDeviceSynchronize();
-            t1_tot += t1[i][0];
-        }
-        double beta = t1_tot / old_t1;
-        for (int i = 0; i < P; i++) {
-            saxpy<<<num_blocks, block_size_1d>>>(p, r, p, beta, std::min(S, N - i * S), i * S);
-            cudaDeviceSynchronize();
-            t2[i][0] = 0;
-        }
+        dot<<<num_blocks, block_size_1d>>>(p, y, t2, N, 0);
+        cudaDeviceSynchronize();
+        float alpha = *t1 / *t2;
+        float old_t1 = *t1;
+        *t1 = 0.0;
+        *t2 = 0.0;
+        saxpy<<<num_blocks, block_size_1d>>>(x, x, p, alpha, N, 0);
+        cudaDeviceSynchronize();
+        saxpy<<<num_blocks, block_size_1d>>>(r, r, y, -1.0 * alpha, N, 0);
+        cudaDeviceSynchronize();
+        l2_norm<<<num_blocks, block_size_1d>>>(r, t1, N, 0);
+        cudaDeviceSynchronize();
+        float beta = *t1 / old_t1;
+        saxpy<<<num_blocks, block_size_1d>>>(p, r, p, beta, N, 0);
+        cudaDeviceSynchronize();
     }
     cudaDeviceSynchronize();
+
+    // Other implementation;
+    // for (int i = 0; i < P; i++) {
+    //     matrix_vector_mult_axpy<<<num_blocks, block_size_1d>>>(A[i], x, b, -1, r, std::min(S, N - i * S), N, i * S);
+    //     cudaDeviceSynchronize();
+    //     cpy<<<num_blocks, block_size_1d>>>(p, r, std::min(S, N - i * S), i * S);
+    //     cudaDeviceSynchronize();
+    //     l2_norm<<<num_blocks, block_size_1d>>>(r, t1[i], std::min(S, N - i * S), i * S);
+    //     cudaDeviceSynchronize();
+    //     t1_tot += t1[i][0];
+    // }   
+    // for (int iter = 0; iter < ITER; iter++) {
+    //     for (int i = 0; i < P; i++) {
+    //         matrix_vector_mult<<<num_blocks, block_size_1d>>>(A[i], p, y, std::min(S, N - i * S), N, i * S);
+    //         cudaDeviceSynchronize();
+    //         dot<<<num_blocks, block_size_1d>>>(p, y, t2[i], std::min(S, N - i * S), i * S);
+    //         cudaDeviceSynchronize();
+    //         t2_tot += t2[i][0];
+    //     }
+    //     float alpha = t1_tot / t2_tot;
+    //     float old_t1 = t1_tot;
+    //     t1_tot = 0.0;
+    //     t2_tot = 0.0;
+    //     for (int i = 0; i < P; i++) {
+    //         saxpy<<<num_blocks, block_size_1d>>>(x, x, p, alpha, std::min(S, N - i * S), i * S);
+    //         cudaDeviceSynchronize();
+    //         saxpy<<<num_blocks, block_size_1d>>>(r, r, y, -1.0 * alpha, std::min(S, N - i * S), i * S);
+    //         cudaDeviceSynchronize();
+    //         t1[i][0] = 0;
+    //         l2_norm<<<num_blocks, block_size_1d>>>(r, t1[i], std::min(S, N - i * S), i * S);
+    //         cudaDeviceSynchronize();
+    //         t1_tot += t1[i][0];
+    //     }
+    //     float beta = t1_tot / old_t1;
+    //     for (int i = 0; i < P; i++) {
+    //         saxpy<<<num_blocks, block_size_1d>>>(p, r, p, beta, std::min(S, N - i * S), i * S);
+    //         cudaDeviceSynchronize();
+    //         t2[i][0] = 0;
+    //     }
+    // }
+    // cudaDeviceSynchronize();
 }
 
 void Benchmark9M::execute_async(int iter) {
     if (pascalGpu && do_prefetch) {
         for (int i = 0; i < P; i++) {
             cudaSetDevice(select_gpu(i, max_devices));
-            cudaMemPrefetchAsync(A[i], sizeof(double) * S * N, 0, s[i]);
+            cudaMemPrefetchAsync(A[i], sizeof(float) * S * N, 0, s[i]);
         }
         cudaSetDevice(select_gpu(0, max_devices));
-        cudaMemPrefetchAsync(x, sizeof(double) * N, 0, s1);
-        cudaMemPrefetchAsync(b, sizeof(double) * N, 0, s1);
-        cudaMemPrefetchAsync(r, sizeof(double) * N, 0, s1);
-        cudaMemPrefetchAsync(p, sizeof(double) * N, 0, s1);
+        cudaMemPrefetchAsync(x, sizeof(float) * N, 0, s1);
+        cudaMemPrefetchAsync(b, sizeof(float) * N, 0, s1);
+        cudaMemPrefetchAsync(r, sizeof(float) * N, 0, s1);
+        cudaMemPrefetchAsync(p, sizeof(float) * N, 0, s1);
     }
 
+    cudaEvent_t e[P];
     for (int i = 0; i < P; i++) {
         cudaSetDevice(select_gpu(i, max_devices));
-        matrix_vector_mult_axpy<<<num_blocks, block_size_1d, 0, s[i]>>>(A[i], x, b, -1, r, std::min(S, N - i * S), N, i * S);
-        cpy<<<num_blocks, block_size_1d, 0, s[i]>>>(p, r, std::min(S, N - i * S), i * S);
-        l2_norm<<<num_blocks, block_size_1d, 0, s[i]>>>(r, t1[i], std::min(S, N - i * S), i * S);
+        matrix_vector_mult_axpy<<<num_blocks, block_size_1d, 0, s[i]>>>(A[i], x, b, -1, r, S, N, i * S);
+        cudaEventCreate(&e[i]);
+        cudaEventRecord(e[i], s[i]);
     }
+    cudaSetDevice(select_gpu(0, max_devices));
     for (int i = 0; i < P; i++) {
-        cudaStreamSynchronize(s[i]);
-        t1_tot += t1[i][0];
+        cudaStreamWaitEvent(s1, e[i], 0);
     }
-
+    cudaEvent_t e_c;
+    cudaEventCreate(&e_c);
+    cpy<<<num_blocks, block_size_1d, 0, s1>>>(p, r, N, 0);
+    cudaEventRecord(e_c, s1);
+    for (int i = 0; i < P; i++) {
+        cudaStreamWaitEvent(s2, e[i], 0);
+    }
+    l2_norm<<<num_blocks, block_size_1d, 0, s2>>>(r, t1, N, 0);
     for (int iter = 0; iter < ITER; iter++) {
+        cudaEvent_t e2[P];
         for (int i = 0; i < P; i++) {
             cudaSetDevice(select_gpu(i, max_devices));
-            matrix_vector_mult<<<num_blocks, block_size_1d, 0, s[i]>>>(A[i], p, y, std::min(S, N - i * S), N, i * S);
-            dot<<<num_blocks, block_size_1d, 0, s[i]>>>(p, y, t2[i], std::min(S, N - i * S), i * S);
+            cudaStreamWaitEvent(s[i], e_c, 0);
+            matrix_vector_mult<<<num_blocks, block_size_1d, 0, s[i]>>>(A[i], p, y, S, N, i * S);
+            cudaEventCreate(&e2[i]);
+            cudaEventRecord(e2[i], s[i]);
         }
+        cudaSetDevice(select_gpu(0, max_devices));
         for (int i = 0; i < P; i++) {
-            cudaStreamSynchronize(s[i]);
-            t2_tot += t2[i][0];
+            cudaStreamWaitEvent(s1, e2[i], 0);
         }
-        double alpha = t1_tot / t2_tot;
-        double old_t1 = t1_tot;
-        t1_tot = 0.0;
-        t2_tot = 0.0;
-        for (int i = 0; i < P; i++) {
-            cudaSetDevice(select_gpu(i, max_devices));
-            t1[i][0] = 0;
-            saxpy<<<num_blocks, block_size_1d, 0, s[i]>>>(x, x, p, alpha, std::min(S, N - i * S), i * S);
-            saxpy<<<num_blocks, block_size_1d, 0, s[i]>>>(r, r, y, -1.0 * alpha, std::min(S, N - i * S), i * S);
-            l2_norm<<<num_blocks, block_size_1d, 0, s[i]>>>(r, t1[i], std::min(S, N - i * S), i * S);
-        }
-        for (int i = 0; i < P; i++) {
-            cudaStreamSynchronize(s[i]);
-            t1_tot += t1[i][0];
-        }
-        double beta = t1_tot / old_t1;
-        for (int i = 0; i < P; i++) {
-            saxpy<<<num_blocks, block_size_1d, 0, s[i]>>>(p, r, p, beta, std::min(S, N - i * S), i * S);
-        }
-        for (int i = 0; i < P; i++) {
-            cudaStreamSynchronize(s[i]);
-            t2[i][0] = 0;
-        }
+        dot<<<num_blocks, block_size_1d, 0, s1>>>(p, y, t2, N, 0);
+        cudaStreamSynchronize(s1);
+        cudaStreamSynchronize(s2);
+        float alpha = *t1 / *t2;
+        float old_t1 = *t1;
+        *t1 = 0.0;
+        *t2 = 0.0;
+        saxpy<<<num_blocks, block_size_1d, 0, s1>>>(x, x, p, alpha, N, 0);
+        saxpy<<<num_blocks, block_size_1d, 0, s2>>>(r, r, y, -1.0 * alpha, N, 0);
+        l2_norm<<<num_blocks, block_size_1d, 0, s2>>>(r, t1, N, 0);
+        cudaStreamSynchronize(s2);
+        float beta = *t1 / old_t1;
+        saxpy<<<num_blocks, block_size_1d, 0, s1>>>(p, r, p, beta, N, 0);
     }
+    cudaStreamSynchronize(s1);
+
+    // Other implementation;
+    // for (int i = 0; i < P; i++) {
+    //     cudaSetDevice(select_gpu(i, max_devices));
+    //     matrix_vector_mult_axpy<<<num_blocks, block_size_1d, 0, s[i]>>>(A[i], x, b, -1, r, std::min(S, N - i * S), N, i * S);
+    //     cpy<<<num_blocks, block_size_1d, 0, s[i]>>>(p, r, std::min(S, N - i * S), i * S);
+    //     l2_norm<<<num_blocks, block_size_1d, 0, s[i]>>>(r, t1[i], std::min(S, N - i * S), i * S);
+    // }
+    // for (int i = 0; i < P; i++) {
+    //     cudaStreamSynchronize(s[i]);
+    //     t1_tot += t1[i][0];
+    // }
+
+    // for (int iter = 0; iter < ITER; iter++) {
+    //     for (int i = 0; i < P; i++) {
+    //         cudaSetDevice(select_gpu(i, max_devices));
+    //         matrix_vector_mult<<<num_blocks, block_size_1d, 0, s[i]>>>(A[i], p, y, std::min(S, N - i * S), N, i * S);
+    //         dot<<<num_blocks, block_size_1d, 0, s[i]>>>(p, y, t2[i], std::min(S, N - i * S), i * S);
+    //     }
+    //     for (int i = 0; i < P; i++) {
+    //         cudaStreamSynchronize(s[i]);
+    //         t2_tot += t2[i][0];
+    //     }
+    //     float alpha = t1_tot / t2_tot;
+    //     float old_t1 = t1_tot;
+    //     t1_tot = 0.0;
+    //     t2_tot = 0.0;
+    //     for (int i = 0; i < P; i++) {
+    //         cudaSetDevice(select_gpu(i, max_devices));
+    //         t1[i][0] = 0;
+    //         saxpy<<<num_blocks, block_size_1d, 0, s[i]>>>(x, x, p, alpha, std::min(S, N - i * S), i * S);
+    //         saxpy<<<num_blocks, block_size_1d, 0, s[i]>>>(r, r, y, -1.0 * alpha, std::min(S, N - i * S), i * S);
+    //         l2_norm<<<num_blocks, block_size_1d, 0, s[i]>>>(r, t1[i], std::min(S, N - i * S), i * S);
+    //     }
+    //     for (int i = 0; i < P; i++) {
+    //         cudaStreamSynchronize(s[i]);
+    //         t1_tot += t1[i][0];
+    //     }
+    //     float beta = t1_tot / old_t1;
+    //     for (int i = 0; i < P; i++) {
+    //         cudaSetDevice(select_gpu(i, max_devices));
+    //         saxpy<<<num_blocks, block_size_1d, 0, s[i]>>>(p, r, p, beta, std::min(S, N - i * S), i * S);
+    //     }
+    //     for (int i = 0; i < P; i++) {
+    //         cudaStreamSynchronize(s[i]);
+    //         t2[i][0] = 0;
+    //     }
+    // }
 }
 
 std::string Benchmark9M::print_result(bool short_form) {
@@ -296,7 +388,7 @@ std::string Benchmark9M::print_result(bool short_form) {
             res += std::to_string(y[j]) + ", ";
         }
 
-        double sum = 0;
+        float sum = 0;
         for (int j = 0; j < N; j++) {
             sum += y[j];
         }
