@@ -61,7 +61,8 @@ struct Benchmark {
                                   stream_attach(options.stream_attach),
                                   policy(options.policy_choice),
                                   benchmark_name(options.benchmark_choice),
-                                  max_devices(options.max_devices) {
+                                  max_devices(options.max_devices),
+                                  nvprof(options.nvprof) {
         cudaDeviceGetAttribute(&pascalGpu, cudaDeviceAttr::cudaDevAttrConcurrentManagedAccess, 0);
         if (debug) {
             std::cout << "------------------------------" << std::endl;
@@ -74,6 +75,7 @@ struct Benchmark {
             std::cout << "- block size 2d=" << block_size_2d << std::endl;
             std::cout << "- num blocks=" << num_blocks << std::endl;
             std::cout << "- max devices=" << max_devices << std::endl;
+            std::cout << "- use nvprof=" << nvprof << std::endl;
             std::cout << "------------------------------" << std::endl;
         }
     }
@@ -92,6 +94,7 @@ struct Benchmark {
     bool stream_attach = DEFAULT_STREAM_ATTACH;
     int max_devices = DEFAULT_MAX_DEVICES;
     int pascalGpu = 0;
+    bool nvprof = DEFAULT_NVPROF;
     Policy policy;
     BenchmarkEnum benchmark_name;
     int err = 0;
