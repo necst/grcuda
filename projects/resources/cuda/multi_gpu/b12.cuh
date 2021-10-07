@@ -28,30 +28,70 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
+#include <stdexcept>
+#include <vector>
 #include "../benchmark.cuh"
+#include "../mmio.hpp"
 
-class Benchmark9M : public Benchmark {
-   public:
-    Benchmark9M(Options &options) : Benchmark(options) {}
+using f32 = float;
+using u32 = unsigned;
+
+struct coo_matrix_t {
+    int *x;
+    int *y;
+    float *val;
+    int begin;
+    int end;
+    int N;
+    int nnz;
+
+};
+
+class Benchmark12 : public Benchmark {
+public:
+    Benchmark12(Options &options) : Benchmark(options) {
+        int *x, *y;
+        f32 *val;
+        int N, M, nnz;
+
+        mm_read_unsymmetric_sparse(this->matrix_path.c_str(), &M, &N, &nnz, &val, &x, &y);
+
+        this->matrix.begin = 0;
+        this->matrix.end = nnz;
+        this->matrix.N = N;
+        this->matrix.x = x;
+        this->matrix.y = y;
+        this->matrix.val = val;
+        this->matrix.nnz = nnz;
+        this->num_gpus = options.max_devices;
+
+
+    }
     void alloc();
     void init();
     void reset();
-    void execute_sync(int iter);
-    void execute_async(int iter);
-    std::string print_result(bool short_form = false);
+    void execute_sync(int);
+    void execute_async(int);
+    void execute_cudagraph(int);
+    void execute_cudagraph_manual(int);
+    void execute_cudagraph_single(int);
+    void prefetch(std::vector<cudaStream_t>);
+    std::string print_result(bool);
 
-   private:
-    int S;
+private:
 
-    float **A;
-    float *x, *y, *r, *p, *b;
-    
-    float *t1, *t2;    
-    // Other implementation;
-    // float **t1, **t2;
-    // float t1_tot = 0;
-    // float t2_tot = 0;
+    unsigned num_eigencomponents = 8;
+    int num_gpus = -1;
+    std::string matrix_path = "";
 
-    cudaStream_t s1, s2;
-    cudaStream_t *s;
+    coo_matrix_t matrix;
+    std::vector<coo_matrix_t> coo_partitions;
+    std::vector<float*> vec_in, spmv_vec_out, intermediate_dot_product_values, alpha_intermediate, beta_intermediate, vec_next, lanczos_vectors, normalized_out;
+
+
+    void alloc_coo_partitions();
+    void alloc_vectors();
+    coo_matrix_t assign_partition(unsigned, unsigned, unsigned);
+
 };
+
