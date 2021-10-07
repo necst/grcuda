@@ -33,6 +33,7 @@
 #include <cstdlib>  // For srand()
 #include "options.hpp"
 #include "benchmark.cuh"
+
 #include "single_gpu/b1.cuh"
 #include "single_gpu/b5.cuh"
 #include "single_gpu/b6.cuh"
@@ -44,6 +45,7 @@
 #include "multi_gpu/b6.cuh"
 #include "multi_gpu/b9.cuh"
 #include "multi_gpu/b11.cuh"
+#include "multi_gpu/b12.cuh"
 
 int main(int argc, char *argv[])
 {
@@ -89,6 +91,8 @@ int main(int argc, char *argv[])
     case BenchmarkEnum::B11M:
         b = new Benchmark11M(options);
         break;
+    case BenchmarkEnum::B12:
+        b = new Benchmark12(options);
     default:
         break;
     }
