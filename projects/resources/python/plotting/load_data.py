@@ -12,8 +12,24 @@ import os
 import numpy as np
 import functools
 from scipy.stats.mstats import gmean
+import segretini_matplottini.src.plot_utils as pu
 
 DEFAULT_RES_DIR = "../../../../grcuda-data/results/scheduling_multiGPU/V100"
+DEFAULT_RES_CUDA_DIR = "../../../../grcuda-data/results/scheduling_multiGPU"
+PLOT_DIR = "../../../../grcuda-data/plots/multi_gpu"
+
+BENCHMARK_NAMES = {
+    "b1m": "VEC",
+    "b5m": "B&S",
+    "b6m": "ML",
+    "b9m": "CG",
+    "b11m": "MUL",
+    }
+
+POLICY_NAMES = {
+    "sync": "SYNC",
+    "default": "ASYNC",
+    }
 
 def load_data(input_date: str, skip_iter=0, remove_inf=True, remove_time_zero=True, benchmark="", phases=None) -> pd.DataFrame:
     """
@@ -185,7 +201,74 @@ def load_data_cuda(input_date: str, skip_iter=0, remove_inf=True, remove_time_ze
     # Clean columns with infinite speedup;
     if remove_inf:
         data = data[data["computation_speedup"] != np.inf].reset_index(drop=True)
+        
+    return data
+
+
+def load_data_cuda_multigpu(input_folders: list, skip_iter=0, remove_inf=True, remove_time_zero=True) -> pd.DataFrame:
+    """
+    Load the benchmark results located in the input sub-folder
+    :param input_folder: name of the folders where results are located, as a subfolder of DEFAULT_RES_CUDA_DIR
+    :param skip_iter: skip the first iterations for each benchmark, as they are considered warmup
+    :param remove_inf: if True, remove rows with infinite speedup
+    :param remove_time_zero: if True, remove rows with 0 computation time;
+    :return: a DataFrame containing the results
+    """
     
+
+    # Load results as pd.DataFrames;
+    data_tmp = []
+    for folder in input_folders:
+        input_path = os.path.join(DEFAULT_RES_CUDA_DIR, folder)
+        for f in os.listdir(input_path):
+            # Parse filename;
+            benchmark, exec_policy, size, num_gpu, block_size_1d, block_size_2d, prefetch, total_iterations, num_blocks = os.path.splitext(f)[0].split("_")[7:]
+            tmp_data = pd.read_csv(os.path.join(input_path, f))
+            
+            # Skip first lines;
+            tmp_data = tmp_data.iloc[skip_iter:, :]
+    
+            # Add other information;
+            tmp_data["benchmark"] = benchmark
+            tmp_data["exec_policy"] = exec_policy
+            tmp_data["prefetch"] = prefetch 
+            tmp_data["size"] = int(size)
+            tmp_data["num_gpu"] = int(num_gpu.replace("gpu", ""))
+            tmp_data["block_size_1d"] = int(block_size_1d)
+            tmp_data["block_size_2d"] = int(block_size_2d)
+            tmp_data["num_blocks_1d"] = int(num_blocks)
+            tmp_data["block_size_str"] = block_size_1d + ",8"
+            tmp_data["total_iterations"] = int(total_iterations)
+            data_tmp += [tmp_data]
+            
+    data = pd.concat(data_tmp, ignore_index=True)
+    data["num_iter"] -= skip_iter
+
+    # Reorder columns;
+    columns = ["benchmark", "exec_policy", "prefetch", "block_size_1d", "block_size_2d", "num_blocks_1d", "block_size_str",
+               "total_iterations", "size", "num_gpu", "num_iter", "gpu_result", "total_time_sec", "overhead_sec", "computation_sec"]
+    data = data[columns]
+    
+    # Clean columns with 0 computation time;
+    if remove_time_zero:
+        data = data[data["computation_sec"] > 0].reset_index(drop=True)
+   
+    # Compute speedups;
+    pu.compute_speedup_df(data, ["benchmark", "prefetch", "block_size_1d", "block_size_2d", "size"],
+                          baseline_filter_col=["exec_policy", "num_gpu"], baseline_filter_val=["default", 1],
+                          time_column="computation_sec")
+    
+    # Clean columns with infinite speedup;
+    if remove_inf:
+        data = data[data["speedup"] != np.inf].reset_index(drop=True)
+        
+    data["benchmark"] = data["benchmark"].replace(BENCHMARK_NAMES)
+    data["exec_policy"] = data["exec_policy"].replace(POLICY_NAMES)
+    data["benchmark"] = pd.Categorical(data["benchmark"], list(BENCHMARK_NAMES.values()))
+    data["exec_policy"] = pd.Categorical(data["exec_policy"], list(POLICY_NAMES.values()))
+    
+    data = data.sort_values(["benchmark", "exec_policy", "size", "num_iter"]).reset_index(drop=True)
+         
     return data
 
 
@@ -247,10 +330,19 @@ def join_tables_baseline(data_cuda_in, data_grcuda_in):
 
 
 if __name__ == "__main__":
-    input_date = "2021_10_03_12_30_18_grcuda_b5(new)_2GPU_noPrefetch_noStrAttach_allParents_dataLocality"
-    data = load_data(input_date, skip_iter=5)
-    data.to_csv("2GPU_allParents_vs_1GPU_Async.csv", sep = ';')
-    #input_date2 = "2020_06_21_14_05_38_cuda"
-    #data2 = load_data_cuda(input_date2, skip_iter=3)   
+    # input_date = "2021_10_03_12_30_18_grcuda_b5(new)_2GPU_noPrefetch_noStrAttach_allParents_dataLocality"
+    # data = load_data(input_date, skip_iter=5)
+    # data.to_csv("2GPU_allParents_vs_1GPU_Async.csv", sep = ';')
     
-    #data3 = join_tables(data[data["benchmark"] == "b1"], data2)
+    res_list = [
+        "2021_10_04_15_13_11_cuda_1gpu_v100",
+        "2021_10_04_15_15_29_cuda_2gpu_v100",
+        "2021_10_04_15_15_49_cuda_4gpu_v100",
+        "2021_10_04_15_33_23_cuda_8gpu_v100",
+        ]
+    res_cuda = load_data_cuda_multigpu(res_list, skip_iter=3)
+    res_cuda_grouped = res_cuda.groupby(["benchmark", "exec_policy", "num_gpu"]).mean().reset_index()
+    res_cuda.to_csv(os.path.join(DEFAULT_RES_CUDA_DIR, "res_cuda.csv"), index=False)
+    res_cuda_grouped.to_csv(os.path.join(DEFAULT_RES_CUDA_DIR, "res_cuda_grouped.csv"), index=False)
+
+    # data3 = join_tables(data[data["benchmark"] == "b1"], data2)

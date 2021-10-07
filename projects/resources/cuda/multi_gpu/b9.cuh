@@ -44,7 +44,13 @@ class Benchmark9M : public Benchmark {
     int S;
 
     float **A;
-    float *x, *y, *r, *p, *t1, *t2, *b;
+    float *x, *y, *r, *p, *b;
+    
+    float *t1, *t2;    
+    // Other implementation;
+    // float **t1, **t2;
+    // float t1_tot = 0;
+    // float t2_tot = 0;
 
     cudaStream_t s1, s2;
     cudaStream_t *s;
