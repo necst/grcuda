@@ -94,6 +94,8 @@ public class CUMLTest {
                     CUBLASTest.assertOutputVectorIsCorrect(numRows, labels, (Integer i) -> i / 10, this.typeChar);
                 } catch (Exception e) {
                     System.out.println("warning: failed to launch cuML, skipping test");
+                    System.out.println(e.getMessage());
+                    //e.printStackTrace(System.out);
                 }
             } catch (Exception e) {
                 System.out.println("warning: cuML not enabled, skipping test");

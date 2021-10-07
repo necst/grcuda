@@ -32,7 +32,6 @@ package com.nvidia.grcuda.runtime.computation;
 
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
-import com.nvidia.grcuda.runtime.stream.DefaultStream;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -49,10 +48,12 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
 
     private final Function nfiFunction;
     private final Object[] argsWithHandle;
+    private final LibrarySetStreamFunction setStreamFunctionNFI;
 
-    public CUDALibraryExecution(AbstractGrCUDAExecutionContext context, Function nfiFunction, List<ComputationArgumentWithValue> args) {
+    public CUDALibraryExecution(AbstractGrCUDAExecutionContext context, Function nfiFunction, LibrarySetStreamFunction setStreamFunctionNFI, List<ComputationArgumentWithValue> args) {
         super(context, new CUDALibraryExecutionInitializer(args));
         this.nfiFunction = nfiFunction;
+        this.setStreamFunctionNFI = setStreamFunctionNFI;
 
         // Array of [libraryHandle + arguments], required by CUDA libraries for execution;
         this.argsWithHandle = new Object[args.size()];
@@ -62,7 +63,7 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
     }
 
     @Override
-    public boolean canUseStream() { return false; }
+    public boolean canUseStream() { return true; }
 
     // TODO: See note in parent class;
 //    @Override
@@ -73,14 +74,14 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
         // Execution happens on the default stream;
         Object result = null;
         try {
+            this.setStreamFunctionNFI.setStream(this.getStream());
             result = INTEROP.execute(this.nfiFunction, this.argsWithHandle);
         } catch (ArityException | UnsupportedMessageException e) {
-            System.out.println("error in execution of cuBLAS function");
+            System.out.println("error in execution of the function"); // questa è la stessa anche per cuML vero?
             e.printStackTrace();
         }
         // Synchronize only the default stream;
-        this.grCUDAExecutionContext.getCudaRuntime().cudaStreamSynchronize(DefaultStream.get());
-        this.setComputationFinished();
+
         return result;
     }
 

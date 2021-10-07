@@ -50,7 +50,9 @@ import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
+import com.nvidia.grcuda.runtime.computation.CUBLASSetStreamFunction;
 import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
+import com.nvidia.grcuda.runtime.computation.LibrarySetStreamFunction;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
@@ -73,8 +75,10 @@ public class CUBLASRegistry {
 
     @CompilationFinal private TruffleObject cublasCreateFunction;
     @CompilationFinal private TruffleObject cublasDestroyFunction;
+    @CompilationFinal private TruffleObject cublasSetStreamFunction;
     @CompilationFinal private TruffleObject cublasCreateFunctionNFI;
     @CompilationFinal private TruffleObject cublasDestroyFunctionNFI;
+    @CompilationFinal private TruffleObject cublasSetStreamFunctionNFI;
 
     private Long cublasHandle = null;
 
@@ -91,6 +95,7 @@ public class CUBLASRegistry {
 
             cublasCreateFunctionNFI = CUBLAS_CUBLASCREATE.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
             cublasDestroyFunctionNFI = CUBLAS_CUBLASDESTROY.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
+            cublasSetStreamFunctionNFI = CUBLAS_CUBLASSETSTREAM.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
 
             // create wrapper for cublasCreate: cublasError_t cublasCreate(long* handle) -> int
             // cublasCreate()
@@ -120,6 +125,23 @@ public class CUBLASRegistry {
                     try {
                         Object result = INTEROP.execute(cublasDestroyFunctionNFI, handle);
                         checkCUBLASReturnCode(result, "cublasDestroy");
+                        return result;
+                    } catch (InteropException e) {
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
+
+            cublasSetStreamFunction = new Function(CUBLAS_CUBLASSETSTREAM.getName()) {
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException {
+                    checkArgumentLength(arguments, 2);
+                    try {
+                        long handle = expectLong(arguments[0]);
+                        long streamID = expectLong(arguments[1]);
+                        Object result = INTEROP.execute(cublasSetStreamFunctionNFI, handle, streamID);
+                        checkCUBLASReturnCode(result, "cublasSetStream");
                         return result;
                     } catch (InteropException e) {
                         throw new GrCUDAInternalException(e);
@@ -163,12 +185,14 @@ public class CUBLASRegistry {
                 protected Object call(Object[] arguments) {
                     ensureInitialized();
 
+                    LibrarySetStreamFunction cublasSetStreamFunction = new CUBLASSetStreamFunction("CUBLASSetStreamHelperFunction", (Function) cublasSetStreamFunctionNFI, cublasHandle);
+
                     try {
                         if (nfiFunction == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
-                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, this.createComputationArgumentWithValueList(arguments, cublasHandle)).schedule();
+                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cublasSetStreamFunction, this.createComputationArgumentWithValueList(arguments, cublasHandle)).schedule();
                         checkCUBLASReturnCode(result, nfiFunction.getName());
                         return result;
                     } catch (InteropException e) {
@@ -222,6 +246,7 @@ public class CUBLASRegistry {
 
     private static final ExternalFunctionFactory CUBLAS_CUBLASCREATE = new ExternalFunctionFactory("cublasCreate", "cublasCreate_v2", "(pointer): sint32");
     private static final ExternalFunctionFactory CUBLAS_CUBLASDESTROY = new ExternalFunctionFactory("cublasDestroy", "cublasDestroy_v2", "(sint64): sint32");
+    private static final ExternalFunctionFactory CUBLAS_CUBLASSETSTREAM = new ExternalFunctionFactory("cublasSetStream", "cublasSetStream_v2","(sint64, sint64): sint32");
 
     private static final ArrayList<ExternalFunctionFactory> functions = new ArrayList<>();
 
