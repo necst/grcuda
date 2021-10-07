@@ -40,7 +40,7 @@
 #include "../benchmark.cuh"
 #include "../mmio.hpp"
 
-#define RANDOM_MATRIX_NUM_ROWS 1000
+#define RANDOM_MATRIX_NUM_ROWS 10000000
 #define RANDOM_MATRIX_AVG_NNZ_PER_ROW 10
 
 using f32 = float;
@@ -70,27 +70,14 @@ struct coo_matrix_t {
 class Benchmark12 : public Benchmark {
 public:
     Benchmark12(Options &options) : Benchmark(options) {
-        i32 *x, *y;
-        f32 *val;
-        i32 N, M, nnz;
-/*
-        if(this->matrix_path != ""){
-            mm_read_unsymmetric_sparse(this->matrix_path.c_str(), &M, &N, &nnz, &val, &x, &y);
-
-            this->matrix.begin = 0;
-            this->matrix.end = nnz;
-            this->matrix.N = N;
-            this->matrix.x = x;
-            this->matrix.y = y;
-            this->matrix.val = val;
-            this->matrix.nnz = nnz;
-            this->num_gpus = options.max_devices;
-        }
-
-*/
+        // This test does not run on pascal gpus due to how Managed memory is handled
 
         this->block_size = this->block_size_1d * this->block_size_2d;
         this->num_gpus = options.max_devices;
+        for(u32 i = 0; i < this->num_gpus; ++i){
+            this->streams.push_back(nullptr);
+        }
+
     }
     void alloc();
     void init();
@@ -104,13 +91,13 @@ public:
 
 private:
 
-    unsigned num_eigencomponents = 8;
+    unsigned num_eigencomponents = 16;
     i32 num_gpus = -1;
     std::string matrix_path;
     bool reorthogonalize = true;
     i32 block_size;
     coo_matrix_t matrix;
-    std::vector<coo_matrix_t> coo_partitions;
+    std::vector<coo_matrix_t*> coo_partitions;
     std::vector<float*> vec_in, spmv_vec_out, intermediate_dot_product_values,  vec_next, lanczos_vectors, normalized_out;
     float *alpha_intermediate, *beta_intermediate;
     std::vector<cudaStream_t> streams;

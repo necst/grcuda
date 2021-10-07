@@ -33,6 +33,7 @@
 #include <cstdlib>  // For srand()
 #include "options.hpp"
 #include "benchmark.cuh"
+
 #include "single_gpu/b1.cuh"
 #include "single_gpu/b5.cuh"
 #include "single_gpu/b6.cuh"
