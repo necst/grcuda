@@ -27,12 +27,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "cuda_profiler_api.h"
 #include "benchmark.cuh"
 
 namespace chrono = std::chrono;
 using clock_type = chrono::high_resolution_clock;
 
-#define GPU_ORDER_8 {0, 6, 3, 1, 4, 2, 5, 7}
+// #define GPU_ORDER_8 {0, 6, 3, 1, 4, 2, 5, 7}
+#define GPU_ORDER_8 {0, 1, 2, 3, 4, 5, 6, 7}
 #define GPU_ORDER_4 {0, 3, 1, 2}
 
 int Benchmark::select_gpu(int i, int max_devices) {
@@ -91,6 +93,7 @@ void Benchmark::run() {
         if (debug) std::cout << "  reset=" << (float)reset_time / 1000 << " ms" << std::endl;
 
         // Execution;
+        if (nvprof) cudaProfilerStart();
         start_tmp = clock_type::now();
         switch (policy) {
             case Policy::Sync:
@@ -111,6 +114,7 @@ void Benchmark::run() {
         if (debug && err) std::cout << "  error=" << err << std::endl;
         end_tmp = clock_type::now();
         auto exec_time = chrono::duration_cast<chrono::microseconds>(end_tmp - start_tmp).count();
+        if (nvprof) cudaProfilerStop();
 
         if (i >= skip_iterations)
             tot_time += exec_time;

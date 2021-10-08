@@ -51,6 +51,7 @@
 #define DEFAULT_PREFETCH false
 #define DEFAULT_STREAM_ATTACH false
 #define DEFAULT_MAX_DEVICES 1
+#define DEFAULT_NVPROF false
 
 //////////////////////////////
 //////////////////////////////
@@ -136,6 +137,7 @@ struct Options {
     int skip_iterations = DEFAULT_SKIP;
     bool prefetch = DEFAULT_PREFETCH;
     bool stream_attach = DEFAULT_STREAM_ATTACH;
+    bool nvprof = DEFAULT_NVPROF;
     BenchmarkEnum benchmark_choice = get_benchmark(DEFAULT_BENCHMARK);
     Policy policy_choice = get_policy(DEFAULT_POLICY);
 
@@ -175,11 +177,12 @@ struct Options {
                                                {"prefetch", required_argument, 0, 'r'},
                                                {"attach", required_argument, 0, 'a'},
                                                {"max_devices", required_argument, 0, 'm'},
+                                               {"nvprof", required_argument, 0, 'v'},
                                                {0, 0, 0, 0}};
         // getopt_long stores the option index here;
         int option_index = 0;
 
-        while ((opt = getopt_long(argc, argv, "dt:n:b:c:g:s:k:p:ram:", long_options, &option_index)) != EOF) {
+        while ((opt = getopt_long(argc, argv, "dt:n:b:c:g:s:k:p:ram:v", long_options, &option_index)) != EOF) {
             switch (opt) {
                 case 'd':
                     debug = true;
@@ -216,6 +219,9 @@ struct Options {
                     break;
                 case 'm':
                     max_devices = atoi(optarg);
+                    break;
+                case 'v':
+                    nvprof = true;
                     break;
                 default:
                     break;
