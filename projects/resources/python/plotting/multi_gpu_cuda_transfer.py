@@ -20,14 +20,16 @@ from load_data import PLOT_DIR, DEFAULT_RES_CUDA_DIR
 OUTPUT_DATE = "2021_10_06"
 
 BENCHMARKS = [
-    # "b1",
+    "b1",
     "b5",
     "b6",
     "b6_4",
+    "b9",
+    "b9_4",
     "b11"
     ]
 
-EDGE = 1
+EDGE = 0.8
 ANGLE = 35
 FORSHORTENING = 1 / 3  # Proportional scaling of the axonometry;
 X_STEP = EDGE * FORSHORTENING
@@ -292,9 +294,9 @@ def draw_pci_transfer_cpu(ax, cpu, gpu, other_gpu, vertical_start, upper=True, s
 def draw_transfer(ax, transfer_matrix_nondirectional, max_transfer: float=None, min_transfer: float=None, 
                   redraw_points: bool=True, **kwargs):
    
-    PALETTE = sns.color_palette("YlOrBr", as_cmap=True)
-    MIN_PAL = 0.3
-    MAX_PAL = 0.7
+    PALETTE = sns.color_palette("YlOrBr", as_cmap=True)# sns.color_palette("YlOrBr", as_cmap=True)
+    MIN_PAL = 0.2
+    MAX_PAL = 0.5
     MAX_WIDTH = 4
     MIN_WIDTH = 0.5
     if max_transfer is None:
@@ -352,6 +354,15 @@ if __name__ == "__main__":
     save_plot(PLOT_DIR, f"v100_topology" + "_{}.{}", date=OUTPUT_DATE, dpi=600)    
     
     #%% Draw transfer of GPUs;
+    
+    # Obtain transfer max and min to normalize plots;
+    maximum_transfer = 0
+    minimum_transfer = np.inf
+    for b in BENCHMARKS:
+        transfer_matrix = pd.read_csv(os.path.join(DEFAULT_RES_CUDA_DIR, INPUT_FOLDER, b + "_transfer_matrix.csv"), index_col=0)
+        maximum_transfer = max(transfer_matrix.max().max(), maximum_transfer)
+        minimum_transfer = min(transfer_matrix.min().min(), minimum_transfer)
+    
     for b in BENCHMARKS:
         fig, ax = draw_topology(alpha_scale=0.5)
         transfer_matrix = pd.read_csv(os.path.join(DEFAULT_RES_CUDA_DIR, INPUT_FOLDER, b + "_transfer_matrix.csv"), index_col=0)
@@ -360,7 +371,7 @@ if __name__ == "__main__":
         # Normalize matrix;
         transfer_matrix_nondirectional /= transfer_matrix_nondirectional.max().max()
         # Draw colored edges;
-        ax = draw_transfer(ax, transfer_matrix_nondirectional)
+        ax = draw_transfer(ax, transfer_matrix_nondirectional, max_transfer=maximum_transfer, min_transfer=minimum_transfer)
         # Add benchmark name;
         ax.annotate(b.upper(), xy=(0.78, 0.85), xycoords="axes fraction", ha="left", color="#2f2f2f", fontsize=14, alpha=1)   
         save_plot(PLOT_DIR, f"v100_topology_{b}" + "_{}.{}", date=OUTPUT_DATE, dpi=600)    
