@@ -68,7 +68,7 @@ DATA_DICT = {
 NVPROF_HEADER = ["start_ms", "duration_ms", "Grid X", "Grid Y", "Grid Z", "Block X", "Block Y", "Block Z",
                  "Registers Per Thread"," Static SMem", "Dynamic SMem", "Device", "Context", "Stream",
                  "transferred_data_byte", "Virtual Address", "name", "Correlation_ID"]
-NVPROF_HEADER_FILTERED = NVPROF_HEADER[:2] + [NVPROF_HEADER[-4]] + [NVPROF_HEADER[-2]]
+NVPROF_HEADER_FILTERED = NVPROF_HEADER[:2] + [NVPROF_HEADER[-7]] + [NVPROF_HEADER[-4]] + [NVPROF_HEADER[-2]]
 
 OPERATIONS_TO_MERGE = set(["htod", "dtoh"])
 
@@ -343,6 +343,72 @@ def get_total_segment_set_length(segments):
         
     return sum([s[1] - s[0] for s in overlap_collection])
 
+@time_phase
+def read_nvprof_log(input_path: str) -> pd.DataFrame:
+    
+    skip_rows = 5
+    try:
+        header = pd.read_csv(input_path, skiprows=3, nrows=1)
+        start_unit = header.iloc[0, 0]
+        duration_unit = header.iloc[0, 1]
+    except:
+        header = pd.read_csv(input_path, skiprows=5, nrows=1)
+        dtypes = header.dtypes
+        start_unit = header.iloc[0, 0]
+        duration_unit = header.iloc[0, 1]
+        skip_rows = 7
+    data = pd.read_csv(input_path, skiprows=skip_rows, names=NVPROF_HEADER, dtype={"Unified Memory": "str"})
+    
+    # Keep only a subset of columns;
+    data = data[NVPROF_HEADER_FILTERED]
+    
+    # Remove page faults;
+    data = data[data["name"] != "[Unified Memory GPU page faults]"].reset_index(drop=True)
+    data = data[data["name"] != "[Unified Memory page throttle]"].reset_index(drop=True)
+    
+    # Remove rows with NaN Duration;
+    data = data.dropna(subset=["duration_ms"]).reset_index(drop=True)
+    
+    # Fix data transfer column;
+    data["transferred_data_byte"] = data["transferred_data_byte"].apply(lambda x: int(str(x).split(".")[0]) if not pd.isnull(x) else 0)
+    
+    # Rename "Device" column;
+    data = data.rename(columns={"Device": "device"})
+    try:
+        data[["device_start", "device_end"]] = data["device"].str.split(",", expand=True)
+    except ValueError:
+        data["device_start"] = data["device"]
+        data["device_end"] = None
+    data["device_start"] = data["device_start"].str.split("(").str[-1].str.replace(")", "")
+    data["device_end"] = data["device_end"].replace({None: ""}).str.split("(").str[-1].str.replace(")", "")
+    
+    # Convert start and duration from seconds to milliseconds;
+    if start_unit == "s":
+        data["start_ms"] *= 1000
+    elif start_unit == "us":
+        data["start_ms"] /= 1000
+    if duration_unit == "s":
+        data["duration_ms"] *= 1000
+    elif duration_unit == "us":
+        data["duration_ms"] /= 1000
+    
+    # Set the start of the computation equal to 0;
+    data["start_ms"] -= data["start_ms"].iloc[0]
+    
+    # Set the end of the computation;
+    data["end_ms"] = data["duration_ms"] + data["start_ms"]
+          
+    # Clean names of operations;
+    data["name"] = data["name"].replace({
+        "[Unified Memory Memcpy HtoD]": "htod",
+        "[Unified Memory Memcpy DtoH]": "dtoh",
+        "[Unified Memory Memcpy DtoD]": "dtod",
+        })
+    
+    # Keep just the name of kernels;
+    data["name"] = data["name"].apply(lambda x: x.split("(")[0])
+    return data
+
 #%%
 
 if __name__ == "__main__":
@@ -356,49 +422,7 @@ if __name__ == "__main__":
     output_res = []
     for b in filtered_files:
     
-        input_file = os.path.join(DEFAULT_RES_DIR, INPUT_DATE, b)
-        data = pd.read_csv(input_file, skiprows=5, names=NVPROF_HEADER)
-        header = pd.read_csv(input_file, skiprows=3, nrows=1)
-        start_unit = header.iloc[0, 0]
-        duration_unit = header.iloc[0, 1]
-        
-        # Keep only a subset of columns;
-        data = data[NVPROF_HEADER_FILTERED]
-        
-        # Remove rows with NaN Duration;
-        data = data.dropna(subset=["duration_ms"]).reset_index(drop=True)
-        
-        # Fix data transfer column;
-        data["transferred_data_byte"] = data["transferred_data_byte"].apply(lambda x: int(str(x).split(".")[0]) if not pd.isnull(x) else 0)
-        
-        # Convert start and duration from seconds to milliseconds;
-        if start_unit == "s":
-            data["start_ms"] *= 1000
-        elif start_unit == "us":
-            data["start_ms"] /= 1000
-        if duration_unit == "s":
-            data["duration_ms"] *= 1000
-        elif duration_unit == "us":
-            data["duration_ms"] /= 1000
-        
-        # Set the start of the computation equal to 0;
-        data["start_ms"] -= data["start_ms"].iloc[0]
-        
-        # Set the end of the computation;
-        data["end_ms"] = data["duration_ms"] + data["start_ms"]
-        
-        # Clean names of operations;
-        data["name"] = data["name"].replace({
-            "[Unified Memory Memcpy HtoD]": "htod",
-            "[Unified Memory Memcpy DtoH]": "dtoh"
-            })
-        
-        # Remove page faults;
-        data = data[data["name"] != "[Unified Memory GPU page faults]"].reset_index(drop=True)
-        data = data[data["name"] != "[Unified Memory page throttle]"].reset_index(drop=True)
-        
-        # Keep just the name of kernels;
-        data["name"] = data["name"].apply(lambda x: x.split("(")[0])
+        data = read_nvprof_log(os.path.join(DEFAULT_RES_DIR, INPUT_DATE, b))
         
         # 960
         # merge_dict = {"b1": 0.1, "b5": 0.1, "b6": 0.1, "b7": 0.1, "b8": 0.1, "b10": 0.1}
