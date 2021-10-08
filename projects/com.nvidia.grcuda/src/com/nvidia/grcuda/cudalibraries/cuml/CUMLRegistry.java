@@ -35,7 +35,6 @@
  */
 package com.nvidia.grcuda.cudalibraries.cuml;
 
-import static com.nvidia.grcuda.functions.Function.expectInt;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 
 import java.util.Arrays;

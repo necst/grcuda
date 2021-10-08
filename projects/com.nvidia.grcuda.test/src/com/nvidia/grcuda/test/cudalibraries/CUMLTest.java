@@ -95,6 +95,7 @@ public class CUMLTest {
                 } catch (Exception e) {
                     System.out.println("warning: failed to launch cuML, skipping test");
                     System.out.println(e.getMessage());
+                    System.out.println(e);
                     //e.printStackTrace(System.out);
                 }
             } catch (Exception e) {
