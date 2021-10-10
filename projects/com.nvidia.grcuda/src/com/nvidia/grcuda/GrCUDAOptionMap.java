@@ -32,39 +32,80 @@ package com.nvidia.grcuda;
 
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
+import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.TruffleObject;
 import org.graalvm.options.OptionKey;
 import org.graalvm.options.OptionValues;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 
 public class GrCUDAOptionMap implements TruffleObject {
 
-    private HashMap<OptionKey, Object> optionTypeKeyMap = new HashMap<>();
+    private HashMap<OptionKey<?>, Object> optionKeyValueMap;
+    private static final TruffleLogger LOGGER = TruffleLogger.getLogger(GrCUDALanguage.ID, "com.nvidia.grcuda.GrCUDAContext");
 
+    public GrCUDAOptionMap(){ optionKeyValueMap = new HashMap<>();}
 
     public GrCUDAOptionMap(OptionValues options) {
+        this();
 
-        // Retrieve if we should force array stream attachment;
-        optionTypeKeyMap.put(GrCUDAOptions.ForceStreamAttach,options.get(GrCUDAOptions.ForceStreamAttach));
+        List<OptionKey<?>> allOptions = GrCUDAOptions.getAll();
 
-        // Retrieve if we should prefetch input data to GPU;
-        optionTypeKeyMap.put(GrCUDAOptions.InputPrefetch,options.get(GrCUDAOptions.InputPrefetch));
+        allOptions.forEach(i -> optionKeyValueMap.put(i, options.get(i)));
+        // stream retrieval policy;
+        optionKeyValueMap.replace(GrCUDAOptions.RetrieveNewStreamPolicy, parseRetrieveStreamPolicy(options.get(GrCUDAOptions.RetrieveNewStreamPolicy)));
+        // how streams are obtained from parent computations;
+        optionKeyValueMap.replace(GrCUDAOptions.RetrieveParentStreamPolicy, parseParentStreamPolicy(options.get(GrCUDAOptions.RetrieveParentStreamPolicy)));
+        // dependency computation policy;
+        DependencyPolicyEnum dependencyPolicy = (DependencyPolicyEnum) optionKeyValueMap.replace(GrCUDAOptions.DependencyPolicy, parseDependencyPolicy(options.get(GrCUDAOptions.DependencyPolicy)));
+        LOGGER.fine("using " + dependencyPolicy.getName() + " dependency policy");
+        // execution policy;
+        optionKeyValueMap.replace(GrCUDAOptions.ExecutionPolicy, parseExecutionPolicy(options.get(GrCUDAOptions.ExecutionPolicy)));
+    }
 
-        // See if we allow the use of multiple GPUs in the system;
-        optionTypeKeyMap.put(GrCUDAOptions.EnableMultiGPU,options.get(GrCUDAOptions.EnableMultiGPU));
+    public HashMap<OptionKey<?>, Object> getAllRuntime(){return new HashMap<>(optionKeyValueMap);}
 
-        // Retrieve the stream retrieval policy;
-        optionTypeKeyMap.put(GrCUDAOptions.RetrieveNewStreamPolicy,options.get(GrCUDAOptions.RetrieveNewStreamPolicy));
+    public Object getValueRuntime(OptionKey key){
+        return optionKeyValueMap.get(key);
+    }
 
-        // Retrieve how streams are obtained from parent computations;
-        optionTypeKeyMap.put(GrCUDAOptions.RetrieveParentStreamPolicy,options.get(GrCUDAOptions.RetrieveParentStreamPolicy));
+    private static ExecutionPolicyEnum parseExecutionPolicy(String policyString) {
+        if (policyString.equals(ExecutionPolicyEnum.SYNC.getName())) return ExecutionPolicyEnum.SYNC;
+        else if (policyString.equals(ExecutionPolicyEnum.ASYNC.getName())) return ExecutionPolicyEnum.ASYNC;
+        else {
+            LOGGER.warning("unknown execution policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_EXECUTION_POLICY);
+            return GrCUDAContext.DEFAULT_EXECUTION_POLICY;
+        }
+    }
 
-        // Retrieve the dependency computation policy;
-        optionTypeKeyMap.put(GrCUDAOptions.DependencyPolicy,options.get(GrCUDAOptions.DependencyPolicy));
+    private static DependencyPolicyEnum parseDependencyPolicy(String policyString) {
+        if (policyString.equals(DependencyPolicyEnum.WITH_CONST.getName())) return DependencyPolicyEnum.WITH_CONST;
+        else if (policyString.equals(DependencyPolicyEnum.NO_CONST.getName())) return DependencyPolicyEnum.NO_CONST;
+        else {
+            LOGGER.warning("Warning: unknown dependency policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_DEPENDENCY_POLICY);
+            return GrCUDAContext.DEFAULT_DEPENDENCY_POLICY;
+        }
+    }
 
-        // Retrieve the execution policy;
-        optionTypeKeyMap.put(GrCUDAOptions.ExecutionPolicy,options.get(GrCUDAOptions.ExecutionPolicy));
+    private static RetrieveNewStreamPolicyEnum parseRetrieveStreamPolicy(String policyString) {
+        if (policyString.equals(RetrieveNewStreamPolicyEnum.FIFO.getName())) return RetrieveNewStreamPolicyEnum.FIFO;
+        else if (policyString.equals(RetrieveNewStreamPolicyEnum.ALWAYS_NEW.getName())) return RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
+        else {
+            LOGGER.warning("Warning: unknown new stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY);
+            return GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY;
+        }
+    }
 
+    private static RetrieveParentStreamPolicyEnum parseParentStreamPolicy(String policyString) {
+        if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT.getName())) return RetrieveParentStreamPolicyEnum.DISJOINT;
+        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT.getName())) return RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
+        else {
+            LOGGER.warning("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY);
+            return GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY;
+        }
     }
 }
