@@ -83,54 +83,38 @@ public final class GrCUDAContext {
 
     private static final TruffleLogger LOGGER = TruffleLogger.getLogger(GrCUDALanguage.ID, "com.nvidia.grcuda.GrCUDAContext");
 
+    private GrCUDAOptionMap grCUDAOptionMap;
+
     private final Env env;
     private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
     private final Namespace rootNamespace;
     private final ArrayList<Runnable> disposables = new ArrayList<>();
     private final AtomicInteger moduleId = new AtomicInteger(0);
     private volatile boolean cudaInitialized = false;
-    private final RetrieveNewStreamPolicyEnum retrieveNewStreamPolicy;
-    private final RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum;
-    private final boolean forceStreamAttach;
-    private final boolean inputPrefetch;
-    private final boolean enableMultiGPU;
 
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
     private final ConcurrentHashMap<Class<?>, CallTarget> uncachedMapCallTargets = new ConcurrentHashMap<>();
 
     public GrCUDAContext(Env env) {
         this.env = env;
-        
-        // Retrieve if we should force array stream attachment;
-        forceStreamAttach = env.getOptions().get(GrCUDAOptions.ForceStreamAttach);
 
-        // Retrieve if we should prefetch input data to GPU;
-        inputPrefetch = env.getOptions().get(GrCUDAOptions.InputPrefetch);
-
-        // See if we allow the use of multiple GPUs in the system;
-        enableMultiGPU = env.getOptions().get(GrCUDAOptions.EnableMultiGPU);
-
-        // Retrieve the stream retrieval policy;
-        retrieveNewStreamPolicy = parseRetrieveStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveNewStreamPolicy));
-        
-        // Retrieve how streams are obtained from parent computations;
-        retrieveParentStreamPolicyEnum = parseParentStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveParentStreamPolicy));
+        this.grCUDAOptionMap = new GrCUDAOptionMap(env.getOptions());
 
         // Retrieve the dependency computation policy;
-        DependencyPolicyEnum dependencyPolicy = parseDependencyPolicy(env.getOptions().get(GrCUDAOptions.DependencyPolicy));
-        LOGGER.fine("using " + dependencyPolicy.getName() + " dependency policy");
+        DependencyPolicyEnum dependencyPolicy = (DependencyPolicyEnum) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.DependencyPolicy);
 
         // Retrieve the execution policy;
-        ExecutionPolicyEnum executionPolicy = parseExecutionPolicy(env.getOptions().get(GrCUDAOptions.ExecutionPolicy));
-        
-        
+        ExecutionPolicyEnum executionPolicy = (ExecutionPolicyEnum) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.ExecutionPolicy);
+
         // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it. 
         //  Once Nvidia adds support for it, we want to remove this limitation;
         if (this.getOption(GrCUDAOptions.TensorRTEnabled) && executionPolicy == ExecutionPolicyEnum.ASYNC) {
             LOGGER.warning("TensorRT and the asynchronous scheduler are not compatible. Switching to the synchronous scheduler.");
             executionPolicy = ExecutionPolicyEnum.SYNC;
         }
-        
+
+        Boolean inputPrefetch = (Boolean) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.InputPrefetch);
+
         // Initialize the execution policy;
         LOGGER.fine("using" + executionPolicy.getName() + " execution policy");
         switch (executionPolicy) {
@@ -221,19 +205,19 @@ public final class GrCUDAContext {
     }
 
     public RetrieveNewStreamPolicyEnum getRetrieveNewStreamPolicy() {
-        return retrieveNewStreamPolicy;
+        return (RetrieveNewStreamPolicyEnum) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.RetrieveNewStreamPolicy);
     }
     
     public RetrieveParentStreamPolicyEnum getRetrieveParentStreamPolicyEnum() {
-        return retrieveParentStreamPolicyEnum;
+        return (RetrieveParentStreamPolicyEnum) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.RetrieveParentStreamPolicy);
     }
 
     public boolean isForceStreamAttach() {
-        return forceStreamAttach;
+        return (Boolean) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.ForceStreamAttach);
     }
 
     public boolean isEnableMultiGPU() {
-        return enableMultiGPU;
+        return (Boolean) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.EnableMultiGPU);
     }
 
     /**
@@ -248,42 +232,6 @@ public final class GrCUDAContext {
     @TruffleBoundary
     public <T> T getOption(OptionKey<T> key) {
         return env.getOptions().get(key);
-    }
-
-    private static ExecutionPolicyEnum parseExecutionPolicy(String policyString) {
-        if (policyString.equals(ExecutionPolicyEnum.SYNC.getName())) return ExecutionPolicyEnum.SYNC;
-        else if (policyString.equals(ExecutionPolicyEnum.ASYNC.getName())) return ExecutionPolicyEnum.ASYNC;
-        else {
-            LOGGER.warning("unknown execution policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_EXECUTION_POLICY);
-            return GrCUDAContext.DEFAULT_EXECUTION_POLICY;
-        }
-    }
-
-    private static DependencyPolicyEnum parseDependencyPolicy(String policyString) {
-        if (policyString.equals(DependencyPolicyEnum.WITH_CONST.getName())) return DependencyPolicyEnum.WITH_CONST;
-        else if (policyString.equals(DependencyPolicyEnum.NO_CONST.getName())) return DependencyPolicyEnum.NO_CONST;
-        else {
-            LOGGER.warning("Warning: unknown dependency policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_DEPENDENCY_POLICY);
-            return GrCUDAContext.DEFAULT_DEPENDENCY_POLICY;
-        }
-    }
-
-    private static RetrieveNewStreamPolicyEnum parseRetrieveStreamPolicy(String policyString) {
-        if (policyString.equals(RetrieveNewStreamPolicyEnum.FIFO.getName())) return RetrieveNewStreamPolicyEnum.FIFO;
-        else if (policyString.equals(RetrieveNewStreamPolicyEnum.ALWAYS_NEW.getName())) return RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
-        else {
-            LOGGER.warning("Warning: unknown new stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY);
-            return GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY;
-        }
-    }
-
-    private static RetrieveParentStreamPolicyEnum parseParentStreamPolicy(String policyString) {
-        if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT.getName())) return RetrieveParentStreamPolicyEnum.DISJOINT;
-        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT.getName())) return RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
-        else {
-            LOGGER.warning("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY);
-            return GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY;
-        }
     }
 
     /**
