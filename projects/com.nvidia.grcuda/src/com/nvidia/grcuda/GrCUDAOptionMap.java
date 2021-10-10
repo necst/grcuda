@@ -30,8 +30,41 @@
  */
 package com.nvidia.grcuda;
 
+import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.oracle.truffle.api.interop.TruffleObject;
+import org.graalvm.options.OptionKey;
+import org.graalvm.options.OptionValues;
+
+import java.util.HashMap;
 
 public class GrCUDAOptionMap implements TruffleObject {
 
+    private HashMap<OptionKey, Object> optionTypeKeyMap = new HashMap<>();
+
+
+    public GrCUDAOptionMap(OptionValues options) {
+
+        // Retrieve if we should force array stream attachment;
+        optionTypeKeyMap.put(GrCUDAOptions.ForceStreamAttach,options.get(GrCUDAOptions.ForceStreamAttach));
+
+        // Retrieve if we should prefetch input data to GPU;
+        optionTypeKeyMap.put(GrCUDAOptions.InputPrefetch,options.get(GrCUDAOptions.InputPrefetch));
+
+        // See if we allow the use of multiple GPUs in the system;
+        optionTypeKeyMap.put(GrCUDAOptions.EnableMultiGPU,options.get(GrCUDAOptions.EnableMultiGPU));
+
+        // Retrieve the stream retrieval policy;
+        optionTypeKeyMap.put(GrCUDAOptions.RetrieveNewStreamPolicy,options.get(GrCUDAOptions.RetrieveNewStreamPolicy));
+
+        // Retrieve how streams are obtained from parent computations;
+        optionTypeKeyMap.put(GrCUDAOptions.RetrieveParentStreamPolicy,options.get(GrCUDAOptions.RetrieveParentStreamPolicy));
+
+        // Retrieve the dependency computation policy;
+        optionTypeKeyMap.put(GrCUDAOptions.DependencyPolicy,options.get(GrCUDAOptions.DependencyPolicy));
+
+        // Retrieve the execution policy;
+        optionTypeKeyMap.put(GrCUDAOptions.ExecutionPolicy,options.get(GrCUDAOptions.ExecutionPolicy));
+
+    }
 }
