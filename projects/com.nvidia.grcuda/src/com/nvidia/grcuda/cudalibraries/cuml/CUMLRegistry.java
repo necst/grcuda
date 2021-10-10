@@ -134,7 +134,7 @@ public class CUMLRegistry {
                         checkCUMLReturnCode(result, "cumlSetStream");
                         return result;
                     } catch (InteropException e) {
-                        CompilerDirectives.transferToInterpreter();
+                        CompilerDirectives.transferToInterpreter(); // controllare se serve
                         throw new GrCUDAInternalException(e);
                     }
                 }
@@ -186,7 +186,7 @@ public class CUMLRegistry {
     public void registerCUMLFunctions(Namespace namespace) {
         // Create function wrappers (decorators for all functions except handle con- and
         // destruction)
-        List<CUMLFunctionNFI> hiddenFunctions = Arrays.asList(CUMLFunctionNFI.CUML_CUMLCREATE, CUMLFunctionNFI.CUML_CUMLDESTROY);
+        List<CUMLFunctionNFI> hiddenFunctions = Arrays.asList(CUMLFunctionNFI.CUML_CUMLCREATE, CUMLFunctionNFI.CUML_CUMLDESTROY, CUMLFunctionNFI.CUML_CUMLSETSTREAM);
         EnumSet.allOf(CUMLFunctionNFI.class).stream().filter(func -> !hiddenFunctions.contains(func)).forEach(func -> {
             final ExternalFunctionFactory factory = func.getFunctionFactory();
             final Function wrapperFunction = new CUDALibraryFunction(factory.getName(), factory.getNFISignature()) {
@@ -205,7 +205,7 @@ public class CUMLRegistry {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
-                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cumlSetStreamFunction, this.createComputationArgumentWithValueList(arguments, (long) cumlHandle)).schedule();
+                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cumlSetStreamFunction, this.createComputationArgumentWithValueList(arguments, cumlHandle)).schedule();
                         checkCUMLReturnCode(result, nfiFunction.getName());
                         return result;
                     } catch (InteropException e) {
@@ -249,8 +249,8 @@ public class CUMLRegistry {
         CUML_CUMLCREATE(new ExternalFunctionFactory("cumlCreate", "cumlCreate", "(pointer): sint32")),
         CUML_CUMLDESTROY(new ExternalFunctionFactory("cumlDestroy", "cumlDestroy", "(sint64): sint32")),
         CUML_CUMLSETSTREAM(new ExternalFunctionFactory("cumlSetStream", "cumlSetStream", "(sint64, sint64): sint32")),
-        CUML_DBSCANFITDOUBLE(new ExternalFunctionFactory("cumlDpDbscanFit", "cumlDpDbscanFit", "(sint32, pointer, sint32, sint32, double, sint32, pointer, uint64, sint32): sint32")),
-        CUML_DBSCANFITFLOAT(new ExternalFunctionFactory("cumlSpDbscanFit", "cumlSpDbscanFit", "(sint32, pointer, sint32, sint32, float, sint32, pointer, uint64, sint32): sint32"));
+        CUML_DBSCANFITDOUBLE(new ExternalFunctionFactory("cumlDpDbscanFit", "cumlDpDbscanFit", "(sint64, pointer, sint32, sint32, double, sint32, pointer, uint64, sint32): sint32")),
+        CUML_DBSCANFITFLOAT(new ExternalFunctionFactory("cumlSpDbscanFit", "cumlSpDbscanFit", "(sint64, pointer, sint32, sint32, float, sint32, pointer, uint64, sint32): sint32"));
 
         private final ExternalFunctionFactory factory;
 
