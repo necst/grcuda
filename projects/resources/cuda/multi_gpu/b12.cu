@@ -79,6 +79,7 @@ __global__ void spmv(const int *x, const int *y, const float *val, const float *
     }
 }
 
+
 __inline__ __device__ float warp_reduce(float val) {
     int warp_size = 32;
     for (int offset = warp_size / 2; offset > 0; offset /= 2)
@@ -110,8 +111,7 @@ __global__ void dot_product(const float *x, const float *y, float *z, int N, int
         atomicAdd(z, sum); // The first thread in the warp updates the output;
 }
 
-__global__ void
-axpb_xtended(const float alpha, const float *x, const float *b, const float beta, const float *c, float *out,
+__global__ void axpb_xtended(const float alpha, const float *x, const float *b, const float beta, const float *c, float *out,
              const int N, const int offset_x, const int offset_c) {
     int init = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
@@ -237,6 +237,9 @@ void Benchmark12::create_random_matrix(bool normalize = true) {
 
 void Benchmark12::alloc() {
 
+    cudaMallocManaged(&(this->alpha_device), sizeof(f32));
+    cudaMallocManaged(&(this->beta_device), sizeof(f32));
+
     if (this->matrix_path.empty())
         this->create_random_matrix();
 
@@ -252,10 +255,28 @@ void Benchmark12::alloc() {
 }
 
 void Benchmark12::reset() {
+    // std::cout << "Called reset" << std::endl;
     // Just call init, it resets all the necessary vectors;
     this->init();
-    // this->tridiagonal_matrix.clear();
 
+    for (u32 i = 0; i < this->num_gpus; ++i) {
+        const auto *partition = this->coo_partitions[i];
+        for (u32 j = 0; j < partition->N; ++j) {
+            this->spmv_vec_out[i][j] = 0.0f;
+        }
+    }
+
+    // std::cout << "reset end" << std::endl;
+
+    this->tridiagonal_matrix.clear();
+
+}
+
+void Benchmark12::sync_all() {
+    for (u32 i = 0; i < this->num_gpus; ++i) {
+        CUDA_CHECK_ERROR(cudaSetDevice(i));
+        CUDA_CHECK_ERROR(cudaDeviceSynchronize());
+    }
 }
 
 void Benchmark12::create_streams() {
@@ -277,23 +298,19 @@ void Benchmark12::launch_multi_kernel(Function kernel_launch_function) {
 
     for (u32 i = 0; i < this->num_gpus; ++i) {
         CUDA_CHECK_ERROR(cudaSetDevice(i));
-        cudaStream_t stream = policy == Policy::Sync ? nullptr : streams[i];
+        cudaStream_t stream = policy == Policy::Sync ? nullptr : streams[i < this->num_gpus ? i : (this->num_gpus - 1)];
         kernel_launch_function(i, stream);
 
         if (policy == Policy::Sync)
-            cudaDeviceSynchronize();
+            this->sync_all();
     }
 
 }
 
 void Benchmark12::execute(i32 iter) {
 
-
-    f32 *alpha;
-    f32 *beta;
-
-    cudaMallocManaged(&alpha, sizeof(f32));
-    cudaMallocManaged(&beta, sizeof(f32));
+    f32 alpha;
+    f32 beta;
 
     if (this->debug) {
         std::cout << "[LANCZOS] Iteration " << iter << std::endl;
@@ -301,6 +318,7 @@ void Benchmark12::execute(i32 iter) {
 
 
     this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+        // std::cout << "spmv 0th begin" << std::endl;
         spmv<<<this->num_blocks, this->block_size, 0, stream>>>(
                 this->coo_partitions[p_idx]->x,
                 this->coo_partitions[p_idx]->y,
@@ -309,28 +327,32 @@ void Benchmark12::execute(i32 iter) {
                 this->spmv_vec_out[p_idx],
                 this->coo_partitions[p_idx]->nnz
         );
+        // std::cout << "spmv 0th end" << std::endl;
 
 
     });
 
     this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
-
+        // std::cout << "dot_product 0th" << std::endl;
+        *alpha_device = 0.0f;
         dot_product<<<this->num_blocks, this->block_size>>>(
-                this->vec_in[p_idx],
                 this->spmv_vec_out[p_idx],
-                alpha,
+                this->vec_in[p_idx],
+                alpha_device,
                 this->coo_partitions[p_idx]->N,
                 this->offsets[p_idx]
         );
+        // std::cout << "Dot product end" << std::endl;
     });
 
-    cudaDeviceSynchronize();
-
-    this->tridiagonal_matrix.push_back(*alpha);
-
-    this->launch_multi_kernel([&, alpha](u32 p_idx, cudaStream_t stream) {
+    this->sync_all();
+    cudaMemcpy(&alpha, alpha_device, sizeof(f32), cudaMemcpyDeviceToHost);
+    this->tridiagonal_matrix.push_back(alpha);
+    // std::cout << alpha << std::endl;
+    this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+        // std::cout << "axpb_xtedned 0th" << std::endl;
         axpb_xtended<<<this->num_blocks, this->block_size, 0, stream>>>(
-                -(*alpha),
+                -alpha,
                 this->vec_in[p_idx],
                 this->spmv_vec_out[p_idx],
                 0,
@@ -345,43 +367,45 @@ void Benchmark12::execute(i32 iter) {
     for (u32 i = 0; i < this->num_eigencomponents; ++i) {
 
         this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
-
+            // std::cout << "l2_norm" << std::endl;
             l2_norm_b12<<<this->num_blocks, this->block_size>>>(
-                this->vec_next[p_idx],
-                beta,
-                this->coo_partitions[p_idx]->N,
-                0
+                    this->vec_next[p_idx],
+                    beta_device,
+                    this->coo_partitions[p_idx]->N,
+                    0
             );
 
-            cudaDeviceSynchronize();
-            *beta = std::sqrt(*beta);
-
+            this->sync_all();
+            cudaMemcpy(&beta, beta_device, sizeof(f32), cudaMemcpyDeviceToHost);
+            beta = std::sqrt(beta);
         });
 
 
-        this->tridiagonal_matrix.push_back(*beta);
+        this->tridiagonal_matrix.push_back(beta);
 
-        this->launch_multi_kernel([&, beta](u32 p_idx, cudaStream_t stream) {
+        this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+            // std::cout << "normalize" << std::endl;
             normalize<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->vec_next[p_idx],
-                    1.0f / (*beta),
+                    1.0f / (beta),
                     this->normalized_out[p_idx],
                     this->coo_partitions[p_idx]->N
             );
         });
 
         this->launch_multi_kernel([&, i](u32 p_idx, cudaStream_t stream) {
+            // std::cout << "copy_partition_to_vec" << std::endl;
             copy_partition_to_vec<<<this->num_blocks, this->block_size>>>(
                     this->vec_in[p_idx],
                     this->lanczos_vectors[p_idx],
                     this->coo_partitions[p_idx]->N,
                     this->coo_partitions[p_idx]->N * (i - 1),
-                    this->offsets[p_idx]
+                    this->coo_partitions[p_idx]->N
             );
         });
 
         for (u32 j = 0; j < this->num_gpus; ++j) {
-
+            // std::cout << "copy_partition_to_vec -> in loop" << std::endl;
             this->launch_multi_kernel([&, i](u32 p_idx, cudaStream_t stream) {
                 copy_partition_to_vec<<<this->num_blocks, this->block_size>>>(
                         this->normalized_out[p_idx],
@@ -398,6 +422,7 @@ void Benchmark12::execute(i32 iter) {
         }
 
         this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+            // std::cout << "spmv" << std::endl;
             spmv<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->coo_partitions[p_idx]->x,
                     this->coo_partitions[p_idx]->y,
@@ -409,38 +434,28 @@ void Benchmark12::execute(i32 iter) {
         });
 
         this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
-            /*dot_product_stage_one<<<DOT_PRODUCT_NUM_BLOCKS, this->block_size * (this->num_blocks / DOT_PRODUCT_NUM_BLOCKS), 0, stream>>>(
-                    this->vec_in[p_idx],
-                    this->spmv_vec_out[p_idx],
-                    this->intermediate_dot_product_values[p_idx],
-                    this->coo_partitions[p_idx]->N,
-                    this->offsets[p_idx]
-            );
-            dot_product_stage_two<<<1, 32, 0, stream>>>(
-                    this->intermediate_dot_product_values[p_idx],
-                    &this->alpha_intermediate[p_idx]
-            );*/
+            // std::cout << "dot_product" << std::endl;
+            *this->alpha_device = 0.0f;
             dot_product<<<this->num_blocks, this->block_size>>>(
-                    this->vec_in[p_idx],
                     this->spmv_vec_out[p_idx],
-                    alpha,
+                    this->vec_in[p_idx],
+                    this->alpha_device,
                     this->coo_partitions[p_idx]->N,
                     this->offsets[p_idx]
             );
         });
+        this->sync_all();
+        cudaMemcpy(&alpha, this->alpha_device, sizeof(f32), cudaMemcpyDeviceToHost);
+        tridiagonal_matrix.push_back(alpha);
 
 
-        tridiagonal_matrix.push_back(*alpha);
-
-        cudaDeviceSynchronize();
-
-        this->launch_multi_kernel([&, alpha, beta, i](u32 p_idx, cudaStream_t stream) {
-
+        this->launch_multi_kernel([&, i](u32 p_idx, cudaStream_t stream) {
+            // std::cout << "axpb_xtended" << std::endl;
             axpb_xtended<<<this->num_blocks, this->block_size, 0, stream>>>(
-                    -(*alpha),
+                    -(alpha),
                     this->vec_in[p_idx],
                     this->spmv_vec_out[p_idx],
-                    -(*beta),
+                    -(beta),
                     this->lanczos_vectors[p_idx],
                     this->vec_next[p_idx],
                     this->coo_partitions[p_idx]->N,
@@ -454,32 +469,23 @@ void Benchmark12::execute(i32 iter) {
 
             for (u32 j = 0; j < i; ++j) {
                 this->launch_multi_kernel([&, j](u32 p_idx, cudaStream_t stream) {
-                    /*    dot_product_stage_one<<<DOT_PRODUCT_NUM_BLOCKS, this->block_size * (this->num_blocks / DOT_PRODUCT_NUM_BLOCKS), 0, stream>>>(
-                                this->vec_next[p_idx],
-                                this->lanczos_vectors[p_idx],
-                                this->intermediate_dot_product_values[p_idx],
-                                this->coo_partitions[p_idx]->N,
-                                this->offsets[p_idx] * j
-                        );
-                        dot_product_stage_two<<<1, 32, 0, stream>>>(
-                                this->intermediate_dot_product_values[p_idx],
-                                &this->alpha_intermediate[p_idx]
-                        );*/
 
                     dot_product<<<this->num_blocks, this->block_size>>>(
                             this->vec_next[p_idx],
                             this->lanczos_vectors[p_idx],
-                            alpha,
+                            this->alpha_device,
                             this->coo_partitions[p_idx]->N,
                             this->offsets[p_idx] * j
                     );
                 });
+                this->sync_all();
+                cudaMemcpy(&alpha, this->alpha_device, sizeof(f32), cudaMemcpyDeviceToHost);
 
-                this->launch_multi_kernel([&, alpha](u32 p_idx, cudaStream_t stream) {
+                this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
                     subtract<<<this->num_blocks, this->block_size, 0, stream>>>(
                             this->vec_next[p_idx],
                             this->lanczos_vectors[p_idx],
-                            *alpha,
+                            alpha,
                             this->coo_partitions[p_idx]->N,
                             this->coo_partitions[p_idx]->N
                     );
@@ -489,7 +495,7 @@ void Benchmark12::execute(i32 iter) {
 
         }
 
-        cudaDeviceSynchronize();
+        this->sync_all();
 
     }
 
@@ -528,7 +534,7 @@ void Benchmark12::init() {
 
     // copy it to the other vectors
     for (u32 i = 1; i < this->num_gpus; ++i) {
-        cudaMemcpy(this->vec_in[i], this->vec_in[0], this->matrix.N, cudaMemcpyHostToHost);
+        cudaMemcpy(this->vec_in[i], this->vec_in[0], this->matrix.N * sizeof(f32), cudaMemcpyHostToHost);
     }
 
     // Initialize the other vectors that get
@@ -545,6 +551,8 @@ void Benchmark12::init() {
 
     }
 
+    *alpha_device = 0.0f;
+    *beta_device = 0.0f;
 
 }
 

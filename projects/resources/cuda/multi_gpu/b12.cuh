@@ -40,9 +40,6 @@
 #include "../benchmark.cuh"
 #include "../mmio.hpp"
 
-#define RANDOM_MATRIX_NUM_ROWS 10000000
-#define RANDOM_MATRIX_AVG_NNZ_PER_ROW 10
-
 using f32 = float;
 using u32 = unsigned;
 using f64 = double;
@@ -91,13 +88,14 @@ public:
 
 private:
 
-    unsigned num_eigencomponents = 16;
+    unsigned num_eigencomponents = 8;
     i32 num_gpus = -1;
     std::string matrix_path;
-    bool reorthogonalize = true;
+    bool reorthogonalize = false;
     i32 block_size;
     coo_matrix_t matrix;
     std::vector<coo_matrix_t*> coo_partitions;
+    f32 *alpha_device, *beta_device;
     std::vector<float*> vec_in, spmv_vec_out, intermediate_dot_product_values,  vec_next, lanczos_vectors, normalized_out;
     float *alpha_intermediate, *beta_intermediate;
     std::vector<cudaStream_t> streams;
@@ -109,13 +107,15 @@ private:
     void alloc_vectors();
     void create_random_matrix(bool);
     void execute(i32);
+    void sync_all();
     void create_streams();
     coo_matrix_t *assign_partition(unsigned, unsigned, unsigned);
 
     template<typename Function>
     void launch_multi_kernel(Function);
 
-
+    static constexpr u32 RANDOM_MATRIX_NUM_ROWS = 1000000;
+    static constexpr u32 RANDOM_MATRIX_AVG_NNZ_PER_ROW = 100;
 
 };
 
