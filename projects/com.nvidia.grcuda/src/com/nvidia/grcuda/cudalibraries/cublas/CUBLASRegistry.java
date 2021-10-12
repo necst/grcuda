@@ -174,7 +174,8 @@ public class CUBLASRegistry {
     }
 
     public void registerCUBLASFunctions(Namespace namespace) {
-        // Create function wrappers (decorators for all functions except handle con- and destruction);
+        // Create function wrappers (decorators for all functions except handle con- and
+        // destruction);
         for (ExternalFunctionFactory factory : functions) {
             final Function wrapperFunction = new CUDALibraryFunction(factory.getName(), factory.getNFISignature()) {
 
@@ -192,7 +193,8 @@ public class CUBLASRegistry {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
-                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cublasSetStreamFunction, this.createComputationArgumentWithValueList(arguments, cublasHandle)).schedule();
+                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cublasSetStreamFunction,
+                                        this.createComputationArgumentWithValueList(arguments, cublasHandle)).schedule();
                         checkCUBLASReturnCode(result, nfiFunction.getName());
                         return result;
                     } catch (InteropException e) {
@@ -246,7 +248,7 @@ public class CUBLASRegistry {
 
     private static final ExternalFunctionFactory CUBLAS_CUBLASCREATE = new ExternalFunctionFactory("cublasCreate", "cublasCreate_v2", "(pointer): sint32");
     private static final ExternalFunctionFactory CUBLAS_CUBLASDESTROY = new ExternalFunctionFactory("cublasDestroy", "cublasDestroy_v2", "(sint64): sint32");
-    private static final ExternalFunctionFactory CUBLAS_CUBLASSETSTREAM = new ExternalFunctionFactory("cublasSetStream", "cublasSetStream_v2","(sint64, sint64): sint32");
+    private static final ExternalFunctionFactory CUBLAS_CUBLASSETSTREAM = new ExternalFunctionFactory("cublasSetStream", "cublasSetStream_v2", "(sint64, sint64): sint32");
 
     private static final ArrayList<ExternalFunctionFactory> functions = new ArrayList<>();
 

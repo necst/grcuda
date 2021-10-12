@@ -6,18 +6,22 @@ import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
+/**
+ * Class of functions to manage streams in the CUML library
+ */
+
 public class CUMLSetStreamFunction extends LibrarySetStreamFunction {
 
-    private long handle;
+    private final long handle;
 
     public CUMLSetStreamFunction(String name, Function setStreamFunctionNFI, long handle) {
         super(name, setStreamFunctionNFI);
-        this.handle=handle;
+        this.handle = handle;
     }
 
     @Override
     public void setStream(CUDAStream stream) {
-        Object[] cumlSetStreamArgs = {this.handle, stream.getRawPointer()}; // non devo richiedere streamID?
+        Object[] cumlSetStreamArgs = {this.handle, stream.getRawPointer()};
         try {
             INTEROP.execute(this.setStreamFunctionNFI, cumlSetStreamArgs);
         } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {

@@ -6,15 +6,17 @@ import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
-import java.util.stream.Stream;
+/**
+ * Class of functions to manage streams in the CUBLAS library
+ */
 
 public class CUBLASSetStreamFunction extends LibrarySetStreamFunction {
 
-    private long handle;
+    private final long handle;
 
     public CUBLASSetStreamFunction(String name, Function setStreamFunctionNFI, long handle) {
         super(name, setStreamFunctionNFI);
-        this.handle=handle;
+        this.handle = handle;
     }
 
     @Override

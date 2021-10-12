@@ -63,11 +63,9 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
     }
 
     @Override
-    public boolean canUseStream() { return true; }
-
-    // TODO: See note in parent class;
-//    @Override
-//    public boolean mustUseDefaultStream() { return true; }
+    public boolean canUseStream() {
+        return true;
+    }
 
     @Override
     public Object execute() throws UnsupportedTypeException {
@@ -77,7 +75,7 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
             this.setStreamFunctionNFI.setStream(this.getStream());
             result = INTEROP.execute(this.nfiFunction, this.argsWithHandle);
         } catch (ArityException | UnsupportedMessageException e) {
-            System.out.println("error in execution of the function"); // questa è la stessa anche per cuML vero?
+            System.out.println("error in execution of the function");
             e.printStackTrace();
         }
         // Synchronize only the default stream;
@@ -96,7 +94,8 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
         public List<ComputationArgumentWithValue> initialize() {
             // Consider only arrays as dependencies;
             // FIXME: should the library handle be considered a dependency?
-            //  The CUDA documentation is not clear on whether you can have concurrent computations with the same handle;
+            // The CUDA documentation is not clear on whether you can have concurrent computations
+            // with the same handle;
             return this.args.stream().filter(ComputationArgument::isArray).collect(Collectors.toList());
         }
     }

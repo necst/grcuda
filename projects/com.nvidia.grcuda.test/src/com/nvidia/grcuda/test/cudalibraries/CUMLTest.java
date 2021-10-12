@@ -41,7 +41,6 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeNoException;
 
 @RunWith(Parameterized.class)
@@ -94,9 +93,6 @@ public class CUMLTest {
                     CUBLASTest.assertOutputVectorIsCorrect(numRows, labels, (Integer i) -> i / 10, this.typeChar);
                 } catch (Exception e) {
                     System.out.println("warning: failed to launch cuML, skipping test");
-                    //System.out.println(e.getMessage());
-                    //System.out.println(e);
-                    //ge.printStackTrace(System.out);
                 }
             } catch (Exception e) {
                 System.out.println("warning: cuML not enabled, skipping test");
