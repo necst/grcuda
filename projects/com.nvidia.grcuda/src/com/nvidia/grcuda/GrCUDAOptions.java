@@ -92,21 +92,4 @@ public final class GrCUDAOptions {
     @Option(category = OptionCategory.USER, help = "Set the location of the TensorRT library.", stability = OptionStability.STABLE) //
     public static final OptionKey<String> TensorRTLibrary = new OptionKey<>(TensorRTRegistry.DEFAULT_LIBRARY);
 
-    public static List<OptionKey<?>> getAll(){
-        List<OptionKey<?>> allOptions = new ArrayList<OptionKey<?>>();
-        allOptions.add(CuBLASEnabled);
-        allOptions.add(CuBLASLibrary);
-        allOptions.add(CuMLEnabled);
-        allOptions.add(CuMLLibrary);
-        allOptions.add(ExecutionPolicy);
-        allOptions.add(DependencyPolicy);
-        allOptions.add(RetrieveNewStreamPolicy);
-        allOptions.add(RetrieveParentStreamPolicy);
-        allOptions.add(ForceStreamAttach);
-        allOptions.add(InputPrefetch);
-        allOptions.add(EnableMultiGPU);
-        allOptions.add(TensorRTEnabled);
-        allOptions.add(TensorRTLibrary);
-        return allOptions;
-    }
 }
