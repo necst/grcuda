@@ -47,7 +47,6 @@ class Lanczos {
         this.numEigen = numEigen
         this.reorthogonalize = reorthogonalize
         this.numPartitions = numPartitions
-
     }
 
 
@@ -207,10 +206,20 @@ class Lanczos {
         const STORE_AND_RESET = this.cu.buildkernel(kernelsDef.STORE_AND_RESET, "store_and_reset", "const pointer, pointer, pointer, sint32, sint32")
         const SUBTRACT = this.cu.buildkernel(kernelsDef.SUBTRACT, "subtract", "pointer, const pointer, float, const sint32, const sint32")
         const COPY_PARTITION_TO_VEC = this.cu.buildkernel(kernelsDef.COPY_PARTITION_TO_VEC, "copy_partition_to_vec", "const pointer, pointer, const sint32, const sint32, const sint32")
-
+        const DOT_PRODUCT = this.cu.buildkernel(kernelsDef.DOT_PRODUCT, "dot_product", "const pointer, const pointer, pointer, sint32, sint32")
+        const L2_NORM = this.cu.buildkernel(kernelsDef.L2_NORM, "l2_norm", "const pointer, pointer, sint32, sint32")
 
         this.kernels = {
-            SPMV, DOT_PRODUCT_STAGE_ONE, DOT_PRODUCT_STAGE_TWO, AXPB_XTENDED, NORMALIZE, STORE_AND_RESET, SUBTRACT, COPY_PARTITION_TO_VEC
+            SPMV,
+            DOT_PRODUCT_STAGE_ONE,
+            DOT_PRODUCT_STAGE_TWO,
+            AXPB_XTENDED,
+            NORMALIZE,
+            STORE_AND_RESET,
+            SUBTRACT,
+            COPY_PARTITION_TO_VEC,
+            DOT_PRODUCT,
+            L2_NORM
         }
     }
 
@@ -265,6 +274,12 @@ class Lanczos {
 
 
         this._launchPartitionKernel(
+            "DOT_PRODUCT",
+            DEFAULT_KERNEL_CONFIG,
+            [this.deviceVecOutSpmv, this.deviceVecIn, this.deviceIntermediateDotProductValues, Ns, offsets]
+        )
+    /*
+        this._launchPartitionKernel(
             "DOT_PRODUCT_STAGE_ONE",
             [...DEFAULT_KERNEL_CONFIG, 4 * THREADS_PER_BLOCK],
             [this.deviceVecOutSpmv, this.deviceVecIn, this.deviceIntermediateDotProductValues, Ns, offsets]
@@ -275,10 +290,10 @@ class Lanczos {
             [1, BLOCKS],
             [this.deviceIntermediateDotProductValues, this.alphaIntermediate]
         )
+    */
 
         this.alpha = this.alphaIntermediate.reduce((acc, cur) => acc + cur[0], 0.0)
         this.tridiagonalMatrix.push(this.alpha)
-
 
         this._launchPartitionKernel(
             "AXPB_XTENDED",
@@ -291,6 +306,12 @@ class Lanczos {
 
             //Compute the l2 norm
             this._launchPartitionKernel(
+                "L2_NORM",
+                DEFAULT_KERNEL_CONFIG,
+                [this.deviceVecNext, this.deviceIntermediateDotProductValues, Ns, Array(this.numPartitions).fill(0)]
+            )
+        /*
+            this._launchPartitionKernel(
                 "DOT_PRODUCT_STAGE_ONE",
                 [...DEFAULT_KERNEL_CONFIG, 4 * THREADS_PER_BLOCK],
                 [this.deviceVecNext, this.deviceVecNext, this.deviceIntermediateDotProductValues, Ns, Array(this.numPartitions).fill(0)]
@@ -301,10 +322,9 @@ class Lanczos {
                 [1, BLOCKS],
                 [this.deviceIntermediateDotProductValues, this.betaIntermediate]
             )
-
+    */
             this.beta = Math.sqrt(this.betaIntermediate.reduce((acc, cur) => acc + cur[0], 0.0))
             this.tridiagonalMatrix.push(this.beta)
-
 
             // Normalize the vector
             this._launchPartitionKernel(
@@ -339,8 +359,12 @@ class Lanczos {
                 DEFAULT_KERNEL_CONFIG,
                 [this.deviceCooX, this.deviceCooY, this.deviceCooVal, this.deviceVecIn, this.deviceVecOutSpmv, nnzs]
             )
-
-
+            this._launchPartitionKernel(
+                "DOT_PRODUCT",
+                DEFAULT_KERNEL_CONFIG,
+                [this.deviceVecOutSpmv, this.deviceVecIn, this.deviceIntermediateDotProductValues, Ns, offsets]
+            )
+        /*
             this._launchPartitionKernel(
                 "DOT_PRODUCT_STAGE_ONE",
                 [...DEFAULT_KERNEL_CONFIG, 4 * THREADS_PER_BLOCK],
@@ -352,7 +376,7 @@ class Lanczos {
                 [1, BLOCKS],
                 [this.deviceIntermediateDotProductValues, this.alphaIntermediate]
             )
-
+        */
             this.alpha = this.alphaIntermediate.reduce((acc, cur) => acc + cur[0], 0.0)
             this.tridiagonalMatrix.push(this.alpha)
 
@@ -365,7 +389,12 @@ class Lanczos {
 
             if(this.reorthogonalize){
                 for(let j = 0; j < i; ++j){
-
+                    this._launchPartitionKernel(
+                        "DOT_PRODUCT",
+                        DEFAULT_KERNEL_CONFIG,
+                        [this.deviceVecNext, this.deviceLanczosVectors, this.deviceIntermediateDotProductValues, Ns, Ns.map(N => N * j)]
+                    )
+                /*
                     this._launchPartitionKernel(
                         "DOT_PRODUCT_STAGE_ONE",
                         [...DEFAULT_KERNEL_CONFIG, 4 * THREADS_PER_BLOCK],
@@ -377,7 +406,7 @@ class Lanczos {
                         [1, BLOCKS],
                         [this.deviceIntermediateDotProductValues, this.alphaIntermediate]
                     )
-
+                */
                     this.alpha = this.alphaIntermediate.reduce((acc, cur) => acc + cur[0], 0)
 
                     this._launchPartitionKernel(

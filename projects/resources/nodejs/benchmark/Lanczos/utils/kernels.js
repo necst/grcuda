@@ -255,6 +255,50 @@ extern "C" __global__ void jacobi_offdiagonal(float *matrix, const float *rotati
 
 `
 
+
+const _WARP_REDUCE = `
+__inline__ __device__ float warp_reduce(float val) {
+    int warp_size = 32;
+    for (int offset = warp_size / 2; offset > 0; offset /= 2)
+        val += __shfl_down_sync(0xFFFFFFFF, val, offset);
+    return val;
+}
+`
+
+const L2_NORM = `
+${_WARP_REDUCE}
+
+extern "C" __global__ void l2_norm(const float *x, float *z, const int N, const int offset) {
+    int warp_size = 32;
+    float sum = 0;
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {
+        float x_tmp = x[i + offset];
+        sum += x_tmp * x_tmp;
+    }
+    sum = warp_reduce(sum); // Obtain the sum of values in the current warp;
+    if ((threadIdx.x & (warp_size - 1)) == 0) // Same as (threadIdx.x % warp_size) == 0 but faster
+        atomicAdd(z, sum); // The first thread in the warp updates the output;
+}
+
+`
+
+const DOT_PRODUCT = `
+${_WARP_REDUCE}
+
+extern "C" __global__ void dot_product(const float *x, const float *y, float *z, const int N, const int offset) {
+    int warp_size = 32;
+    float sum = 0;
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {
+        sum += x[i] * y[i + offset];
+    }
+    sum = warp_reduce(sum); // Obtain the sum of values in the current warp;
+    if ((threadIdx.x & (warp_size - 1)) == 0) // Same as (threadIdx.x % warp_size) == 0 but faster
+        atomicAdd(z, sum); // The first thread in the warp updates the output;
+}
+
+`
+
+
 module.exports = {
     SPMV,
     AXPB_XTENDED,
@@ -263,6 +307,8 @@ module.exports = {
     STORE_AND_RESET,
     DOT_PRODUCT_STAGE_ONE,
     DOT_PRODUCT_STAGE_TWO,
+    L2_NORM,
+    DOT_PRODUCT,
     COPY_PARTITION_TO_VEC,
     SUBTRACT,
     JACOBI_OFFDIAGONAL,
