@@ -63,7 +63,6 @@ import com.oracle.truffle.api.TruffleLogger;
 import org.graalvm.options.OptionKey;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -101,10 +100,10 @@ public final class GrCUDAContext {
         this.grCUDAOptionMap = new GrCUDAOptionMap(env.getOptions());
 
         // Retrieve the dependency computation policy;
-        DependencyPolicyEnum dependencyPolicy = (DependencyPolicyEnum) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.DependencyPolicy);
+        DependencyPolicyEnum dependencyPolicy = grCUDAOptionMap.getDependencyPolicy();
 
         // Retrieve the execution policy;
-        ExecutionPolicyEnum executionPolicy = (ExecutionPolicyEnum) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.ExecutionPolicy);
+        ExecutionPolicyEnum executionPolicy = (ExecutionPolicyEnum) grCUDAOptionMap.getExecutionPolicy();
 
         // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it. 
         //  Once Nvidia adds support for it, we want to remove this limitation;
@@ -113,7 +112,7 @@ public final class GrCUDAContext {
             executionPolicy = ExecutionPolicyEnum.SYNC;
         }
 
-        Boolean inputPrefetch = (Boolean) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.InputPrefetch);
+        Boolean inputPrefetch = grCUDAOptionMap.isInputPrefetch();
 
         // Initialize the execution policy;
         LOGGER.fine("using" + executionPolicy.getName() + " execution policy");
@@ -204,22 +203,6 @@ public final class GrCUDAContext {
         return uncachedMapCallTargets;
     }
 
-    public RetrieveNewStreamPolicyEnum getRetrieveNewStreamPolicy() {
-        return (RetrieveNewStreamPolicyEnum) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.RetrieveNewStreamPolicy);
-    }
-    
-    public RetrieveParentStreamPolicyEnum getRetrieveParentStreamPolicyEnum() {
-        return (RetrieveParentStreamPolicyEnum) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.RetrieveParentStreamPolicy);
-    }
-
-    public boolean isForceStreamAttach() {
-        return (Boolean) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.ForceStreamAttach);
-    }
-
-    public boolean isEnableMultiGPU() {
-        return (Boolean) grCUDAOptionMap.getValueRuntime(GrCUDAOptions.EnableMultiGPU);
-    }
-
     /**
      * Compute the maximum number of concurrent threads that can be spawned by GrCUDA.
      * This value is usually smaller or equal than the number of logical CPU threads available on the machine.
@@ -233,6 +216,8 @@ public final class GrCUDAContext {
     public <T> T getOption(OptionKey<T> key) {
         return env.getOptions().get(key);
     }
+
+    public GrCUDAOptionMap getOptionMap(){return grCUDAOptionMap;}
 
     /**
      * Cleanup the GrCUDA context at the end of the execution;

@@ -35,25 +35,29 @@ import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 import com.oracle.truffle.api.TruffleLogger;
+import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.library.ExportLibrary;
+import com.oracle.truffle.api.library.ExportMessage;
+import org.graalvm.options.OptionDescriptor;
 import org.graalvm.options.OptionKey;
 import org.graalvm.options.OptionValues;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+@ExportLibrary(InteropLibrary.class)
 public class GrCUDAOptionMap implements TruffleObject {
 
     private HashMap<OptionKey<?>, Object> optionKeyValueMap;
     private static final TruffleLogger LOGGER = TruffleLogger.getLogger(GrCUDALanguage.ID, "com.nvidia.grcuda.GrCUDAContext");
 
-    public GrCUDAOptionMap(){ optionKeyValueMap = new HashMap<>();}
-
     public GrCUDAOptionMap(OptionValues options) {
-        this();
-
-        List<OptionKey<?>> allOptions = GrCUDAOptions.getAll();
+        optionKeyValueMap = new HashMap<>();
+        List<OptionKey<?>> allOptions = new ArrayList<>();
+        options.getDescriptors().forEach(o -> allOptions.add(o.getKey()));
 
         allOptions.forEach(i -> optionKeyValueMap.put(i, options.get(i)));
         // stream retrieval policy;
@@ -67,9 +71,19 @@ public class GrCUDAOptionMap implements TruffleObject {
         optionKeyValueMap.replace(GrCUDAOptions.ExecutionPolicy, parseExecutionPolicy(options.get(GrCUDAOptions.ExecutionPolicy)));
     }
 
-    public HashMap<OptionKey<?>, Object> getAllRuntime(){return new HashMap<>(optionKeyValueMap);}
+    public HashMap<OptionKey<?>, Object> getOptions(){
+        return optionKeyValueMap;
+    }
 
-    public Object getValueRuntime(OptionKey key){
+    @ExportMessage
+    public Object hasHashEntries(HashMap<OptionKey<?>, Object> map){
+        //TODO: any check?
+        return true;
+    }
+
+    @ExportMessage
+    public Object readHashValue(HashMap<OptionKey<?>, Object> map, OptionKey<?> key){
+        //TODO: any check?
         return optionKeyValueMap.get(key);
     }
 
@@ -108,4 +122,57 @@ public class GrCUDAOptionMap implements TruffleObject {
             return GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY;
         }
     }
+
+    public Boolean isCuBLASEnabled(){
+        return (Boolean) optionKeyValueMap.get(GrCUDAOptions.CuBLASEnabled);
+    }
+
+    public String getCuBLASLibrary(){
+        return (String) optionKeyValueMap.get(GrCUDAOptions.CuBLASLibrary);
+    }
+
+    public Boolean isCuMLEnabled(){
+        return (Boolean) optionKeyValueMap.get(GrCUDAOptions.CuMLEnabled);
+    }
+
+    public String getCuMLLibrary(){
+        return (String) optionKeyValueMap.get(GrCUDAOptions.CuMLLibrary);
+    }
+
+    public ExecutionPolicyEnum getExecutionPolicy(){
+        return (ExecutionPolicyEnum) optionKeyValueMap.get(GrCUDAOptions.ExecutionPolicy);
+    }
+
+    public DependencyPolicyEnum getDependencyPolicy(){
+        return (DependencyPolicyEnum) optionKeyValueMap.get(GrCUDAOptions.DependencyPolicy);
+    }
+
+    public RetrieveNewStreamPolicyEnum getRetrieveNewStreamPolicy(){
+        return (RetrieveNewStreamPolicyEnum) optionKeyValueMap.get(GrCUDAOptions.RetrieveNewStreamPolicy);
+    }
+
+    public RetrieveParentStreamPolicyEnum getRetrieveParentStreamPolicy(){
+        return (RetrieveParentStreamPolicyEnum) optionKeyValueMap.get(GrCUDAOptions.RetrieveParentStreamPolicy);
+    }
+
+    public Boolean isForceStreamAttach(){
+        return (Boolean) optionKeyValueMap.get(GrCUDAOptions.ForceStreamAttach);
+    }
+
+    public Boolean isInputPrefetch(){
+        return (Boolean) optionKeyValueMap.get(GrCUDAOptions.InputPrefetch);
+    }
+
+    public Boolean isEnableMultiGPU(){
+        return (Boolean) optionKeyValueMap.get(GrCUDAOptions.EnableMultiGPU);
+    }
+
+    public Boolean isTensorRTEnabled(){
+        return (Boolean) optionKeyValueMap.get(GrCUDAOptions.TensorRTEnabled);
+    }
+
+    public String getTensorRTLibrary(){
+        return (String) optionKeyValueMap.get(GrCUDAOptions.TensorRTLibrary);
+    }
+
 }
