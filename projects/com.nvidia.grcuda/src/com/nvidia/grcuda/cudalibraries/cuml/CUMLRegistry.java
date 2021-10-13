@@ -96,7 +96,7 @@ public class CUMLRegistry {
     }
 
     public void ensureInitialized() {
-        if (cumlHandle == -1) {
+        if (cumlHandle == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             // create NFI function objects for handle creation and destruction
@@ -172,7 +172,7 @@ public class CUMLRegistry {
     }
 
     private void cuMLShutdown() {
-        if (cumlHandle != -1) {
+        if (cumlHandle != null) {
             try {
                 Object result = INTEROP.execute(cumlDestroyFunction, cumlHandle);
                 checkCUMLReturnCode(result, CUMLFunctionNFI.CUML_CUMLDESTROY.getFunctionFactory().getName());
