@@ -1,3 +1,12 @@
+# 2021-10-13
+
+* Enabled support for cuBLAS and cuML in the async scheduler
+  * Streams' management is now supported both for CUML and CUBLAS
+  * This feature can be possibly applied to any library, by extending the `LibrarySetStreamFunction` class
+* Set TensorRT support to experimental
+  * TensorRT is currently not supported on CUDA 11.4, making it impossible to use along a recent version of cuML
+  * **Known limitation:** due to this incompatibility, TensorRT is currently not available on the async scheduler
+
 # 2021-09-30, Release 1
 
 ## API Changes
@@ -16,13 +25,6 @@
     * Data transfer and execution (on different data, e.g. distinct DeviceArrays) is overlapped using different streams
     * The scheduler supports different options, see `README.md` for the full list
     * It is the scheduler presented in "DAG-based Scheduling with Resource Sharing for Multi-task Applications in a Polyglot GPU Runtime" (IPDPS 2021)
-
-* Enabled support for cuBLAS and cuML in the aync scheduler
-    * Streams' management is now supported both for CUML and CUBLAS
-    * This feature can be possibly applied to any library, by extending the `LibrarySetStreamFunction` class
-* Set TensorRT support to experimental
-    * TensorRT is currently not supported on CUDA 11.4, making it impossible to use along a recent version of cuML
-    * **Known limitation:** due to this incompatibility, TensorRT is currently not available on the async scheduler 
 
 ## New features
 
