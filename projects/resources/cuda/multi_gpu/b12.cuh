@@ -31,6 +31,7 @@
 #include <stdexcept>
 #include <vector>
 #include <cstdlib>
+#include <numeric>
 #include <algorithm>
 #include <functional>
 #include <cassert>

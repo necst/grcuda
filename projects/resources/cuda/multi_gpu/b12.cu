@@ -618,12 +618,14 @@ void Benchmark12::execute_async(int iter) {
 std::string Benchmark12::print_result(bool short_form = false) {
 
     std::string base = "";
-    for (u32 i = 0; i < this->num_eigencomponents * 2 - 1; ++i) {
-        const auto &r = this->tridiagonal_matrix[i];
-        base += std::to_string(i) + " -> " + std::to_string(r) + ", ";
-    }
+    if(this->debug){
+       for (u32 i = 0; i < this->num_eigencomponents * 2 - 1; ++i) {
+           const auto &r = this->tridiagonal_matrix[i];
+           base += std::to_string(i) + " -> " + std::to_string(r) + ", ";
+       }
 
-    base += "\n";
+       base += "\n";
+   }
 
     return base;
 }
