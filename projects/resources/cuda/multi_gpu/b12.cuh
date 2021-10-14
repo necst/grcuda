@@ -79,6 +79,7 @@ public:
         }
 
         cudaGetDeviceCount(&this->num_devices);
+        this->num_devices = std::min(this->num_devices, this->num_partitions);
         assert(this->num_devices > 0);
 
 
