@@ -354,7 +354,7 @@ public class CUBLASWithScheduleTest {
     public void testGemmScheduling() {
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
             Value cu = context.eval("grcuda", "CU");
-            int numDim = 10000;
+            int numDim = 100;
             String cudaType = "double";
             Value alpha = cu.invokeMember("DeviceArray", cudaType, 1);
             Value beta = cu.invokeMember("DeviceArray", cudaType, 1);
