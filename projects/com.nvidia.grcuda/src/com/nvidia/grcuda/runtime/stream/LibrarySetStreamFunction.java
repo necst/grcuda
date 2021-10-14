@@ -15,6 +15,11 @@ abstract public class LibrarySetStreamFunction {
         this.setStreamFunctionNFI = setStreamFunctionNFI;
     }
 
+    /**
+     * Set stream for the execution of supported libraries' functions
+     * 
+     * @param stream a CUDAstream
+     */
     public abstract void setStream(CUDAStream stream);
 
 }

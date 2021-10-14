@@ -73,6 +73,8 @@ public class CUBLASRegistry {
     private final GrCUDAContext context;
     private final String libraryPath;
 
+    private LibrarySetStreamFunction cublasLibrarySetStreamFunction;
+
     @CompilationFinal private TruffleObject cublasCreateFunction;
     @CompilationFinal private TruffleObject cublasDestroyFunction;
     @CompilationFinal private TruffleObject cublasSetStreamFunction;
@@ -158,6 +160,9 @@ public class CUBLASRegistry {
                 throw new GrCUDAInternalException(e);
             }
         }
+
+        cublasLibrarySetStreamFunction = new CUBLASSetStreamFunction((Function) cublasSetStreamFunctionNFI, cublasHandle);
+
     }
 
     private void cuBLASShutdown() {
@@ -186,14 +191,12 @@ public class CUBLASRegistry {
                 protected Object call(Object[] arguments) {
                     ensureInitialized();
 
-                    LibrarySetStreamFunction cublasSetStreamFunction = new CUBLASSetStreamFunction((Function) cublasSetStreamFunctionNFI, cublasHandle);
-
                     try {
                         if (nfiFunction == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
-                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cublasSetStreamFunction,
+                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cublasLibrarySetStreamFunction,
                                         this.createComputationArgumentWithValueList(arguments, cublasHandle)).schedule();
                         checkCUBLASReturnCode(result, nfiFunction.getName());
                         return result;

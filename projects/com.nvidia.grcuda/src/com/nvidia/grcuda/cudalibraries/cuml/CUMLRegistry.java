@@ -88,6 +88,8 @@ public class CUMLRegistry {
 
     @CompilationFinal private TruffleObject cumlSetStreamFunctionNFI;
 
+    private LibrarySetStreamFunction cumlLibrarySetStreamFunction;
+
     private Long cumlHandle = null;
 
     public CUMLRegistry(GrCUDAContext context) {
@@ -169,6 +171,7 @@ public class CUMLRegistry {
                 throw new GrCUDAInternalException(e);
             }
         }
+        cumlLibrarySetStreamFunction = new CUMLSetStreamFunction((Function) cumlSetStreamFunctionNFI, cumlHandle);
     }
 
     private void cuMLShutdown() {
@@ -199,14 +202,12 @@ public class CUMLRegistry {
                 public Object call(Object[] arguments) {
                     ensureInitialized();
 
-                    LibrarySetStreamFunction cumlSetStreamFunction = new CUMLSetStreamFunction((Function) cumlSetStreamFunctionNFI, cumlHandle);
-
                     try {
                         if (nfiFunction == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
-                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cumlSetStreamFunction,
+                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cumlLibrarySetStreamFunction,
                                         this.createComputationArgumentWithValueList(arguments, cumlHandle)).schedule();
                         checkCUMLReturnCode(result, nfiFunction.getName());
                         return result;
