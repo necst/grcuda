@@ -32,6 +32,7 @@ package com.nvidia.grcuda.runtime.computation;
 
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.stream.LibrarySetStreamFunction;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -78,8 +79,6 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
             System.out.println("error in execution of the function");
             e.printStackTrace();
         }
-        // Synchronize only the default stream;
-
         return result;
     }
 
@@ -93,7 +92,6 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
         @Override
         public List<ComputationArgumentWithValue> initialize() {
             // Consider only arrays as dependencies;
-            // FIXME: should the library handle be considered a dependency?
             // The CUDA documentation is not clear on whether you can have concurrent computations
             // with the same handle;
             return this.args.stream().filter(ComputationArgument::isArray).collect(Collectors.toList());

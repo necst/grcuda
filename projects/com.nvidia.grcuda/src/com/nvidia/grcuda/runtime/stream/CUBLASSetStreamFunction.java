@@ -1,10 +1,11 @@
-package com.nvidia.grcuda.runtime.computation;
+package com.nvidia.grcuda.runtime.stream;
 
 import com.nvidia.grcuda.functions.Function;
-import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+
+import static com.nvidia.grcuda.functions.Function.INTEROP;
 
 /**
  * Class of functions to manage streams in the CUBLAS library
@@ -14,8 +15,8 @@ public class CUBLASSetStreamFunction extends LibrarySetStreamFunction {
 
     private final long handle;
 
-    public CUBLASSetStreamFunction(String name, Function setStreamFunctionNFI, long handle) {
-        super(name, setStreamFunctionNFI);
+    public CUBLASSetStreamFunction(Function setStreamFunctionNFI, long handle) {
+        super(setStreamFunctionNFI);
         this.handle = handle;
     }
 

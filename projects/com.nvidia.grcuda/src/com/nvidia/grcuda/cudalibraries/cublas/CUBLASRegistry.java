@@ -50,9 +50,9 @@ import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
-import com.nvidia.grcuda.runtime.computation.CUBLASSetStreamFunction;
+import com.nvidia.grcuda.runtime.stream.CUBLASSetStreamFunction;
 import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
-import com.nvidia.grcuda.runtime.computation.LibrarySetStreamFunction;
+import com.nvidia.grcuda.runtime.stream.LibrarySetStreamFunction;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
@@ -186,7 +186,7 @@ public class CUBLASRegistry {
                 protected Object call(Object[] arguments) {
                     ensureInitialized();
 
-                    LibrarySetStreamFunction cublasSetStreamFunction = new CUBLASSetStreamFunction("CUBLASSetStreamHelperFunction", (Function) cublasSetStreamFunctionNFI, cublasHandle);
+                    LibrarySetStreamFunction cublasSetStreamFunction = new CUBLASSetStreamFunction((Function) cublasSetStreamFunctionNFI, cublasHandle);
 
                     try {
                         if (nfiFunction == null) {

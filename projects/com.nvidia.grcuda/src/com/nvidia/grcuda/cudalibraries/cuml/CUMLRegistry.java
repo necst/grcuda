@@ -47,12 +47,12 @@ import com.nvidia.grcuda.GrCUDAInternalException;
 import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.Namespace;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
-import com.nvidia.grcuda.runtime.computation.CUMLSetStreamFunction;
+import com.nvidia.grcuda.runtime.stream.CUMLSetStreamFunction;
 import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
-import com.nvidia.grcuda.runtime.computation.LibrarySetStreamFunction;
+import com.nvidia.grcuda.runtime.stream.LibrarySetStreamFunction;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -199,7 +199,7 @@ public class CUMLRegistry {
                 public Object call(Object[] arguments) {
                     ensureInitialized();
 
-                    LibrarySetStreamFunction cumlSetStreamFunction = new CUMLSetStreamFunction("CUMLSetStreamHelperFunction", (Function) cumlSetStreamFunctionNFI, cumlHandle);
+                    LibrarySetStreamFunction cumlSetStreamFunction = new CUMLSetStreamFunction((Function) cumlSetStreamFunctionNFI, cumlHandle);
 
                     try {
                         if (nfiFunction == null) {
