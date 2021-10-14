@@ -100,7 +100,7 @@ private:
     unsigned num_eigencomponents = 8;
     i32 num_partitions = -1;
     i32 num_devices = -1;
-    std::string matrix_path = "/home/users/francesco.sgherzi/grcuda_tmp/projects/resources/cuda/datasets/333SP.mtx";
+    std::string matrix_path = "../datasets/333SP.mtx";
     bool reorthogonalize = false;
     i32 block_size;
     coo_matrix_t matrix;
