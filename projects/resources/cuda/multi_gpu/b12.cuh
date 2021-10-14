@@ -75,12 +75,10 @@ public:
 
         this->block_size = this->block_size_1d * this->block_size_2d;
         this->num_partitions = options.max_devices;
-        for(u32 i = 0; i < this->num_partitions; ++i){
-            this->streams.push_back(nullptr);
-        }
+
 
         cudaGetDeviceCount(&this->num_devices);
-        this->num_devices = std::min(this->num_devices, this->num_partitions);
+        //this->num_devices = std::min(this->num_devices, this->num_partitions);
         assert(this->num_devices > 0);
 
 

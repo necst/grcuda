@@ -332,6 +332,7 @@ void Benchmark12::alloc() {
     else
         this->load_matrix();
 
+
     this->create_streams();
     this->alloc_coo_partitions();
     this->alloc_vectors();
@@ -363,13 +364,12 @@ void Benchmark12::reset() {
 
 void Benchmark12::sync_all() {
 
-    if(this->num_partitions == 1){
-        cudaDeviceSynchronize();
-    } else {
-        for (u32 i = 0; i < this->num_partitions; ++i) {
-            CUDA_CHECK_ERROR(cudaStreamSynchronize(this->streams[i]));
-        }
+    for (u32 i = 0; i < this->num_partitions; ++i) {
+        auto selected_device = select_gpu(i, this->num_devices);
+        CUDA_CHECK_ERROR(cudaSetDevice(selected_device));
+        CUDA_CHECK_ERROR(cudaStreamSynchronize(this->streams[i]));
     }
+    cudaSetDevice(0);
 }
 
 void Benchmark12::create_streams() {
@@ -379,7 +379,7 @@ void Benchmark12::create_streams() {
         CUDA_CHECK_ERROR(cudaSetDevice(selected_device));
         auto *stream = (cudaStream_t *) std::malloc(sizeof(cudaStream_t));
         CUDA_CHECK_ERROR(cudaStreamCreate(stream));
-        this->streams[i] = *stream;
+        this->streams.push_back(*stream);
     }
 
     cudaSetDevice(0);
@@ -408,7 +408,7 @@ void Benchmark12::execute(i32 iter) {
     }
 
 
-    this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+    this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
         spmv<<<this->num_blocks, this->block_size, 0, stream>>>(
                 this->coo_partitions[p_idx]->x,
                 this->coo_partitions[p_idx]->y,
@@ -419,10 +419,10 @@ void Benchmark12::execute(i32 iter) {
         );
     });
 
-    this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+    this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
         // std::cout << "dot_product 0th" << std::endl;
         this->alpha_intermediate[p_idx] = 0.0;
-        dot_product<<<this->num_blocks, this->block_size>>>(
+        dot_product<<<this->num_blocks, this->block_size, 0, stream>>>(
                 this->spmv_vec_out[p_idx],
                 this->vec_in[p_idx],
                 &this->alpha_intermediate[p_idx],
@@ -437,7 +437,7 @@ void Benchmark12::execute(i32 iter) {
     this->tridiagonal_matrix.push_back(*alpha);
 
     // std::cout << alpha << std::endl;
-    this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+    this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
         // std::cout << "axpb_xtedned 0th" << std::endl;
         axpb_xtended<<<this->num_blocks, this->block_size, 0, stream>>>(
                 -(*alpha),
@@ -454,10 +454,10 @@ void Benchmark12::execute(i32 iter) {
 
     for (u32 i = 1; i < this->num_eigencomponents; ++i) {
 
-        this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+        this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
             // std::cout << "l2_norm" << std::endl;
-            this->beta_intermediate[p_idx] = 0;
-            l2_norm_b12<<<this->num_blocks, this->block_size>>>(
+            this->beta_intermediate[p_idx] = 0.0f;
+            l2_norm_b12<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->vec_next[p_idx],
                     &this->beta_intermediate[p_idx],
                     this->coo_partitions[p_idx]->N,
@@ -472,7 +472,7 @@ void Benchmark12::execute(i32 iter) {
         *beta = std::sqrt(*beta);
         this->tridiagonal_matrix.push_back(*beta);
 
-        this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+        this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
             // std::cout << "normalize" << std::endl;
             normalize<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->vec_next[p_idx],
@@ -482,9 +482,9 @@ void Benchmark12::execute(i32 iter) {
             );
         });
 
-        this->launch_multi_kernel([&, i](u32 p_idx, cudaStream_t stream) {
+        this->launch_multi_kernel([&, i](u32 p_idx, const cudaStream_t &stream) {
             // std::cout << "copy_partition_to_vec" << std::endl;
-            copy_partition_to_vec<<<this->num_blocks, this->block_size>>>(
+            copy_partition_to_vec<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->vec_in[p_idx],
                     this->lanczos_vectors[p_idx],
                     this->offsets[p_idx],
@@ -494,9 +494,8 @@ void Benchmark12::execute(i32 iter) {
         });
 
         for (u32 j = 0; j < this->num_partitions; ++j) {
-            // std::cout << "copy_partition_to_vec -> in loop" << std::endl;
-            this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
-                copy_partition_to_vec<<<this->num_blocks, this->block_size>>>(
+            this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
+                copy_partition_to_vec<<<this->num_blocks, this->block_size, 0, stream>>>(
                         this->normalized_out[p_idx],
                         this->vec_in[p_idx],
                         this->coo_partitions[p_idx]->N,
@@ -510,7 +509,7 @@ void Benchmark12::execute(i32 iter) {
             this->vec_in.push_back(first);
         }
 
-        this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream){
+        this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream){
             set<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->spmv_vec_out[p_idx],
                     0.0f,
@@ -518,7 +517,7 @@ void Benchmark12::execute(i32 iter) {
             );
         });
 
-        this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+        this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
             // std::cout << "spmv" << std::endl;
             spmv<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->coo_partitions[p_idx]->x,
@@ -530,10 +529,10 @@ void Benchmark12::execute(i32 iter) {
             );
         });
 
-        this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+        this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
             // std::cout << "dot_product" << std::endl;
             this->alpha_intermediate[p_idx] = 0.0f;
-            dot_product<<<this->num_blocks, this->block_size>>>(
+            dot_product<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->spmv_vec_out[p_idx],
                     this->vec_in[p_idx],
                     &this->alpha_intermediate[p_idx],
@@ -544,11 +543,10 @@ void Benchmark12::execute(i32 iter) {
         });
 
         this->sync_all();
-        // TODO: std::accumulate does NOT WORK
         *alpha = accumulate(this->alpha_intermediate, this->num_partitions);
         tridiagonal_matrix.push_back(*alpha);
 
-        this->launch_multi_kernel([&, i](u32 p_idx, cudaStream_t stream) {
+        this->launch_multi_kernel([&, i](u32 p_idx, const cudaStream_t &stream) {
             // std::cout << "axpb_xtended" << std::endl;
             axpb_xtended<<<this->num_blocks, this->block_size, 0, stream>>>(
                     -(*alpha),
@@ -567,9 +565,9 @@ void Benchmark12::execute(i32 iter) {
         if (this->reorthogonalize) {
 
             for (u32 j = 0; j < i; ++j) {
-                this->launch_multi_kernel([&, j](u32 p_idx, cudaStream_t stream) {
+                this->launch_multi_kernel([&, j](u32 p_idx, const cudaStream_t &stream) {
 
-                    dot_product<<<this->num_blocks, this->block_size>>>(
+                    dot_product<<<this->num_blocks, this->block_size, 0, stream>>>(
                             this->vec_next[p_idx],
                             this->lanczos_vectors[p_idx],
                             this->alpha,
@@ -579,7 +577,7 @@ void Benchmark12::execute(i32 iter) {
                 });
                 this->sync_all();
 
-                this->launch_multi_kernel([&](u32 p_idx, cudaStream_t stream) {
+                this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
                     subtract<<<this->num_blocks, this->block_size, 0, stream>>>(
                             this->vec_next[p_idx],
                             this->lanczos_vectors[p_idx],
@@ -632,7 +630,7 @@ std::string Benchmark12::print_result(bool short_form = false) {
 
 void Benchmark12::init() {
     // Initialize vec_in[0]
-    std::generate(this->vec_in[0], this->vec_in[0] + this->matrix.N, []() { return 1.0f / RANDOM_MATRIX_NUM_ROWS; });
+    std::generate(this->vec_in[0], this->vec_in[0] + this->matrix.N, [this]() { return 1.0f / this->matrix.N; });
 
     // copy it to the other vectors
     for (u32 i = 1; i < this->num_partitions; ++i) {
