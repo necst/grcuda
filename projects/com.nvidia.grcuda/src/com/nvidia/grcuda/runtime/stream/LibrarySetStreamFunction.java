@@ -1,4 +1,4 @@
-package com.nvidia.grcuda.runtime.computation;
+package com.nvidia.grcuda.runtime.stream;
 
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
@@ -7,12 +7,11 @@ import com.nvidia.grcuda.runtime.stream.CUDAStream;
  * Abstract class to manage async streams for supported libraries
  */
 
-abstract public class LibrarySetStreamFunction extends Function {
+abstract public class LibrarySetStreamFunction {
 
     protected final Function setStreamFunctionNFI;
 
-    protected LibrarySetStreamFunction(String name, Function setStreamFunctionNFI) {
-        super(name);
+    protected LibrarySetStreamFunction(Function setStreamFunctionNFI) {
         this.setStreamFunctionNFI = setStreamFunctionNFI;
     }
 

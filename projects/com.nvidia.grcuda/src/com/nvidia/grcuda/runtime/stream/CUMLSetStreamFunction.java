@@ -1,10 +1,11 @@
-package com.nvidia.grcuda.runtime.computation;
+package com.nvidia.grcuda.runtime.stream;
 
 import com.nvidia.grcuda.functions.Function;
-import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+
+import static com.nvidia.grcuda.functions.Function.INTEROP;
 
 /**
  * Class of functions to manage streams in the CUML library
@@ -14,8 +15,8 @@ public class CUMLSetStreamFunction extends LibrarySetStreamFunction {
 
     private final long handle;
 
-    public CUMLSetStreamFunction(String name, Function setStreamFunctionNFI, long handle) {
-        super(name, setStreamFunctionNFI);
+    public CUMLSetStreamFunction(Function setStreamFunctionNFI, long handle) {
+        super(setStreamFunctionNFI);
         this.handle = handle;
     }
 
