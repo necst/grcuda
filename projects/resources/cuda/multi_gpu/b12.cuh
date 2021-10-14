@@ -36,6 +36,9 @@
 #include <cassert>
 #include <thread>
 #include <ostream>
+#include <fstream>
+#include <cstring>
+#include <sstream>
 
 #include "../benchmark.cuh"
 #include "../mmio.hpp"
@@ -70,10 +73,14 @@ public:
         // This test does not run on pascal gpus due to how Managed memory is handled
 
         this->block_size = this->block_size_1d * this->block_size_2d;
-        this->num_gpus = options.max_devices;
-        for(u32 i = 0; i < this->num_gpus; ++i){
+        this->num_partitions = options.max_devices;
+        for(u32 i = 0; i < this->num_partitions; ++i){
             this->streams.push_back(nullptr);
         }
+
+        cudaGetDeviceCount(&this->num_devices);
+        assert(this->num_devices > 0);
+
 
     }
     void alloc();
@@ -84,18 +91,21 @@ public:
     void execute_cudagraph(i32);
     void execute_cudagraph_manual(i32);
     void execute_cudagraph_single(i32);
+    void load_matrix(bool);
     std::string print_result(bool);
+
 
 private:
 
     unsigned num_eigencomponents = 8;
-    i32 num_gpus = -1;
-    std::string matrix_path;
+    i32 num_partitions = -1;
+    i32 num_devices = -1;
+    std::string matrix_path = "/home/users/francesco.sgherzi/grcuda_tmp/projects/resources/cuda/datasets/333SP.mtx";
     bool reorthogonalize = false;
     i32 block_size;
     coo_matrix_t matrix;
     std::vector<coo_matrix_t*> coo_partitions;
-    f32 *alpha_device, *beta_device;
+    f32 *alpha, *beta;
     std::vector<float*> vec_in, spmv_vec_out, intermediate_dot_product_values,  vec_next, lanczos_vectors, normalized_out;
     float *alpha_intermediate, *beta_intermediate;
     std::vector<cudaStream_t> streams;
