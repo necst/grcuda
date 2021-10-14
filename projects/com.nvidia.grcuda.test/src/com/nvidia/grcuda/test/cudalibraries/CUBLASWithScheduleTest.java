@@ -72,7 +72,9 @@ public class CUBLASWithScheduleTest {
     }
 
     /**
-     * Test 2 independent kernels followed by a BLAS kernel A ---> C B --/
+     * Test 2 independent kernels followed by a BLAS kernel
+     * A ---> C
+     * B --/
      */
     @Test
     public void testTaxpyJoinPattern() {
@@ -122,7 +124,9 @@ public class CUBLASWithScheduleTest {
     }
 
     /**
-     * Test a BLAS kernel followed by 2 independent kernels; A--->B \-->C
+     * Test a BLAS kernel followed by 2 independent kernels;
+     * A--->B
+     * \-->C
      */
     @Test
     public void testTaxpyForkPattern() {
@@ -174,7 +178,8 @@ public class CUBLASWithScheduleTest {
 
     /**
      * Test a 2 independent kernels followed by a BLAS kernel followed by 2 independent kernels;
-     * A--->C--->D B---/ \-->E
+     * A--->C--->D
+     * B---/ \-->E
      */
     @Test
     public void testTaxpyJoinForkPattern() {
@@ -228,7 +233,8 @@ public class CUBLASWithScheduleTest {
     }
 
     /**
-     * Test a BLAS kernel followed by 2 independent kernels followed by a BLAS kernel; A--->B--->D
+     * Test a BLAS kernel followed by 2 independent kernels followed by a BLAS kernel;
+     * A--->B--->D
      * \-->C---/
      */
     @Test
@@ -281,8 +287,10 @@ public class CUBLASWithScheduleTest {
     }
 
     /**
-     * Test a BLAS kernel followed by 2 independent kernels followed by a BLAS kernel; /-->E-->F
-     * A--->B--->D \-->C---/
+     * Test a BLAS kernel followed by 2 independent kernels followed by a BLAS kernel;
+     *       /-->E-->F
+     * A--->B--->D
+     * \-->C---/
      */
     @Test
     public void testTaxpyIndependentCompPattern() {
@@ -346,7 +354,7 @@ public class CUBLASWithScheduleTest {
     public void testGemmScheduling() {
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
             Value cu = context.eval("grcuda", "CU");
-            int numDim = 10;
+            int numDim = 10000;
             String cudaType = "double";
             Value alpha = cu.invokeMember("DeviceArray", cudaType, 1);
             Value beta = cu.invokeMember("DeviceArray", cudaType, 1);
@@ -359,7 +367,6 @@ public class CUBLASWithScheduleTest {
             beta2.setArrayElement(0, 2);
             alpha3.setArrayElement(0, -2);
 
-            // complex types require two elements along 1st dimension (since column-major order)
             Value matrixA = cu.invokeMember("DeviceArray", cudaType, numDim, numDim, "F");
             Value matrixB = cu.invokeMember("DeviceArray", cudaType, numDim, numDim, "F");
             Value matrixC = cu.invokeMember("DeviceArray", cudaType, numDim, numDim, "F");
@@ -367,7 +374,7 @@ public class CUBLASWithScheduleTest {
             Value matrixF = cu.invokeMember("DeviceArray", cudaType, numDim, numDim, "F");
             Value matrixG = cu.invokeMember("DeviceArray", cudaType, numDim, numDim, "F");
 
-            // set matrix
+            // Initialize matrices
             // A, E: identity matrix
             for (int j = 0; j < numDim; j++) {
                 for (int i = 0; i < numDim; i++) {
@@ -393,12 +400,14 @@ public class CUBLASWithScheduleTest {
             Value tgemm = context.eval("grcuda", "BLAS::cublas" + typeChar + "gemm");
             Value taxpy = context.eval("grcuda", "BLAS::cublas" + typeChar + "axpy");
             final int cublasOpN = 0;
+            // Schedule 2 GEMMs;
             tgemm.execute(cublasOpN, cublasOpN, numDim, numDim, numDim,
                             alpha,
                             matrixA, numDim,
                             matrixB, numDim,
                             beta,
                             matrixC, numDim);
+            // Schedule 1 axpy;
             tgemm.execute(cublasOpN, cublasOpN, numDim, numDim, numDim,
                             alpha2,
                             matrixE, numDim,
