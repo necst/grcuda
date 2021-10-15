@@ -75,7 +75,7 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
         try {
             result = INTEROP.execute(this.nfiFunction, this.argsWithHandle);
         } catch (ArityException | UnsupportedMessageException e) {
-            System.out.println("error in execution of cuBLAS function");
+            this.grCUDAExecutionContext.getCudaRuntime().getContext().getLogger().severe("error in execution of cuBLAS function");
             e.printStackTrace();
         }
         // Synchronize only the default stream;

@@ -228,6 +228,8 @@ public final class GrCUDAContext {
         return retrieveParentStreamPolicyEnum;
     }
 
+    public TruffleLogger getLogger() { return LOGGER; }
+
     public boolean isForceStreamAttach() {
         return forceStreamAttach;
     }

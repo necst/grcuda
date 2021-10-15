@@ -30,6 +30,7 @@
  */
 package com.nvidia.grcuda.runtime.computation.streamattach;
 
+import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
@@ -45,6 +46,12 @@ import java.util.concurrent.Callable;
  */
 public class PrePascalStreamAttachPolicy implements StreamAttachArchitecturePolicy {
 
+    private final GrCUDAContext grCUDAContext;
+
+    public PrePascalStreamAttachPolicy(GrCUDAContext context){
+        this.grCUDAContext = context;
+    }
+
     @Override
     public void execute(Runnable runnable) {
         runnable.run();
@@ -55,7 +62,7 @@ public class PrePascalStreamAttachPolicy implements StreamAttachArchitecturePoli
         try {
             return callable.call();
         } catch(Exception e) {
-            System.out.println("WARNING: failed to compute stream dependency, returning default stream");
+            this.grCUDAContext.getLogger().warning("WARNING: failed to compute stream dependency, returning default stream");
             return Optional.of(DefaultStream.get());
         }
     }
