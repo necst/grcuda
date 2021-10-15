@@ -90,5 +90,5 @@ public final class GrCUDAOptions {
     public static final OptionKey<String> TensorRTLibrary = new OptionKey<>(TensorRTRegistry.DEFAULT_LIBRARY);
 
     @Option(category = OptionCategory.USER, help = "Logs the kernels execution time.", stability = OptionStability.STABLE) //
-    public static final OptionKey<Boolean> LogExecTimeEnabled = new OptionKey<>(false);
+    public static final OptionKey<Boolean> EnableKernelTimers = new OptionKey<>(false);
 }

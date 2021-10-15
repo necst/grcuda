@@ -31,6 +31,7 @@
 package com.nvidia.grcuda.runtime.computation;
 
 import com.nvidia.grcuda.CUDAEvent;
+import com.nvidia.grcuda.runtime.ProfilableElement;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyComputation;
@@ -111,6 +112,34 @@ public abstract class GrCUDAComputationalElement {
 
     public List<ComputationArgumentWithValue> getArgumentList() {
         return argumentList;
+    }
+
+    // Create a profilable element
+    private ProfilableElement profilableElement;
+
+    public boolean isProfilable() {
+        return profilableElement.isProfilable();
+    }
+
+    /**
+     * Set in Profilable Element the elapsed time between start event of the computation and the end event
+     *
+     * @param deviceId
+     * @param time
+     *
+     */
+    public void setExecutionTime(int deviceId, float time){
+        profilableElement.addExecutionTime(deviceId, time);
+    }
+
+    /**
+     * Get execution time of the computation on the device deviceId,
+     * if computation has not yet been executed on the device then it returns null.
+     * @param deviceId
+     * @return execution time
+     */
+    public float getExecutionTimeOnDevice(int deviceId){
+        return profilableElement.getExecutionTimeOnDevice(deviceId);
     }
 
     /**
