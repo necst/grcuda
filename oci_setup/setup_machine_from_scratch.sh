@@ -37,6 +37,7 @@
 INSTALL_CUML=false
 INSTALL_RECENT_CMAKE=false
 ACTIVATE_GRAALPYTHON_ENV=true
+INSTALL_ON_NVSWITCH=false
 
 # basic update on a newly created machine;
 sudo apt update
@@ -89,6 +90,13 @@ sudo dpkg -i cuda-repo-ubuntu2004-11-4-local_11.4.2-470.57.02-1_amd64.deb
 sudo apt-key add /var/cuda-repo-ubuntu2004-11-4-local/7fa2af80.pub
 sudo apt-get update
 sudo apt-get -y install cuda
+
+# Systems with NVSwitch require Nvidia's fabric manager;
+if [ "$INSTALL_ON_NVSWITCH" = true ] ; then
+    sudo apt-get install cuda-drivers-fabricmanager-470
+    sudo systemctl start nvidia-fabricmanager
+    sudo systemctl enable nvidia-fabricmanager
+fi
 
 # symlink for python (use it with care! some system tools require Python 2.7);
 # sudo ln -s /usr/bin/python3 /usr/bin/python
