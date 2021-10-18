@@ -37,9 +37,10 @@ import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.UnknownKeyException;
+import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
-import org.graalvm.options.OptionDescriptor;
 import org.graalvm.options.OptionKey;
 import org.graalvm.options.OptionValues;
 
@@ -76,16 +77,33 @@ public class GrCUDAOptionMap implements TruffleObject {
     }
 
     @ExportMessage
-    public Object hasHashEntries(HashMap<OptionKey<?>, Object> map){
-        //TODO: any check?
+    public final boolean hasHashEntries(){
         return true;
     }
 
     @ExportMessage
-    public Object readHashValue(HashMap<OptionKey<?>, Object> map, OptionKey<?> key){
-        //TODO: any check?
-        return optionKeyValueMap.get(key);
+    public final Object readHashValue(Object key) throws UnknownKeyException, UnsupportedMessageException {
+        Object value;
+        if (key instanceof OptionKey){
+            value = optionKeyValueMap.get(key);
+        }
+        else {
+            throw UnsupportedMessageException.create();
+        }
+        if (value == null) throw UnknownKeyException.create(key, new Throwable());
+        return value;
     }
+
+    @ExportMessage
+    final long getHashSize() throws UnsupportedMessageException { return optionKeyValueMap.size(); }
+
+    @ExportMessage
+    final boolean isHashEntryReadable(Object key) {
+        return (key instanceof OptionKey) && optionKeyValueMap.get(key) != null;
+    }
+
+    @ExportMessage
+    final Object getHashEntriesIterator() throws UnsupportedMessageException { return optionKeyValueMap.entrySet().iterator(); }
 
     private static ExecutionPolicyEnum parseExecutionPolicy(String policyString) {
         if (policyString.equals(ExecutionPolicyEnum.SYNC.getName())) return ExecutionPolicyEnum.SYNC;
