@@ -9,10 +9,16 @@ import pandas as pd
 import numpy as np
 import os
 
-from compute_transfer_computation_overlap import read_nvprof_log
-from load_data import PLOT_DIR, DEFAULT_RES_CUDA_DIR
+from compute_transfer_computation_overlap import read_nvprof_log, read_nvprof_log_a100
+from load_data import DEFAULT_RES_CUDA_DIR
 
-INPUT_FOLDER = "nvprof_cuda/2021_10_07"
+# V100;
+GPU = "V100"
+INPUT_FOLDER = "V100/nvprof_cuda/2021_10_07"
+
+# A100;
+GPU = "A100"
+INPUT_FOLDER = "A100/nvprof_cuda/2021_10_18"
 
 TRANSFERS = ["htod", "dtod", "dtoh"]
 
@@ -33,14 +39,15 @@ if __name__ == "__main__":
         if "transfer_matrix" in f:
             continue
         print(f"reading {f}")
-        data = read_nvprof_log(os.path.join(DEFAULT_RES_CUDA_DIR, INPUT_FOLDER, f))
-        
+        if GPU == "V100":
+            data = read_nvprof_log(os.path.join(DEFAULT_RES_CUDA_DIR, INPUT_FOLDER, f))
+        elif GPU == "A100":
+            data = read_nvprof_log_a100(os.path.join(DEFAULT_RES_CUDA_DIR, INPUT_FOLDER, f))
+        else:
+            raise ValueError(f"Unknown GPU={GPU}")
+            
         # Keep only memory transfer;
         data = data[data["name"].isin(TRANSFERS)]
-        # Fix names of transfer;
-        data.loc[data["name"] != "dtod", "device_end"] = data[data["name"] != "dtod"]["device_start"]
-        data.loc[data["name"] == "htod", "device_start"] = "CPU"
-        data.loc[data["name"] == "dtoh", "device_end"] = "CPU"
         
         data_grouped = data.groupby(["device_start", "device_end"])["transferred_data_byte"].sum().reset_index()
         devices = sorted(list(set(data_grouped["device_start"].unique()).union(set(data_grouped["device_end"].unique()))))
@@ -53,5 +60,6 @@ if __name__ == "__main__":
         res_summary[f] = transfer_matrix_nondirectional
         
         basename = os.path.splitext(f)[0]
+        basename = basename.replace("_gputrace", "").replace("m", "")
         transfer_matrix.to_csv(os.path.join(DEFAULT_RES_CUDA_DIR, INPUT_FOLDER, f"{basename}_transfer_matrix.csv"))
         

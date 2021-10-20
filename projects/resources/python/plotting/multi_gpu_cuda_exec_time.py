@@ -22,13 +22,24 @@ from load_data import load_data_cuda_multigpu, PLOT_DIR
 ##############################
 ##############################
 
-OUTPUT_DATE = "2021_10_06"
+OUTPUT_DATE = "2021_10_19"
 
+# V100;
+GPU = "V100"
 RES_FOLDERS = [
     "2021_10_04_15_13_11_cuda_1gpu_v100",
     "2021_10_04_15_15_29_cuda_2gpu_v100",
     "2021_10_04_15_15_49_cuda_4gpu_v100",
     "2021_10_04_15_33_23_cuda_8gpu_v100",
+    ]
+
+# A100;
+GPU = "A100"
+RES_FOLDERS = [
+    "2021_10_18_11_50_56_cuda_1gpu_a100",
+    "2021_10_18_12_57_50_cuda_2gpu_a100",
+    "2021_10_18_13_21_05_cuda_4gpu_a100",
+    "2021_10_18_13_44_18_cuda_8gpu_a100",
     ]
     
 ##############################
@@ -137,7 +148,7 @@ def plot_speedup_bars(data_in):
     add_labels(ax, vertical_offsets=offsets, rotation=0, format_str="{:.2f}", fontsize=2.2, skip_zero=False)
     
     # Add label with GPU name;
-    ax.annotate("V100", xy=(0.9, 0.9), xycoords="axes fraction", ha="left", color="#2f2f2f", fontsize=fontsize, alpha=1)   
+    ax.annotate(GPU, xy=(0.9, 0.9), xycoords="axes fraction", ha="left", color="#2f2f2f", fontsize=fontsize, alpha=1)   
     
     # Create hierarchical x ticks;
     y_min = -0.5
@@ -249,7 +260,7 @@ def plot_speedup_line(data_in):
         # Add baseline times;
         ax.annotate("Baseline CUDA exec. time (ms):", xy=(0, -0.4), fontsize=fontsize - 1, ha="left", xycoords="axes fraction", color="#949494")
         if col == 0:
-            ax.annotate("V100:", xy=(-0.4, -0.56), fontsize=fontsize - 1, color="#949494", ha="right", xycoords=("data", "axes fraction"))
+            ax.annotate(f"{GPU}:", xy=(-0.4, -0.56), fontsize=fontsize - 1, color="#949494", ha="right", xycoords=("data", "axes fraction"))
         for l_i, l in enumerate(x_ticks):
             vals = d[(d["size"] == int(l))]["baseline_time"]
             baseline_median = np.median(vals) if len(vals) > 0 else np.nan
@@ -272,12 +283,12 @@ def plot_speedup_line(data_in):
 
 if __name__ == "__main__":
     
-    res_cuda = load_data_cuda_multigpu(RES_FOLDERS, skip_iter=3)
+    res_cuda = load_data_cuda_multigpu([os.path.join(GPU, x) for x in RES_FOLDERS], skip_iter=3)
     res_cuda_grouped = res_cuda.groupby(["benchmark", "exec_policy", "num_gpu"]).mean().dropna().reset_index()
 
     #%% Plot speedup divided by benchmark and number of GPUs;
-    # plot_speedup_bars(res_cuda_grouped)
-    # save_plot(PLOT_DIR, f"cuda_bars" + "_{}.{}", date=OUTPUT_DATE, dpi=600)
+    plot_speedup_bars(res_cuda_grouped)
+    save_plot(PLOT_DIR, f"cuda_bars" + "_{}.{}", date=OUTPUT_DATE, dpi=600)
     
     #%% Plot speedup divided by size, benchmark and number of GPUs;
     plot_speedup_line(res_cuda)

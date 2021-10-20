@@ -353,7 +353,6 @@ def read_nvprof_log(input_path: str) -> pd.DataFrame:
         duration_unit = header.iloc[0, 1]
     except:
         header = pd.read_csv(input_path, skiprows=5, nrows=1)
-        dtypes = header.dtypes
         start_unit = header.iloc[0, 0]
         duration_unit = header.iloc[0, 1]
         skip_rows = 7
@@ -407,6 +406,84 @@ def read_nvprof_log(input_path: str) -> pd.DataFrame:
     
     # Keep just the name of kernels;
     data["name"] = data["name"].apply(lambda x: x.split("(")[0])
+    
+    # Fix names of transfer;
+    data.loc[data["name"] != "dtod", "device_end"] = data[data["name"] != "dtod"]["device_start"]
+    data.loc[data["name"] == "htod", "device_start"] = "CPU"
+    data.loc[data["name"] == "dtoh", "device_end"] = "CPU"  
+    
+    return data
+
+
+@time_phase
+def read_nvprof_log_a100(input_path: str) -> pd.DataFrame:
+    data = pd.read_csv(input_path)
+    
+    # Keep only a subset of columns;
+    data = data.iloc[:, [0, 1, 12, 13, 16, 19]]
+    
+    # Convert start and duration from seconds to milliseconds;
+    start_unit = data.columns[0].split("(")[-1].replace(")", "")
+    duration_unit = data.columns[1].split("(")[-1].replace(")", "")
+    if start_unit == "s":
+        data[data.columns[0]] *= 1000
+    elif start_unit == "us":
+        data[data.columns[0]] /= 1000
+    elif start_unit == "ns":
+        data[data.columns[0]] /= 1000000
+    if duration_unit == "s":
+        data[data.columns[1]] *= 1000
+    elif duration_unit == "us":
+        data[data.columns[1]] /= 1000
+    elif duration_unit == "ns":
+        data[data.columns[1]] /= 1000000
+        
+    # Rename columns;
+    data = data.rename(columns={data.columns[0]: "start_ms", 
+                                data.columns[1]: "duration_ms",
+                                "Device": "device",
+                                "Bytes (MB)": "transferred_data_byte",
+                                "Thruput (MBps)": "transfer_throughput_bytesec",
+                                "Name": "name",
+                                })
+    
+    # Remove page faults;
+    data = data[data["name"] != "[Unified Memory GPU page faults]"].reset_index(drop=True)
+    data = data[data["name"] != "[Unified Memory page throttle]"].reset_index(drop=True)
+    
+    # Remove rows with NaN Duration;
+    data = data.dropna(subset=["duration_ms"]).reset_index(drop=True)
+    
+    # Turn MB into bytes;
+    data["transferred_data_byte"] *= 1000
+    data["transfer_throughput_bytesec"] *= 1000
+    
+    # Set the start of the computation equal to 0;
+    data["start_ms"] -= data["start_ms"].iloc[0]
+    
+    # Set the end of the computation;
+    data["end_ms"] = data["duration_ms"] + data["start_ms"]
+    
+    # Clean names of operations;
+    data["name"] = data["name"].replace({
+        "[CUDA Unified Memory memcpy HtoD]": "htod",
+        "[CUDA Unified Memory memcpy DtoH]": "dtoh",
+        "[CUDA Unified Memory memcpy DtoD]": "dtod",
+        })
+    
+    # Keep just the name of kernels;
+    data["name"] = data["name"].apply(lambda x: x.split("(")[0])
+    
+    # Add start-end devices;
+    data["device_end"] = data["device"].str.split("(").str[-1].str.replace(")", "")
+    data["device_start"] = None
+    
+    # Fix start-end devices;
+    data.loc[data["name"] == "htod", "device_start"] = "CPU"
+    data.loc[data["name"] == "dtoh", "device_start"] = data.loc[data["name"] == "dtoh", "device_end"]
+    data.loc[data["name"] == "dtoh", "device_end"] = "CPU"
+    data.loc[data["name"] == "dtod", "device_start"] = "NVSwitch"  
+    
     return data
 
 #%%
