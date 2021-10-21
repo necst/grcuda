@@ -58,6 +58,6 @@ public class GrCUDAExecutionContextMock extends GrCUDAExecutionContext {
     }
 
     public StreamAttachArchitecturePolicy getArrayStreamArchitecturePolicy() {
-        return new PrePascalStreamAttachPolicy(this.cudaRuntime.getContext());
+        return new PrePascalStreamAttachPolicy();
     }
 }

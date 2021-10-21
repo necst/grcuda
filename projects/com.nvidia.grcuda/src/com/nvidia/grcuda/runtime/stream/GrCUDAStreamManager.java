@@ -157,7 +157,6 @@ public class GrCUDAStreamManager {
                     // If we require synchronization on the default stream, perform it in a specialized way;
                     if (stream.isDefaultStream()) {
                         this.runtime.getContext().getLogger().finest("--\tsync stream " + stream + " by " + vertex.getComputation());
-                        this.
                         // Synchronize the device;
                         syncDevice();
                         // All computations are now finished;

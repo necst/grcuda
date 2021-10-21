@@ -30,7 +30,6 @@
  */
 package com.nvidia.grcuda.runtime.computation.streamattach;
 
-import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
@@ -45,12 +44,6 @@ import java.util.concurrent.Callable;
  * This interface wraps and executes the array association function specified in {@link GrCUDAComputationalElement}
  */
 public class PrePascalStreamAttachPolicy implements StreamAttachArchitecturePolicy {
-
-    private final GrCUDAContext grCUDAContext;
-
-    public PrePascalStreamAttachPolicy(GrCUDAContext context){
-        this.grCUDAContext = context;
-    }
 
     @Override
     public void execute(Runnable runnable) {

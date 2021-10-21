@@ -37,6 +37,7 @@ package com.nvidia.grcuda;
 
 import com.nvidia.grcuda.cudalibraries.cublas.CUBLASRegistry;
 import com.nvidia.grcuda.cudalibraries.cuml.CUMLRegistry;
+import com.nvidia.grcuda.cudalibraries.tensorrt.TensorRTRegistry;
 import com.nvidia.grcuda.functions.BindAllFunction;
 import com.nvidia.grcuda.functions.BindFunction;
 import com.nvidia.grcuda.functions.BindKernelFunction;
@@ -55,7 +56,6 @@ import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.SyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
-import com.nvidia.grcuda.cudalibraries.tensorrt.TensorRTRegistry;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleLanguage.Env;
@@ -81,7 +81,7 @@ public final class GrCUDAContext {
 
     private static final String ROOT_NAMESPACE = "CU";
 
-    private static final TruffleLogger LOGGER = TruffleLogger.getLogger(GrCUDALanguage.ID, "com.nvidia.grcuda.GrCUDAContext");
+    public static final TruffleLogger LOGGER = GrCUDALogger.getLogger(GrCUDALogger.MAIN_LOGGER);
 
     private final Env env;
     private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
@@ -227,8 +227,6 @@ public final class GrCUDAContext {
     public RetrieveParentStreamPolicyEnum getRetrieveParentStreamPolicyEnum() {
         return retrieveParentStreamPolicyEnum;
     }
-
-    public TruffleLogger getLogger() { return LOGGER; }
 
     public boolean isForceStreamAttach() {
         return forceStreamAttach;

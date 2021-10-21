@@ -174,7 +174,7 @@ public final class CUDARuntime {
         this.architectureIsPascalOrNewer = cudaDeviceGetAttribute(CUDADeviceAttribute.COMPUTE_CAPABILITY_MAJOR, 0) >= 6;
 
         // Use pre-Pascal stream attachment policy if the CC is < 6 or if the attachment is forced by options;
-        this.streamAttachArchitecturePolicy = (!this.architectureIsPascalOrNewer || context.isForceStreamAttach()) ? new PrePascalStreamAttachPolicy(this.context) : new PostPascalStreamAttachPolicy();
+        this.streamAttachArchitecturePolicy = (!this.architectureIsPascalOrNewer || context.isForceStreamAttach()) ? new PrePascalStreamAttachPolicy() : new PostPascalStreamAttachPolicy();
     }
 
     // using this slow/uncached instance since all calls are non-critical
