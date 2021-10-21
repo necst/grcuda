@@ -87,7 +87,7 @@ int main(){
 
 	std::ofstream out_file;
 	
-	out_file.open("/usr/tmp/GrCUDA/connection_graph.csv");
+	out_file.open("connection_graph.csv");
 	out_file << "From,To,Bandwidth\n";
 
 	for(int i=0; i<NGPU; i++){
