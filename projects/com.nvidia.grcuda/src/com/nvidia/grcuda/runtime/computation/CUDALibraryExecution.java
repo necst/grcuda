@@ -30,6 +30,7 @@
  */
 package com.nvidia.grcuda.runtime.computation;
 
+import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
@@ -75,7 +76,7 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
         try {
             result = INTEROP.execute(this.nfiFunction, this.argsWithHandle);
         } catch (ArityException | UnsupportedMessageException e) {
-            this.grCUDAExecutionContext.getCudaRuntime().getContext().getLogger().severe("error in execution of cuBLAS function");
+            GrCUDALogger.getLogger(GrCUDALogger.COMPUTATION_LOGGER).severe("error in execution of cuBLAS function");
             e.printStackTrace();
         }
         // Synchronize only the default stream;
