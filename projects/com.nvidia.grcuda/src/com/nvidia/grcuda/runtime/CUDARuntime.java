@@ -1451,7 +1451,7 @@ public final class CUDARuntime {
                                             result.getClass().getName());
         }
         if (returnCode != 0) {
-            this.context.getLogger().severe("ERROR CODE=" + returnCode);
+            RUNTIME_LOGGER.severe("ERROR CODE=" + returnCode);
             throw new GrCUDAException(returnCode, DriverAPIErrorMessages.getString(returnCode), function);
 
         }
