@@ -114,11 +114,8 @@ public abstract class GrCUDAComputationalElement {
         return argumentList;
     }
 
-    // Create a profilable element
-    private ProfilableElement profilableElement;
-
     public boolean isProfilable() {
-        return profilableElement.isProfilable();
+        return true;
     }
 
     /**
@@ -128,9 +125,7 @@ public abstract class GrCUDAComputationalElement {
      * @param time
      *
      */
-    public void setExecutionTime(int deviceId, float time){
-        profilableElement.addExecutionTime(deviceId, time);
-    }
+    public void setExecutionTime(int deviceId, float time){ }
 
     /**
      * Get execution time of the computation on the device deviceId,
@@ -138,9 +133,7 @@ public abstract class GrCUDAComputationalElement {
      * @param deviceId
      * @return execution time
      */
-    public float getExecutionTimeOnDevice(int deviceId){
-        return profilableElement.getExecutionTimeOnDevice(deviceId);
-    }
+    public float getExecutionTimeOnDevice(int deviceId){ return 0; }
 
     /**
      * Return if this computation could lead to dependencies with future computations.
