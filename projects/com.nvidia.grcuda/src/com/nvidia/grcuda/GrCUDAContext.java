@@ -97,7 +97,7 @@ public final class GrCUDAContext {
     public GrCUDAContext(Env env) {
         this.env = env;
 
-        this.grCUDAOptionMap = new GrCUDAOptionMap(env.getOptions());
+        this.grCUDAOptionMap = GrCUDAOptionMap.getInstance(env.getOptions());
 
         // Retrieve the dependency computation policy;
         DependencyPolicyEnum dependencyPolicy = grCUDAOptionMap.getDependencyPolicy();

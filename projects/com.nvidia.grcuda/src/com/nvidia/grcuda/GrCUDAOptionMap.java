@@ -52,10 +52,12 @@ import java.util.Objects;
 @ExportLibrary(InteropLibrary.class)
 public class GrCUDAOptionMap implements TruffleObject {
 
+    private static GrCUDAOptionMap instance;
+
     private HashMap<OptionKey<?>, Object> optionKeyValueMap;
     private static final TruffleLogger LOGGER = TruffleLogger.getLogger(GrCUDALanguage.ID, "com.nvidia.grcuda.GrCUDAContext");
 
-    public GrCUDAOptionMap(OptionValues options) {
+    private GrCUDAOptionMap(OptionValues options) {
         optionKeyValueMap = new HashMap<>();
         List<OptionKey<?>> allOptions = new ArrayList<>();
         options.getDescriptors().forEach(o -> allOptions.add(o.getKey()));
@@ -73,8 +75,18 @@ public class GrCUDAOptionMap implements TruffleObject {
         optionKeyValueMap.replace(GrCUDAOptions.ExecutionPolicy, parseExecutionPolicy(options.get(GrCUDAOptions.ExecutionPolicy)));
     }
 
+    public static GrCUDAOptionMap getInstance(OptionValues options){
+        instance = new GrCUDAOptionMap(options);
+        return instance;
+    }
+
+    public static GrCUDAOptionMap getInstance(){
+        return instance;
+    }
+
+    //enforces immutability
     public HashMap<OptionKey<?>, Object> getOptions(){
-        return optionKeyValueMap;
+        return new HashMap<>(optionKeyValueMap);
     }
 
     @ExportMessage
