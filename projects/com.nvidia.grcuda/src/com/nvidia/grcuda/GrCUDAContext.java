@@ -103,7 +103,7 @@ public final class GrCUDAContext {
         DependencyPolicyEnum dependencyPolicy = grCUDAOptionMap.getDependencyPolicy();
 
         // Retrieve the execution policy;
-        ExecutionPolicyEnum executionPolicy = (ExecutionPolicyEnum) grCUDAOptionMap.getExecutionPolicy();
+        ExecutionPolicyEnum executionPolicy = grCUDAOptionMap.getExecutionPolicy();
 
         // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it. 
         //  Once Nvidia adds support for it, we want to remove this limitation;

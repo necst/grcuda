@@ -66,7 +66,8 @@ public class GrCUDAOptionMap implements TruffleObject {
         // how streams are obtained from parent computations;
         optionKeyValueMap.replace(GrCUDAOptions.RetrieveParentStreamPolicy, parseParentStreamPolicy(options.get(GrCUDAOptions.RetrieveParentStreamPolicy)));
         // dependency computation policy;
-        DependencyPolicyEnum dependencyPolicy = (DependencyPolicyEnum) optionKeyValueMap.replace(GrCUDAOptions.DependencyPolicy, parseDependencyPolicy(options.get(GrCUDAOptions.DependencyPolicy)));
+        optionKeyValueMap.replace(GrCUDAOptions.DependencyPolicy, parseDependencyPolicy(options.get(GrCUDAOptions.DependencyPolicy)));
+        DependencyPolicyEnum dependencyPolicy = getDependencyPolicy();
         LOGGER.fine("using " + dependencyPolicy.getName() + " dependency policy");
         // execution policy;
         optionKeyValueMap.replace(GrCUDAOptions.ExecutionPolicy, parseExecutionPolicy(options.get(GrCUDAOptions.ExecutionPolicy)));
