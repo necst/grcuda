@@ -37,6 +37,7 @@ package com.nvidia.grcuda;
 
 import com.nvidia.grcuda.cudalibraries.cublas.CUBLASRegistry;
 import com.nvidia.grcuda.cudalibraries.cuml.CUMLRegistry;
+import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.BindAllFunction;
 import com.nvidia.grcuda.functions.BindFunction;
 import com.nvidia.grcuda.functions.BindKernelFunction;
@@ -174,6 +175,12 @@ public final class GrCUDAContext {
             Namespace trt = new Namespace(TensorRTRegistry.NAMESPACE);
             namespace.addNamespace(trt);
             new TensorRTRegistry(this).registerTensorRTFunctions(trt);
+        }
+        // added support for cusparse
+        if (this.getOption(GrCUDAOptions.CuSPARSEEnabled)) {
+            Namespace sparse = new Namespace(CUSPARSERegistry.NAMESPACE);
+            namespace.addNamespace(sparse);
+            new CUSPARSERegistry(this).registerCUSPARSEFunctions(sparse);
         }
         this.rootNamespace = namespace;
     }

@@ -265,4 +265,5 @@ public class CUBLASRegistry {
                             "(sint64, sint32, sint32, sint32, sint32, sint32, pointer, pointer, sint32, pointer, sint32, pointer, pointer, sint32): sint32"));
         }
     }
+
 }
