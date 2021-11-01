@@ -62,7 +62,8 @@ struct Benchmark {
                                   policy(options.policy_choice),
                                   benchmark_name(options.benchmark_choice),
                                   max_devices(options.max_devices),
-                                  nvprof(options.nvprof) {
+                                  nvprof(options.nvprof),
+                                  num_partitions(options.num_partitions) {
         cudaDeviceGetAttribute(&pascalGpu, cudaDeviceAttr::cudaDevAttrConcurrentManagedAccess, 0);
         if (debug) {
             std::cout << "------------------------------" << std::endl;
@@ -72,10 +73,11 @@ struct Benchmark {
             std::cout << "- N=" << N << std::endl;
             std::cout << "- policy=" << options.policy_map[policy] << std::endl;
             std::cout << "- block size 1d=" << block_size_1d << std::endl;
-            std::cout << "- block size 2d=" << block_size_2d << std::endl;
+            std::cout << "- block size 2d (where applicable)=" << block_size_2d << std::endl;
             std::cout << "- num blocks=" << num_blocks << std::endl;
-            std::cout << "- max devices=" << max_devices << std::endl;
+            std::cout << "- max devices (where applicable)=" << max_devices << std::endl;
             std::cout << "- use nvprof=" << nvprof << std::endl;
+            std::cout << "- num of partitions (where applicable)=" << num_partitions << std::endl;
             std::cout << "------------------------------" << std::endl;
         }
     }
@@ -95,6 +97,7 @@ struct Benchmark {
     int max_devices = DEFAULT_MAX_DEVICES;
     int pascalGpu = 0;
     bool nvprof = DEFAULT_NVPROF;
+    int num_partitions = DEFAULT_NUM_PARTITIONS;
     Policy policy;
     BenchmarkEnum benchmark_name;
     int err = 0;

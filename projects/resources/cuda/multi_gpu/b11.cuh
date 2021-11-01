@@ -32,7 +32,9 @@
 
 class Benchmark11M : public Benchmark {
    public:
-    Benchmark11M(Options &options) : Benchmark(options) {}
+    Benchmark11M(Options &options) : Benchmark(options) {
+        P = num_partitions;
+    }
     void alloc();
     void init();
     void reset();
@@ -43,6 +45,7 @@ class Benchmark11M : public Benchmark {
    private:
     int M;
     int S;
+    int P;
 
     float **x;
     float *y, *z;
