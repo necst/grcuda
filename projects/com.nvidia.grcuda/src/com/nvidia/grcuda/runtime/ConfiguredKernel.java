@@ -60,6 +60,12 @@ public class ConfiguredKernel extends ProfilableElement implements TruffleObject
     private final KernelConfig config;
 
     public ConfiguredKernel(Kernel kernel, KernelConfig config) {
+        // Will need to support static option map
+        // super(GrCUDAContext.OptionMap.?);
+
+        // super(Boolean.TRUE);
+        //super(Boolean.FALSE);
+
         this.kernel = kernel;
         this.config = config;
     }
