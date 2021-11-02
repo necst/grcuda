@@ -32,6 +32,7 @@
 //////////////////////////////
 //////////////////////////////
 
+// Assume that z is partitioned in blocks (old implementation, not used);
 extern "C" __global__ void matrix_matrix_mult_1(const float* x, const float* y, float* z, int x_num_rows, int x_num_cols, int y_num_cols, int z_num_cols) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < x_num_rows; i += blockDim.x * gridDim.x) {
         for(int j = blockIdx.y * blockDim.y + threadIdx.y; j < y_num_cols; j += blockDim.y * gridDim.y) {
@@ -40,6 +41,19 @@ extern "C" __global__ void matrix_matrix_mult_1(const float* x, const float* y, 
                 sum += x[i * x_num_cols + k] * y[j * x_num_cols + k];
             }
             z[i * z_num_cols + j] = sum;
+        }
+    }
+}
+
+// Use a single array for z, but still access it as if it were divided in
+extern "C" __global__ void matrix_matrix_mult_2(const float* x, const float* y, float* z, int x_num_rows, int x_num_cols, int y_num_cols, int x_offset, int y_offset) {
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < x_num_rows; i += blockDim.x * gridDim.x) {
+        for(int j = blockIdx.y * blockDim.y + threadIdx.y; j < y_num_cols; j += blockDim.y * gridDim.y) {
+            float sum = 0;
+            for (int k = 0; k < x_num_cols; k++) {                
+                sum += x[i * x_num_cols + k] * y[j * x_num_cols + k];
+            }
+            z[(x_offset + i) * x_num_cols + (y_offset + j)] = sum;
         }
     }
 }
@@ -55,14 +69,15 @@ void Benchmark13M::alloc() {
     // Assume that data in X are row-major, Y are column-major;
     x = (float **) malloc(sizeof(float*) * P);
     y = (float **) malloc(sizeof(float*) * P);
-    z = (float **) malloc(sizeof(float*) * PZ);
+    // z = (float **) malloc(sizeof(float*) * PZ);
     for (int i = 0; i < P; i++) {
         err = cudaMallocManaged(&x[i], sizeof(float) * S * N);
         err = cudaMallocManaged(&y[i], sizeof(float) * S * N);
     }
-    for (int i = 0; i < PZ; i++) {
-        err = cudaMallocManaged(&z[i], sizeof(float) * S * S);
-    }
+    // for (int i = 0; i < PZ; i++) {
+        // err = cudaMallocManaged(&z[i], sizeof(float) * S * S);
+    // }
+    err = cudaMallocManaged(&z, sizeof(float) * N * N);
 
     // Create P * P streams;
     s = (cudaStream_t *) malloc(sizeof(cudaStream_t) * PZ);
@@ -105,7 +120,7 @@ void Benchmark13M::execute_sync(int iter) {
         for (int p1 = 0; p1 < P; p1++) {
             for (int p2 = 0; p2 < P; p2++) {
                 int p = p1 * P + p2;
-                cudaMemPrefetchAsync(z[p], sizeof(float) * S * S, 0, 0);
+                // cudaMemPrefetchAsync(z[p], sizeof(float) * S * S, 0, 0);
                 // Redundant prefetching in the sync implementation, but possibly necessary in multi-GPU;
                 cudaMemPrefetchAsync(x[p1], sizeof(float) * S * N, 0, 0);
                 cudaMemPrefetchAsync(y[p2], sizeof(float) * S * N, 0, 0);
@@ -116,7 +131,8 @@ void Benchmark13M::execute_sync(int iter) {
     cudaDeviceSynchronize();
     for (int p1 = 0; p1 < P; p1++) {
         for (int p2 = 0; p2 < P; p2++) {
-            matrix_matrix_mult_1<<<grid_size, block_size_2d_dim>>>(x[p1], y[p2], z[p1 * P + p2], std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), S);
+            // matrix_matrix_mult_1<<<grid_size, block_size_2d_dim>>>(x[p1], y[p2], z[p1 * P + p2], std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), S);
+            matrix_matrix_mult_2<<<grid_size, block_size_2d_dim>>>(x[p1], y[p2], z, std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), p1 * S, p2 * S);
             cudaDeviceSynchronize();
         }
     } 
@@ -130,12 +146,12 @@ void Benchmark13M::execute_async(int iter) {
             int p = p1 * P + p2;
             cudaSetDevice(select_gpu(p, max_devices));
             if (!pascalGpu || stream_attach) {
-                cudaStreamAttachMemAsync(s[p], z[p], sizeof(float) * S * S);
+                // cudaStreamAttachMemAsync(s[p], z[p], sizeof(float) * S * S);
             }
             if (pascalGpu && do_prefetch) {
                 cudaMemPrefetchAsync(x[p1], sizeof(float) * S * N, select_gpu(p, max_devices), s[p]);
                 cudaMemPrefetchAsync(y[p2], sizeof(float) * S * N, select_gpu(p, max_devices), s[p]);
-                cudaMemPrefetchAsync(z[p], sizeof(float) * S * S, select_gpu(p, max_devices), s[p]);
+                // cudaMemPrefetchAsync(z[p], sizeof(float) * S * S, select_gpu(p, max_devices), s[p]);
             }
         }
     }
@@ -143,7 +159,8 @@ void Benchmark13M::execute_async(int iter) {
         for (int p2 = 0; p2 < P; p2++) {
             int p = p1 * P + p2;
             cudaSetDevice(select_gpu(p, max_devices));
-            matrix_matrix_mult_1<<<grid_size, block_size_2d_dim, 0, s[p]>>>(x[p1], y[p2], z[p], std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), S);
+            // matrix_matrix_mult_1<<<grid_size, block_size_2d_dim, 0, s[p]>>>(x[p1], y[p2], z[p], std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), S);
+            matrix_matrix_mult_2<<<grid_size, block_size_2d_dim, 0, s[p]>>>(x[p1], y[p2], z, std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), p1 * S, p2 * S);
         }
     }
     for (int p1 = 0; p1 < P; p1++) {
@@ -155,7 +172,7 @@ void Benchmark13M::execute_async(int iter) {
 
 std::string Benchmark13M::print_result(bool short_form) {
     if (short_form) {
-        return std::to_string(z[0][0]);
+        // return std::to_string(z[0][0]);
     } else {
         int old_precision = std::cout.precision();
 		std::cout.precision(2);
@@ -163,9 +180,10 @@ std::string Benchmark13M::print_result(bool short_form) {
         for (int i = 0; i < std::min(30, N); i++) {
             res += "[";
             for (int j = 0; j < std::min(30, N); j++) {
-                int p1 = i / S; 
-                int p2 = j / S; 
-                res += std::to_string(z[p1 * P + p2][(i % S) * S + j % S]) + ", ";
+                // int p1 = i / S; 
+                // int p2 = j / S; 
+                // res += std::to_string(z[p1 * P + p2][(i % S) * S + j % S]) + ", ";
+                res += std::to_string(z[i * N + j]) + ", ";
             }
             res += "...]\n";
         }
