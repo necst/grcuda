@@ -109,7 +109,7 @@ public class GrCUDAOptionMap implements TruffleObject {
         else {
             throw UnsupportedMessageException.create();
         }
-        if (value == null) throw UnknownKeyException.create(key, new Throwable());
+        if (value == null) throw UnknownKeyException.create(key);
         return value;
     }
 
