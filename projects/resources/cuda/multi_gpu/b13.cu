@@ -32,7 +32,8 @@
 //////////////////////////////
 //////////////////////////////
 
-// Assume that z is partitioned in blocks (old implementation, not used);
+#if PARTITION_Z
+// Assume that z is partitioned in blocks;
 extern "C" __global__ void matrix_matrix_mult_1(const float* x, const float* y, float* z, int x_num_rows, int x_num_cols, int y_num_cols, int z_num_cols) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < x_num_rows; i += blockDim.x * gridDim.x) {
         for(int j = blockIdx.y * blockDim.y + threadIdx.y; j < y_num_cols; j += blockDim.y * gridDim.y) {
@@ -44,7 +45,7 @@ extern "C" __global__ void matrix_matrix_mult_1(const float* x, const float* y, 
         }
     }
 }
-
+#else
 // Use a single array for z, but still access it as if it were divided in
 extern "C" __global__ void matrix_matrix_mult_2(const float* x, const float* y, float* z, int x_num_rows, int x_num_cols, int y_num_cols, int x_offset, int y_offset) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < x_num_rows; i += blockDim.x * gridDim.x) {
@@ -57,6 +58,7 @@ extern "C" __global__ void matrix_matrix_mult_2(const float* x, const float* y, 
         }
     }
 }
+#endif
 
 //////////////////////////////
 //////////////////////////////
@@ -69,16 +71,18 @@ void Benchmark13M::alloc() {
     // Assume that data in X are row-major, Y are column-major;
     x = (float **) malloc(sizeof(float*) * P);
     y = (float **) malloc(sizeof(float*) * P);
-    // z = (float **) malloc(sizeof(float*) * PZ);
     for (int i = 0; i < P; i++) {
         err = cudaMallocManaged(&x[i], sizeof(float) * S * N);
         err = cudaMallocManaged(&y[i], sizeof(float) * S * N);
     }
-    // for (int i = 0; i < PZ; i++) {
-        // err = cudaMallocManaged(&z[i], sizeof(float) * S * S);
-    // }
+#if PARTITION_Z
+    z = (float **) malloc(sizeof(float*) * PZ);
+    for (int i = 0; i < PZ; i++) {
+        err = cudaMallocManaged(&z[i], sizeof(float) * S * S);
+    }
+#else
     err = cudaMallocManaged(&z, sizeof(float) * N * N);
-
+#endif
     // Create P * P streams;
     s = (cudaStream_t *) malloc(sizeof(cudaStream_t) * PZ);
     for (int i = 0; i < PZ; i++) {
@@ -119,7 +123,7 @@ void Benchmark13M::execute_sync(int iter) {
     if (do_prefetch && pascalGpu) {
         for (int p1 = 0; p1 < P; p1++) {
             for (int p2 = 0; p2 < P; p2++) {
-                int p = p1 * P + p2;
+                // int p = p1 * P + p2;
                 // cudaMemPrefetchAsync(z[p], sizeof(float) * S * S, 0, 0);
                 // Redundant prefetching in the sync implementation, but possibly necessary in multi-GPU;
                 cudaMemPrefetchAsync(x[p1], sizeof(float) * S * N, 0, 0);
@@ -131,8 +135,11 @@ void Benchmark13M::execute_sync(int iter) {
     cudaDeviceSynchronize();
     for (int p1 = 0; p1 < P; p1++) {
         for (int p2 = 0; p2 < P; p2++) {
-            // matrix_matrix_mult_1<<<grid_size, block_size_2d_dim>>>(x[p1], y[p2], z[p1 * P + p2], std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), S);
+#if PARTITION_Z
+            matrix_matrix_mult_1<<<grid_size, block_size_2d_dim>>>(x[p1], y[p2], z[p1 * P + p2], std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), S);
+#else
             matrix_matrix_mult_2<<<grid_size, block_size_2d_dim>>>(x[p1], y[p2], z, std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), p1 * S, p2 * S);
+#endif
             cudaDeviceSynchronize();
         }
     } 
@@ -159,8 +166,11 @@ void Benchmark13M::execute_async(int iter) {
         for (int p2 = 0; p2 < P; p2++) {
             int p = p1 * P + p2;
             cudaSetDevice(select_gpu(p, max_devices));
-            // matrix_matrix_mult_1<<<grid_size, block_size_2d_dim, 0, s[p]>>>(x[p1], y[p2], z[p], std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), S);
+#if PARTITION_Z
+            matrix_matrix_mult_1<<<grid_size, block_size_2d_dim, 0, s[p]>>>(x[p1], y[p2], z[p], std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), S);
+#else
             matrix_matrix_mult_2<<<grid_size, block_size_2d_dim, 0, s[p]>>>(x[p1], y[p2], z, std::min(S, N - p1 * S), N, std::min(S, N - p2 * S), p1 * S, p2 * S);
+#endif
         }
     }
     for (int p1 = 0; p1 < P; p1++) {
@@ -172,7 +182,11 @@ void Benchmark13M::execute_async(int iter) {
 
 std::string Benchmark13M::print_result(bool short_form) {
     if (short_form) {
-        // return std::to_string(z[0][0]);
+#if PARTITION_Z
+        return std::to_string(z[0][0]);
+#else
+        return std::to_string(z[0]);
+#endif
     } else {
         int old_precision = std::cout.precision();
 		std::cout.precision(2);
@@ -180,10 +194,13 @@ std::string Benchmark13M::print_result(bool short_form) {
         for (int i = 0; i < std::min(30, N); i++) {
             res += "[";
             for (int j = 0; j < std::min(30, N); j++) {
-                // int p1 = i / S; 
-                // int p2 = j / S; 
-                // res += std::to_string(z[p1 * P + p2][(i % S) * S + j % S]) + ", ";
+#if PARTITION_Z
+                int p1 = i / S; 
+                int p2 = j / S; 
+                res += std::to_string(z[p1 * P + p2][(i % S) * S + j % S]) + ", ";
+#else
                 res += std::to_string(z[i * N + j]) + ", ";
+#endif
             }
             res += "...]\n";
         }
