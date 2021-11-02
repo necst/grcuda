@@ -110,18 +110,18 @@ public class CUSPARSERegistry {
             cusparseSpMV_buffersizeFunctionNFI = CUSPARSE_CUSPARSESPMV_BUFFERSIZE.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
             cusparseSpMVFunctionNFI = CUSPARSE_CUSPARSESPMV.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
 
-            public enum cusparseIndexType_t{
+            enum cusparseIndexType_t{
                 CUSPARSE_INDEX_16U,
                 CUSPARSE_INDEX_32I,
                 CUSPARSE_INDEX_64I
             };
 
-            public enum cusparseIndexBase_t{
+            enum cusparseIndexBase_t{
                 CUSPARSE_INDEX_BASE_ONE,
                 CUSPARSE_INDEX_BASE_ZERO
             };
 
-            public enum cudaDataType{
+            enum cudaDataType{
                 CUDA_C_16F, // 16 bit complex
                 CUDA_C_32F, // 32 bit complex
                 CUDA_C_64F, // 64 bit complex
@@ -134,13 +134,13 @@ public class CUSPARSERegistry {
                 CUDA_R_8U   //8 bit real as a signed integer
             };
 
-            public enum cusparseOperation_t{
+            enum cusparseOperation_t{
                 CUSPARSE_OPERATION_NON_TRANSPOSE,
                 CUSPARSE_OPERATION_TRANSPOSE,
                 CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE
             };
 
-            public enum cusparseSpMVAlg_t{
+            enum cusparseSpMVAlg_t{
                 CUSPARSE_SPMV_ALG_DEFAULT,
                 CUSPARSE_SPMV_COO_ALG1,
                 CUSPARSE_SPMV_COO_ALG2,
@@ -208,9 +208,9 @@ public class CUSPARSERegistry {
                         long cooRowInd = expectLong(arguments[4]); // puntatori void???
                         long cooColInd = expectLong(arguments[5]);
                         long cooValues = expectLong(arguments[6]);
-                        cusparseIndexType_t cooIdxType = cusparseIndexType_t.expectInt(arguments[7]);
-                        cusparseIndexBase_t idxBase = cusparseIndexBase_t.expectInt(arguments[8]);
-                        cudaDataType valueType = cudaDataType.expectInt(arguments[9]);
+                        cusparseIndexType_t cooIdxType = expectInt(arguments[7]);
+                        cusparseIndexBase_t idxBase = expectInt(arguments[8]);
+                        cudaDataType valueType = expectInt(arguments[9]);
                         Object result = INTEROP.execute(cusparseCreateCooFunctionNFI, rows, cols, nnz, cooRowInd, cooColInd, cooValues, cooIdxType, idxBase, valueType);
                         checkCUSPARSEReturnCode(result, "cusparseCreateCoo");
                         return result;
@@ -246,9 +246,9 @@ public class CUSPARSERegistry {
                         long csrRowInd = expectLong(arguments[4]);
                         long csrColInd = expectLong(arguments[5]);
                         long csrValues = expectLong(arguments[6]);
-                        cusparseIndexType_t cooIdxType = cusparseIndexType_t.expectInt(arguments[7]);
-                        cusparseIndexBase_t idxBase = cusparseIndexBase_t.expectInt(arguments[8]);
-                        cudaDataType valueType = cudaDataType.expectInt(arguments[9]);
+                        cusparseIndexType_t cooIdxType = expectInt(arguments[7]);
+                        cusparseIndexBase_t idxBase = expectInt(arguments[8]);
+                        cudaDataType valueType = expectInt(arguments[9]);
                         Object result = INTEROP.execute(cusparseCreateCsrFunctionNFI, rows, cols, nnz, csrRowInd, csrColInd, csrValues, cooIdxType, idxBase, valueType);
                         checkCUSPARSEReturnCode(result, "cusparseCreateCsr");
                         return result;
@@ -307,8 +307,8 @@ public class CUSPARSERegistry {
                         vecX = expectLong(arguments[4]); // non sono sicura
                         long beta = expectLong(arguments[5]);
                         vecY = expectLong(arguments[4]); // neanche qua
-                        cudaDataType computeType = cudaDataType.expectInt(arguments(7));
-                        cusparseSpMVAlg_t alg = cusparseSpMVAlg_t.expectInt(arguments[8]);
+                        cudaDataType computeType = expectInt(arguments(7));
+                        cusparseSpMVAlg_t alg = expectInt(arguments[8]);
                         long bufferSize = expectLong(arguments[9]);
                         Object result = INTEROP.execute(cusparseSpMV_buffersizeFunctionNFI, handle, opA, alpha, cusparseSpMatDescr, vecX, beta, vecY, computeType, alg, bufferSize);
                         checkCUSPARSEReturnCode(result, "cusparseSpMV_buffersize");
@@ -336,18 +336,18 @@ public class CUSPARSERegistry {
                 public Object call(Object[] arguments) throws ArityException{
                     checkArgumentLength(arguments, 10);
                     try{
-                        UnsafeHelper.Integer64Object matA = UnsafeHelper.createInteger64Object(); // ho creato una roba da 8 byte
-                        UnsafeHelper.Integer64Object vecX = UnsafeHelper.createInteger64Object(); // ho creato una roba da 8 byte
-                        UnsafeHelper.Integer64Object vecY = UnsafeHelper.createInteger64Object(); // ho creato una roba da 8 byte
+                        UnsafeHelper.Integer64Object matA = UnsafeHelper.createInteger64Object();
+                        UnsafeHelper.Integer64Object vecX = UnsafeHelper.createInteger64Object();
+                        UnsafeHelper.Integer64Object vecY = UnsafeHelper.createInteger64Object();
                         long handle = expectLong(arguments[0]);
                         cusparseOperation_t opA = cusparseOperation_t.(arguments[1]);
-                        long alpha = expectLong(arguments[2]); // puntatore a scalare
+                        long alpha = expectLong(arguments[2]);
                         matA = expectLong(arguments[3]);
-                        vecX = expectLong(arguments[4]); // non sono sicura
+                        vecX = expectLong(arguments[4]);
                         long beta = expectLong(arguments[5]);
-                        vecY = expectLong(arguments[4]); // neanche qua
-                        cudaDataType computeType = cudaDataType.expectInt(arguments(7));
-                        cusparseSpMVAlg_t alg = cusparseSpMVAlg_t.expectInt(arguments[8]);
+                        vecY = expectLong(arguments[4]);
+                        cudaDataType computeType = expectInt(arguments(7));
+                        cusparseSpMVAlg_t alg = expectInt(arguments[8]);
                         long bufferSize = expectLong(arguments[9]);
                         Object result = INTEROP.execute(cusparseSpMVFunctionNFI, handle, opA, alpha, matA, vecX, beta, vecY, computeType, alg, bufferSize);
                         checkCUSPARSEReturnCode(result, "cusparseSmPV");
