@@ -116,6 +116,8 @@ public final class GrCUDAContext {
         // Retrieve how streams are obtained from parent computations;
         retrieveParentStreamPolicyEnum = parseParentStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveParentStreamPolicy));
 
+        //parseLoggingLevel(env.getOptions().get(GrCUDAOptions.LoggingLevel));
+
         // Retrieve the dependency computation policy;
         DependencyPolicyEnum dependencyPolicy = parseDependencyPolicy(env.getOptions().get(GrCUDAOptions.DependencyPolicy));
         LOGGER.fine("using " + dependencyPolicy.getName() + " dependency policy");
@@ -285,6 +287,11 @@ public final class GrCUDAContext {
             return GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY;
         }
     }
+
+    /* public void parseLoggingLevel(String loggingLevel){
+        //
+           ???.logHandler("log.grcuda.level",loggingLevel);
+    } */
 
     /**
      * Cleanup the GrCUDA context at the end of the execution;
