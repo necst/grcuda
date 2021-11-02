@@ -52,10 +52,16 @@ import java.util.Objects;
 @ExportLibrary(InteropLibrary.class)
 public class GrCUDAOptionMap implements TruffleObject {
 
-    private static GrCUDAOptionMap instance;
+    private static GrCUDAOptionMap instance = null;
 
     private HashMap<OptionKey<?>, Object> optionKeyValueMap;
     private static final TruffleLogger LOGGER = TruffleLogger.getLogger(GrCUDALanguage.ID, "com.nvidia.grcuda.GrCUDAContext");
+
+    public static final ExecutionPolicyEnum DEFAULT_EXECUTION_POLICY = ExecutionPolicyEnum.ASYNC;
+    public static final DependencyPolicyEnum DEFAULT_DEPENDENCY_POLICY = DependencyPolicyEnum.NO_CONST;
+    public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.FIFO;
+    public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
+    public static final boolean DEFAULT_FORCE_STREAM_ATTACH = false;
 
     private GrCUDAOptionMap(OptionValues options) {
         optionKeyValueMap = new HashMap<>();
@@ -76,7 +82,7 @@ public class GrCUDAOptionMap implements TruffleObject {
     }
 
     public static GrCUDAOptionMap getInstance(OptionValues options){
-        instance = new GrCUDAOptionMap(options);
+        if (instance == null) instance = new GrCUDAOptionMap(options);
         return instance;
     }
 
@@ -122,8 +128,8 @@ public class GrCUDAOptionMap implements TruffleObject {
         if (policyString.equals(ExecutionPolicyEnum.SYNC.getName())) return ExecutionPolicyEnum.SYNC;
         else if (policyString.equals(ExecutionPolicyEnum.ASYNC.getName())) return ExecutionPolicyEnum.ASYNC;
         else {
-            LOGGER.warning("unknown execution policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_EXECUTION_POLICY);
-            return GrCUDAContext.DEFAULT_EXECUTION_POLICY;
+            LOGGER.warning("unknown execution policy=" + policyString + "; using default=" + DEFAULT_EXECUTION_POLICY);
+            return DEFAULT_EXECUTION_POLICY;
         }
     }
 
@@ -131,8 +137,8 @@ public class GrCUDAOptionMap implements TruffleObject {
         if (policyString.equals(DependencyPolicyEnum.WITH_CONST.getName())) return DependencyPolicyEnum.WITH_CONST;
         else if (policyString.equals(DependencyPolicyEnum.NO_CONST.getName())) return DependencyPolicyEnum.NO_CONST;
         else {
-            LOGGER.warning("Warning: unknown dependency policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_DEPENDENCY_POLICY);
-            return GrCUDAContext.DEFAULT_DEPENDENCY_POLICY;
+            LOGGER.warning("Warning: unknown dependency policy=" + policyString + "; using default=" + DEFAULT_DEPENDENCY_POLICY);
+            return DEFAULT_DEPENDENCY_POLICY;
         }
     }
 
@@ -140,8 +146,8 @@ public class GrCUDAOptionMap implements TruffleObject {
         if (policyString.equals(RetrieveNewStreamPolicyEnum.FIFO.getName())) return RetrieveNewStreamPolicyEnum.FIFO;
         else if (policyString.equals(RetrieveNewStreamPolicyEnum.ALWAYS_NEW.getName())) return RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
         else {
-            LOGGER.warning("Warning: unknown new stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY);
-            return GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY;
+            LOGGER.warning("Warning: unknown new stream retrieval policy=" + policyString + "; using default=" + DEFAULT_RETRIEVE_STREAM_POLICY);
+            return DEFAULT_RETRIEVE_STREAM_POLICY;
         }
     }
 
@@ -149,8 +155,8 @@ public class GrCUDAOptionMap implements TruffleObject {
         if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT.getName())) return RetrieveParentStreamPolicyEnum.DISJOINT;
         else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT.getName())) return RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
         else {
-            LOGGER.warning("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY);
-            return GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY;
+            LOGGER.warning("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + DEFAULT_PARENT_STREAM_POLICY);
+            return DEFAULT_PARENT_STREAM_POLICY;
         }
     }
 
