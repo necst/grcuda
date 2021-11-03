@@ -8,7 +8,7 @@ Created on Thu Oct  7 12:54:09 2021
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import seaborn as sns
-import numpy as np
+ddimport numpy as np
 import pandas as pd
 import os
 import matplotlib.gridspec as gridspec
@@ -400,22 +400,22 @@ class A100Drawer(GPUDrawer):
     NUM_GPUS = 8
     NUM_CPUS = 2
     X_MIN = 0
-    X_MAX = 4
+    X_MAX = 3.8
     Y_MIN = 0
-    Y_MAX = 1.6
+    Y_MAX = 1.2
     
     X_RANGE = X_MAX - X_MIN
     Y_RANGE = Y_MAX - Y_MIN
     X_OFFSET = X_RANGE * 0.05
     GPU_RANGE = (X_RANGE - 2 * X_OFFSET)
     X_SHIFT = GPU_RANGE / NUM_GPUS
-    Y_GPU = 0.4 * Y_RANGE
+    Y_GPU = 0.5 * Y_RANGE
     Y_CPU = 0.9 * Y_RANGE
     GPU_GROUP_SIZE = NUM_GPUS // NUM_CPUS
     STEP_SIZE_GPU = GPU_RANGE / (NUM_GPUS - 1)
     X_OFFSET_CPU = X_OFFSET + STEP_SIZE_GPU * (GPU_GROUP_SIZE - 1) / 2
-    Y_OFFSET_NVSWITCH = 0.3 * Y_RANGE
-    Y_NVSWITCH = Y_GPU - Y_OFFSET_NVSWITCH
+    Y_NVSWITCH = 0.1 * Y_RANGE
+    Y_OFFSET_NVSWITCH = Y_GPU - Y_NVSWITCH
     
     X_GPU_POINTS = np.linspace(X_OFFSET, X_RANGE - X_OFFSET, NUM_GPUS)
     Y_GPU_POINTS = [Y_GPU] * NUM_GPUS
@@ -444,11 +444,11 @@ class A100Drawer(GPUDrawer):
         return fig, ax
     
     def draw_points(self, ax, alpha_scale=1):
-        ax.scatter(self.X_GPU_POINTS, self.Y_GPU_POINTS, color="#2f2f2f", alpha=alpha_scale, zorder=10)                
+        ax.scatter(self.X_GPU_POINTS, self.Y_GPU_POINTS, color="#2f2f2f", alpha=alpha_scale, zorder=100)                
         return ax
     
     def draw_cpu_points(self, ax, alpha_scale=1): 
-        ax.scatter(self.X_CPU_POINTS, self.Y_CPU_POINTS, color="#888888", alpha=alpha_scale, zorder=10)         
+        ax.scatter(self.X_CPU_POINTS, self.Y_CPU_POINTS, edgecolor="#888888", color="w", alpha=alpha_scale, zorder=100)         
         return ax
     
     def draw_cpu_lines(self, ax, alpha_scale=1):
@@ -477,17 +477,17 @@ class A100Drawer(GPUDrawer):
     
     def draw_gpu_lines(self, ax, alpha_scale=1):
         style_nv = dict(
-            linewidth=2,
+            linewidth=1,
             linestyle="-",
             color="#2f2f2f",
-            alpha=0.9 * alpha_scale,
+            alpha=1 * alpha_scale,
             solid_capstyle="round",
         )
         style_switch = dict(
-            linewidth=6,
+            linewidth=5,
             linestyle="-",
             color="#2f2f2f",
-            alpha=0.9 * alpha_scale,
+            alpha=1 * alpha_scale,
             solid_capstyle="round",
         )
         
@@ -508,7 +508,7 @@ class A100Drawer(GPUDrawer):
     def draw_gpu_names(self, ax):
         for i, g in enumerate(self.GPU):
             x = g[0] + self.X_RANGE * 0.005
-            y = g[1] - self.Y_RANGE * 0.08
+            y = g[1] - self.Y_RANGE * 0.14
             ax.annotate(f"GPU{i}", xy=(x, y), color="#2f2f2f", fontsize=9, ha="left")
         return ax 
     
@@ -521,12 +521,12 @@ class A100Drawer(GPUDrawer):
         y = self.Y_NVSWITCH - self.Y_RANGE * 0.1
         ax.annotate("NVSwitch", xy=(x, y), color="#888888", fontsize=7, ha="left")
         
-        x = np.mean([c[0] for c in self.CPU])
+        x = np.mean([c[0] for c in self.CPU]) 
         y = self.CPU[0][1] - self.Y_RANGE * 0.08
         ax.annotate("Infinity Fabric", xy=(x, y), ha="center", color="#888888", fontsize=7)
         
         x = np.mean([self.CPU[0][0], self.GPU[0][0]]) - self.X_RANGE * 0.02
-        y = np.mean([self.CPU[0][1], self.GPU[0][1]])
+        y = np.mean([self.CPU[0][1], self.GPU[0][1]]) + self.Y_RANGE * 0.02
         angle = np.rad2deg(np.arctan((self.CPU[0][1] - self.GPU[0][1]) / (self.CPU[0][0] - self.GPU[0][0])))
         ax.annotate("PCIe 4.0 x16", xy=(x, y), ha="center", color="#888888",
                     fontsize=7, rotation=angle, rotation_mode="anchor")
@@ -546,11 +546,11 @@ class A100Drawer(GPUDrawer):
     
     def draw_transfer(self, ax, transfer_matrix_nondirectional, max_transfer: float=None, min_transfer: float=None, 
                       redraw_points: bool=True, **kwargs):
-        PALETTE = sns.color_palette("YlOrBr", as_cmap=True)# sns.color_palette("YlOrBr", as_cmap=True)
+        PALETTE = sns.color_palette("YlOrBr", as_cmap=True)
         MIN_PAL = 0.2
         MAX_PAL = 0.5
         MAX_WIDTH = 6
-        MIN_WIDTH = 1
+        MIN_WIDTH = 1.5
         if max_transfer is None:
             max_transfer = transfer_matrix_nondirectional.max().max()
         if min_transfer is None:
@@ -571,16 +571,19 @@ class A100Drawer(GPUDrawer):
                 gpu_tot = gpu + cpu * self.GPU_GROUP_SIZE
                 if str(gpu_tot) in transfer_matrix_nondirectional.index:
                     cpu_gpu_transfer = transfer_matrix_nondirectional.loc[str(gpu_tot), :]["CPU"]
-                    ax.plot((self.CPU[cpu][0], self.GPU[gpu_tot][0]), (self.CPU[cpu][1], self.GPU[gpu_tot][1]), **style_gpu(cpu_gpu_transfer))
+                    if cpu_gpu_transfer > 0:
+                        ax.plot((self.CPU[cpu][0], self.GPU[gpu_tot][0]), (self.CPU[cpu][1], self.GPU[gpu_tot][1]), **style_gpu(cpu_gpu_transfer))
         
         # All the other channels;
         for gpu in range(self.NUM_GPUS):
             if str(gpu) in transfer_matrix_nondirectional.index and "NVSwitch" in transfer_matrix_nondirectional.index:
                 gpu_switch_transfer = transfer_matrix_nondirectional.loc[str(gpu), :]["NVSwitch"]
-                ax.plot((self.GPU[gpu][0], self.GPU[gpu][0]), (self.Y_NVSWITCH, self.GPU[gpu][1]), **style_gpu(gpu_switch_transfer))
+                if gpu_switch_transfer > 0:
+                    ax.plot((self.GPU[gpu][0], self.GPU[gpu][0]), (self.Y_NVSWITCH, self.GPU[gpu][1]), **style_gpu(gpu_switch_transfer))
         if "NVSwitch" in transfer_matrix_nondirectional.index:
             switch_transfer_tot = transfer_matrix_nondirectional["NVSwitch"].sum()
-            ax.plot((self.X_OFFSET, self.X_OFFSET + self.GPU_RANGE), (self.Y_NVSWITCH, self.Y_NVSWITCH), **style_gpu(switch_transfer_tot))
+            if switch_transfer_tot > 0:
+                ax.plot((self.X_OFFSET, self.X_OFFSET + self.GPU_RANGE), (self.Y_NVSWITCH, self.Y_NVSWITCH), **style_gpu(switch_transfer_tot))
         return ax
 
     def add_benchmark_name(self, ax, b):
@@ -619,7 +622,7 @@ if __name__ == "__main__":
     else:
         raise ValueError(f"Unknown GPU={GPU}")
     
-    fig, ax = gpu_drawer.draw_topology(alpha_scale=0.5)
+    fig, ax = gpu_drawer.draw_topology(alpha_scale=1)
     save_plot(PLOT_DIR, f"{GPU.lower()}_topology" + "_{}.{}", date=OUTPUT_DATE, dpi=600)    
     
     #%% Draw transfer of GPUs;
@@ -636,7 +639,7 @@ if __name__ == "__main__":
     
     #%%  A plot for every benchmark;
     for b in BENCHMARKS:
-        fig, ax = gpu_drawer.draw_topology(alpha_scale=0.5)
+        fig, ax = gpu_drawer.draw_topology(alpha_scale=1)
         transfer_matrix = pd.read_csv(os.path.join(DEFAULT_RES_CUDA_DIR, INPUT_FOLDER, b + "_transfer_matrix.csv"), index_col=0)
         # Create non-directional matrix;
         transfer_matrix_nondirectional = create_nondirectional_transfer_matrix(transfer_matrix)
@@ -654,7 +657,7 @@ if __name__ == "__main__":
     
     for bi, b in enumerate(BENCHMARKS):
         ax = fig.add_subplot(gs[0, bi])
-        fig, ax = gpu_drawer.draw_topology(alpha_scale=0.5, fig=fig, ax=ax)
+        fig, ax = gpu_drawer.draw_topology(alpha_scale=1, fig=fig, ax=ax)
         transfer_matrix = pd.read_csv(os.path.join(DEFAULT_RES_CUDA_DIR, INPUT_FOLDER, b + "_transfer_matrix.csv"), index_col=0)
         # Create non-directional matrix;
         transfer_matrix_nondirectional = create_nondirectional_transfer_matrix(transfer_matrix)
