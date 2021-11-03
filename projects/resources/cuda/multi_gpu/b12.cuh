@@ -68,9 +68,9 @@ struct coo_matrix_t {
 #define DOT_PRODUCT_NUM_BLOCKS 32
 #define DOT_PRODUCT_THREADS_PER_BLOCK 64
 
-class Benchmark12 : public Benchmark {
+class Benchmark12M : public Benchmark {
 public:
-    Benchmark12(Options &options) : Benchmark(options) {
+    Benchmark12M(Options &options) : Benchmark(options) {
         // This test does not run on pascal gpus due to how Managed memory is handled
 
         this->block_size = this->block_size_1d * this->block_size_2d;

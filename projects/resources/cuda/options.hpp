@@ -52,6 +52,8 @@
 #define DEFAULT_STREAM_ATTACH false
 #define DEFAULT_MAX_DEVICES 1
 #define DEFAULT_NVPROF false
+// In some benchmarks, allow the computation to be split into an arbitrary number of partitions;
+#define DEFAULT_NUM_PARTITIONS 16
 
 //////////////////////////////
 //////////////////////////////
@@ -76,7 +78,8 @@ enum BenchmarkEnum {
     B6M,
     B9M,
     B11M,
-    B12,
+    B12M,
+    B13M,
     ERR
 };
 
@@ -119,8 +122,10 @@ inline BenchmarkEnum get_benchmark(std::string benchmark) {
         return BenchmarkEnum::B9M;
     else if (benchmark == "b11m")
         return BenchmarkEnum::B11M;
-    else if (benchmark == "b12")
-        return BenchmarkEnum::B12;
+    else if (benchmark == "b12m")
+        return BenchmarkEnum::B12M;
+    else if (benchmark == "b13m")
+        return BenchmarkEnum::B13M;
     else
         return BenchmarkEnum::ERR;
 }
@@ -138,6 +143,7 @@ struct Options {
     bool prefetch = DEFAULT_PREFETCH;
     bool stream_attach = DEFAULT_STREAM_ATTACH;
     bool nvprof = DEFAULT_NVPROF;
+    int num_partitions = DEFAULT_NUM_PARTITIONS;
     BenchmarkEnum benchmark_choice = get_benchmark(DEFAULT_BENCHMARK);
     Policy policy_choice = get_policy(DEFAULT_POLICY);
 
@@ -162,7 +168,8 @@ struct Options {
                 (BenchmarkEnum::B6M, "b6m")
                 (BenchmarkEnum::B9M, "b9m")
                 (BenchmarkEnum::B11M, "b11m")
-                (BenchmarkEnum::B12, "b12");
+                (BenchmarkEnum::B12M, "b12m")
+                (BenchmarkEnum::B13M, "b13m");
 
         int opt;
         static struct option long_options[] = {{"debug", no_argument, 0, 'd'},
@@ -174,15 +181,16 @@ struct Options {
                                                {"skip_first", required_argument, 0, 's'},
                                                {"benchmark", required_argument, 0, 'k'},
                                                {"policy", required_argument, 0, 'p'},
-                                               {"prefetch", required_argument, 0, 'r'},
-                                               {"attach", required_argument, 0, 'a'},
+                                               {"prefetch", no_argument, 0, 'r'},
+                                               {"attach", no_argument, 0, 'a'},
                                                {"max_devices", required_argument, 0, 'm'},
-                                               {"nvprof", required_argument, 0, 'v'},
+                                               {"nvprof", no_argument, 0, 'v'},
+                                               {"partitions", required_argument, 0, 'P'},
                                                {0, 0, 0, 0}};
         // getopt_long stores the option index here;
         int option_index = 0;
 
-        while ((opt = getopt_long(argc, argv, "dt:n:b:c:g:s:k:p:ram:v", long_options, &option_index)) != EOF) {
+        while ((opt = getopt_long(argc, argv, "dt:n:b:c:g:s:k:p:ram:vP:", long_options, &option_index)) != EOF) {
             switch (opt) {
                 case 'd':
                     debug = true;
@@ -222,6 +230,9 @@ struct Options {
                     break;
                 case 'v':
                     nvprof = true;
+                    break;
+                case 'P':
+                    num_partitions = atoi(optarg);
                     break;
                 default:
                     break;

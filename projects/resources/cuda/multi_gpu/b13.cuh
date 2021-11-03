@@ -30,9 +30,11 @@
 #pragma once
 #include "../benchmark.cuh"
 
-class Benchmark11M : public Benchmark {
+#define PARTITION_Z false
+
+class Benchmark13M : public Benchmark {
    public:
-    Benchmark11M(Options &options) : Benchmark(options) {
+    Benchmark13M(Options &options) : Benchmark(options) {
         P = num_partitions;
     }
     void alloc();
@@ -43,13 +45,14 @@ class Benchmark11M : public Benchmark {
     std::string print_result(bool short_form = false);
 
    private:
-    int M;
     int S;
-    int P;
+    int P, PZ;
 
-    float **x;
-    float *y, *z;
-    float *x_cpu;
-
+    float **x, **y;
+#if PARTITION_Z
+    float **z;
+#else
+    float *z;
+#endif
     cudaStream_t *s;
 };

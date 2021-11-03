@@ -174,7 +174,7 @@ T accumulate(T *arr, const u32 size, const T init = T(0)){
     return accumulator;
 }
 
-void Benchmark12::alloc_vectors() {
+void Benchmark12M::alloc_vectors() {
     for (const auto &partition: this->coo_partitions) {
         f32 *tmp_vec_in, *tmp_spmv_out, *tmp_intermediate_dot_product_values;
         f32 *tmp_vec_next, *tmp_lanczos_vectors, *tmp_normalized_out;
@@ -199,7 +199,7 @@ void Benchmark12::alloc_vectors() {
     CUDA_CHECK_ERROR(cudaMallocManaged(&beta_intermediate, sizeof(f32) * this->num_partitions));
 }
 
-void Benchmark12::alloc_coo_partitions() {
+void Benchmark12M::alloc_coo_partitions() {
 
     const u32 nnz_per_partition = u32((this->matrix.nnz + this->num_partitions) / this->num_partitions);
     u32 from_index = 0;
@@ -223,7 +223,7 @@ void Benchmark12::alloc_coo_partitions() {
     this->coo_partitions.push_back(coo_partition);
 }
 
-coo_matrix_t *Benchmark12::assign_partition(u32 from_index, u32 to_index, u32 offset) {
+coo_matrix_t *Benchmark12M::assign_partition(u32 from_index, u32 to_index, u32 offset) {
     i32 *tmp_x, *tmp_y;
     f32 *tmp_val;
     coo_matrix_t *coo_partition;
@@ -250,7 +250,7 @@ coo_matrix_t *Benchmark12::assign_partition(u32 from_index, u32 to_index, u32 of
     return coo_partition;
 }
 
-void Benchmark12::create_random_matrix(bool normalize = true) {
+void Benchmark12M::create_random_matrix(bool normalize = true) {
     u32 total_nnz = RANDOM_MATRIX_AVG_NNZ_PER_ROW * RANDOM_MATRIX_NUM_ROWS;
     i32 *x = (i32 *) std::malloc(total_nnz * sizeof(i32));
     i32 *y = (i32 *) std::malloc(total_nnz * sizeof(i32));
@@ -288,7 +288,7 @@ void Benchmark12::create_random_matrix(bool normalize = true) {
 
 }
 
-void Benchmark12::load_matrix(bool normalize = false) {
+void Benchmark12M::load_matrix(bool normalize = false) {
 
     i32 M, N, nnz;
     std::vector<i32> x, y;
@@ -322,7 +322,7 @@ void Benchmark12::load_matrix(bool normalize = false) {
 
 }
 
-void Benchmark12::alloc() {
+void Benchmark12M::alloc() {
 
     cudaMallocManaged(&(this->alpha), sizeof(f32));
     cudaMallocManaged(&(this->beta), sizeof(f32));
@@ -344,7 +344,7 @@ void Benchmark12::alloc() {
 
 }
 
-void Benchmark12::reset() {
+void Benchmark12M::reset() {
     // std::cout << "Called reset" << std::endl;
     // Just call init, it resets all the necessary vectors;
     this->init();
@@ -362,7 +362,7 @@ void Benchmark12::reset() {
 
 }
 
-void Benchmark12::sync_all() {
+void Benchmark12M::sync_all() {
 
     for (u32 i = 0; i < this->num_partitions; ++i) {
         auto selected_device = select_gpu(i, this->num_devices);
@@ -372,7 +372,7 @@ void Benchmark12::sync_all() {
     cudaSetDevice(0);
 }
 
-void Benchmark12::create_streams() {
+void Benchmark12M::create_streams() {
 
     for (u32 i = 0; i < this->num_partitions; ++i) {
         auto selected_device = select_gpu(i, this->num_devices);
@@ -387,7 +387,7 @@ void Benchmark12::create_streams() {
 }
 
 template<typename Function>
-void Benchmark12::launch_multi_kernel(Function kernel_launch_function) {
+void Benchmark12M::launch_multi_kernel(Function kernel_launch_function) {
 
     for (u32 i = 0; i < this->num_partitions; ++i) {
         auto selected_device = select_gpu(i, this->num_devices);
@@ -401,7 +401,7 @@ void Benchmark12::launch_multi_kernel(Function kernel_launch_function) {
 
 }
 
-void Benchmark12::execute(i32 iter) {
+void Benchmark12M::execute(i32 iter) {
 
     if (this->debug) {
         std::cout << "[LANCZOS] Iteration " << iter << std::endl;
@@ -599,12 +599,12 @@ void Benchmark12::execute(i32 iter) {
 
 }
 
-void Benchmark12::execute_sync(i32 iter) {
+void Benchmark12M::execute_sync(i32 iter) {
     assert(this->policy == Policy::Sync);
     this->execute(iter);
 }
 
-void Benchmark12::execute_async(int iter) {
+void Benchmark12M::execute_async(int iter) {
     assert(this->policy == Policy::Async);
 
     for (u32 i = 0; i < this->num_partitions; ++i)
@@ -613,7 +613,7 @@ void Benchmark12::execute_async(int iter) {
     this->execute(iter);
 }
 
-std::string Benchmark12::print_result(bool short_form = false) {
+std::string Benchmark12M::print_result(bool short_form = false) {
 
     std::string base = "";
     if(this->debug){
@@ -628,7 +628,7 @@ std::string Benchmark12::print_result(bool short_form = false) {
     return base;
 }
 
-void Benchmark12::init() {
+void Benchmark12M::init() {
     // Initialize vec_in[0]
     std::generate(this->vec_in[0], this->vec_in[0] + this->matrix.N, [this]() { return 1.0f / this->matrix.N; });
 
@@ -656,16 +656,16 @@ void Benchmark12::init() {
 
 }
 
-void Benchmark12::execute_cudagraph(int iter) {
-    throw new std::runtime_error("Benchmark12::execute_cudagraph not implemented");
+void Benchmark12M::execute_cudagraph(int iter) {
+    throw new std::runtime_error("Benchmark12M::execute_cudagraph not implemented");
 }
 
-void Benchmark12::execute_cudagraph_manual(int iter) {
-    throw new std::runtime_error("Benchmark12::execute_cudagraph_manual not implemented");
+void Benchmark12M::execute_cudagraph_manual(int iter) {
+    throw new std::runtime_error("Benchmark12M::execute_cudagraph_manual not implemented");
 }
 
-void Benchmark12::execute_cudagraph_single(int iter) {
-    throw new std::runtime_error("Benchmark12::execute_cudagraph_single not implemented");
+void Benchmark12M::execute_cudagraph_single(int iter) {
+    throw new std::runtime_error("Benchmark12M::execute_cudagraph_single not implemented");
 }
 
 std::ostream &operator<<(std::ostream &os, const coo_matrix_t &matrix) {

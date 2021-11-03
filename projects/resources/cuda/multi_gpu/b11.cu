@@ -32,8 +32,6 @@
 //////////////////////////////
 //////////////////////////////
 
-#define P 16
-
 extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, float* z, int n, int m, int z_offset) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
         float sum = 0;
@@ -73,12 +71,13 @@ void Benchmark11M::init() {
 }
 
 void Benchmark11M::reset() {
+    int S1 = (N + 16 - 1) / 16;
     for (int i = 0; i < M; i++) {
         y[i] = float(i + 1) / M; // (float)(rand()) / (float)(RAND_MAX);
     }
     for (int i = 0; i < P; i++) {
         for (int j = 0; j < S * M; j++) {
-            x[i][j] = float(i + 1) / (S * M); // x_cpu[i * S * M + j];
+            x[i][j] = float(i + 1) / (S1 * M); // x_cpu[i * S * M + j];
         }
     }
 }
