@@ -61,6 +61,7 @@ import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import sun.security.krb5.internal.SeqNumber;
 
 public class CUSPARSERegistry {
     // TODO: set library directory
@@ -90,6 +91,44 @@ public class CUSPARSERegistry {
 
     private Long cusparseHandle = null;
 
+    public enum cusparseIndexType_t{
+        CUSPARSE_INDEX_16U,
+        CUSPARSE_INDEX_32I,
+        CUSPARSE_INDEX_64I;
+    }
+
+    public enum cusparseIndexBase_t {
+        CUSPARSE_INDEX_BASE_ONE,
+        CUSPARSE_INDEX_BASE_ZERO;
+    }
+
+    public enum cudaDataType {
+        CUDA_C_16F, // 16 bit complex
+        CUDA_C_32F, // 32 bit complex
+        CUDA_C_64F, // 64 bit complex
+        CUDA_C_8I,  // 8 bit complex as a pair of signed integers
+        CUDA_C_8U,  // 8 bit complex as a pair of signed integers
+        CUDA_R_16F, // 16 bit real
+        CUDA_R_32F, // 32 bit real
+        CUDA_R_64F, // 64 bit real
+        CUDA_R_8I,    // 8 bit real as a signed integer
+        CUDA_R_8U;   //8 bit real as a signed integer
+    }
+
+    public enum cusparseOperation_t {
+        CUSPARSE_OPERATION_NON_TRANSPOSE,
+        CUSPARSE_OPERATION_TRANSPOSE,
+        CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
+    }
+
+    public enum cusparseSpMVAlg_t {
+        CUSPARSE_SPMV_ALG_DEFAULT,
+        CUSPARSE_SPMV_COO_ALG1,
+        CUSPARSE_SPMV_COO_ALG2,
+        CUSPARSE_SPMV_CSR_ALG1,
+        CUSPARSE_SPMV_CSR_ALG2;
+    }
+
     public CUSPARSERegistry(GrCUDAContext context) {
         this.context = context;
         // created field in GrCUDAOptions
@@ -100,7 +139,7 @@ public class CUSPARSERegistry {
         if (cusparseHandle == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
-            // create NFI function objects for handle creation and destruction
+            // create NFI function objects for functions' management
 
             cusparseCreateFunctionNFI = CUSPARSE_CUSPARSECREATE.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
             cusparseDestroyFunctionNFI = CUSPARSE_CUSPARSEDESTROY.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
@@ -110,43 +149,7 @@ public class CUSPARSERegistry {
             cusparseSpMV_buffersizeFunctionNFI = CUSPARSE_CUSPARSESPMV_BUFFERSIZE.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
             cusparseSpMVFunctionNFI = CUSPARSE_CUSPARSESPMV.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
 
-            enum cusparseIndexType_t{
-                CUSPARSE_INDEX_16U,
-                CUSPARSE_INDEX_32I,
-                CUSPARSE_INDEX_64I
-            };
 
-            enum cusparseIndexBase_t{
-                CUSPARSE_INDEX_BASE_ONE,
-                CUSPARSE_INDEX_BASE_ZERO
-            };
-
-            enum cudaDataType{
-                CUDA_C_16F, // 16 bit complex
-                CUDA_C_32F, // 32 bit complex
-                CUDA_C_64F, // 64 bit complex
-                CUDA_C_8I,  // 8 bit complex as a pair of signed integers
-                CUDA_C_8U,  // 8 bit complex as a pair of signed integers
-                CUDA_R_16F, // 16 bit real
-                CUDA_R_32F, // 32 bit real
-                CUDA_R_64F, // 64 bit real
-                CUDA_R_8I, 	// 8 bit real as a signed integer
-                CUDA_R_8U   //8 bit real as a signed integer
-            };
-
-            enum cusparseOperation_t{
-                CUSPARSE_OPERATION_NON_TRANSPOSE,
-                CUSPARSE_OPERATION_TRANSPOSE,
-                CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE
-            };
-
-            enum cusparseSpMVAlg_t{
-                CUSPARSE_SPMV_ALG_DEFAULT,
-                CUSPARSE_SPMV_COO_ALG1,
-                CUSPARSE_SPMV_COO_ALG2,
-                CUSPARSE_SPMV_CSR_ALG1,
-                CUSPARSE_SPMV_CSR_ALG2
-            };
 
             // cusparseStatus_t cusparseCreate(cusparseHandle_t handle)
 
@@ -195,10 +198,12 @@ public class CUSPARSERegistry {
             //                  cudaDataType          valueType)
 
             cusparseCreateCooFunction = new Function(CUSPARSE_CUSPARSECREATECOO.getName()) {
+
+                Long cusparseSpMatDescr = null;
                 @Override
                 @TruffleBoundary
-                UnsafeHelper.Integer64Object cusparseSpMatDescr = UnsafeHelper.createInteger64Object();
                 public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
+
                     checkArgumentLength(arguments, 10);
                     try{
                         cusparseSpMatDescr = expectLong(arguments[0]); // è un puntatore
@@ -208,9 +213,9 @@ public class CUSPARSERegistry {
                         long cooRowInd = expectLong(arguments[4]); // puntatori void???
                         long cooColInd = expectLong(arguments[5]);
                         long cooValues = expectLong(arguments[6]);
-                        cusparseIndexType_t cooIdxType = expectInt(arguments[7]);
-                        cusparseIndexBase_t idxBase = expectInt(arguments[8]);
-                        cudaDataType valueType = expectInt(arguments[9]);
+                        int  cooIdxType = expectInt(arguments[7]);
+                        cusparseIndexBase_t idxBase = (cusparseIndexBase_t) arguments[8];
+                        cudaDataType valueType = (cudaDataType) arguments[9];
                         Object result = INTEROP.execute(cusparseCreateCooFunctionNFI, rows, cols, nnz, cooRowInd, cooColInd, cooValues, cooIdxType, idxBase, valueType);
                         checkCUSPARSEReturnCode(result, "cusparseCreateCoo");
                         return result;
@@ -233,9 +238,10 @@ public class CUSPARSERegistry {
             //                  cudaDataType          valueType)
 
             cusparseCreateCsrFunction = new Function(CUSPARSE_CUSPARSECREATECSR.getName()) {
+
+                Long cusparseSpMatDescr = null;
                 @Override
                 @TruffleBoundary
-                UnsafeHelper.Integer64Object cusparseSpMatDescr = UnsafeHelper.createInteger64Object();
                 public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
                     checkArgumentLength(arguments, 10);
                     try{
@@ -246,9 +252,9 @@ public class CUSPARSERegistry {
                         long csrRowInd = expectLong(arguments[4]);
                         long csrColInd = expectLong(arguments[5]);
                         long csrValues = expectLong(arguments[6]);
-                        cusparseIndexType_t cooIdxType = expectInt(arguments[7]);
-                        cusparseIndexBase_t idxBase = expectInt(arguments[8]);
-                        cudaDataType valueType = expectInt(arguments[9]);
+                        cusparseIndexType_t cooIdxType = (cusparseIndexType_t) arguments[7];
+                        cusparseIndexBase_t idxBase = (cusparseIndexBase_t) arguments[8];
+                        cudaDataType valueType = (cudaDataType) arguments[9];
                         Object result = INTEROP.execute(cusparseCreateCsrFunctionNFI, rows, cols, nnz, csrRowInd, csrColInd, csrValues, cooIdxType, idxBase, valueType);
                         checkCUSPARSEReturnCode(result, "cusparseCreateCsr");
                         return result;
@@ -264,16 +270,17 @@ public class CUSPARSERegistry {
             //                    cudaDataType          valueType)
 
             cusparseCreateDnVecFunction = new Function(CUSPARSE_CUSPARSECREATEDNVEC.getName()) {
+
+                Long cusparseDnVecDescr = null;
                 @Override
                 @TruffleBoundary
-                UnsafeHelper.Integer64Object cusparseDnVecDescr = UnsafeHelper.createInteger64Object();
                 public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
                     checkArgumentLength(arguments, 4);
                     try{
                         cusparseDnVecDescr = expectLong(arguments[0]); // è giusto con expectLong?
                         long size = expectLong(arguments[1]);
                         long values = expectLong(arguments[2]);
-                        cudaDataType valueType = expectInt(arguments[3];)
+                        cudaDataType valueType = (cudaDataType) arguments[3];
                         Object result = INTEROP.execute(cusparseCreateDnVecFunctionNFI, size, values, valueType);
                         checkCUSPARSEReturnCode(result, "cusparseCreateDnVec");
                         return result;
@@ -292,23 +299,26 @@ public class CUSPARSERegistry {
             // enum structures necessary for SpMV_buffersize:
 
             cusparseSpMV_buffersizeFunction = new Function(CUSPARSE_CUSPARSESPMV_BUFFERSIZE.getName()) {
+                Integer computeType = null;
+                Integer alg = null;
+                Integer opA = null;
                 @Override
                 @TruffleBoundary
                 public Object call(Object[] arguments) throws ArityException {
                     checkArgumentLength(arguments, 10);
                     try {
-                        UnsafeHelper.Integer64Object cusparseSpMatDescr = UnsafeHelper.createInteger64Object(); // ho creato una roba da 8 byte
-                        UnsafeHelper.Integer64Object vecX = UnsafeHelper.createInteger64Object(); // ho creato una roba da 8 byte
-                        UnsafeHelper.Integer64Object vecY = UnsafeHelper.createInteger64Object(); // ho creato una roba da 8 byte
+                        Long cusparseSpMatDescr = null; // ho creato una roba da 8 byte
+                        Long vecX = null; // ho creato una roba da 8 byte
+                        Long vecY = null; // ho creato una roba da 8 byte
                         long handle = expectLong(arguments[0]);
-                        cusparseOperation_t opA = cusparseOperation_t.(arguments[1]);
+                        cusparseOperation_t opA =(cusparseOperation_t) arguments[1];
                         long alpha = expectLong(arguments[2]); // è solo uno scalare, dovrebbe andare così, no?
                         cusparseSpMatDescr = expectLong(arguments[3]);
                         vecX = expectLong(arguments[4]); // non sono sicura
                         long beta = expectLong(arguments[5]);
                         vecY = expectLong(arguments[4]); // neanche qua
-                        cudaDataType computeType = expectInt(arguments(7));
-                        cusparseSpMVAlg_t alg = expectInt(arguments[8]);
+                        cudaDataType computeType = (cudaDataType) arguments[7];
+                        cusparseSpMVAlg_t alg = (cusparseSpMVAlg_t) arguments[8];
                         long bufferSize = expectLong(arguments[9]);
                         Object result = INTEROP.execute(cusparseSpMV_buffersizeFunctionNFI, handle, opA, alpha, cusparseSpMatDescr, vecX, beta, vecY, computeType, alg, bufferSize);
                         checkCUSPARSEReturnCode(result, "cusparseSpMV_buffersize");
@@ -330,44 +340,44 @@ public class CUSPARSERegistry {
             //             cusparseSpMVAlg_t    alg,
             //             void*                externalBuffer)
 
-            cusparseSpMVFunction = new Function(CUSPARSE_CUSPARSESPMV.getName()){
+            cusparseSpMVFunction = new Function(CUSPARSE_CUSPARSESPMV.getName()) {
+                Integer opA = null;
+                Integer computeType = null;
+                Integer alg = null;
                 @Override
                 @TruffleBoundary
-                public Object call(Object[] arguments) throws ArityException{
+                public Object call(Object[] arguments) throws ArityException {
                     checkArgumentLength(arguments, 10);
-                    try{
-                        UnsafeHelper.Integer64Object matA = UnsafeHelper.createInteger64Object();
-                        UnsafeHelper.Integer64Object vecX = UnsafeHelper.createInteger64Object();
-                        UnsafeHelper.Integer64Object vecY = UnsafeHelper.createInteger64Object();
+                    try {
+                        Long matA = null;
+                        Long vecX = null;
+                        Long vecY = null;
                         long handle = expectLong(arguments[0]);
-                        cusparseOperation_t opA = cusparseOperation_t.(arguments[1]);
+                        cusparseOperation_t opA = (cusparseOperation_t) arguments[1];
                         long alpha = expectLong(arguments[2]);
                         matA = expectLong(arguments[3]);
                         vecX = expectLong(arguments[4]);
                         long beta = expectLong(arguments[5]);
                         vecY = expectLong(arguments[4]);
-                        cudaDataType computeType = expectInt(arguments(7));
-                        cusparseSpMVAlg_t alg = expectInt(arguments[8]);
+                        cudaDataType computeType = (cudaDataType) arguments[7];
+                        cusparseSpMVAlg_t alg = (cusparseSpMVAlg_t) arguments[8];
                         long bufferSize = expectLong(arguments[9]);
                         Object result = INTEROP.execute(cusparseSpMVFunctionNFI, handle, opA, alpha, matA, vecX, beta, vecY, computeType, alg, bufferSize);
                         checkCUSPARSEReturnCode(result, "cusparseSmPV");
                         return result;
+                    } catch (InteropException e) {
+                        throw new GrCUDAInternalException(e);
                     }
-
                 }
-            }
-
-
-            try {
-                Object result = INTEROP.execute(cusparseCreateFunction);
-                cusparseHandle = expectLong(result);
-
-                context.addDisposable(this::cuSPARSEShutdown);
-            } catch (InteropException e) {
-                throw new GrCUDAInternalException(e);
-            }
+            };
         }
-
+        try {
+            Object result = INTEROP.execute(cusparseCreateFunction);
+            cusparseHandle = expectLong(result);
+            context.addDisposable(this::cuSPARSEShutdown);
+        } catch (InteropException e) {
+            throw new GrCUDAInternalException(e);
+        }
     }
 
     private void cuSPARSEShutdown() {
@@ -401,13 +411,19 @@ public class CUSPARSERegistry {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
-                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction,
-                                        this.createComputationArgumentWithValueList(arguments, cusparseHandle)).schedule();
+                        // Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction,
+//                                        this.createComputationArgumentWithValueList(arguments, cusparseHandle)).schedule();
+                        Object result = null;
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
                         return result;
-                    } catch (InteropException e) {
-                        throw new GrCUDAInternalException(e);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
                     }
+//                    catch (InteropException e) {
+//                        throw new GrCUDAInternalException(e);
+//                    }
                 }
             };
             namespace.addFunction(wrapperFunction);
@@ -473,5 +489,4 @@ public class CUSPARSERegistry {
 
     private static final ArrayList<ExternalFunctionFactory> functions = new ArrayList<>();
 
-    }
 }
