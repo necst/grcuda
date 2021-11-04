@@ -1,3 +1,11 @@
+# 2021-11-04
+
+* Enabled the usage of TruffleLoggers for logging the execution of grcuda code
+    * GrCUDA is characterized by the presence of several different types of loggers, each one with its own functionality
+    * Implemented GrCUDALogger class is in order to have access to loggers of interest when specific features are needed
+* Changed all the print in the source code in log events, with different logging levels
+* Added documentation about logging in docs
+
 # 2021-09-30, Release 1
 
 ## API Changes
