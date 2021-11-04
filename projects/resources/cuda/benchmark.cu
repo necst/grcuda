@@ -122,6 +122,9 @@ void Benchmark::run() {
         if (debug) {
             std::cout << "  result=" << print_result() << std::endl;
             std::cout << "  execution(" << i << ")=" << (float)exec_time / 1000 << " ms" << std::endl;
+#if CPU_VALIDATION
+            cpu_validation(i);
+#endif
         } else {
             std::cout << i << "," << print_result(true) << "," << (float)(reset_time + exec_time) / 1e6 << "," << (float)reset_time / 1e6 << "," << (float)exec_time / 1e6 << std::endl;
         }
@@ -150,4 +153,8 @@ void Benchmark::execute_cudagraph_manual(int iter) {
 
 void Benchmark::execute_cudagraph_single(int iter) {
     std::cout << "cudagraph (single) not implemented for " << benchmark_name << std::endl;
+}
+
+void Benchmark::cpu_validation(int iter) {
+    std::cout << "cpu validation not implemented for " << benchmark_name << std::endl;
 }

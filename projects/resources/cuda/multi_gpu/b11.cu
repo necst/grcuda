@@ -42,6 +42,54 @@ extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, 
     }
 }
 
+#define BLOCK_DIM 16
+extern "C" __global__ void matrix_vector_mult_2(const float* x, const float* y, float* z, int n, int m, int z_offset) {
+    int tile_size = BLOCK_DIM;
+
+    // In the simplest implementation, each block computes a vertical tile of the Z vector, 
+    // whose coordinates are given by blockIdx.x;
+    // Here, we allow each block to process more tiles, hence the loops below;
+    for(int z_tile_i = blockIdx.x; z_tile_i < (m + tile_size - 1) / tile_size; z_tile_i += gridDim.x) {
+        // Index of the tile element computed by this thread, with respect of the current tile;
+        int z_i = threadIdx.x;
+        int z_j = threadIdx.y;
+        // Coordinate of the Z matrix element computed by this specific thread, with respect to the overall Z matrix (not counting host-level data partitioning);
+        int i = z_tile_i * blockDim.x + threadIdx.x;
+        // Value of the Z vector block being computed by this specific thread;
+        float z_val_i = 0;
+        // Loop over the tiles in the same row of X of the desired output tile in Z;
+        for (int curr_tile_index = 0; curr_tile_index < (n + tile_size - 1) / tile_size; curr_tile_index++) {
+            // Shared memory used to store the current tiles of X and Y;
+            __shared__ float x_tile[BLOCK_DIM][BLOCK_DIM];
+            __shared__ float y_tile[BLOCK_DIM];
+            // Each thread in the block loads a value into the tile;
+            if ((i < n) && (curr_tile_index * tile_size + z_j < m)) {
+                x_tile[z_i][z_j] = x[m * i + curr_tile_index * tile_size + z_j];
+            } else {
+                x_tile[z_i][z_j] = 0;
+            }
+            if (curr_tile_index * tile_size + z_j < m) {
+                y_tile[z_j] = y[curr_tile_index * tile_size + z_j];
+            } else {
+                y_tile[z_j] = 0;
+            }
+            // Synchronize threads in the block, ensure the tile has been loaded;
+            __syncthreads();
+            // Multiply the i row of the tile with the vector tile;
+            for (int k = 0; k < tile_size; k++) {   
+                z_val_i += x_tile[z_i][k] * y_tile[k];
+            }
+
+            // Synchronize threads in the block, ensure the computation has finished before loading the next tile;
+            __syncthreads();
+        }
+        // Write the output value into Z, keeping into account the offset of the current tile;
+        if (z_offset + i < n) {
+            z[z_offset + i] = z_val_i;
+        }     
+    }
+}
+
 //////////////////////////////
 //////////////////////////////
 
@@ -65,19 +113,15 @@ void Benchmark11M::alloc() {
 }
 
 void Benchmark11M::init() {
-    // for (int i = 0; i < N * M; i++) {
-    //     x_cpu[i] = (float)(rand()) / (float)(RAND_MAX);
-    // }
 }
 
 void Benchmark11M::reset() {
-    int S1 = (N + 16 - 1) / 16;
     for (int i = 0; i < M; i++) {
-        y[i] = float(i + 1) / M; // (float)(rand()) / (float)(RAND_MAX);
+        y[i] = float(i + 1) / M; 
     }
     for (int i = 0; i < P; i++) {
         for (int j = 0; j < S * M; j++) {
-            x[i][j] = float(i + 1) / (S1 * M); // x_cpu[i * S * M + j];
+            x[i][j] = float(i * S * M + j) / (N * M);
         }
     }
 }
@@ -98,6 +142,8 @@ void Benchmark11M::execute_sync(int iter) {
 }
 
 void Benchmark11M::execute_async(int iter) {
+    dim3 block_size_2d_dim(block_size_2d, block_size_2d);
+    dim3 grid_size(num_blocks, num_blocks);
     for (int p = 0; p < P; p++) {
         cudaSetDevice(select_gpu(p, max_devices));
         if (!pascalGpu || stream_attach) {
@@ -105,12 +151,9 @@ void Benchmark11M::execute_async(int iter) {
         }
         if (pascalGpu && do_prefetch) {
             cudaMemPrefetchAsync(x[p], sizeof(float) * S * M, select_gpu(p, max_devices), s[p]);
-            cudaMemPrefetchAsync(y, sizeof(float) * M, select_gpu(p, max_devices), s[p]);
         }
-    }
-    for (int p = 0; p < P; p++) {
-        cudaSetDevice(select_gpu(p, max_devices));
         matrix_vector_mult_1<<<num_blocks, block_size_1d, 0, s[p]>>>(x[p], y, z, std::min(S, N - p * S), M, p * S);
+        // matrix_vector_mult_2<<<grid_size, block_size_2d_dim, 0, s[p]>>>(x[p], y, z, std::min(S, N - p * S), M, p * S);
     }
     for (int p = 0; p < P; p++) {
         err = cudaStreamSynchronize(s[p]);

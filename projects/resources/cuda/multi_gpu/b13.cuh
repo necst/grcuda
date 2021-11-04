@@ -43,16 +43,22 @@ class Benchmark13M : public Benchmark {
     void execute_sync(int iter);
     void execute_async(int iter);
     std::string print_result(bool short_form = false);
+    void cpu_validation(int iter);
 
    private:
     int S;
     int P, PZ;
 
+    float *x_cpu, *y_cpu;
     float **x, **y;
 #if PARTITION_Z
     float **z;
 #else
     float *z;
+#endif
+
+#if CPU_VALIDATION
+    float *z_cpu;
 #endif
     cudaStream_t *s;
 };
