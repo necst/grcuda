@@ -103,14 +103,14 @@ public class GrCUDAOptionMap implements TruffleObject {
     @ExportMessage
     public final Object readHashValue(Object key) throws UnknownKeyException, UnsupportedMessageException {
         Object value;
-        if (key instanceof OptionKey){
-            value = optionKeyValueMap.get(key);
+        if (key instanceof String){
+            value = getValueByKeyName((String) key);
         }
         else {
             throw UnsupportedMessageException.create();
         }
         if (value == null) throw UnknownKeyException.create(key);
-        return value;
+        return value.toString();
     }
 
     @ExportMessage
@@ -118,11 +118,15 @@ public class GrCUDAOptionMap implements TruffleObject {
 
     @ExportMessage
     final boolean isHashEntryReadable(Object key) {
-        return (key instanceof OptionKey) && optionKeyValueMap.get(key) != null;
+        return key instanceof String && getValueByKeyName((String) key) != null;
     }
 
     @ExportMessage
-    final Object getHashEntriesIterator() throws UnsupportedMessageException { return optionKeyValueMap.entrySet().iterator(); }
+    final Object getHashEntriesIterator() throws UnsupportedMessageException {  //TODO new map keys and values to string
+        HashMap<String, String> entries = new HashMap<>();
+        optionKeyValueMap.forEach((key, value) -> entries.put(key.getName(), value.toString()));
+        return entries.entrySet().iterator();
+    }
 
     private static ExecutionPolicyEnum parseExecutionPolicy(String policyString) {
         if (policyString.equals(ExecutionPolicyEnum.SYNC.getName())) return ExecutionPolicyEnum.SYNC;
@@ -212,4 +216,9 @@ public class GrCUDAOptionMap implements TruffleObject {
         return (String) optionKeyValueMap.get(GrCUDAOptions.TensorRTLibrary);
     }
 
+    private Object getValueByKeyName(String string){
+        for ( OptionKey<?> entry : optionKeyValueMap.keySet())
+            if (Objects.equals(entry.getName(), string)) return optionKeyValueMap.get(entry);
+        return null;
+    }
 }

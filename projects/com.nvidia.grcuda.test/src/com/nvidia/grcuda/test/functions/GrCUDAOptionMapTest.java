@@ -101,13 +101,13 @@ public class GrCUDAOptionMapTest {
     @Test(expected = UnknownKeyException.class)
     public void testReadUnknownKey() throws UnsupportedMessageException, UnknownKeyException {
         initializeNull();
-        optionMap.readHashValue(new OptionKey<String>("test"));
+        optionMap.readHashValue("test");
     }
 
     @Test(expected = UnsupportedMessageException.class)
     public void testReadUnsupportedMessage() throws UnsupportedMessageException, UnknownKeyException {
         initializeDefault();
-        optionMap.readHashValue("");
+        optionMap.readHashValue(null);
     }
 
 }

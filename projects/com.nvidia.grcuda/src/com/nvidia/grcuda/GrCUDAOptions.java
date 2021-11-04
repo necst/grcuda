@@ -54,42 +54,42 @@ public final class GrCUDAOptions {
     }
 
     @Option(category = OptionCategory.USER, help = "Enable cuBLAS support.", stability = OptionStability.STABLE) //
-    public static final OptionKey<Boolean> CuBLASEnabled = new OptionKey<>(true);
+    public static final OptionKey<Boolean> CuBLASEnabled = new OptionKey<>(true, "CuBLASEnabled");
 
     @Option(category = OptionCategory.USER, help = "Set the location of the cublas library.", stability = OptionStability.STABLE) //
-    public static final OptionKey<String> CuBLASLibrary = new OptionKey<>(CUBLASRegistry.DEFAULT_LIBRARY);
+    public static final OptionKey<String> CuBLASLibrary = new OptionKey<>(CUBLASRegistry.DEFAULT_LIBRARY, "CuBLASLibrary");
 
     @Option(category = OptionCategory.USER, help = "Enable cuML support.", stability = OptionStability.STABLE) //
-    public static final OptionKey<Boolean> CuMLEnabled = new OptionKey<>(true);
+    public static final OptionKey<Boolean> CuMLEnabled = new OptionKey<>(true, "CuMLEnabled");
 
     @Option(category = OptionCategory.USER, help = "Set the location of the cuml library.", stability = OptionStability.STABLE) //
-    public static final OptionKey<String> CuMLLibrary = new OptionKey<>(CUMLRegistry.DEFAULT_LIBRARY);
+    public static final OptionKey<String> CuMLLibrary = new OptionKey<>(CUMLRegistry.DEFAULT_LIBRARY, "CuMLLibrary");
 
     @Option(category = OptionCategory.USER, help = "Choose the scheduling policy of GrCUDA computations", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<String> ExecutionPolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_EXECUTION_POLICY.getName());
+    public static final OptionKey<String> ExecutionPolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_EXECUTION_POLICY.getName(), "ExecutionPolicy");
 
     @Option(category = OptionCategory.USER, help = "Choose how data dependencies between GrCUDA computations are computed", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<String> DependencyPolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_DEPENDENCY_POLICY.getName());
+    public static final OptionKey<String> DependencyPolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_DEPENDENCY_POLICY.getName(), "DependencyPolicy");
 
     @Option(category = OptionCategory.USER, help = "Choose how streams for new GrCUDA computations are created", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<String> RetrieveNewStreamPolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_RETRIEVE_STREAM_POLICY.getName());
+    public static final OptionKey<String> RetrieveNewStreamPolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_RETRIEVE_STREAM_POLICY.getName(), "RetrieveNewStreamPolicy");
 
     @Option(category = OptionCategory.USER, help = "Choose how streams for new GrCUDA computations are obtained from parent computations", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<String> RetrieveParentStreamPolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_PARENT_STREAM_POLICY.getName());
+    public static final OptionKey<String> RetrieveParentStreamPolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_PARENT_STREAM_POLICY.getName(), "RetrieveParentStreamPolicy");
 
     @Option(category = OptionCategory.USER, help = "Force the use of array stream attaching even when not required (e.g. post-Pascal GPUs)", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<Boolean> ForceStreamAttach = new OptionKey<>(false);
+    public static final OptionKey<Boolean> ForceStreamAttach = new OptionKey<>(false, "ForceStreamAttach");
 
     @Option(category = OptionCategory.USER, help = "Always prefetch input arrays to GPU if possible (e.g. post-Pascal GPUs)", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<Boolean> InputPrefetch = new OptionKey<>(false);
+    public static final OptionKey<Boolean> InputPrefetch = new OptionKey<>(false, "InputPrefetch");
 
     @Option(category = OptionCategory.USER, help = "Enable the option to set the current GPU in use", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<Boolean> EnableMultiGPU = new OptionKey<>(false);
+    public static final OptionKey<Boolean> EnableMultiGPU = new OptionKey<>(false, "EnableMultiGPU");
 
     @Option(category = OptionCategory.USER, help = "Enable TensorRT support.", stability = OptionStability.STABLE) //
-    public static final OptionKey<Boolean> TensorRTEnabled = new OptionKey<>(false);
+    public static final OptionKey<Boolean> TensorRTEnabled = new OptionKey<>(false, "TensorRTEnabled");
 
     @Option(category = OptionCategory.USER, help = "Set the location of the TensorRT library.", stability = OptionStability.STABLE) //
-    public static final OptionKey<String> TensorRTLibrary = new OptionKey<>(TensorRTRegistry.DEFAULT_LIBRARY);
+    public static final OptionKey<String> TensorRTLibrary = new OptionKey<>(TensorRTRegistry.DEFAULT_LIBRARY, "TensorRTLibrary");
 
 }
