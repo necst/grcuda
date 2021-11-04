@@ -56,7 +56,7 @@ public class PrePascalStreamAttachPolicy implements StreamAttachArchitecturePoli
         try {
             return callable.call();
         } catch(Exception e) {
-            GrCUDALogger.getLogger(GrCUDALogger.COMPUTATION_LOGGER).warning("WARNING: failed to compute stream dependency, returning default stream");
+            GrCUDALogger.getLogger(GrCUDALogger.COMPUTATION_LOGGER).warning("failed to compute stream dependency, returning default stream");
             return Optional.of(DefaultStream.get());
         }
     }

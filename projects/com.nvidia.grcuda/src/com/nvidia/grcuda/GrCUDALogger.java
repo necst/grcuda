@@ -4,7 +4,9 @@ import com.oracle.truffle.api.TruffleLogger;
 
 public class GrCUDALogger {
 
-    public static final String MAIN_LOGGER = "com.nvidia.grcuda";
+    public static final String DEFAULT_LOGGER_LEVEL= "INFO";
+
+    public static final String GRCUDA_LOGGER = "com.nvidia.grcuda";
 
     public static final String CUDALIBRARIES_LOGGER = "com.nvidia.grcuda.cudalibraries";
 

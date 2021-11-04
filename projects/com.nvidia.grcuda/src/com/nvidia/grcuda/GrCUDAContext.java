@@ -81,7 +81,7 @@ public final class GrCUDAContext {
 
     private static final String ROOT_NAMESPACE = "CU";
 
-    public static final TruffleLogger LOGGER = GrCUDALogger.getLogger(GrCUDALogger.MAIN_LOGGER);
+    private static final TruffleLogger LOGGER = GrCUDALogger.getLogger(GrCUDALogger.GRCUDA_LOGGER);
 
     private final Env env;
     private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
@@ -116,8 +116,6 @@ public final class GrCUDAContext {
         // Retrieve how streams are obtained from parent computations;
         retrieveParentStreamPolicyEnum = parseParentStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveParentStreamPolicy));
 
-        //parseLoggingLevel(env.getOptions().get(GrCUDAOptions.LoggingLevel));
-
         // Retrieve the dependency computation policy;
         DependencyPolicyEnum dependencyPolicy = parseDependencyPolicy(env.getOptions().get(GrCUDAOptions.DependencyPolicy));
         LOGGER.fine("using " + dependencyPolicy.getName() + " dependency policy");
@@ -134,7 +132,7 @@ public final class GrCUDAContext {
         }
         
         // Initialize the execution policy;
-        LOGGER.fine("using" + executionPolicy.getName() + " execution policy");
+        LOGGER.fine("using " + executionPolicy.getName() + " execution policy");
         switch (executionPolicy) {
             case SYNC:
                 this.grCUDAExecutionContext = new SyncGrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.SYNC : PrefetcherEnum.NONE);
@@ -265,7 +263,7 @@ public final class GrCUDAContext {
         if (policyString.equals(DependencyPolicyEnum.WITH_CONST.getName())) return DependencyPolicyEnum.WITH_CONST;
         else if (policyString.equals(DependencyPolicyEnum.NO_CONST.getName())) return DependencyPolicyEnum.NO_CONST;
         else {
-            LOGGER.warning("Warning: unknown dependency policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_DEPENDENCY_POLICY);
+            LOGGER.warning("unknown dependency policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_DEPENDENCY_POLICY);
             return GrCUDAContext.DEFAULT_DEPENDENCY_POLICY;
         }
     }
@@ -274,7 +272,7 @@ public final class GrCUDAContext {
         if (policyString.equals(RetrieveNewStreamPolicyEnum.FIFO.getName())) return RetrieveNewStreamPolicyEnum.FIFO;
         else if (policyString.equals(RetrieveNewStreamPolicyEnum.ALWAYS_NEW.getName())) return RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
         else {
-            LOGGER.warning("Warning: unknown new stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY);
+            LOGGER.warning("unknown new stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY);
             return GrCUDAContext.DEFAULT_RETRIEVE_STREAM_POLICY;
         }
     }
@@ -283,7 +281,7 @@ public final class GrCUDAContext {
         if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT.getName())) return RetrieveParentStreamPolicyEnum.DISJOINT;
         else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT.getName())) return RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
         else {
-            LOGGER.warning("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY);
+            LOGGER.warning("unknown parent stream retrieval policy=" + policyString + "; using default=" + GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY);
             return GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY;
         }
     }

@@ -1438,9 +1438,7 @@ public final class CUDARuntime {
         }
     }
 
-    // @SuppressWarnings("static-method")
-    // it was static -> couldn't use logger from a static method
-    private void checkCUReturnCode(Object result, String... function) {
+    private static void checkCUReturnCode(Object result, String... function) {
         int returnCode;
         try {
             returnCode = INTEROP.asInt(result);

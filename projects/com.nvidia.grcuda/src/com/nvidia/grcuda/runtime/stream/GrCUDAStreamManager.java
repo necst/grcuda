@@ -206,7 +206,7 @@ public class GrCUDAStreamManager {
                             + "; stream that waits=" + vertex.getComputation().getStream().getStreamNumber()
                             + "; event=" + event.getEventNumber());
                 } else {
-                    STREAM_LOGGER.warning("\t* WARNING: missing event to sync child computation=" + vertex.getComputation() +
+                    STREAM_LOGGER.warning("\t* missing event to sync child computation=" + vertex.getComputation() +
                             " and parent computation=" + parent);
                 }
             }
@@ -250,7 +250,7 @@ public class GrCUDAStreamManager {
         if (computation.getEvent().isPresent()) {
             runtime.cudaEventDestroy(computation.getEvent().get());
         } else {
-            STREAM_LOGGER.warning("\t* WARNING: missing event to destroy for computation=" + computation);
+            STREAM_LOGGER.warning("\t* missing event to destroy for computation=" + computation);
         }
     }
 
