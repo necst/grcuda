@@ -44,7 +44,6 @@ import java.util.List;
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDAInternalException;
-import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.Namespace;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
@@ -86,7 +85,7 @@ public class CUMLRegistry {
 
     public CUMLRegistry(GrCUDAContext context) {
         this.context = context;
-        libraryPath = context.getOption(GrCUDAOptions.CuMLLibrary);
+        libraryPath = context.getOptions().getCuMLLibrary();
     }
 
     private void ensureInitialized() {

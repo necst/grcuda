@@ -44,6 +44,7 @@ import com.nvidia.grcuda.functions.BuildKernelFunction;
 import com.nvidia.grcuda.functions.DeviceArrayFunction;
 import com.nvidia.grcuda.functions.GetDeviceFunction;
 import com.nvidia.grcuda.functions.GetDevicesFunction;
+import com.nvidia.grcuda.functions.GetOptionsFunction;
 import com.nvidia.grcuda.functions.map.MapFunction;
 import com.nvidia.grcuda.functions.map.ShredFunction;
 import com.nvidia.grcuda.runtime.CUDARuntime;
@@ -76,7 +77,7 @@ public final class GrCUDAContext {
 
     private static final TruffleLogger LOGGER = TruffleLogger.getLogger(GrCUDALanguage.ID, "com.nvidia.grcuda.GrCUDAContext");
 
-    private GrCUDAOptionMap grCUDAOptionMap;
+    private final GrCUDAOptionMap grCUDAOptionMap;
 
     private final Env env;
     private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
@@ -101,7 +102,7 @@ public final class GrCUDAContext {
 
         // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it. 
         //  Once Nvidia adds support for it, we want to remove this limitation;
-        if (this.getOption(GrCUDAOptions.TensorRTEnabled) && executionPolicy == ExecutionPolicyEnum.ASYNC) {
+        if (this.getOptions().isTensorRTEnabled() && (executionPolicy == ExecutionPolicyEnum.ASYNC)) {
             LOGGER.warning("TensorRT and the asynchronous scheduler are not compatible. Switching to the synchronous scheduler.");
             executionPolicy = ExecutionPolicyEnum.SYNC;
         }
@@ -132,8 +133,9 @@ public final class GrCUDAContext {
         namespace.addFunction(new BuildKernelFunction(this.grCUDAExecutionContext));
         namespace.addFunction(new GetDevicesFunction(this.grCUDAExecutionContext.getCudaRuntime()));
         namespace.addFunction(new GetDeviceFunction(this.grCUDAExecutionContext.getCudaRuntime()));
+        namespace.addFunction(new GetOptionsFunction(this.getOptions()));
         this.grCUDAExecutionContext.getCudaRuntime().registerCUDAFunctions(namespace);
-        if (this.getOption(GrCUDAOptions.CuMLEnabled)) {
+        if (this.getOptions().isCuMLEnabled()) {
             if (this.getCUDARuntime().isArchitectureIsPascalOrNewer()) {
                 Namespace ml = new Namespace(CUMLRegistry.NAMESPACE);
                 namespace.addNamespace(ml);
@@ -142,12 +144,12 @@ public final class GrCUDAContext {
                 LOGGER.warning("cuML is supported only on GPUs with compute capability >= 6.0 (Pascal and newer). It cannot be enabled.");
             }
         }
-        if (this.getOption(GrCUDAOptions.CuBLASEnabled)) {
+        if (this.getOptions().isCuBLASEnabled()) {
                 Namespace blas = new Namespace(CUBLASRegistry.NAMESPACE);
                 namespace.addNamespace(blas);
                 new CUBLASRegistry(this).registerCUBLASFunctions(blas);
         }
-        if (this.getOption(GrCUDAOptions.TensorRTEnabled)) {
+        if (this.getOptions().isTensorRTEnabled()) {
             Namespace trt = new Namespace(TensorRTRegistry.NAMESPACE);
             namespace.addNamespace(trt);
             new TensorRTRegistry(this).registerTensorRTFunctions(trt);
@@ -206,12 +208,14 @@ public final class GrCUDAContext {
         return Runtime.getRuntime().availableProcessors();
     }
 
-    @TruffleBoundary
-    public <T> T getOption(OptionKey<T> key) {
-        return env.getOptions().get(key);
-    }
+//    @TruffleBoundary
+//    public <T> T getOption(OptionKey<T> key) {
+//        return env.getOptions().get(key);
+//    }
 
-    public GrCUDAOptionMap getOptionMap(){return grCUDAOptionMap;}
+    public GrCUDAOptionMap getOptions() {
+        return grCUDAOptionMap;
+    }
 
     /**
      * Cleanup the GrCUDA context at the end of the execution;

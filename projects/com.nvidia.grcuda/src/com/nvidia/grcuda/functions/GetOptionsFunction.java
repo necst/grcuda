@@ -29,15 +29,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package com.nvidia.grcuda.functions;
 
 import com.nvidia.grcuda.GrCUDAOptionMap;
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
-public class GetOptionsFunction extends Function{
+public class GetOptionsFunction extends Function {
     private final GrCUDAOptionMap optionMap;
 
     public GetOptionsFunction(GrCUDAOptionMap optionMap) {
@@ -46,7 +45,7 @@ public class GetOptionsFunction extends Function{
     }
 
     @Override
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public Object call(Object[] arguments) throws UnsupportedTypeException, ArityException {
         checkArgumentLength(arguments, 0);
         return optionMap;

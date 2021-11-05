@@ -67,7 +67,7 @@ public class GrCUDAStreamManager {
     private final RetrieveParentStream retrieveParentStream;
 
     public GrCUDAStreamManager(CUDARuntime runtime) { 
-        this(runtime, runtime.getContext().getOptionMap().getRetrieveNewStreamPolicy(), runtime.getContext().getOptionMap().getRetrieveParentStreamPolicy());
+        this(runtime, runtime.getContext().getOptions().getRetrieveNewStreamPolicy(), runtime.getContext().getOptions().getRetrieveParentStreamPolicy());
     }
 
     public GrCUDAStreamManager(

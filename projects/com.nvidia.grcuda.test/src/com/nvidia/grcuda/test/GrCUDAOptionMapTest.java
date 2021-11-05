@@ -28,20 +28,25 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.nvidia.grcuda.test.functions;
+package com.nvidia.grcuda.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.cudalibraries.cublas.CUBLASRegistry;
 import com.nvidia.grcuda.cudalibraries.cuml.CUMLRegistry;
 import com.nvidia.grcuda.cudalibraries.tensorrt.TensorRTRegistry;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
+import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import com.nvidia.grcuda.test.util.mock.OptionValuesMock;
 import com.oracle.truffle.api.interop.UnknownKeyException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import org.graalvm.options.OptionKey;
 import org.graalvm.options.OptionValues;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -101,7 +106,7 @@ public class GrCUDAOptionMapTest {
     @Test(expected = UnknownKeyException.class)
     public void testReadUnknownKey() throws UnsupportedMessageException, UnknownKeyException {
         initializeNull();
-        optionMap.readHashValue("test");
+        optionMap.readHashValue("NotPresent");
     }
 
     @Test(expected = UnsupportedMessageException.class)
@@ -110,4 +115,17 @@ public class GrCUDAOptionMapTest {
         optionMap.readHashValue(null);
     }
 
+    @Test
+    public void testGetOptionsFunction() {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", ExecutionPolicyEnum.ASYNC.getName()).build()) {
+            // Obtain the options map;
+            Value options = ctx.eval("grcuda", "getoptions").execute();
+            // Check the we have a map;
+            assertTrue(options.hasHashEntries());
+            System.out.println(options.getHashSize());
+            // Obtain some options;
+            assertEquals(options.getHashValue("grcuda.ExecutionPolicy").asString(), ExecutionPolicyEnum.ASYNC.getName());
+            assertEquals(options.getHashValue("grcuda.EnableMultiGPU").asBoolean(), GrCUDAOptionMap.DEFAULT_ENABLE_MULTIGPU);
+        }
+    }
 }

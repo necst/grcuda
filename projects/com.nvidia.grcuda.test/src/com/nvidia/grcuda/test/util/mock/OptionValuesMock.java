@@ -39,7 +39,6 @@ import java.util.Map;
 
 public class OptionValuesMock implements OptionValues {
 
-
     private final Map<OptionKey<?>, Object> values;
     private final Map<OptionKey<?>, String> unparsedValues;
 
@@ -47,7 +46,6 @@ public class OptionValuesMock implements OptionValues {
         this.values =  new HashMap<>();
         this.unparsedValues =  new HashMap<>();
     }
-
 
     @Override
     public OptionDescriptors getDescriptors() {
@@ -73,5 +71,4 @@ public class OptionValuesMock implements OptionValues {
     public boolean hasSetOptions() {
         return OptionValues.super.hasSetOptions();
     }
-
 }
