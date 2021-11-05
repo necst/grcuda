@@ -68,10 +68,15 @@ public abstract class GrCUDAComputationalElement {
     private CUDAStream stream = DefaultStream.get();
     /**
      * Reference to the event associated to this computation, and recorded on the stream where this computation is executed,
+     * before the computation is started. It is used in order to time the execution.
+     */
+    private CUDAEvent eventStart;
+    /**
+     * Reference to the event associated to this computation, and recorded on the stream where this computation is executed,
      * after the computation is started. It offers a precise synchronization point for children computations.
      * If the computation is not executed on a stream, the event is null;
      */
-    private CUDAEvent event;
+    private CUDAEvent eventStop;
     /**
      * Keep track of whether this computation has already been executed, and represents a "dead" vertex in the DAG.
      * Computations that are already executed will not be considered when computing dependencies;
@@ -186,16 +191,28 @@ public abstract class GrCUDAComputationalElement {
         this.computationStarted = true;
     }
 
-    public Optional<CUDAEvent> getEvent() {
-        if (event != null) {
-            return Optional.of(event);
+    public Optional<CUDAEvent> getEventStop() {
+        if (eventStop != null) {
+            return Optional.of(eventStop);
         } else {
             return Optional.empty();
         }
     }
 
-    public void setEvent(CUDAEvent event) {
-        this.event = event;
+    public Optional<CUDAEvent> getEventStart() {
+        if (eventStop != null) {
+            return Optional.of(eventStart);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public void setEventStop(CUDAEvent eventStop) {
+        this.eventStop = eventStop;
+    }
+
+    public void setEventStart(CUDAEvent eventStart) {
+        this.eventStart = eventStart;
     }
 
     /**

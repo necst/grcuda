@@ -108,7 +108,10 @@ public class GrCUDAStreamManager {
 
         // If the computation cannot use customized streams, return immediately;
         if (vertex.getComputation().canUseStream()) {
+
+            System.out.println("is profilable: " + vertex.getComputation().isProfilable());
             CUDAStream stream;
+
             if (vertex.isStart()) {
                 // Else, if the computation doesn't have parents, provide a new stream to it;
                 stream = this.retrieveNewStream.retrieve();
@@ -132,15 +135,33 @@ public class GrCUDAStreamManager {
     /**
      * Associate a new {@link CUDAEvent} to this computation, if the computation is done on a {@link CUDAStream}.
      * The event is created and recorded on the stream where the computation is running,
+     * and can be used to time the execution of the computation;
+     * @param vertex an input computation for which we want to assign an event
+     */
+    public void assignEventStart(ExecutionDAG.DAGVertex vertex) {
+        // If the computation cannot use customized streams, return immediately;
+
+        runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
+
+        if (vertex.getComputation().canUseStream()) {
+            CUDAEvent event = runtime.cudaEventCreate();
+            runtime.cudaEventRecord(event, vertex.getComputation().getStream());
+            vertex.getComputation().setEventStart(event);
+        }
+    }
+
+    /**
+     * Associate a new {@link CUDAEvent} to this computation, if the computation is done on a {@link CUDAStream}.
+     * The event is created and recorded on the stream where the computation is running,
      * and can be used for precise synchronization of children computation;
      * @param vertex an input computation for which we want to assign an event
      */
-    public void assignEvent(ExecutionDAG.DAGVertex vertex) {
+    public void assignEventStop(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
         if (vertex.getComputation().canUseStream()) {
             CUDAEvent event = runtime.cudaEventCreate();
             runtime.cudaEventRecord(event, vertex.getComputation().getStream());
-            vertex.getComputation().setEvent(event);
+            vertex.getComputation().setEventStop(event);
         }
     }
 
@@ -194,8 +215,8 @@ public class GrCUDAStreamManager {
             //   as operations scheduled on a stream are executed in order;
             if (!vertex.getComputation().getStream().equals(stream)) {
                 // Synchronize on the events associated to the parents;
-                if (parent.getEvent().isPresent()) {
-                    CUDAEvent event = parent.getEvent().get();
+                if (parent.getEventStop().isPresent()) {
+                    CUDAEvent event = parent.getEventStop().get();
                     runtime.cudaStreamWaitEvent(vertex.getComputation().getStream(), event);
 
 //                    System.out.println("\t* wait event on stream; stream to sync=" + stream.getStreamNumber()
@@ -243,8 +264,11 @@ public class GrCUDAStreamManager {
     protected void setComputationFinishedInner(GrCUDAComputationalElement computation) {
         computation.setComputationFinished();
         // Destroy the event associated to this computation;
-        if (computation.getEvent().isPresent()) {
-            runtime.cudaEventDestroy(computation.getEvent().get());
+        if (computation.getEventStop().isPresent()) {
+            Float time = (float) 0.0;
+            runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
+            runtime.cudaEventElapsedTime(time, computation.getEventStart().get(), computation.getEventStop().get());
+            runtime.cudaEventDestroy(computation.getEventStop().get());
         } else {
             System.out.println("\t* WARNING: missing event to destroy for computation=" + computation);
         }
