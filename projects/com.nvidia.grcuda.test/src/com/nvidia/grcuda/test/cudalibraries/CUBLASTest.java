@@ -55,7 +55,7 @@ public class CUBLASTest {
     public static Collection<Object[]> data() {
 
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
-                {ExecutionPolicyEnum.SYNC.getName(), ExecutionPolicyEnum.ASYNC.getName()},
+                {ExecutionPolicyEnum.SYNC.toString(), ExecutionPolicyEnum.ASYNC.toString()},
                 {true, false},
                 {'S', 'D', 'C', 'Z'}
         }));

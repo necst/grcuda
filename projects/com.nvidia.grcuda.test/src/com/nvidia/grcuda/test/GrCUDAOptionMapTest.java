@@ -47,11 +47,9 @@ import org.graalvm.options.OptionKey;
 import org.graalvm.options.OptionValues;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashMap;
-
 
 public class GrCUDAOptionMapTest {
 
@@ -68,10 +66,10 @@ public class GrCUDAOptionMapTest {
         options.put(GrCUDAOptions.TensorRTEnabled, false);
         unparsedOptions.put(GrCUDAOptions.CuBLASLibrary, CUBLASRegistry.DEFAULT_LIBRARY);
         unparsedOptions.put(GrCUDAOptions.CuMLLibrary, CUMLRegistry.DEFAULT_LIBRARY);
-        unparsedOptions.put(GrCUDAOptions.ExecutionPolicy, GrCUDAOptionMap.DEFAULT_EXECUTION_POLICY.getName());
-        unparsedOptions.put(GrCUDAOptions.DependencyPolicy, GrCUDAOptionMap.DEFAULT_DEPENDENCY_POLICY.getName());
-        unparsedOptions.put(GrCUDAOptions.RetrieveNewStreamPolicy, GrCUDAOptionMap.DEFAULT_RETRIEVE_STREAM_POLICY.getName());
-        unparsedOptions.put(GrCUDAOptions.RetrieveParentStreamPolicy, GrCUDAOptionMap.DEFAULT_PARENT_STREAM_POLICY.getName());
+        unparsedOptions.put(GrCUDAOptions.ExecutionPolicy, GrCUDAOptionMap.DEFAULT_EXECUTION_POLICY.toString());
+        unparsedOptions.put(GrCUDAOptions.DependencyPolicy, GrCUDAOptionMap.DEFAULT_DEPENDENCY_POLICY.toString());
+        unparsedOptions.put(GrCUDAOptions.RetrieveNewStreamPolicy, GrCUDAOptionMap.DEFAULT_RETRIEVE_STREAM_POLICY.toString());
+        unparsedOptions.put(GrCUDAOptions.RetrieveParentStreamPolicy, GrCUDAOptionMap.DEFAULT_PARENT_STREAM_POLICY.toString());
         unparsedOptions.put(GrCUDAOptions.TensorRTLibrary, TensorRTRegistry.DEFAULT_LIBRARY);
 
         OptionValues optionValues = new OptionValuesMock();
@@ -82,10 +80,10 @@ public class GrCUDAOptionMapTest {
     }
 
     public void initializeNull(){
-        unparsedOptions.put(GrCUDAOptions.ExecutionPolicy, GrCUDAOptionMap.DEFAULT_EXECUTION_POLICY.getName());
-        unparsedOptions.put(GrCUDAOptions.DependencyPolicy, GrCUDAOptionMap.DEFAULT_DEPENDENCY_POLICY.getName());
-        unparsedOptions.put(GrCUDAOptions.RetrieveNewStreamPolicy, GrCUDAOptionMap.DEFAULT_RETRIEVE_STREAM_POLICY.getName());
-        unparsedOptions.put(GrCUDAOptions.RetrieveParentStreamPolicy, GrCUDAOptionMap.DEFAULT_PARENT_STREAM_POLICY.getName());
+        unparsedOptions.put(GrCUDAOptions.ExecutionPolicy, GrCUDAOptionMap.DEFAULT_EXECUTION_POLICY.toString());
+        unparsedOptions.put(GrCUDAOptions.DependencyPolicy, GrCUDAOptionMap.DEFAULT_DEPENDENCY_POLICY.toString());
+        unparsedOptions.put(GrCUDAOptions.RetrieveNewStreamPolicy, GrCUDAOptionMap.DEFAULT_RETRIEVE_STREAM_POLICY.toString());
+        unparsedOptions.put(GrCUDAOptions.RetrieveParentStreamPolicy, GrCUDAOptionMap.DEFAULT_PARENT_STREAM_POLICY.toString());
         unparsedOptions.put(GrCUDAOptions.TensorRTLibrary, null);
 
         OptionValues optionValues = new OptionValuesMock();
@@ -117,15 +115,15 @@ public class GrCUDAOptionMapTest {
 
     @Test
     public void testGetOptionsFunction() {
-        try (Context ctx = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", ExecutionPolicyEnum.ASYNC.getName()).build()) {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", ExecutionPolicyEnum.ASYNC.toString()).build()) {
             // Obtain the options map;
             Value options = ctx.eval("grcuda", "getoptions").execute();
             // Check the we have a map;
             assertTrue(options.hasHashEntries());
-            System.out.println(options.getHashSize());
+
             // Obtain some options;
-            assertEquals(options.getHashValue("grcuda.ExecutionPolicy").asString(), ExecutionPolicyEnum.ASYNC.getName());
-            assertEquals(options.getHashValue("grcuda.EnableMultiGPU").asBoolean(), GrCUDAOptionMap.DEFAULT_ENABLE_MULTIGPU);
+            assertEquals(ExecutionPolicyEnum.ASYNC.toString(), options.getHashValue("grcuda.ExecutionPolicy").asString());
+            assertEquals(GrCUDAOptionMap.DEFAULT_ENABLE_MULTIGPU, Boolean.valueOf(options.getHashValue("grcuda.EnableMultiGPU").asString()));
         }
     }
 }

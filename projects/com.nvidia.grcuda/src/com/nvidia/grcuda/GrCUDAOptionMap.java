@@ -44,9 +44,7 @@ import com.oracle.truffle.api.library.ExportMessage;
 import org.graalvm.options.OptionKey;
 import org.graalvm.options.OptionValues;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Objects;
 
 @ExportLibrary(InteropLibrary.class)
@@ -54,7 +52,16 @@ public class GrCUDAOptionMap implements TruffleObject {
 
     private static GrCUDAOptionMap instance = null;
 
+    /**
+     * Store options using the option name and its value;
+     */
     private final HashMap<String, Object> optionsMap;
+    /**
+     * Store a mapping between GrCUDA's Truffle options and their names, as strings.
+     * OptionKeys are assumed to be immutable, so this map must be read-only as well;
+     */
+    private final HashMap<OptionKey<?>, String> optionNames;
+
     private static final TruffleLogger LOGGER = TruffleLogger.getLogger(GrCUDALanguage.ID, "com.nvidia.grcuda.GrCUDAContext");
 
     public static final ExecutionPolicyEnum DEFAULT_EXECUTION_POLICY = ExecutionPolicyEnum.ASYNC;
@@ -68,20 +75,29 @@ public class GrCUDAOptionMap implements TruffleObject {
 
     private GrCUDAOptionMap(OptionValues options) {
         optionsMap = new HashMap<>();
-        List<OptionKey<?>> allOptions = new ArrayList<>();
-        options.getDescriptors().forEach(o -> allOptions.add(o.getKey()));
+        // Store the name and value of each option;
+        options.getDescriptors().forEach(option -> optionsMap.put(option.getName(), options.get(option.getKey())));
+        // Map each OptionKey to its name, to update them and retrieve values inside GrCUDA;
+        optionNames = new HashMap<>();
+        options.getDescriptors().forEach(o -> optionNames.put(o.getKey(), o.getName()));
 
-        allOptions.forEach(i -> optionsMap.put(i.toString(), options.get(i)));
+        // Parse individual options;
+
         // Stream retrieval policy;
-        optionsMap.replace(GrCUDAOptions.RetrieveNewStreamPolicy.toString(), parseRetrieveStreamPolicy(options.get(GrCUDAOptions.RetrieveNewStreamPolicy)));
+        optionsMap.replace(optionNames.get(GrCUDAOptions.RetrieveNewStreamPolicy), parseRetrieveStreamPolicy(options.get(GrCUDAOptions.RetrieveNewStreamPolicy)));
         // How streams are obtained from parent computations;
-        optionsMap.replace(GrCUDAOptions.RetrieveParentStreamPolicy.toString(), parseParentStreamPolicy(options.get(GrCUDAOptions.RetrieveParentStreamPolicy)));
+        optionsMap.replace(optionNames.get(GrCUDAOptions.RetrieveParentStreamPolicy), parseParentStreamPolicy(options.get(GrCUDAOptions.RetrieveParentStreamPolicy)));
         // Dependency computation policy;
-        optionsMap.replace(GrCUDAOptions.DependencyPolicy.toString(), parseDependencyPolicy(options.get(GrCUDAOptions.DependencyPolicy)));
-        DependencyPolicyEnum dependencyPolicy = getDependencyPolicy();
-        LOGGER.fine("using " + dependencyPolicy.getName() + " dependency policy");
+        optionsMap.replace(optionNames.get(GrCUDAOptions.DependencyPolicy), parseDependencyPolicy(options.get(GrCUDAOptions.DependencyPolicy)));
         // Execution policy;
-        optionsMap.replace(GrCUDAOptions.ExecutionPolicy.toString(), parseExecutionPolicy(options.get(GrCUDAOptions.ExecutionPolicy)));
+        optionsMap.replace(optionNames.get(GrCUDAOptions.ExecutionPolicy), parseExecutionPolicy(options.get(GrCUDAOptions.ExecutionPolicy)));
+    }
+
+    /**
+     * Obtain the option value starting from the OptionKey;
+     */
+    private Object getOptionValueFromOptionKey(OptionKey<?> optionKey) {
+        return optionsMap.get(optionNames.get(optionKey));
     }
 
     public static GrCUDAOptionMap getInstance(OptionValues options){
@@ -95,8 +111,8 @@ public class GrCUDAOptionMap implements TruffleObject {
     }
 
     private static ExecutionPolicyEnum parseExecutionPolicy(String policyString) {
-        if (policyString.equals(ExecutionPolicyEnum.SYNC.getName())) return ExecutionPolicyEnum.SYNC;
-        else if (policyString.equals(ExecutionPolicyEnum.ASYNC.getName())) return ExecutionPolicyEnum.ASYNC;
+        if (policyString.equals(ExecutionPolicyEnum.SYNC.toString())) return ExecutionPolicyEnum.SYNC;
+        else if (policyString.equals(ExecutionPolicyEnum.ASYNC.toString())) return ExecutionPolicyEnum.ASYNC;
         else {
             LOGGER.warning("unknown execution policy=" + policyString + "; using default=" + DEFAULT_EXECUTION_POLICY);
             return DEFAULT_EXECUTION_POLICY;
@@ -104,8 +120,8 @@ public class GrCUDAOptionMap implements TruffleObject {
     }
 
     private static DependencyPolicyEnum parseDependencyPolicy(String policyString) {
-        if (policyString.equals(DependencyPolicyEnum.WITH_CONST.getName())) return DependencyPolicyEnum.WITH_CONST;
-        else if (policyString.equals(DependencyPolicyEnum.NO_CONST.getName())) return DependencyPolicyEnum.NO_CONST;
+        if (policyString.equals(DependencyPolicyEnum.WITH_CONST.toString())) return DependencyPolicyEnum.WITH_CONST;
+        else if (policyString.equals(DependencyPolicyEnum.NO_CONST.toString())) return DependencyPolicyEnum.NO_CONST;
         else {
             LOGGER.warning("Warning: unknown dependency policy=" + policyString + "; using default=" + DEFAULT_DEPENDENCY_POLICY);
             return DEFAULT_DEPENDENCY_POLICY;
@@ -113,8 +129,8 @@ public class GrCUDAOptionMap implements TruffleObject {
     }
 
     private static RetrieveNewStreamPolicyEnum parseRetrieveStreamPolicy(String policyString) {
-        if (policyString.equals(RetrieveNewStreamPolicyEnum.FIFO.getName())) return RetrieveNewStreamPolicyEnum.FIFO;
-        else if (policyString.equals(RetrieveNewStreamPolicyEnum.ALWAYS_NEW.getName())) return RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
+        if (policyString.equals(RetrieveNewStreamPolicyEnum.FIFO.toString())) return RetrieveNewStreamPolicyEnum.FIFO;
+        else if (policyString.equals(RetrieveNewStreamPolicyEnum.ALWAYS_NEW.toString())) return RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
         else {
             LOGGER.warning("Warning: unknown new stream retrieval policy=" + policyString + "; using default=" + DEFAULT_RETRIEVE_STREAM_POLICY);
             return DEFAULT_RETRIEVE_STREAM_POLICY;
@@ -122,8 +138,8 @@ public class GrCUDAOptionMap implements TruffleObject {
     }
 
     private static RetrieveParentStreamPolicyEnum parseParentStreamPolicy(String policyString) {
-        if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT.getName())) return RetrieveParentStreamPolicyEnum.DISJOINT;
-        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT.getName())) return RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
+        if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT.toString())) return RetrieveParentStreamPolicyEnum.DISJOINT;
+        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT.toString())) return RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
         else {
             LOGGER.warning("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + DEFAULT_PARENT_STREAM_POLICY);
             return DEFAULT_PARENT_STREAM_POLICY;
@@ -131,55 +147,55 @@ public class GrCUDAOptionMap implements TruffleObject {
     }
 
     public Boolean isCuBLASEnabled(){
-        return (Boolean) optionsMap.get(GrCUDAOptions.CuBLASEnabled.toString());
+        return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.CuBLASEnabled);
     }
 
     public String getCuBLASLibrary(){
-        return (String) optionsMap.get(GrCUDAOptions.CuBLASLibrary.toString());
+        return (String) getOptionValueFromOptionKey(GrCUDAOptions.CuBLASLibrary);
     }
 
     public Boolean isCuMLEnabled(){
-        return (Boolean) optionsMap.get(GrCUDAOptions.CuMLEnabled.toString());
+        return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.CuMLEnabled);
     }
 
     public String getCuMLLibrary(){
-        return (String) optionsMap.get(GrCUDAOptions.CuMLLibrary.toString());
+        return (String) getOptionValueFromOptionKey(GrCUDAOptions.CuMLLibrary);
     }
 
     public ExecutionPolicyEnum getExecutionPolicy(){
-        return (ExecutionPolicyEnum) optionsMap.get(GrCUDAOptions.ExecutionPolicy.toString());
+        return (ExecutionPolicyEnum) getOptionValueFromOptionKey(GrCUDAOptions.ExecutionPolicy);
     }
 
     public DependencyPolicyEnum getDependencyPolicy(){
-        return (DependencyPolicyEnum) optionsMap.get(GrCUDAOptions.DependencyPolicy.toString());
+        return (DependencyPolicyEnum) getOptionValueFromOptionKey(GrCUDAOptions.DependencyPolicy);
     }
 
     public RetrieveNewStreamPolicyEnum getRetrieveNewStreamPolicy(){
-        return (RetrieveNewStreamPolicyEnum) optionsMap.get(GrCUDAOptions.RetrieveNewStreamPolicy.toString());
+        return (RetrieveNewStreamPolicyEnum) getOptionValueFromOptionKey(GrCUDAOptions.RetrieveNewStreamPolicy);
     }
 
     public RetrieveParentStreamPolicyEnum getRetrieveParentStreamPolicy(){
-        return (RetrieveParentStreamPolicyEnum) optionsMap.get(GrCUDAOptions.RetrieveParentStreamPolicy.toString());
+        return (RetrieveParentStreamPolicyEnum) getOptionValueFromOptionKey(GrCUDAOptions.RetrieveParentStreamPolicy);
     }
 
     public Boolean isForceStreamAttach(){
-        return (Boolean) optionsMap.get(GrCUDAOptions.ForceStreamAttach.toString());
+        return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.ForceStreamAttach);
     }
 
     public Boolean isInputPrefetch(){
-        return (Boolean) optionsMap.get(GrCUDAOptions.InputPrefetch.toString());
+        return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.InputPrefetch);
     }
 
     public Boolean isEnableMultiGPU(){
-        return (Boolean) optionsMap.get(GrCUDAOptions.EnableMultiGPU.toString());
+        return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.EnableMultiGPU);
     }
 
     public Boolean isTensorRTEnabled(){
-        return (Boolean) optionsMap.get(GrCUDAOptions.TensorRTEnabled.toString());
+        return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.TensorRTEnabled);
     }
 
     public String getTensorRTLibrary(){
-        return (String) optionsMap.get(GrCUDAOptions.TensorRTLibrary.toString());
+        return (String) getOptionValueFromOptionKey(GrCUDAOptions.TensorRTLibrary);
     }
 
     // Implement InteropLibrary;
@@ -193,7 +209,7 @@ public class GrCUDAOptionMap implements TruffleObject {
     public final Object readHashValue(Object key) throws UnknownKeyException, UnsupportedMessageException {
         Object value;
         if (key instanceof String){
-            value = this.optionsMap.get(key.toString());
+            value = this.optionsMap.get(key);
         }
         else {
             throw UnsupportedMessageException.create();
@@ -216,6 +232,6 @@ public class GrCUDAOptionMap implements TruffleObject {
     final Object getHashEntriesIterator() throws UnsupportedMessageException {
         HashMap<String, String> entries = new HashMap<>();
         optionsMap.forEach((key, value) -> entries.put(key, value.toString()));
-        return entries.entrySet().iterator();
+        return new GrCUDAException("iterator not implemented");
     }
 }

@@ -54,14 +54,10 @@ import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.SyncGrCUDAExecutionContext;
-import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.cudalibraries.tensorrt.TensorRTRegistry;
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleLanguage.Env;
 import com.oracle.truffle.api.TruffleLogger;
-import org.graalvm.options.OptionKey;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
@@ -110,7 +106,7 @@ public final class GrCUDAContext {
         Boolean inputPrefetch = grCUDAOptionMap.isInputPrefetch();
 
         // Initialize the execution policy;
-        LOGGER.fine("using" + executionPolicy.getName() + " execution policy");
+        LOGGER.fine("using" + executionPolicy.toString() + " execution policy");
         switch (executionPolicy) {
             case SYNC:
                 this.grCUDAExecutionContext = new SyncGrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.SYNC : PrefetcherEnum.NONE);
