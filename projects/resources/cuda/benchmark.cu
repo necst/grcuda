@@ -34,7 +34,7 @@ namespace chrono = std::chrono;
 using clock_type = chrono::high_resolution_clock;
 
 // #define GPU_ORDER_8 {0, 6, 3, 1, 4, 2, 5, 7}
-#define GPU_ORDER_8 {0, 1, 2, 3, 4, 5, 6, 7}
+#define GPU_ORDER_8 {0, 4, 1, 5, 2, 6, 3, 7} // {0, 4, 2, 6, 1, 5, 3, 7}
 #define GPU_ORDER_4 {0, 3, 1, 2}
 
 int Benchmark::select_gpu(int i, int max_devices) {

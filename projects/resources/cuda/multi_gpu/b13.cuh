@@ -31,6 +31,7 @@
 #include "../benchmark.cuh"
 
 #define PARTITION_Z false
+#define P2_STREAMS false
 
 class Benchmark13M : public Benchmark {
    public:
