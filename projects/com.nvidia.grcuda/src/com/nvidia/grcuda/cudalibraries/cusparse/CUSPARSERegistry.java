@@ -40,17 +40,21 @@ import static com.nvidia.grcuda.functions.Function.expectLong;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDAInternalException;
 import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.Namespace;
+import com.nvidia.grcuda.TypeException;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
+import com.nvidia.grcuda.runtime.computation.ComputationArgument;
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.runtime.stream.CUSPARSESetStreamFunction;
 import com.nvidia.grcuda.runtime.stream.LibrarySetStreamFunction;
 import com.oracle.truffle.api.CompilerAsserts;
@@ -67,7 +71,7 @@ import sun.security.krb5.internal.SeqNumber;
 
 public class CUSPARSERegistry {
     // TODO: set library directory
-    public static final String DEFAULT_LIBRARY = (System.getenv("LIBCUSPARSE_DIR") != null ? System.getenv("LIBCUSPARSE_DIR") : "") + "libcusparse.so";
+    public static final String DEFAULT_LIBRARY = (System.getenv("LIBCUSPARSE_DIR") != null ? System.getenv("LIBCUSPARSE_DIR") : "") + "libcusparse.so.11";
     // TODO: edit install.sh -> source file (OptionsDescriptor)
     public static final String DEFAULT_LIBRARY_HINT = " (CuSPARSE library location can be set via the --grcuda.CuSPARSELibrary= option. " +
                     "CuSPARSE support can be disabled via --grcuda.CuSPARSEEnabled=false.";
@@ -217,10 +221,10 @@ public class CUSPARSERegistry {
                         long cooRowInd = expectLong(arguments[4]);
                         long cooColInd = expectLong(arguments[5]);
                         long cooValues = expectLong(arguments[6]);
-                        int  cooIdxType = expectInt(arguments[7]);
+                        cusparseIndexType_t  cooIdxType = cusparseIndexType_t.values()[expectInt(arguments[7])];
                         cusparseIndexBase_t idxBase = cusparseIndexBase_t.values()[expectInt(arguments[8])];
                         cudaDataType valueType = cudaDataType.values()[expectInt(arguments[9])];
-                        Object result = INTEROP.execute(cusparseCreateCooFunctionNFI, rows, cols, nnz, cooRowInd, cooColInd, cooValues, cooIdxType, idxBase, valueType);
+                        Object result = INTEROP.execute(cusparseCreateCooFunctionNFI, rows, cols, nnz, cooRowInd, cooColInd, cooValues, cooIdxType.ordinal(), idxBase.ordinal(), valueType.ordinal());
                         checkCUSPARSEReturnCode(result, "cusparseCreateCoo");
                         return result;
                     } catch (InteropException e){
@@ -279,11 +283,11 @@ public class CUSPARSERegistry {
                 public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
                     checkArgumentLength(arguments, 4);
                     try{
-                        cusparseDnVecDescr = expectLong(arguments[0]); // è giusto con expectLong?
+                        cusparseDnVecDescr = expectLong(arguments[0]);
                         long size = expectLong(arguments[1]);
                         long values = expectLong(arguments[2]);
                         cudaDataType valueType = cudaDataType.values()[expectInt(arguments[3])];
-                        Object result = INTEROP.execute(cusparseCreateDnVecFunctionNFI, size, values, valueType);
+                        Object result = INTEROP.execute(cusparseCreateDnVecFunctionNFI, size, values, valueType.ordinal());
                         checkCUSPARSEReturnCode(result, "cusparseCreateDnVec");
                         return result;
                     } catch (InteropException e){
@@ -367,7 +371,6 @@ public class CUSPARSERegistry {
             try {
                 Object result = INTEROP.execute(cusparseCreateFunction);
                 cusparseHandle = expectLong(result);
-
                 context.addDisposable(this::cuSPARSEShutdown);
             } catch (InteropException e) {
                 throw new GrCUDAInternalException(e);
@@ -409,12 +412,23 @@ public class CUSPARSERegistry {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
+                        // Set the other arguments;
+                        //TODO: clean up D:
+                        List<ComputationArgumentWithValue> computationArgumentsWithValue = new ArrayList<>();
+                        if(!factory.getName().contains("SpMV")){
+                            List<ComputationArgument> computationArguments = ComputationArgument.parseParameterSignature(factory.getNFISignature());
+                            for (int i = 0; i < arguments.length; i++) {
+                                computationArgumentsWithValue.add(new ComputationArgumentWithValue(computationArguments.get(i), arguments[i]));
+                            }
+                        } else {
+                            computationArgumentsWithValue = this.createComputationArgumentWithValueList(arguments, cusparseHandle);
+                        }
                         Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
-                                this.createComputationArgumentWithValueList(arguments, cusparseHandle)).schedule();
+                                computationArgumentsWithValue).schedule();
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
                         return result;
-                    } catch (InteropException e) {
-                        throw new GrCUDAInternalException(e);
+                    } catch (InteropException | TypeException e) {
+                        throw new GrCUDAInternalException((InteropException) e);
                     }
                 }
             };
@@ -462,24 +476,29 @@ public class CUSPARSERegistry {
         }
     }
 
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATE = new ExternalFunctionFactory("cusparseCreate", "cusparseCreate_v2", "(pointer): sint32");
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSEDESTROY = new ExternalFunctionFactory("cusparseDestroy", "cusparseDestroy_v2", "(sint64): sint32");
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo_v2", "(pointer, sint64, " +
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATE = new ExternalFunctionFactory("cusparseCreate", "cusparseCreate", "(pointer): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSEDESTROY = new ExternalFunctionFactory("cusparseDestroy", "cusparseDestroy", "(sint64): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo", "(pointer, sint64, " +
                                                                                                         "sint64, sint64, pointer, pointer, pointer, sint32, sint32, sint32): sint32");
-                                                                                                        // gli input delle enum sono sint32, giusto?
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECSR = new ExternalFunctionFactory("cusparseCreateCsr", "cusparseCreateCoo_v2", "(pointer, sint64, sint64, sint64," +
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECSR = new ExternalFunctionFactory("cusparseCreateCsr", "cusparseCreateCsr", "(pointer, sint64, sint64, sint64," +
                                                                                                             "pointer, pointer, pointer, sint32, sint32, sint32, sint32): sint32");
-                                                                                                        // gli input delle enum sono sint32, giusto?
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATEDNVEC = new ExternalFunctionFactory("cusparseCreateDnVec", "cusparseCreateDnVec_v2", "(pointer, sint64, pointer, " +
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATEDNVEC = new ExternalFunctionFactory("cusparseCreateDnVec", "cusparseCreateDnVec", "(pointer, sint64, pointer, " +
                                                                                                                 "sint32): sint32");
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV_BUFFERSIZE = new ExternalFunctionFactory("cusparseSpMV_buffersize", "cusparseSpMV_buffersize_v2", "(sint64," +
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV_BUFFERSIZE = new ExternalFunctionFactory("cusparseSpMV_bufferSize", "cusparseSpMV_bufferSize", "(sint64," +
                                                                                                                 "sint32, pointer, sint64, sint64, pointer, sint64, sint32, sint32, pointer): sint32");
-                                                                                                        // sicuramente c'è un problema con i sint64, perchè non vuole i pointer di MatDesc, ma gli oggetti
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV = new ExternalFunctionFactory("cusparseSpMV", "cusparseSpMV_v2", "(sint64, sint32, pointer, sint64, " +
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV = new ExternalFunctionFactory("cusparseSpMV", "cusparseSpMV", "(sint64, sint32, pointer, sint64, " +
                                                                                                                 "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
-                                                                                                        // stesso problema con i Desc
 
     private static final ArrayList<ExternalFunctionFactory> functions = new ArrayList<>();
 
+    static {
+        functions.add(CUSPARSE_CUSPARSECREATE);
+        functions.add(CUSPARSE_CUSPARSEDESTROY);
+        functions.add(CUSPARSE_CUSPARSECREATECOO);
+        functions.add(CUSPARSE_CUSPARSECREATECSR);
+        functions.add(CUSPARSE_CUSPARSECREATEDNVEC);
+        functions.add(CUSPARSE_CUSPARSESPMV_BUFFERSIZE);
+        functions.add(CUSPARSE_CUSPARSESPMV);
+    }
 
 }

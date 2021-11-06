@@ -177,11 +177,11 @@ public final class GrCUDAContext {
             new TensorRTRegistry(this).registerTensorRTFunctions(trt);
         }
         // added support for cusparse
-        if (this.getOption(GrCUDAOptions.CuSPARSEEnabled)) {
-            Namespace sparse = new Namespace(CUSPARSERegistry.NAMESPACE);
-            namespace.addNamespace(sparse);
-            new CUSPARSERegistry(this).registerCUSPARSEFunctions(sparse);
-        }
+        // TODO: set CUDA option for cusparse
+        Namespace sparse = new Namespace(CUSPARSERegistry.NAMESPACE);
+        namespace.addNamespace(sparse);
+        new CUSPARSERegistry(this).registerCUSPARSEFunctions(sparse);
+
         this.rootNamespace = namespace;
     }
 

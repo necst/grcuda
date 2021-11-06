@@ -190,7 +190,6 @@ public class CUBLASRegistry {
                 @TruffleBoundary
                 protected Object call(Object[] arguments) {
                     ensureInitialized();
-
                     try {
                         if (nfiFunction == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
