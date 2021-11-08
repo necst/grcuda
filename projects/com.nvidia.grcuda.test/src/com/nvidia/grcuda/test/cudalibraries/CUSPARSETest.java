@@ -83,8 +83,7 @@ public class CUSPARSETest {
         try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(
                         true).build()) {
 
-            int numDim = 1000;
-            int numElements = numDim;
+            int numElements = 1000;
 
             // creating context variables
             Value cu = polyglot.eval("grcuda", "CU");
@@ -92,10 +91,10 @@ public class CUSPARSETest {
             // creating variables for cusparse functions as DeviceArrays
             Value alpha = cu.invokeMember("DeviceArray", "float", 1);
             Value beta = cu.invokeMember("DeviceArray", "float", 1);
-            Value bufferSize = cu.invokeMember("DeviceArray", "float", 1);
-            Value dnVecXDescr = cu.invokeMember("DeviceArray", "long", 1);
-            Value dnVecYDescr = cu.invokeMember("DeviceArray", "long", 1);
-            Value spMatDescr = cu.invokeMember("DeviceArray", "long", 1);
+            UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
+            UnsafeHelper.Integer64Object dnVecXDescr = UnsafeHelper.createInteger64Object(); //cu.invokeMember("DeviceArray", "long", 1);
+            UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object(); // cu.invokeMember("DeviceArray", "long", 1);
+            UnsafeHelper.Integer64Object spMatDescr = UnsafeHelper.createInteger64Object(); // cu.invokeMember("DeviceArray", "long", 1);
             Value coordX = cu.invokeMember("DeviceArray", "int", numElements);
             Value coordY = cu.invokeMember("DeviceArray", "int", numElements);
             Value nnzVec = cu.invokeMember("DeviceArray", "float", numElements);
@@ -119,7 +118,7 @@ public class CUSPARSETest {
             // variables initialization
             alpha.setArrayElement(0, 1);
             beta.setArrayElement(0, 0);
-            bufferSize.setArrayElement(0,0);
+
 
             // initial checks
             assertEquals(numElements, coordX.getArraySize());
@@ -141,44 +140,56 @@ public class CUSPARSETest {
 
             // cusparseCreateDnVec
             Value cusparseCreateDnVec = polyglot.eval("grcuda", "SPARSE::cusparseCreateDnVec");
-            cusparseCreateDnVec.execute(dnVecXDescr.asNativePointer(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
-            cusparseCreateDnVec.execute(dnVecYDescr.asNativePointer(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+            Value cusparseCreateDnVecXOutputValue = cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+            Value cusparseCreateDnVecYOutputValue = cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+
+            assertEquals(cusparseCreateDnVecXOutputValue.asInt(), 0);
+            assertEquals(cusparseCreateDnVecYOutputValue.asInt(), 0);
 
             // cusparseCreateCoo
             Value cusparseCreateCoo = polyglot.eval("grcuda", "SPARSE::cusparseCreateCoo");
-            cusparseCreateCoo.execute(spMatDescr.asNativePointer(), numElements, numElements, numElements, coordX, coordY, nnzVec,
+            Value cusparseCreateCooOutputValue = cusparseCreateCoo.execute(spMatDescr.getAddress(), numElements, numElements, numElements, coordX, coordY, nnzVec,
                             CUSPARSERegistry.cusparseIndexType_t.CUSPARSE_INDEX_32I.ordinal(), CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
                         CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+
+            assertEquals(cusparseCreateCooOutputValue.asInt(), 0);
 
             // cusparseSpMV_buffersize
             Value cusparseSpMV_bufferSize = polyglot.eval("grcuda", "SPARSE::cusparseSpMV_bufferSize");
             cusparseSpMV_bufferSize.execute(
-//                    cusparseHandle.getValue(),
                     CUSPARSERegistry.cusparseOperation_t.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
                     alpha,
-                    spMatDescr,
-                    dnVecXDescr,
+                    spMatDescr.getValue(),
+                    dnVecXDescr.getValue(),
                     beta,
-                    dnVecYDescr,
+                    dnVecYDescr.getValue(),
                     CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal(),
                     CUSPARSERegistry.cusparseSpMVAlg_t.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
-                    bufferSize
+                    bufferSize.getAddress()
             );
 
+            long bufferSizeValue = bufferSize.getValue();
+
+            if (bufferSizeValue == 0){
+                // DeviceArrays cannot have size < 1
+                // But cusparseSpMV_buffersize CAN return a value of zero
+                // for the size of the temporary buffer
+                bufferSizeValue = 1;
+            }
             // cusparseSpMV
             Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
+            Value buffer = cu.invokeMember("DeviceArray", "float", bufferSizeValue);
+
             cusparseSpMV.execute(
-                    // no need to pass the handle
-//                    cusparseHandle.getValue(),
                     CUSPARSERegistry.cusparseOperation_t.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
                     alpha,
-                    spMatDescr,
-                    dnVecXDescr,
+                    spMatDescr.getValue(),
+                    dnVecXDescr.getValue(),
                     beta,
-                    dnVecYDescr,
+                    dnVecYDescr.getValue(),
                     CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal(),
                     CUSPARSERegistry.cusparseSpMVAlg_t.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
-                    bufferSize
+                    buffer
             );
         }
     }
