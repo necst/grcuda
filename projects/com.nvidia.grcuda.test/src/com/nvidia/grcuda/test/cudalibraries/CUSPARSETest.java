@@ -82,34 +82,46 @@ public class CUSPARSETest {
     public void testSpMV() {
         try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(
                         true).build()) {
-            Value cu = polyglot.eval("grcuda", "CU");
+
             int numDim = 1000;
             int numElements = numDim;
+
+            // creating context variables
+            Value cu = polyglot.eval("grcuda", "CU");
+
+            // creating variables for cusparse functions as DeviceArrays
             Value alpha = cu.invokeMember("DeviceArray", "float", 1);
             Value beta = cu.invokeMember("DeviceArray", "float", 1);
             Value bufferSize = cu.invokeMember("DeviceArray", "float", 1);
-            alpha.setArrayElement(0, 1);
-            beta.setArrayElement(0, 0);
-            bufferSize.setArrayElement(0,0);
-            // creating handle
-            UnsafeHelper.Integer64Object cusparseHandle = UnsafeHelper.createInteger64Object();
-            // creating COO matrix
+            Value dnVecXDescr = cu.invokeMember("DeviceArray", "long", 1);
+            Value dnVecYDescr = cu.invokeMember("DeviceArray", "long", 1);
+            Value spMatDescr = cu.invokeMember("DeviceArray", "long", 1);
             Value coordX = cu.invokeMember("DeviceArray", "int", numElements);
             Value coordY = cu.invokeMember("DeviceArray", "int", numElements);
             Value nnzVec = cu.invokeMember("DeviceArray", "float", numElements);
             Value dnVec = cu.invokeMember("DeviceArray", "float", numElements);
             Value outVec = cu.invokeMember("DeviceArray", "float", numElements);
-            // creating descriptors
-            UnsafeHelper.Integer64Object dnVecXDescr = UnsafeHelper.createInteger64Object();
-            UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object();
-            UnsafeHelper.Integer64Object spMatDescr = UnsafeHelper.createInteger64Object();
+
+            // handle not use with the current specifications (see registry)
+//            UnsafeHelper.Integer64Object cusparseHandle = UnsafeHelper.createInteger64Object();
+
+            // variables as generic elements
+//            UnsafeHelper.Integer64Object dnVecXDescr = UnsafeHelper.createInteger64Object();
+//            UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object();
+//            UnsafeHelper.Integer64Object spMatDescr = UnsafeHelper.createInteger64Object();
 //            UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
 //            UnsafeHelper.Float32Object alpha = UnsafeHelper.createFloat32Object();
 //            UnsafeHelper.Float32Object beta = UnsafeHelper.createFloat32Object();
 //            alpha.setValue(1.0F);
 //            beta.setValue(0.0F);
+//            bufferSize.setValue(0);
 
+            // variables initialization
+            alpha.setArrayElement(0, 1);
+            beta.setArrayElement(0, 0);
+            bufferSize.setArrayElement(0,0);
 
+            // initial checks
             assertEquals(numElements, coordX.getArraySize());
             assertEquals(numElements, coordY.getArraySize());
             assertEquals(numElements, nnzVec.getArraySize());
@@ -125,18 +137,21 @@ public class CUSPARSETest {
                 outVec.setArrayElement(i, 0.0);
             }
 
-            // creating matrix and vectors descriptors (from cusparse)
-            // TODO: find a way to assert that the output of those functions is correct
+            // TODO: find a way to check whether the output of those functions is correct or not
+
+            // cusparseCreateDnVec
             Value cusparseCreateDnVec = polyglot.eval("grcuda", "SPARSE::cusparseCreateDnVec");
-            System.out.println("POLIPO");
-            cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
-            cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+            cusparseCreateDnVec.execute(dnVecXDescr.asNativePointer(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+            cusparseCreateDnVec.execute(dnVecYDescr.asNativePointer(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+
+            // cusparseCreateCoo
             Value cusparseCreateCoo = polyglot.eval("grcuda", "SPARSE::cusparseCreateCoo");
-            cusparseCreateCoo.execute(spMatDescr.getAddress(), numElements, numElements, numElements, coordX, coordY, nnzVec,
+            cusparseCreateCoo.execute(spMatDescr.asNativePointer(), numElements, numElements, numElements, coordX, coordY, nnzVec,
                             CUSPARSERegistry.cusparseIndexType_t.CUSPARSE_INDEX_32I.ordinal(), CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
                         CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+
+            // cusparseSpMV_buffersize
             Value cusparseSpMV_bufferSize = polyglot.eval("grcuda", "SPARSE::cusparseSpMV_bufferSize");
-            try{
             cusparseSpMV_bufferSize.execute(
 //                    cusparseHandle.getValue(),
                     CUSPARSERegistry.cusparseOperation_t.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
@@ -149,186 +164,22 @@ public class CUSPARSETest {
                     CUSPARSERegistry.cusparseSpMVAlg_t.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
                     bufferSize
             );
-            } catch (PolyglotException e){
-                e.printStackTrace();
-                System.out.println(e.getMessage());
-                System.out.println(e.getSourceLocation());
-                System.out.println(e.isGuestException());
-                System.out.println(e.isHostException());
-            }
 
-
-            
-            
-
-            // create all inputs for a function
-// Value taxpy = polyglot.eval("grcuda", "SPARSE::cusparse" + typeChar + "axpy");
-// taxpy.execute(numDim, alpha, coordX, 1, coordY, 1);
-// assertOutputVectorIsCorrect(numElements, coordY, (Integer i) -> i);
+            // cusparseSpMV
+            Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
+            cusparseSpMV.execute(
+                    // no need to pass the handle
+//                    cusparseHandle.getValue(),
+                    CUSPARSERegistry.cusparseOperation_t.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
+                    alpha,
+                    spMatDescr,
+                    dnVecXDescr,
+                    beta,
+                    dnVecYDescr,
+                    CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal(),
+                    CUSPARSERegistry.cusparseSpMVAlg_t.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
+                    bufferSize
+            );
         }
     }
-//
-// /**
-// * BLAS Level-2 Test.
-// */
-// @Test
-// public void testTgemv() {
-// try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy",
-// this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(
-// true).build()) {
-// Value cu = polyglot.eval("grcuda", "CU");
-// int numDim = 10;
-// boolean isComplex = (typeChar == 'C') || (typeChar == 'Z');
-// String cudaType = ((typeChar == 'D') || (typeChar == 'Z')) ? "double" : "float";
-// int numElements = isComplex ? numDim * 2 : numDim;
-// Value alpha = cu.invokeMember("DeviceArray", cudaType, isComplex ? 2 : 1);
-// Value beta = cu.invokeMember("DeviceArray", cudaType, isComplex ? 2 : 1);
-// alpha.setArrayElement(0, -1);
-// beta.setArrayElement(0, 2);
-// if (isComplex) {
-// alpha.setArrayElement(1, 0);
-// beta.setArrayElement(1, 0);
-// }
-//
-// // complex types require two elements along 1st dimension (since column-major order)
-// Value matrixA = cu.invokeMember("DeviceArray", cudaType, numElements, numDim, "F");
-// Value x = cu.invokeMember("DeviceArray", cudaType, numElements);
-// Value y = cu.invokeMember("DeviceArray", cudaType, numElements);
-//
-// // set matrix
-// // A: identity matrix
-// for (int j = 0; j < numDim; j++) {
-// for (int i = 0; i < numElements; i++) {
-// // complex types require two elements along 1st dimension (since column-major
-// // order)
-// Value row = matrixA.getArrayElement(i);
-// row.setArrayElement(j, ((!isComplex & (i == j)) || (isComplex && (i == (2 * j)))) ? 1.0 : 0.0);
-// }
-// }
-//
-// // set vectors
-// // x = (1, 2, ..., numDim)
-// // y = (1, 2, ..., numDim)
-// for (int i = 0; i < numElements; i++) {
-// x.setArrayElement(i, i);
-// y.setArrayElement(i, i);
-// }
-// Value tgemv = polyglot.eval("grcuda", "BLAS::cublas" + typeChar + "gemv");
-// final int cublasOpN = 0;
-// tgemv.execute(cublasOpN, numDim, numDim,
-// alpha,
-// matrixA, numDim,
-// x, 1,
-// beta,
-// y, 1);
-// assertOutputVectorIsCorrect(numElements, y, (Integer i) -> i);
-// }
-// }
-//
-// /**
-// * BLAS Level-3 Test.
-// */
-// @Test
-// public void testTgemm() {
-// try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy",
-// this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(
-// true).build()) {
-// Value cu = polyglot.eval("grcuda", "CU");
-// int numDim = 10;
-// boolean isComplex = (typeChar == 'C') || (typeChar == 'Z');
-// String cudaType = ((typeChar == 'D') || (typeChar == 'Z')) ? "double" : "float";
-// int numElements = isComplex ? numDim * 2 : numDim;
-// Value alpha = cu.invokeMember("DeviceArray", cudaType, isComplex ? 2 : 1);
-// Value beta = cu.invokeMember("DeviceArray", cudaType, isComplex ? 2 : 1);
-// alpha.setArrayElement(0, -1);
-// beta.setArrayElement(0, 2);
-// if (isComplex) {
-// alpha.setArrayElement(1, 0);
-// beta.setArrayElement(1, 0);
-// }
-//
-// // complex types require two elements along 1st dimension (since column-major order)
-// Value matrixA = cu.invokeMember("DeviceArray", cudaType, numElements, numDim, "F");
-// Value matrixB = cu.invokeMember("DeviceArray", cudaType, numElements, numDim, "F");
-// Value matrixC = cu.invokeMember("DeviceArray", cudaType, numElements, numDim, "F");
-//
-// // set matrix
-// // A: identity matrix
-// for (int j = 0; j < numDim; j++) {
-// for (int i = 0; i < numElements; i++) {
-// // complex types require two elements along 1st dimension (since column-major
-// // order)
-// Value row = matrixA.getArrayElement(i);
-// row.setArrayElement(j, ((!isComplex & (i == j)) || (isComplex && (i == (2 * j)))) ? 1.0 : 0.0);
-// }
-// }
-// // B == C
-// for (int j = 0; j < numDim; j++) {
-// for (int i = 0; i < numElements; i++) {
-// Value row = matrixB.getArrayElement(i);
-// row.setArrayElement(j, i + numElements * j);
-// }
-// }
-// for (int j = 0; j < numDim; j++) {
-// for (int i = 0; i < numElements; i++) {
-// Value row = matrixC.getArrayElement(i);
-// row.setArrayElement(j, i + numElements * j);
-// }
-// }
-// Value tgemm = polyglot.eval("grcuda", "BLAS::cublas" + typeChar + "gemm");
-// final int cublasOpN = 0;
-// tgemm.execute(cublasOpN, cublasOpN, numDim, numDim, numDim,
-// alpha,
-// matrixA, numDim,
-// matrixB, numDim,
-// beta,
-// matrixC, numDim);
-// assertOutputMatrixIsCorrect(numDim, numElements, matrixC, (Integer i) -> i);
-// }
-// }
-//
-// /**
-// * Validation function for vectors.
-// */
-// public static void assertOutputVectorIsCorrect(int len, Value deviceArray,
-// Function<Integer, Integer> outFunc, char typeChar) {
-// boolean hasDouble = (typeChar == 'D') || (typeChar == 'Z');
-// for (int i = 0; i < len; i++) {
-// if (hasDouble) {
-// double expected = outFunc.apply(i);
-// double actual = deviceArray.getArrayElement(i).asDouble();
-// assertEquals(expected, actual, 1e-5);
-// } else {
-// float expected = outFunc.apply(i);
-// float actual = deviceArray.getArrayElement(i).asFloat();
-// assertEquals(expected, actual, 1e-5f);
-// }
-// }
-// }
-//
-// private void assertOutputVectorIsCorrect(int len, Value deviceArray,
-// Function<Integer, Integer> outFunc) {
-// CUSPARSETest.assertOutputVectorIsCorrect(len, deviceArray, outFunc, this.typeChar);
-// }
-//
-// /**
-// * Validation function for matrix.
-// */
-// private void assertOutputMatrixIsCorrect(int numDim, int numElements, Value matrix,
-// Function<Integer, Integer> outFunc) {
-// boolean hasDouble = (typeChar == 'D') || (typeChar == 'Z');
-// for (int j = 0; j < numDim; j++) {
-// for (int i = 0; i < numElements; i++) {
-// int idx = i + numElements * j;
-// if (hasDouble) {
-// double expected = outFunc.apply(idx);
-// double actual = matrix.getArrayElement(i).getArrayElement(j).asDouble();
-// assertEquals(expected, actual, 1e-5);
-// } else {
-// float expected = outFunc.apply(idx);
-// float actual = matrix.getArrayElement(i).getArrayElement(j).asFloat();
-// assertEquals(expected, actual, 1e-5f);
-// }
-// }
-// }
 }
