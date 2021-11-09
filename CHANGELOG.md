@@ -6,6 +6,15 @@
 * Changed all the print in the source code in log events, with different logging levels
 * Added documentation about logging in docs
 
+# 2021-10-13
+
+* Enabled support for cuBLAS and cuML in the async scheduler
+  * Streams' management is now supported both for CUML and CUBLAS
+  * This feature can be possibly applied to any library, by extending the `LibrarySetStreamFunction` class
+* Set TensorRT support to experimental
+  * TensorRT is currently not supported on CUDA 11.4, making it impossible to use along a recent version of cuML
+  * **Known limitation:** due to this incompatibility, TensorRT is currently not available on the async scheduler
+  
 # 2021-09-30, Release 1
 
 ## API Changes
