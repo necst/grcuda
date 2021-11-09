@@ -1437,7 +1437,7 @@ public final class CUDARuntime {
             context.setCUDAInitialized();
         }
     }
-
+    @SuppressWarnings("static-method")
     private static void checkCUReturnCode(Object result, String... function) {
         int returnCode;
         try {

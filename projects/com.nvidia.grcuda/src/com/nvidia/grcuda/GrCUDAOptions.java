@@ -88,7 +88,4 @@ public final class GrCUDAOptions {
 
     @Option(category = OptionCategory.USER, help = "Set the location of the TensorRT library.", stability = OptionStability.STABLE) //
     public static final OptionKey<String> TensorRTLibrary = new OptionKey<>(TensorRTRegistry.DEFAULT_LIBRARY);
-
-    @Option(category = OptionCategory.USER, help = "Set the logging level for all the GrCUDA loggers.", stability = OptionStability.STABLE) //
-    public static final OptionKey<String> LoggingLevel = new OptionKey<>(GrCUDALogger.DEFAULT_LOGGER_LEVEL);
 }
