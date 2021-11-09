@@ -67,6 +67,7 @@ import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import org.graalvm.compiler.debug.CSVUtil;
 import sun.security.krb5.internal.SeqNumber;
 
 public class CUSPARSERegistry {
@@ -90,10 +91,10 @@ public class CUSPARSERegistry {
     private Long cusparseHandle = null;
 
     public enum cusparseIndexType_t{
+        CUSPARSE_INDEX_UNUSED,
         CUSPARSE_INDEX_16U,
         CUSPARSE_INDEX_32I,
         CUSPARSE_INDEX_64I;
-
     }
 
     public enum cusparseIndexBase_t {
@@ -112,8 +113,6 @@ public class CUSPARSERegistry {
         CUDA_C_8I,  // 8 bit complex as a pair of signed integers
         CUDA_R_8U,   //8 bit real as a signed integer
         CUDA_C_8U;  // 8 bit complex as a pair of signed integers
-
-
     }
 
     public enum cusparseOperation_t {
@@ -299,7 +298,7 @@ public class CUSPARSERegistry {
                                                                                                                 "pointer, sint64, sint64, pointer, sint64, sint32, sint32, pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV = new ExternalFunctionFactory("cusparseSpMV", "cusparseSpMV", "(sint64, sint32, pointer, sint64, " +
                                                                                                                 "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
-
+//    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMATSETATTRIBUTE = new ExternalFunctionFactory("cusparseSpMatSetAttribute", "cusparseSpMatSetAttribute", "(sint64, sint32")
 
     //
 

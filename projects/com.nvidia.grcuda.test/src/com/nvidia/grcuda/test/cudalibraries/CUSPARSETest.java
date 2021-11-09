@@ -35,6 +35,7 @@
 package com.nvidia.grcuda.test.cudalibraries;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -100,7 +101,7 @@ public class CUSPARSETest {
             Value nnzVec = cu.invokeMember("DeviceArray", "float", numElements);
             Value dnVec = cu.invokeMember("DeviceArray", "float", numElements);
             Value outVec = cu.invokeMember("DeviceArray", "float", numElements);
-
+            bufferSize.setValue(-1);
             // handle not use with the current specifications (see registry)
 //            UnsafeHelper.Integer64Object cusparseHandle = UnsafeHelper.createInteger64Object();
 
@@ -140,8 +141,8 @@ public class CUSPARSETest {
 
             // cusparseCreateDnVec
             Value cusparseCreateDnVec = polyglot.eval("grcuda", "SPARSE::cusparseCreateDnVec");
-            Value cusparseCreateDnVecXOutputValue = cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
-            Value cusparseCreateDnVecYOutputValue = cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+            Value cusparseCreateDnVecXOutputValue = cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
+            Value cusparseCreateDnVecYOutputValue = cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
 
             assertEquals(cusparseCreateDnVecXOutputValue.asInt(), 0);
             assertEquals(cusparseCreateDnVecYOutputValue.asInt(), 0);
@@ -150,7 +151,7 @@ public class CUSPARSETest {
             Value cusparseCreateCoo = polyglot.eval("grcuda", "SPARSE::cusparseCreateCoo");
             Value cusparseCreateCooOutputValue = cusparseCreateCoo.execute(spMatDescr.getAddress(), numElements, numElements, numElements, coordX, coordY, nnzVec,
                             CUSPARSERegistry.cusparseIndexType_t.CUSPARSE_INDEX_32I.ordinal(), CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
-                        CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+                            CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
 
             assertEquals(cusparseCreateCooOutputValue.asInt(), 0);
 
@@ -163,12 +164,14 @@ public class CUSPARSETest {
                     dnVecXDescr.getValue(),
                     beta,
                     dnVecYDescr.getValue(),
-                    CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal(),
+                    CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
                     CUSPARSERegistry.cusparseSpMVAlg_t.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
                     bufferSize.getAddress()
             );
 
             long bufferSizeValue = bufferSize.getValue();
+
+            assertNotEquals(bufferSizeValue, -1);
 
             if (bufferSizeValue == 0){
                 // DeviceArrays cannot have size < 1
@@ -187,10 +190,15 @@ public class CUSPARSETest {
                     dnVecXDescr.getValue(),
                     beta,
                     dnVecYDescr.getValue(),
-                    CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal(),
+                    CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
                     CUSPARSERegistry.cusparseSpMVAlg_t.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
                     buffer
             );
+
+            for (int i = 0; i < numElements; i++){
+                assertEquals(outVec.getArrayElement(i).asFloat(), edge_value, 1e-5);
+            }
+
         }
     }
 }
