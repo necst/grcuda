@@ -40,6 +40,7 @@ import static org.junit.Assert.assertNotEquals;
 import java.util.Arrays;
 import java.util.Collection;
 
+import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import org.graalvm.polyglot.Context;
@@ -61,10 +62,11 @@ public class CUSPARSETest {
     public static Collection<Object[]> data() {
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
                         {ExecutionPolicyEnum.SYNC.getName(), ExecutionPolicyEnum.ASYNC.getName()},
-                        {true, false}
+                        {true, false},
         }));
     }
 
+//    GrCUDAOptions.CuSPARSEEnabled
     private final String policy;
     private final boolean inputPrefetch;
 
@@ -79,7 +81,7 @@ public class CUSPARSETest {
 
     @Test
     public void testCreateDnVec(){
-        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(
+        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option("grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
                 true).build()) {
 
             int numElements = 1000;
@@ -126,7 +128,7 @@ public class CUSPARSETest {
 
     @Test
     public void testCreateCoo(){
-        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(
+        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option("grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
                 true).build()) {
 
             int numElements = 1000;
@@ -196,7 +198,7 @@ public class CUSPARSETest {
 
     @Test
     public void testSpMV_bufferSize(){
-        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(
+        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option("grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
                 true).build()) {
 
             int numElements = 1000;
@@ -280,7 +282,7 @@ public class CUSPARSETest {
 
     @Test
     public void testSpMV() {
-        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(
+        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option("grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
                         true).build()) {
 
             int numElements = 1000;
