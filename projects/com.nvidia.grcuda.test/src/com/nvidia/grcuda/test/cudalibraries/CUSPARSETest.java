@@ -106,8 +106,8 @@ public class CUSPARSETest {
 
             // cusparseCreateDnVec
             Value cusparseCreateDnVec = polyglot.eval("grcuda", "SPARSE::cusparseCreateDnVec");
-            Value cusparseCreateDnVecXOutputValue = cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
-            Value cusparseCreateDnVecYOutputValue = cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+            Value cusparseCreateDnVecXOutputValue = cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
+            Value cusparseCreateDnVecYOutputValue = cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
 
             assertEquals(cusparseCreateDnVecXOutputValue.asInt(), 0);
             assertEquals(cusparseCreateDnVecYOutputValue.asInt(), 0);
@@ -167,8 +167,8 @@ public class CUSPARSETest {
 
             // cusparseCreateDnVec
             Value cusparseCreateDnVec = polyglot.eval("grcuda", "SPARSE::cusparseCreateDnVec");
-            Value cusparseCreateDnVecXOutputValue = cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
-            Value cusparseCreateDnVecYOutputValue = cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+            Value cusparseCreateDnVecXOutputValue = cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
+            Value cusparseCreateDnVecYOutputValue = cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
 
             assertEquals(cusparseCreateDnVecXOutputValue.asInt(), 0);
             assertEquals(cusparseCreateDnVecYOutputValue.asInt(), 0);
@@ -178,7 +178,7 @@ public class CUSPARSETest {
             Value cusparseCreateCoo = polyglot.eval("grcuda", "SPARSE::cusparseCreateCoo");
             Value cusparseCreateCooOutputValue = cusparseCreateCoo.execute(spMatDescr.getAddress(), numElements, numElements, numElements, coordX, coordY, nnzVec,
                     CUSPARSERegistry.cusparseIndexType_t.CUSPARSE_INDEX_64I.ordinal(), CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
-                    CUSPARSERegistry.cudaDataType.CUDA_C_32F.ordinal());
+                    CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
 
             // check matrix construction's consistency with the provided initialization values
             assertEquals(cusparseCreateCooOutputValue.asInt(), 0);
