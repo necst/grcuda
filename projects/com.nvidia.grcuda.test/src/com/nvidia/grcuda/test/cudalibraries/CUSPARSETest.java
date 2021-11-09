@@ -88,8 +88,8 @@ public class CUSPARSETest {
             Value cu = polyglot.eval("grcuda", "CU");
 
             // creating variables for cusparse functions as DeviceArrays
-            UnsafeHelper.Integer64Object dnVecXDescr = UnsafeHelper.createInteger64Object(); //cu.invokeMember("DeviceArray", "long", 1);
-            UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object(); // cu.invokeMember("DeviceArray", "long", 1);
+            UnsafeHelper.Integer64Object dnVecXDescr = UnsafeHelper.createInteger64Object();
+            UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object();
             Value dnVec = cu.invokeMember("DeviceArray", "float", numElements);
             Value outVec = cu.invokeMember("DeviceArray", "float", numElements);
             Value ctrlVec = cu.invokeMember("DeviceArray", "float", numElements);
@@ -240,8 +240,8 @@ public class CUSPARSETest {
 
             // cusparseCreateDnVec
             Value cusparseCreateDnVec = polyglot.eval("grcuda", "SPARSE::cusparseCreateDnVec");
-            Value cusparseCreateDnVecXOutputValue = cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_R_64F.ordinal());
-            Value cusparseCreateDnVecYOutputValue = cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_R_64F.ordinal());
+            Value cusparseCreateDnVecXOutputValue = cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), numElements, dnVec, CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
+            Value cusparseCreateDnVecYOutputValue = cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), numElements, outVec, CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
 
             assertEquals(cusparseCreateDnVecXOutputValue.asInt(), 0);
             assertEquals(cusparseCreateDnVecYOutputValue.asInt(), 0);
@@ -250,7 +250,7 @@ public class CUSPARSETest {
             Value cusparseCreateCoo = polyglot.eval("grcuda", "SPARSE::cusparseCreateCoo");
             Value cusparseCreateCooOutputValue = cusparseCreateCoo.execute(spMatDescr.getAddress(), numElements, numElements, numElements, coordX, coordY, nnzVec,
                     CUSPARSERegistry.cusparseIndexType_t.CUSPARSE_INDEX_64I.ordinal(), CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
-                    CUSPARSERegistry.cudaDataType.CUDA_R_64F.ordinal());
+                    CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
 
             assertEquals(cusparseCreateCooOutputValue.asInt(), 0);
 

@@ -71,9 +71,7 @@ import org.graalvm.compiler.debug.CSVUtil;
 import sun.security.krb5.internal.SeqNumber;
 
 public class CUSPARSERegistry {
-    // TODO: set library directory
     public static final String DEFAULT_LIBRARY = (System.getenv("LIBCUSPARSE_DIR") != null ? System.getenv("LIBCUSPARSE_DIR") : "") + "libcusparse.so.11";
-    // TODO: edit install.sh -> source file (OptionsDescriptor)
     public static final String DEFAULT_LIBRARY_HINT = " (CuSPARSE library location can be set via the --grcuda.CuSPARSELibrary= option. " +
                     "CuSPARSE support can be disabled via --grcuda.CuSPARSEEnabled=false.";
     public static final String NAMESPACE = "SPARSE";
