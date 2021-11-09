@@ -1,3 +1,10 @@
+# 2021-11-09
+
+* Enabled support for cuSPARSE
+  * Operations with sparse matrices from cuSPARSE library are now supported
+  * **Known limitation:** Not all data types are supported
+
+
 # 2021-10-13
 
 * Enabled support for cuBLAS and cuML in the async scheduler
