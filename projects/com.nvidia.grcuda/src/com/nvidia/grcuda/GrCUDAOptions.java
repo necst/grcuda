@@ -91,12 +91,10 @@ public final class GrCUDAOptions {
     @Option(category = OptionCategory.USER, help = "Set the location of the TensorRT library.", stability = OptionStability.STABLE) //
     public static final OptionKey<String> TensorRTLibrary = new OptionKey<>(TensorRTRegistry.DEFAULT_LIBRARY);
 
-    // new options added for cusparse
+    @Option(category = OptionCategory.USER, help = "Enable cuSPARSE support.", stability = OptionStability.EXPERIMENTAL) //
+    public static final OptionKey<Boolean> CuSPARSEEnabled = new OptionKey<>(false);
 
-    @Option(category = OptionCategory.USER, help = "Enable cuSPARSE support.", stability = OptionStability.STABLE) //
-    public static final OptionKey<Boolean> CuSPARSEEnabled = new OptionKey<>(true);
-
-    @Option(category = OptionCategory.USER, help = "Set the location of the cusparse library.", stability = OptionStability.STABLE) //
+    @Option(category = OptionCategory.USER, help = "Set the location of the cusparse library.", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> CuSPARSELibrary = new OptionKey<>(CUSPARSERegistry.DEFAULT_LIBRARY);
 
 }
