@@ -46,6 +46,7 @@ struct Benchmark {
     virtual void execute_cudagraph_manual(int iter);
     virtual void execute_cudagraph_single(int iter);
     virtual std::string print_result(bool short_form = false) = 0;
+    virtual void cpu_validation(int iter);
     void run();
     int add_node(void **paramarray, cudaKernelNodeParams &param, void *func, dim3 gridsize, dim3 threads, cudaGraph_t &g, cudaGraphNode_t *n, std::vector<cudaGraphNode_t> &dependencies, int shared_memory = 0);
     int select_gpu(int i, int max_devices);

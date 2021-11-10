@@ -34,7 +34,7 @@ namespace chrono = std::chrono;
 using clock_type = chrono::high_resolution_clock;
 
 // #define GPU_ORDER_8 {0, 6, 3, 1, 4, 2, 5, 7}
-#define GPU_ORDER_8 {0, 1, 2, 3, 4, 5, 6, 7}
+#define GPU_ORDER_8 {0, 4, 1, 5, 2, 6, 3, 7} // {0, 4, 2, 6, 1, 5, 3, 7}
 #define GPU_ORDER_4 {0, 3, 1, 2}
 
 int Benchmark::select_gpu(int i, int max_devices) {
@@ -122,6 +122,9 @@ void Benchmark::run() {
         if (debug) {
             std::cout << "  result=" << print_result() << std::endl;
             std::cout << "  execution(" << i << ")=" << (float)exec_time / 1000 << " ms" << std::endl;
+#if CPU_VALIDATION
+            cpu_validation(i);
+#endif
         } else {
             std::cout << i << "," << print_result(true) << "," << (float)(reset_time + exec_time) / 1e6 << "," << (float)reset_time / 1e6 << "," << (float)exec_time / 1e6 << std::endl;
         }
@@ -150,4 +153,8 @@ void Benchmark::execute_cudagraph_manual(int iter) {
 
 void Benchmark::execute_cudagraph_single(int iter) {
     std::cout << "cudagraph (single) not implemented for " << benchmark_name << std::endl;
+}
+
+void Benchmark::cpu_validation(int iter) {
+    std::cout << "cpu validation not implemented for " << benchmark_name << std::endl;
 }

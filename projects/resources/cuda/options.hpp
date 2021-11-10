@@ -40,6 +40,7 @@
 //////////////////////////////
 //////////////////////////////
 
+#define CPU_VALIDATION false
 #define DEBUG false
 #define NUM_ITER 30
 #define DEFAULT_BLOCK_SIZE_1D 32
