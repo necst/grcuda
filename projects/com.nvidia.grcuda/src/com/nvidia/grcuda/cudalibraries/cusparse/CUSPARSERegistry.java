@@ -84,6 +84,7 @@ public class CUSPARSERegistry {
     @CompilationFinal private TruffleObject cusparseCreateCsrFunction;
     @CompilationFinal private TruffleObject cusparseCreateDnVecFunction;
     @CompilationFinal private TruffleObject cusparseSpMV_bufferSizeFunction;
+    @CompilationFinal private TruffleObject cusparseSgemvi_bufferSizeFunction;
     @CompilationFinal private TruffleObject cusparseCreateFunctionNFI;
     @CompilationFinal private TruffleObject cusparseDestroyFunctionNFI;
     @CompilationFinal private TruffleObject cusparseSetStreamFunctionNFI;
@@ -91,6 +92,8 @@ public class CUSPARSERegistry {
     @CompilationFinal private TruffleObject cusparseCreateCsrFunctionNFI;
     @CompilationFinal private TruffleObject cusparseCreateDnVecFunctionNFI;
     @CompilationFinal private TruffleObject cusparseSpMV_bufferSizeFunctionNFI;
+    @CompilationFinal private TruffleObject cusparseSgemvi_bufferSizeFunctionNFI;
+
 
 
     private Long cusparseHandle = null;
@@ -153,7 +156,7 @@ public class CUSPARSERegistry {
             cusparseCreateCsrFunctionNFI = CUSPARSE_CUSPARSECREATECSR.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
             cusparseCreateDnVecFunctionNFI = CUSPARSE_CUSPARSECREATEDNVEC.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
             cusparseSpMV_bufferSizeFunctionNFI = CUSPARSE_CUSPARSESPMV_BUFFERSIZE.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
-
+            cusparseSgemvi_bufferSizeFunctionNFI = CUSPARSE_CUSPARSESGEMVI_BUFFERSIZE.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
             // cusparseStatus_t cusparseCreate(cusparseHandle_t handle)
 
             cusparseCreateFunction = new Function(CUSPARSE_CUSPARSECREATE.getName()) {
@@ -349,6 +352,37 @@ public class CUSPARSERegistry {
                 }
             };
 
+            // cusparseStatus_t cusparseSgemvi_bufferSize(cusparseHandle_t handle,
+            //                  cusparseOperation_t transA,
+            //                  int m,
+            //                  int n,
+            //                  int nnz,
+            //                  int* pBufferSize)
+
+            cusparseSgemvi_bufferSizeFunction = new Function(CUSPARSE_CUSPARSESGEMVI_BUFFERSIZE.getName()){
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException{
+                    checkArgumentLength(6);
+                    long handle = expectLong(arguments[0]);
+                    cusparseOperation_t transA = cusparseOperation_t.values()[expectInt(arguments[1])];
+                    int m = expectInt(arguments[2]);
+                    int n = expectInt(arguments[3]);
+                    int nnz = expectInt(arguments[4]);
+                    long pBufferSize = expectLong(arguments[5]);
+                    try {
+                        Object result = INTEROP.execute(cusparseSgemvi_bufferSizeFunctionNFI, handle, transA, m, n, nnz, pBufferSize);
+                        checkCUSPARSEReturnCode(result, "cusparseSgemvi_bufferSize");
+                        return result
+                    } catch (InteropException e){
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
+
+
+
+
             try {
                 Object result = INTEROP.execute(cusparseCreateFunction);
                 cusparseHandle = expectLong(result);
@@ -478,6 +512,13 @@ public class CUSPARSERegistry {
                                                                                                                 "pointer, sint64, sint64, pointer, sint64, sint32, sint32, pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV = new ExternalFunctionFactory("cusparseSpMV", "cusparseSpMV", "(sint64, sint32, pointer, sint64, " +
                                                                                                                 "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESGEMVI_BUFFERSIZE = new ExternalFunctionFactory("cusparseSpGEMM", "cusparseSpGEMM", "(sint64, sint32, sint32, " +
+                                                                                                                "sint32, sint32, pointer): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESGEMVI = new ExternalFunctionFactory("cusparseSgemvi", "cusparseSgemvi", "(sint64, sint32, sint32, sint32" +
+                                                                                                                "pointer, pointer, sint32, sint32, pointer, pointer, pointer, pointer, sint32, pointer): sint32");
+
+
+
 
     private static final ArrayList<ExternalFunctionFactory> functions = new ArrayList<>();
 
@@ -489,6 +530,7 @@ public class CUSPARSERegistry {
 //        functions.add(CUSPARSE_CUSPARSECREATEDNVEC);
 //        functions.add(CUSPARSE_CUSPARSESPMV_BUFFERSIZE);
         functions.add(CUSPARSE_CUSPARSESPMV);
+        functions.add(CUSPARSE_CUSPARSESGEMVI);
     }
 
 }
