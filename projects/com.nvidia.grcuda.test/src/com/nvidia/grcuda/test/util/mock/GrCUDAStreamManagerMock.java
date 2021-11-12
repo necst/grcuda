@@ -71,7 +71,10 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
     }
 
     @Override
-    public void assignEvent(ExecutionDAG.DAGVertex vertex) { }
+    public void assignEventStart(ExecutionDAG.DAGVertex vertex) { }
+
+    @Override
+    public void assignEventStop(ExecutionDAG.DAGVertex vertex) { }
 
     @Override
     public void syncStream(CUDAStream stream) { }
