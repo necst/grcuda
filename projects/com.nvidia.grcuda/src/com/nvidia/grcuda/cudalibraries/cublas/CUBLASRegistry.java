@@ -116,7 +116,7 @@ public class CUBLASRegistry {
                 }
             };
 
-            // create wrapper for cublasDestroy: cublasError_t cublasDestroy(long handle) -> void
+            // create wrapper for cublasDestroy: cublasError_t cublasDestroy(long handle)
             // cublasDestroy(long handle)
             cublasDestroyFunction = new Function(CUBLAS_CUBLASDESTROY.getName()) {
                 @Override

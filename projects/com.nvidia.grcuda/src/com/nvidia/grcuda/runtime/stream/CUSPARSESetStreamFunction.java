@@ -22,5 +22,13 @@ public class CUSPARSESetStreamFunction extends LibrarySetStreamFunction {
 
     @Override
     public void setStream(CUDAStream stream) {
+        Object[] cusparseSetStreamArgs = {this.handle, stream.getRawPointer()};
+        try {
+            INTEROP.execute(this.setStreamFunctionNFI, cusparseSetStreamArgs);
+        } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
+            System.out.println("failed to set CUSPARSE stream");
+            e.printStackTrace();
+        }
+    }
     }
 }

@@ -86,9 +86,6 @@ public class CUSPARSERegistry {
     @CompilationFinal private TruffleObject cusparseDestroyFunctionNFI;
     @CompilationFinal private TruffleObject cusparseSetStreamFunctionNFI;
 
-
-
-
     private Long cusparseHandle = null;
 
     public enum cusparseIndexType_t{
@@ -202,18 +199,6 @@ public class CUSPARSERegistry {
                     }
                 }
             };
-
-            // cusparseStatus_t cusparseCreateCoo(cusparseSpMatDescr_t* spMatDescr,
-            //                  int64_t               rows,
-            //                  int64_t               cols,
-            //                  int64_t               nnz,
-            //                  void*                 cooRowInd,
-            //                  void*                 cooColInd,
-            //                  void*                 cooValues,
-            //                  cusparseIndexType_t   cooIdxType,
-            //                  cusparseIndexBase_t   idxBase,
-            //                  cudaDataType          valueType)
-
 
             try {
                 Object result = INTEROP.execute(cusparseCreateFunction);
@@ -329,12 +314,6 @@ public class CUSPARSERegistry {
     private static final ArrayList<CUSPARSEProxy> functions = new ArrayList<>();
 
     static {
-//        functions.add(CUSPARSE_CUSPARSECREATE);
-//        functions.add(CUSPARSE_CUSPARSEDESTROY);
-//        functions.add(CUSPARSE_CUSPARSECREATECOO);
-//        functions.add(CUSPARSE_CUSPARSECREATECSR);
-//        functions.add(CUSPARSE_CUSPARSECREATEDNVEC);
-//        functions.add(CUSPARSE_CUSPARSESPMV_BUFFERSIZE);
         functions.add(new CUSPARSEProxySpMV(CUSPARSE_CUSPARSESPMV));
         // FIXME: Change this when we implement the proxy for gemvi
         functions.add(new CUSPARSEProxySpMV(CUSPARSE_CUSPARSESGEMVI));

@@ -16,7 +16,7 @@ import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.checkCUS
 
 public abstract class CUSPARSEProxy {
 
-    @CompilerDirectives.CompilationFinal private TruffleObject cusparseCreateFunctionNFI;
+    @CompilationFinal private TruffleObject cusparseCreateFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseDestroyFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseSetStreamFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseCreateCooFunctionNFI;
@@ -56,6 +56,17 @@ public abstract class CUSPARSEProxy {
             cusparseCreateDnVecFunctionNFI = CUSPARSE_CUSPARSECREATEDNVEC.makeFunction(context.getCUDARuntime(), libraryPath, CUSPARSERegistry.DEFAULT_LIBRARY_HINT);
             cusparseSpMV_bufferSizeFunctionNFI = CUSPARSE_CUSPARSESPMV_BUFFERSIZE.makeFunction(context.getCUDARuntime(), libraryPath, CUSPARSERegistry.DEFAULT_LIBRARY_HINT);
             cusparseSgemvi_bufferSizeFunctionNFI = CUSPARSE_CUSPARSESGEMVI_BUFFERSIZE.makeFunction(context.getCUDARuntime(), libraryPath, CUSPARSERegistry.DEFAULT_LIBRARY_HINT);
+
+            // cusparseStatus_t cusparseCreateCoo(cusparseSpMatDescr_t* spMatDescr,
+            //                  int64_t               rows,
+            //                  int64_t               cols,
+            //                  int64_t               nnz,
+            //                  void*                 cooRowInd,
+            //                  void*                 cooColInd,
+            //                  void*                 cooValues,
+            //                  cusparseIndexType_t   cooIdxType,
+            //                  cusparseIndexBase_t   idxBase,
+            //                  cudaDataType          valueType)
 
             cusparseCreateCooFunction = new Function(CUSPARSE_CUSPARSECREATECOO.getName()) {
                 Long cusparseSpMatDescr = null;
@@ -230,8 +241,6 @@ public abstract class CUSPARSEProxy {
 
     public abstract Object[] formatArguments(Object[] rawArgs);
 
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATE = new ExternalFunctionFactory("cusparseCreate", "cusparseCreate", "(pointer): sint32");
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSEDESTROY = new ExternalFunctionFactory("cusparseDestroy", "cusparseDestroy", "(sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo", "(pointer, sint64, " +
             "sint64, sint64, pointer, pointer, pointer, sint32, sint32, sint32): sint32");
