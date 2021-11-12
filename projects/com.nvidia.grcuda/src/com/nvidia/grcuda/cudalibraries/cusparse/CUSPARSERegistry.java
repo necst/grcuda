@@ -358,7 +358,6 @@ public class CUSPARSERegistry {
             }
         }
 
-        Object cusparseSetStreamFunctionNFI = null;
         cusparseLibrarySetStreamFunction = new CUSPARSESetStreamFunction((Function) cusparseSetStreamFunctionNFI, cusparseHandle);
 
     }
