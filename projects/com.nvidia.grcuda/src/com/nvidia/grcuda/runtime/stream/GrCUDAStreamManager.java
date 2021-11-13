@@ -265,9 +265,13 @@ public class GrCUDAStreamManager {
         computation.setComputationFinished();
         // Destroy the event associated to this computation;
         if (computation.getEventStop().isPresent()) {
-            Float time = (float) 0.0;
-            runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
-            runtime.cudaEventElapsedTime(time, computation.getEventStart().get(), computation.getEventStop().get());
+            float timeMilliseconds;
+            if(runtime.getContext().isTimeComputation() && computation.isProfilable()){
+                runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
+                timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());
+                System.out.println("print time elapsed in streamManager : "+timeMilliseconds);
+                computation.setExecutionTime(computation.getStream().getStreamDeviceId(), timeMilliseconds);
+            }
             runtime.cudaEventDestroy(computation.getEventStop().get());
         } else {
             System.out.println("\t* WARNING: missing event to destroy for computation=" + computation);

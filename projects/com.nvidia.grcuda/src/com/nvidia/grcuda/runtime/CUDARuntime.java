@@ -525,19 +525,18 @@ public final class CUDARuntime {
 
     /**
      * Computes the elapsed time between events.
-     * @param ms Time between start and end in ms
      * @param start Starting event
      * @param end Ending event
      */
     @TruffleBoundary
-    public void cudaEventElapsedTime(Float ms, CUDAEvent start, CUDAEvent end) {
+    public float cudaEventElapsedTime(CUDAEvent start, CUDAEvent end) {
 
         try(UnsafeHelper.Float32Object outPointer = UnsafeHelper.createFloat32Object()) {
             Object callable = CUDARuntimeFunction.CUDA_EVENTELAPSEDTIME.getSymbol(this);
             Object result = INTEROP.execute(callable, outPointer.getAddress(),start.getRawPointer(), end.getRawPointer());
             checkCUDAReturnCode(result, "cudaEventElapsedTime");
             float time = outPointer.getValue();
-            System.out.println("Time measured by cudaEventElapsedTime: "+time/1000);
+            return time;
         } catch (InteropException e) {
             throw new GrCUDAException(e);
         }
