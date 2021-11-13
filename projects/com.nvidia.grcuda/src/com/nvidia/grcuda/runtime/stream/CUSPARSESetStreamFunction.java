@@ -30,5 +30,4 @@ public class CUSPARSESetStreamFunction extends LibrarySetStreamFunction {
             e.printStackTrace();
         }
     }
-    }
 }

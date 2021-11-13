@@ -16,7 +16,8 @@ import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.checkCUS
 
 public abstract class CUSPARSEProxy {
 
-    @CompilationFinal private TruffleObject cusparseCreateFunctionNFI;
+    @CompilerDirectives.CompilationFinal
+    private TruffleObject cusparseCreateFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseDestroyFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseSetStreamFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseCreateCooFunctionNFI;
@@ -239,7 +240,7 @@ public abstract class CUSPARSEProxy {
         return externalFunctionFactory;
     }
 
-    public abstract Object[] formatArguments(Object[] rawArgs);
+    public abstract Object[] formatArguments(Object[] rawArgs) throws UnsupportedTypeException;
 
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo", "(pointer, sint64, " +
