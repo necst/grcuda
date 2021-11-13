@@ -94,7 +94,7 @@ public final class GrCUDAContext {
     private final boolean forceStreamAttach;
     private final boolean inputPrefetch;
     private final boolean enableMultiGPU;
-    private final boolean enableKernelTimers;
+    private final boolean timeComputation;
 
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
     private final ConcurrentHashMap<Class<?>, CallTarget> uncachedMapCallTargets = new ConcurrentHashMap<>();
@@ -112,7 +112,7 @@ public final class GrCUDAContext {
         enableMultiGPU = env.getOptions().get(GrCUDAOptions.EnableMultiGPU);
 
         // Check if kernel timers are enabled
-        enableKernelTimers = env.getOptions().get(GrCUDAOptions.EnableKernelTimers);
+        timeComputation = env.getOptions().get(GrCUDAOptions.TimeComputation);
 
         // Retrieve the stream retrieval policy;
         retrieveNewStreamPolicy = parseRetrieveStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveNewStreamPolicy));
@@ -240,8 +240,8 @@ public final class GrCUDAContext {
         return enableMultiGPU;
     }
 
-    public boolean isEnableKernelTimers() {
-        return enableKernelTimers;
+    public boolean isTimeComputation() {
+        return timeComputation;
     }
 
     /**
