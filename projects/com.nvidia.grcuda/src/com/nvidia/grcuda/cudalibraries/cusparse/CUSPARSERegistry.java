@@ -48,6 +48,7 @@ import com.nvidia.grcuda.Namespace;
 import com.nvidia.grcuda.TypeException;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxy;
+import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySgemvi;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
@@ -316,7 +317,7 @@ public class CUSPARSERegistry {
     static {
         functions.add(new CUSPARSEProxySpMV(CUSPARSE_CUSPARSESPMV));
         // FIXME: Change this when we implement the proxy for gemvi
-        functions.add(new CUSPARSEProxySpMV(CUSPARSE_CUSPARSESGEMVI));
+        functions.add(new CUSPARSEProxySgemvi(CUSPARSE_CUSPARSESGEMVI));
     }
 
 }
