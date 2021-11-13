@@ -141,9 +141,9 @@ public class GrCUDAStreamManager {
     public void assignEventStart(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
 
-        runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
-
-        if (vertex.getComputation().canUseStream()) {
+        if (vertex.getComputation().canUseStream() && runtime.getContext().isEnableKernelTimers() && vertex.getComputation().isProfilable()) {
+            // cudaEventRecord is sensitive to the ctx of the device that is currently set, so we call cudaSetDevice
+            runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
             CUDAEvent event = runtime.cudaEventCreate();
             runtime.cudaEventRecord(event, vertex.getComputation().getStream());
             vertex.getComputation().setEventStart(event);
