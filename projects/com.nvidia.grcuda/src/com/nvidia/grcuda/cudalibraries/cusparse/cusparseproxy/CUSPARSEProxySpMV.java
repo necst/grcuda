@@ -4,14 +4,12 @@ import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
+import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 import static com.nvidia.grcuda.functions.Function.expectInt;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 // ci serve importare una classe dai test AHEM o ricreiamo tutto?
-
-
-
 
 public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
@@ -22,12 +20,17 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
     }
 
     @Override
+    public Value eval(Source source) {
+        return null;
+    }
+
+
+    @Override
     public Object[] formatArguments(Object[] rawArgs) throws UnsupportedTypeException {
 
         if(rawArgs.length == nArgsRaw){
             return rawArgs;
         } else {
-            GrCUDAContext polyglot; // we should build one, but all functions are in the test folder
             args = new Object[nArgsRaw];
             long rows = expectLong(rawArgs[3]);
             long cols = expectLong(rawArgs[4]);
@@ -85,16 +88,16 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
                 CUSPARSERegistry.cusparseSpMVAlg_t alg = CUSPARSERegistry.cusparseSpMVAlg_t.values()[expectInt(rawArgs[16])];
 
                 // create coo matrix descriptor
-                Value cusparseCreateCoo = polyglot.eval("grcuda", "SPARSE::cusparseCreateCoo");
+                Value cusparseCreateCoo = eval(Source.create("grcuda", "SPARSE::cusparseCreateCoo"));
                 cusparseCreateCoo.execute(cooMatDescr.getAddress(), rows, cols, nnz, cooRowIdx, cooColIdx, cooValues, cooIdxType.ordinal(), cooIdxBase.ordinal(), valueType.ordinal()); // TODO: check enums
 
                 // create dense vectors X and Y descriptors
-                Value cusparseCreateDnVec = polyglot.eval("grcuda", "SPARSE::cusparseCreateDnVec");
+                Value cusparseCreateDnVec = eval(Source.create("grcuda", "SPARSE::cusparseCreateDnVec"));
                 cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), size, valuesX, valueTypeVec.ordinal());
                 cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), size, valuesY, valueTypeVec.ordinal());
 
                 // create buffer
-                Value cusparseSpMV_bufferSize = polyglot.eval("grcuda", "SPARSE::cusparseSpMV_bufferSize");
+                Value cusparseSpMV_bufferSize = eval(Source.create("grcuda", "SPARSE::cusparseSpMV_bufferSize"));
                 cusparseSpMV_bufferSize.execute(handle, opA.ordinal(), alpha, cooMatDescr.getValue(), dnVecXDescr.getValue(), beta, dnVecYDescr.getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
 
                 // format new arguments for SpMV with COO format
@@ -160,16 +163,16 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
                 CUSPARSERegistry.cusparseSpMVAlg_t alg = CUSPARSERegistry.cusparseSpMVAlg_t.values()[expectInt(rawArgs[15])];
 
                 // create csr matrix descriptor
-                Value cusparseCreateCsr = polyglot.eval("grcuda", "SPARSE::cusparseCreateCoo");
+                Value cusparseCreateCsr = eval(Source.create("grcuda", "SPARSE::cusparseCreateCoo"));
                 cusparseCreateCsr.execute(csrMatDescr, rows, cols, nnz, csrRowOffsets, csrColIdx, csrValues, csrOffsetType, csrColIdxType, csrIdxBase, valueType); // TODO: check enums
 
                 // create dense vectors X and Y descriptors
-                Value cusparseCreateDnVec = polyglot.eval("grcuda", "SPARSE::cusparseCreateDnVec");
+                Value cusparseCreateDnVec = eval(Source.create("grcuda", "SPARSE::cusparseCreateDnVec"));
                 cusparseCreateDnVec.execute(dnVecXDescr, size, valuesX, valueTypeVec);
                 cusparseCreateDnVec.execute(dnVecYDescr, size, valuesY, valueTypeVec);
 
                 // create buffer
-                Value cusparseSpMV_bufferSize = polyglot.eval("grcuda", "SPARSE::cusparseSpMV_bufferSize");
+                Value cusparseSpMV_bufferSize = eval(Source.create("grcuda", "SPARSE::cusparseSpMV_bufferSize"));
                 cusparseSpMV_bufferSize.execute(handle, opA, alpha, csrMatDescr, dnVecXDescr, beta, dnVecYDescr, valueType, alg, bufferSize);
 
                 // format new arguments for SpMV with CSR format

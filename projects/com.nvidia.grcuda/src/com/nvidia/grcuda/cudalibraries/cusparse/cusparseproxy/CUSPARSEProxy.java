@@ -11,14 +11,13 @@ import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropException;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import org.graalvm.polyglot.Source;
+import org.graalvm.polyglot.Value;
 
 import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.checkCUSPARSEReturnCode;
 
 public abstract class CUSPARSEProxy {
 
-    @CompilerDirectives.CompilationFinal
-    private TruffleObject cusparseCreateFunctionNFI;
-    @CompilerDirectives.CompilationFinal private TruffleObject cusparseDestroyFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseSetStreamFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseCreateCooFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseCreateCsrFunctionNFI;
@@ -46,6 +45,12 @@ public abstract class CUSPARSEProxy {
     public static void setContext(GrCUDAContext context){
         CUSPARSEProxy.context = context;
     }
+
+    public Value eval(String languageId, CharSequence source) {
+        return eval(Source.create(languageId, source));
+    }
+
+    public abstract Value eval(Source source);
 
     private void initializeNfi(){
         if(context != null){
