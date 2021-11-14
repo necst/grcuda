@@ -1,4 +1,6 @@
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
+import com.nvidia.grcuda.GrCUDAContext;
+import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
@@ -15,11 +17,6 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
 
     public CUSPARSEProxySgemvi(ExternalFunctionFactory externalFunctionFactory) {
         super(externalFunctionFactory);
-    }
-
-    @Override
-    public Value eval(Source source) {
-        return null;
     }
 
     @Override
@@ -65,8 +62,11 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
 //            long y = expectLong(rawArgs[0]);
 //            CUSPARSERegistry.cusparseIndexBase_t idxBase = CUSPARSERegistry.cusparseIndexBase_t.values()[expectInt(rawArgs[0])];
 
+            // create context
+            Context polyglot = GrCUDAContext.buildProxyContext().build();
+
             // create buffer
-            Value cusparseSgemvi_bufferSize = eval(Source.create("grcuda", "SPARSE::cusparseSgemvi_bufferSize"));
+            Value cusparseSgemvi_bufferSize = polyglot.eval("grcuda", "SPARSE::cusparseSgemvi_bufferSize");
             cusparseSgemvi_bufferSize.execute(handle, transA.ordinal(), m, n, nnz, bufferSize.getAddress());
             return args;
         }

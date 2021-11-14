@@ -280,9 +280,9 @@ public class CUSPARSETest {
 //     */
 
     @Test
-    public void testSpMV() {
+    public void SpMV(){
         try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option("grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
-                        true).build()) {
+                true).build()) {
 
             int numElements = 1000;
 

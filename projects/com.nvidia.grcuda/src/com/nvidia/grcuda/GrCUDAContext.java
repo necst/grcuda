@@ -61,7 +61,11 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleLanguage.Env;
 import com.oracle.truffle.api.TruffleLogger;
+import org.graalvm.nativeimage.LogHandler;
+import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.options.OptionKey;
+import org.graalvm.polyglot.Context;
+import org.graalvm.word.UnsignedWord;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -291,6 +295,12 @@ public final class GrCUDAContext {
             return GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY;
         }
     }
+
+    public static Context.Builder buildProxyContext() {
+        return Context.newBuilder().allowAllAccess(true).allowExperimentalOptions(true).option("log.grcuda.com.nvidia.grcuda.level", "WARNING").option("log.grcuda.com.nvidia.grcuda.GrCUDAContext.level", "SEVERE");
+    }
+
+
 
     /* public void parseLoggingLevel(String loggingLevel){
         //

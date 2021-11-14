@@ -11,10 +11,10 @@ import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropException;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-import org.graalvm.polyglot.Source;
-import org.graalvm.polyglot.Value;
+
 
 import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.checkCUSPARSEReturnCode;
+import static com.nvidia.grcuda.functions.Function.expectLong;
 
 public abstract class CUSPARSEProxy {
 
@@ -42,15 +42,11 @@ public abstract class CUSPARSEProxy {
         initializeNfi();
     }
 
+    // we need to create a new context
+
     public static void setContext(GrCUDAContext context){
         CUSPARSEProxy.context = context;
     }
-
-    public Value eval(String languageId, CharSequence source) {
-        return eval(Source.create(languageId, source));
-    }
-
-    public abstract Value eval(Source source);
 
     private void initializeNfi(){
         if(context != null){
@@ -112,6 +108,33 @@ public abstract class CUSPARSEProxy {
             //                  cusparseIndexType_t   csrColIndType,
             //                  cusparseIndexBase_t   idxBase,
             //                  cudaDataType          valueType)
+
+            cusparseCreateCooFunction = new Function(CUSPARSE_CUSPARSECREATECOO.getName()) {
+                Long cusparseSpMatDescr = null;
+                @Override
+                @CompilerDirectives.TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
+                    checkArgumentLength(arguments, 10);
+                    cusparseSpMatDescr = expectLong(arguments[0]);
+                    long rows = expectLong(arguments[1]);
+                    long cols = expectLong(arguments[2]);
+                    long nnz = expectLong(arguments[3]);
+                    long cooRowIdx = expectLong(arguments[4]);
+                    long cooColIdx = expectLong(arguments[5]);
+                    long cooValues = expectLong(arguments[6]);
+                    CUSPARSERegistry.cusparseIndexType_t cooIdxType = CUSPARSERegistry.cusparseIndexType_t.values()[expectInt(arguments[7])];
+                    CUSPARSERegistry.cusparseIndexBase_t cooIdxBase = CUSPARSERegistry.cusparseIndexBase_t.values()[expectInt(arguments[8])];
+                    CUSPARSERegistry.cudaDataType valueType = CUSPARSERegistry.cudaDataType.values()[expectInt(arguments[9])];
+                    try {
+                        Object result = INTEROP.execute(cusparseCreateCooFunctionNFI, rows, cols, nnz, cooRowIdx, cooColIdx, cooValues,
+                                cooIdxType.ordinal(), cooIdxBase.ordinal(), valueType.ordinal());
+                        checkCUSPARSEReturnCode(result, "cusparseCreateCoo");
+                        return result;
+                    } catch(InteropException e){
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
 
             cusparseCreateCsrFunction = new Function(CUSPARSE_CUSPARSECREATECSR.getName()) {
                 Long cusparseSpMatDescr = null;
@@ -231,7 +254,6 @@ public abstract class CUSPARSEProxy {
                     }
                 }
             };
-
 
         } else {
             // TODO: FIGURE OUT WHAT TO THROW IN CASE CONTEXT IS NULL
