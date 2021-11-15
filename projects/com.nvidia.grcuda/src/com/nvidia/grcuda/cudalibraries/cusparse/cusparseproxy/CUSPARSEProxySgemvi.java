@@ -1,5 +1,7 @@
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 import com.nvidia.grcuda.GrCUDAContext;
+import com.oracle.truffle.api.interop.ArityException;
+import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
@@ -7,6 +9,8 @@ import org.graalvm.polyglot.Value;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
+
+import static com.nvidia.grcuda.functions.Function.INTEROP;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 import static com.nvidia.grcuda.functions.Function.expectInt;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -15,8 +19,12 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
 
     private final int nArgsRaw = 14; // args for library function
 
+    private final Context graalVMContext = Context.getCurrent();
+
     public CUSPARSEProxySgemvi(ExternalFunctionFactory externalFunctionFactory) {
+
         super(externalFunctionFactory);
+        graalVMContext.enter();
     }
 
     @Override
@@ -62,12 +70,13 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
 //            long y = expectLong(rawArgs[0]);
 //            CUSPARSERegistry.cusparseIndexBase_t idxBase = CUSPARSERegistry.cusparseIndexBase_t.values()[expectInt(rawArgs[0])];
 
-            // create context
-            Context polyglot = GrCUDAContext.buildProxyContext().build();
-
             // create buffer
-            Value cusparseSgemvi_bufferSize = polyglot.eval("grcuda", "SPARSE::cusparseSgemvi_bufferSize");
-            cusparseSgemvi_bufferSize.execute(handle, transA.ordinal(), m, n, nnz, bufferSize.getAddress());
+            Value cusparseSgemvi_bufferSize = graalVMContext.eval("grcuda", "SPARSE::cusparseSgemvi_bufferSize");
+            try {
+                Object resultBufferSize = INTEROP.execute(cusparseSgemvi_bufferSize, transA.ordinal(), m, n, nnz, bufferSize.getAddress());
+            } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
+                e.printStackTrace();
+            }
             return args;
         }
     }

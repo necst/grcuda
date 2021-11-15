@@ -4,28 +4,32 @@ import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
+import com.oracle.truffle.api.interop.ArityException;
+import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
+
+import static com.nvidia.grcuda.functions.Function.INTEROP;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 import static com.nvidia.grcuda.functions.Function.expectInt;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-
-import java.io.OutputStream;
-import java.util.logging.Handler;
-// ci serve importare una classe dai test AHEM o ricreiamo tutto?
 
 public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
     private final int nArgsRaw = 10; // args for library function
 
+    private final Context graalVMContext = Context.getCurrent();
+
     public CUSPARSEProxySpMV(ExternalFunctionFactory externalFunctionFactory) {
         super(externalFunctionFactory);
+        graalVMContext.enter();
+        System.out.println("entered context");
     }
+
 
     @Override
     public Object[] formatArguments(Object[] rawArgs) throws UnsupportedTypeException {
-
         if(rawArgs.length == nArgsRaw){
             return rawArgs;
         } else {
@@ -85,21 +89,30 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
                 long valuesY = expectLong(rawArgs[15]);
                 CUSPARSERegistry.cusparseSpMVAlg_t alg = CUSPARSERegistry.cusparseSpMVAlg_t.values()[expectInt(rawArgs[16])];
 
-                // create context for functions' execution
-                Context polyglot = GrCUDAContext.buildProxyContext().build();
-                Value cusparseCreateCoo = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
-
                 // create coo matrix descriptor
-                cusparseCreateCoo.execute(cooMatDescr.getAddress(), rows, cols, nnz, cooRowIdx, cooColIdx, cooValues, cooIdxType.ordinal(), cooIdxBase.ordinal(), valueType.ordinal()); // TODO: check enums
+                Value cusparseCreateCoo = graalVMContext.eval("grcuda", "SPARSE::cusparseSpMV");
+                try {
+                    Object resultCoo = INTEROP.execute(cusparseCreateCoo, cooMatDescr.getAddress(), rows, cols, nnz, cooRowIdx, cooColIdx, cooValues, cooIdxType.ordinal(), cooIdxBase.ordinal(), valueType.ordinal());
+                } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
+                    e.printStackTrace();
+                } // TODO: re-throw an exception if sth goes wrong
 
                 // create dense vectors X and Y descriptors
-                Value cusparseCreateDnVec = polyglot.eval("grcuda", "SPARSE::cusparseCreateDnVec");
-                cusparseCreateDnVec.execute(dnVecXDescr.getAddress(), size, valuesX, valueTypeVec.ordinal());
-                cusparseCreateDnVec.execute(dnVecYDescr.getAddress(), size, valuesY, valueTypeVec.ordinal());
+                Value cusparseCreateDnVec = graalVMContext.eval("grcuda", "SPARSE::cusparseCreateDnVec");
+                try {
+                    Object resultX = INTEROP.execute(cusparseCreateDnVec, dnVecXDescr.getAddress(), size, valuesX, valueTypeVec.ordinal());
+                    Object resultY = INTEROP.execute(cusparseCreateDnVec, dnVecYDescr.getAddress(), size, valuesY, valueTypeVec.ordinal());
+                } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
+                    e.printStackTrace();
+                }
 
                 // create buffer
-                Value cusparseSpMV_bufferSize = polyglot.eval("grcuda", "SPARSE::cusparseSpMV_bufferSize");
-                cusparseSpMV_bufferSize.execute(handle, opA.ordinal(), alpha, cooMatDescr.getValue(), dnVecXDescr.getValue(), beta, dnVecYDescr.getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
+                Value cusparseSpMV_bufferSize = graalVMContext.eval("grcuda", "SPARSE::cusparseSpMV_bufferSize");
+                try {
+                    Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSize, handle, opA.ordinal(), alpha, cooMatDescr.getValue(), dnVecXDescr.getValue(), beta, dnVecYDescr.getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
+                } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
+                    e.printStackTrace();
+                }
 
                 // format new arguments for SpMV with COO format
                 args[0] = handle;
@@ -163,21 +176,30 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
                 long valuesY = expectLong(rawArgs[14]);
                 CUSPARSERegistry.cusparseSpMVAlg_t alg = CUSPARSERegistry.cusparseSpMVAlg_t.values()[expectInt(rawArgs[15])];
 
-                // create context:
-                Context polyglot = GrCUDAContext.buildProxyContext().build();
-
                 // create csr matrix descriptor
-                Value cusparseCreateCsr = polyglot.eval("grcuda", "SPARSE::cusparseCreateCoo");
-                cusparseCreateCsr.execute(csrMatDescr, rows, cols, nnz, csrRowOffsets, csrColIdx, csrValues, csrOffsetType, csrColIdxType, csrIdxBase, valueType); // TODO: check enums
+                Value cusparseCreateCsr = graalVMContext.eval("grcuda", "SPARSE::cusparseCreateCoo");
+                try {
+                    Object resultCsr = INTEROP.execute(cusparseCreateCsr, csrMatDescr.getAddress(), rows, cols, nnz, csrRowOffsets, csrColIdx, csrValues, csrOffsetType.ordinal(), csrColIdxType.ordinal(), csrIdxBase.ordinal(), valueType.ordinal());
+                } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
+                    e.printStackTrace();
+                } // TODO: re-throw an exception if sth goes wrong
 
                 // create dense vectors X and Y descriptors
-                Value cusparseCreateDnVec = polyglot.eval("grcuda", "SPARSE::cusparseCreateDnVec");
-                cusparseCreateDnVec.execute(dnVecXDescr, size, valuesX, valueTypeVec);
-                cusparseCreateDnVec.execute(dnVecYDescr, size, valuesY, valueTypeVec);
+                Value cusparseCreateDnVec = graalVMContext.eval("grcuda", "SPARSE::cusparseCreateDnVec");
+                try {
+                    Object resultX = INTEROP.execute(cusparseCreateDnVec, dnVecXDescr.getAddress(), size, valuesX, valueTypeVec.ordinal());
+                    Object resultY = INTEROP.execute(cusparseCreateDnVec, dnVecXDescr.getAddress(), size, valuesX, valueTypeVec.ordinal());
+                } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
+                    e.printStackTrace();
+                }
 
                 // create buffer
-                Value cusparseSpMV_bufferSize = polyglot.eval("grcuda", "SPARSE::cusparseSpMV_bufferSize");
-                cusparseSpMV_bufferSize.execute(handle, opA, alpha, csrMatDescr, dnVecXDescr, beta, dnVecYDescr, valueType, alg, bufferSize);
+                Value cusparseSpMV_bufferSize = graalVMContext.eval("grcuda", "SPARSE::cusparseSpMV_bufferSize");
+                try {
+                    Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSize, handle, opA.ordinal(), alpha, csrMatDescr.getValue(), dnVecXDescr.getValue(), beta, dnVecYDescr.getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
+                } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
+                    e.printStackTrace();
+                }
 
                 // format new arguments for SpMV with CSR format
                 args[0] = handle;

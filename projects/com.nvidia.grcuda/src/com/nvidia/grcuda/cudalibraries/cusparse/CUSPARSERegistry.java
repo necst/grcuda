@@ -315,7 +315,6 @@ public class CUSPARSERegistry {
 
     static {
         functions.add(new CUSPARSEProxySpMV(CUSPARSE_CUSPARSESPMV));
-        // FIXME: Change this when we implement the proxy for gemvi
         functions.add(new CUSPARSEProxySgemvi(CUSPARSE_CUSPARSESGEMVI));
     }
 

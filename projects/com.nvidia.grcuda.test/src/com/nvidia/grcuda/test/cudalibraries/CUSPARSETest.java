@@ -284,6 +284,7 @@ public class CUSPARSETest {
         try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option("grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
                 true).build()) {
 
+            //option("grcuda.CuSPARSEEnabled", String.valueOf(true))
             int numElements = 1000;
 
             // creating context variables
@@ -293,16 +294,16 @@ public class CUSPARSETest {
             Value handle = cu.invokeMember("DeviceArray", "int", 1);
             Value alpha = cu.invokeMember("DeviceArray", "float", 1);
             Value beta = cu.invokeMember("DeviceArray", "float", 1);
-            UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
-            UnsafeHelper.Integer64Object dnVecXDescr = UnsafeHelper.createInteger64Object();
-            UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object();
-            UnsafeHelper.Integer64Object spMatDescr = UnsafeHelper.createInteger64Object();
+//            UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
+//            UnsafeHelper.Integer64Object dnVecXDescr = UnsafeHelper.createInteger64Object();
+//            UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object();
+//            UnsafeHelper.Integer64Object spMatDescr = UnsafeHelper.createInteger64Object();
             Value coordX = cu.invokeMember("DeviceArray", "int", numElements);
             Value coordY = cu.invokeMember("DeviceArray", "int", numElements);
             Value nnzVec = cu.invokeMember("DeviceArray", "float", numElements);
             Value dnVec = cu.invokeMember("DeviceArray", "float", numElements);
             Value outVec = cu.invokeMember("DeviceArray", "float", numElements);
-            bufferSize.setValue(-1);
+//            bufferSize.setValue(-1);
 
             // variables initialization
             alpha.setArrayElement(0, 1);

@@ -11,6 +11,8 @@ import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropException;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import org.graalvm.polyglot.Source;
+import org.graalvm.polyglot.Value;
 
 
 import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.checkCUSPARSEReturnCode;
@@ -260,8 +262,6 @@ public abstract class CUSPARSEProxy {
         }
 
     }
-
-
 
     public ExternalFunctionFactory getExternalFunctionFactory() {
         return externalFunctionFactory;

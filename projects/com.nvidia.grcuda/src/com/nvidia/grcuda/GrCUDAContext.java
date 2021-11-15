@@ -61,11 +61,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleLanguage.Env;
 import com.oracle.truffle.api.TruffleLogger;
-import org.graalvm.nativeimage.LogHandler;
-import org.graalvm.nativeimage.c.type.CCharPointer;
 import org.graalvm.options.OptionKey;
-import org.graalvm.polyglot.Context;
-import org.graalvm.word.UnsignedWord;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -105,7 +101,7 @@ public final class GrCUDAContext {
 
     public GrCUDAContext(Env env) {
         this.env = env;
-        
+
         // Retrieve if we should force array stream attachment;
         forceStreamAttach = env.getOptions().get(GrCUDAOptions.ForceStreamAttach);
 
@@ -117,7 +113,7 @@ public final class GrCUDAContext {
 
         // Retrieve the stream retrieval policy;
         retrieveNewStreamPolicy = parseRetrieveStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveNewStreamPolicy));
-        
+
         // Retrieve how streams are obtained from parent computations;
         retrieveParentStreamPolicyEnum = parseParentStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveParentStreamPolicy));
 
@@ -127,15 +123,15 @@ public final class GrCUDAContext {
 
         // Retrieve the execution policy;
         ExecutionPolicyEnum executionPolicy = parseExecutionPolicy(env.getOptions().get(GrCUDAOptions.ExecutionPolicy));
-        
-        
-        // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it. 
+
+
+        // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it.
         //  Once Nvidia adds support for it, we want to remove this limitation;
         if (this.getOption(GrCUDAOptions.TensorRTEnabled) && executionPolicy == ExecutionPolicyEnum.ASYNC) {
             LOGGER.warning("TensorRT and the asynchronous scheduler are not compatible. Switching to the synchronous scheduler.");
             executionPolicy = ExecutionPolicyEnum.SYNC;
         }
-        
+
         // Initialize the execution policy;
         LOGGER.fine("using " + executionPolicy.getName() + " execution policy");
         switch (executionPolicy) {
@@ -171,16 +167,16 @@ public final class GrCUDAContext {
             }
         }
         if (this.getOption(GrCUDAOptions.CuBLASEnabled)) {
-                Namespace blas = new Namespace(CUBLASRegistry.NAMESPACE);
-                namespace.addNamespace(blas);
-                new CUBLASRegistry(this).registerCUBLASFunctions(blas);
+            Namespace blas = new Namespace(CUBLASRegistry.NAMESPACE);
+            namespace.addNamespace(blas);
+            new CUBLASRegistry(this).registerCUBLASFunctions(blas);
         }
         if (this.getOption(GrCUDAOptions.TensorRTEnabled)) {
             Namespace trt = new Namespace(TensorRTRegistry.NAMESPACE);
             namespace.addNamespace(trt);
             new TensorRTRegistry(this).registerTensorRTFunctions(trt);
         }
-        if (this.getOption((GrCUDAOptions.CuSPARSEEnabled))) {
+        if (this.getOption(GrCUDAOptions.CuSPARSEEnabled)) {
             Namespace sparse = new Namespace(CUSPARSERegistry.NAMESPACE);
             namespace.addNamespace(sparse);
             new CUSPARSERegistry(this).registerCUSPARSEFunctions(sparse);
@@ -233,7 +229,7 @@ public final class GrCUDAContext {
     public RetrieveNewStreamPolicyEnum getRetrieveNewStreamPolicy() {
         return retrieveNewStreamPolicy;
     }
-    
+
     public RetrieveParentStreamPolicyEnum getRetrieveParentStreamPolicyEnum() {
         return retrieveParentStreamPolicyEnum;
     }
@@ -295,12 +291,6 @@ public final class GrCUDAContext {
             return GrCUDAContext.DEFAULT_PARENT_STREAM_POLICY;
         }
     }
-
-    public static Context.Builder buildProxyContext() {
-        return Context.newBuilder().allowAllAccess(true).allowExperimentalOptions(true).option("log.grcuda.com.nvidia.grcuda.level", "WARNING").option("log.grcuda.com.nvidia.grcuda.GrCUDAContext.level", "SEVERE");
-    }
-
-
 
     /* public void parseLoggingLevel(String loggingLevel){
         //
