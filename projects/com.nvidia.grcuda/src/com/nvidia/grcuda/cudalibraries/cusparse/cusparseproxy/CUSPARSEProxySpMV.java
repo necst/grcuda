@@ -44,6 +44,8 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
                 UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object();
                 UnsafeHelper.Integer64Object cooMatDescr = UnsafeHelper.createInteger64Object();
                 UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
+                UnsafeHelper.Integer64Object handle = UnsafeHelper.createInteger64Object();
+
 
                 CUSPARSERegistry.cusparseOperation_t opA = CUSPARSERegistry.cusparseOperation_t.values()[expectInt(rawArgs[0])];
 //                System.out.println("OPA");
@@ -81,26 +83,24 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
                 // create coo matrix descriptor
                try {
                     Object resultCoo = INTEROP.execute(cusparseCreateCooFunction, cooMatDescr.getAddress(), rows, cols, nnz, v1, v2, values, cooIdxType.ordinal(), cooIdxBase.ordinal(), valueType.ordinal());
+                    System.out.println("created coo: result" + resultCoo);
                 } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
                     e.printStackTrace();
                 } // TODO: re-throw an exception if sth goes wrong
 
                 // create dense vectors X and Y descriptors
                 try {
-                    System.out.println("DnVecDesc: " + dnVecXDescr);
-                    System.out.println("DnVecDesc: " + dnVecYDescr);
-                    System.out.println("Done printing");
                     Object resultX = INTEROP.execute(cusparseCreateDnVecFunction, dnVecXDescr.getAddress(), size, valuesX, valueTypeVec.ordinal());
                     Object resultY = INTEROP.execute(cusparseCreateDnVecFunction, dnVecYDescr.getAddress(), size, valuesY, valueTypeVec.ordinal());
+                    System.out.println("created dnvec: result" + resultX + resultY);
                 } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
                     e.printStackTrace();
-                    e.getMessage();
-                    e.getCause();
                 }
 
                 // create buffer
                 try {
-                    Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunction, 0, opA.ordinal(), alpha, cooMatDescr.getValue(), dnVecXDescr.getValue(), beta, dnVecYDescr.getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
+                    Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunction, 1, opA.ordinal(), alpha, cooMatDescr.getValue(), dnVecXDescr.getValue(), beta, dnVecYDescr.getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
+                    System.out.println("created buffer: result" + resultBufferSize);
                 } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
                     e.printStackTrace();
                 }
