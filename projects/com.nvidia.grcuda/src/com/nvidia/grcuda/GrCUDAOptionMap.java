@@ -276,8 +276,8 @@ public class GrCUDAOptionMap implements TruffleObject {
     @ExportLibrary(InteropLibrary.class)
     public static class GrCUDAOptionTuple implements TruffleObject {
 
-        private final int size = 2;
-        private final String[] entry = new String[size];
+        private final int SIZE = 2;
+        private final String[] entry = new String[SIZE];
 
         public GrCUDAOptionTuple(String key, String value) {
             entry[0] = key;
@@ -296,13 +296,17 @@ public class GrCUDAOptionMap implements TruffleObject {
 
         @ExportMessage
         public final Object readArrayElement(long index) throws InvalidArrayIndexException {
-            if (index == 0 || index == 1) return entry[(int)index];
-            throw InvalidArrayIndexException.create(index);
+            if (index == 0 || index == 1) {
+                return entry[(int)index];
+            }
+            else {
+                throw InvalidArrayIndexException.create(index);
+            }
         }
 
         @ExportMessage
         public final long getArraySize() {
-            return size;
+            return SIZE;
         }
     }
 

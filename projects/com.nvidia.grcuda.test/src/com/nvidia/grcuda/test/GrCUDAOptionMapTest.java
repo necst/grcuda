@@ -169,4 +169,33 @@ public class GrCUDAOptionMapTest {
             assertEquals(GrCUDAOptionMap.DEFAULT_ENABLE_MULTIGPU, Boolean.valueOf(options.getHashValue("grcuda.EnableMultiGPU").asString()));
         }
     }
+
+    @Test
+    public void testGetOptionsFunctionIterator() {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", ExecutionPolicyEnum.ASYNC.toString()).build()) {
+            // Obtain the options map;
+            Value options = ctx.eval("grcuda", "getoptions").execute();
+            // Get the iterator;
+            Value iterator = options.getHashEntriesIterator();
+            int optionCount = 0;
+            // Check that we can find a specific option key and value;
+            String optionKeyToFind = "grcuda.ExecutionPolicy";
+            String optionValueToFind = ExecutionPolicyEnum.ASYNC.toString();
+            boolean optionFound = false;
+            while (iterator.hasIteratorNextElement()) {
+                Value option = iterator.getIteratorNextElement();
+                assertEquals(2, option.getArraySize());
+                if (option.getArrayElement(0).asString().equals(optionKeyToFind)) {
+                    optionFound = true;
+                    assertEquals(optionValueToFind, option.getArrayElement(1).asString());
+                }
+                optionCount++;
+            }
+            assertTrue(optionFound);
+            assertTrue(iterator.isIterator());
+            assertFalse(iterator.hasIteratorNextElement());
+            assertEquals(options.getHashSize(), optionCount);
+        }
+    }
+
 }
