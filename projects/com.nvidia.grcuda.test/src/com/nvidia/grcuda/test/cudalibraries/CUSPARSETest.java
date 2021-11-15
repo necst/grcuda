@@ -369,6 +369,7 @@ public class CUSPARSETest {
             Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
             // Value buffer = cu.invokeMember("DeviceArray", "float", bufferSizeValue);
 
+            System.out.println("context creation successful");
             // order of the arguments should be the following for COO:
             // handle, opA, alpha, rows, cols, nnz, cooRowIdx, cooColIdx, cooValues, cooIdxType, cooIdxBase, valueType, size, valuesX, valueTypeVec, beta, valuesY, alg
             cusparseSpMV.execute(
