@@ -19,41 +19,16 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
 
     private final int nArgsRaw = 14; // args for library function
 
-    private final Context graalVMContext = Context.getCurrent();
-
     public CUSPARSEProxySgemvi(ExternalFunctionFactory externalFunctionFactory) {
-
         super(externalFunctionFactory);
-        graalVMContext.enter();
     }
 
     @Override
     public Object[] formatArguments(Object[] rawArgs) throws UnsupportedTypeException {
+        this.initializeNfi();
         if(rawArgs.length == nArgsRaw){
             return rawArgs;
         } else {
-            // cusparseStatus_t cusparseSgemvi_bufferSize(cusparseHandle_t handle,
-            //                  cusparseOperation_t transA,
-            //                  int m,
-            //                  int n,
-            //                  int nnz,
-            //                  int* pBufferSize)
-
-//            cusparseStatus_t
-//            cusparseSgemvi(cusparseHandle_t     handle,
-//                    cusparseOperation_t  transA,
-//            int                  m,
-//            int                  n,
-//               const float*         alpha,
-//               const float*         A,
-//            int                  lda,
-//            int                  nnz,
-//               const float*         x,
-//               const int*           xInd,
-//               const float*         beta,
-//            float*               y,
-//                    cusparseIndexBase_t  idxBase,
-//            void*                pBuffer)
             args = new Object[nArgsRaw];
             UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
             long handle = expectLong(rawArgs[0]);
@@ -71,9 +46,8 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
 //            CUSPARSERegistry.cusparseIndexBase_t idxBase = CUSPARSERegistry.cusparseIndexBase_t.values()[expectInt(rawArgs[0])];
 
             // create buffer
-            Value cusparseSgemvi_bufferSize = graalVMContext.eval("grcuda", "SPARSE::cusparseSgemvi_bufferSize");
             try {
-                Object resultBufferSize = INTEROP.execute(cusparseSgemvi_bufferSize, transA.ordinal(), m, n, nnz, bufferSize.getAddress());
+                Object resultBufferSize = INTEROP.execute(cusparseSgemvi_bufferSizeFunction, transA.ordinal(), m, n, nnz, bufferSize.getAddress());
             } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
                 e.printStackTrace();
             }

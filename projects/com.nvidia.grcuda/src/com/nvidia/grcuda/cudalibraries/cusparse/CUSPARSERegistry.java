@@ -308,7 +308,7 @@ public class CUSPARSERegistry {
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV = new ExternalFunctionFactory("cusparseSpMV", "cusparseSpMV", "(sint64, sint32, pointer, sint64, " +
                                                                                                                 "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESGEMVI = new ExternalFunctionFactory("cusparseSgemvi", "cusparseSgemvi", "(sint64, sint32, sint32, sint32" +
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESGEMVI = new ExternalFunctionFactory("cusparseSgemvi", "cusparseSgemvi", "(sint64, sint32, sint32, sint32," +
                                                                                                                 "pointer, pointer, sint32, sint32, pointer, pointer, pointer, pointer, sint32, pointer): sint32");
 
     private static final ArrayList<CUSPARSEProxy> functions = new ArrayList<>();

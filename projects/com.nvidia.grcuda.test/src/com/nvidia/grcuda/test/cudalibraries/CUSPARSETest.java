@@ -291,7 +291,6 @@ public class CUSPARSETest {
             Value cu = polyglot.eval("grcuda", "CU");
 
             // creating variables for cusparse functions as DeviceArrays
-            Value handle = cu.invokeMember("DeviceArray", "int", 1);
             Value alpha = cu.invokeMember("DeviceArray", "float", 1);
             Value beta = cu.invokeMember("DeviceArray", "float", 1);
 //            UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
@@ -374,7 +373,6 @@ public class CUSPARSETest {
             // order of the arguments should be the following for COO:
             // handle, opA, alpha, rows, cols, nnz, cooRowIdx, cooColIdx, cooValues, cooIdxType, cooIdxBase, valueType, size, valuesX, valueTypeVec, beta, valuesY, alg
             cusparseSpMV.execute(
-                    handle,
                     CUSPARSERegistry.cusparseOperation_t.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
                     alpha,
                     numElements,
@@ -385,10 +383,9 @@ public class CUSPARSETest {
                     nnzVec,
                     CUSPARSERegistry.cusparseIndexType_t.CUSPARSE_INDEX_32I.ordinal(),
                     CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
-                    CUSPARSERegistry.cudaDataType.CUDA_R_32F,
-                    numElements,
+                    CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
                     dnVec,
-                    CUSPARSERegistry.cudaDataType.CUDA_R_32F,
+                    CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
                     beta,
                     outVec,
                     CUSPARSERegistry.cusparseSpMVAlg_t.CUSPARSE_SPMV_ALG_DEFAULT.ordinal()
