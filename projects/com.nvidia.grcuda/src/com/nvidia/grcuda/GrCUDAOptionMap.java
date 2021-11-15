@@ -36,6 +36,8 @@ import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.InteropLibrary;
+import com.oracle.truffle.api.interop.InvalidArrayIndexException;
+import com.oracle.truffle.api.interop.StopIterationException;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnknownKeyException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
@@ -45,6 +47,9 @@ import org.graalvm.options.OptionKey;
 import org.graalvm.options.OptionValues;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 @ExportLibrary(InteropLibrary.class)
@@ -62,7 +67,7 @@ public class GrCUDAOptionMap implements TruffleObject {
      */
     private final HashMap<OptionKey<?>, String> optionNames;
 
-    private static final TruffleLogger LOGGER = TruffleLogger.getLogger(GrCUDALanguage.ID, "com.nvidia.grcuda.GrCUDAContext");
+    private static final TruffleLogger LOGGER = TruffleLogger.getLogger(GrCUDALanguage.ID, "com.nvidia.grcuda.GrCUDAOptionMap");
 
     public static final ExecutionPolicyEnum DEFAULT_EXECUTION_POLICY = ExecutionPolicyEnum.ASYNC;
     public static final DependencyPolicyEnum DEFAULT_DEPENDENCY_POLICY = DependencyPolicyEnum.NO_CONST;
@@ -75,11 +80,12 @@ public class GrCUDAOptionMap implements TruffleObject {
 
     private GrCUDAOptionMap(OptionValues options) {
         optionsMap = new HashMap<>();
-        // Store the name and value of each option;
-        options.getDescriptors().forEach(option -> optionsMap.put(option.getName(), options.get(option.getKey())));
-        // Map each OptionKey to its name, to update them and retrieve values inside GrCUDA;
         optionNames = new HashMap<>();
-        options.getDescriptors().forEach(o -> optionNames.put(o.getKey(), o.getName()));
+
+        // Store the name and value of each option;
+        // Map each OptionKey to its name, to retrieve values inside GrCUDA;
+        options.getDescriptors().forEach(o -> {optionsMap.put(o.getName(), options.get(o.getKey()));
+            optionNames.put(o.getKey(), o.getName());});
 
         // Parse individual options;
 
@@ -219,19 +225,85 @@ public class GrCUDAOptionMap implements TruffleObject {
     }
 
     @ExportMessage
-    final long getHashSize() throws UnsupportedMessageException {
+    public final long getHashSize(){
         return optionsMap.size();
     }
 
     @ExportMessage
-    final boolean isHashEntryReadable(Object key) {
+    public final boolean isHashEntryReadable(Object key) {
         return key instanceof String && this.optionsMap.containsKey(key);
     }
 
     @ExportMessage
-    final Object getHashEntriesIterator() throws UnsupportedMessageException {
-        HashMap<String, String> entries = new HashMap<>();
-        optionsMap.forEach((key, value) -> entries.put(key, value.toString()));
-        return new GrCUDAException("iterator not implemented");
+    public Object getHashEntriesIterator() {
+        return new EntriesIterator(optionsMap.entrySet().iterator());
     }
+
+    @ExportLibrary(InteropLibrary.class)
+    public static final class EntriesIterator implements TruffleObject {
+        private Iterator<Map.Entry<String, Object>> iterator;
+
+        private EntriesIterator(Iterator<Map.Entry<String, Object>> iterator) {
+            this.iterator = iterator;
+        }
+
+        @SuppressWarnings("static-method")
+        @ExportMessage
+        public boolean isIterator() {
+            return true;
+        }
+
+        @ExportMessage
+        public boolean hasIteratorNextElement() {
+            try {
+                return iterator.hasNext();
+            }catch(NoSuchElementException e){
+                return false;
+            }
+        }
+
+        @ExportMessage
+        public GrCUDAOptionTuple getIteratorNextElement() throws StopIterationException {
+            if (hasIteratorNextElement()) {
+                Map.Entry<String,Object> entry = iterator.next();
+                return new GrCUDAOptionTuple(entry.getKey(), entry.getValue().toString());
+            } else {
+                throw StopIterationException.create();
+            }
+        }
+    }
+
+    @ExportLibrary(InteropLibrary.class)
+    public static class GrCUDAOptionTuple implements TruffleObject {
+
+        private final int size = 2;
+        private final String[] entry = new String[size];
+
+        public GrCUDAOptionTuple(String key, String value) {
+            entry[0] = key;
+            entry[1] = value;
+        }
+
+        @ExportMessage
+        static boolean hasArrayElements(GrCUDAOptionTuple tuple) {
+            return true;
+        }
+
+        @ExportMessage
+        public final boolean isArrayElementReadable(long index) {
+            return index == 0 || index == 1;
+        }
+
+        @ExportMessage
+        public final Object readArrayElement(long index) throws InvalidArrayIndexException {
+            if (index == 0 || index == 1) return entry[(int)index];
+            throw InvalidArrayIndexException.create(index);
+        }
+
+        @ExportMessage
+        public final long getArraySize() {
+            return size;
+        }
+    }
+
 }

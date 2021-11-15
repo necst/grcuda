@@ -31,6 +31,7 @@
 package com.nvidia.grcuda.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.nvidia.grcuda.GrCUDAOptionMap;
@@ -41,6 +42,8 @@ import com.nvidia.grcuda.cudalibraries.tensorrt.TensorRTRegistry;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import com.nvidia.grcuda.test.util.mock.OptionValuesMock;
+import com.oracle.truffle.api.interop.InvalidArrayIndexException;
+import com.oracle.truffle.api.interop.StopIterationException;
 import com.oracle.truffle.api.interop.UnknownKeyException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import org.graalvm.options.OptionKey;
@@ -113,6 +116,46 @@ public class GrCUDAOptionMapTest {
         optionMap.readHashValue(null);
     }
 
+    @Test
+    public void testGetHashEntriesIterator(){
+        initializeDefault();
+        GrCUDAOptionMap.EntriesIterator hashIterator = (GrCUDAOptionMap.EntriesIterator) optionMap.getHashEntriesIterator();
+        optionMap.getOptions().forEach((key, value) -> {
+            assertTrue(hashIterator.hasIteratorNextElement());
+            try {
+                GrCUDAOptionMap.GrCUDAOptionTuple elem = hashIterator.getIteratorNextElement();
+                assertEquals(key, elem.readArrayElement(0));
+                assertEquals(value.toString(), elem.readArrayElement(1));
+            } catch (StopIterationException | InvalidArrayIndexException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    @Test(expected = StopIterationException.class)
+    public void testGetStopIteration() throws StopIterationException {
+        initializeNull();
+        GrCUDAOptionMap.EntriesIterator hashIterator = (GrCUDAOptionMap.EntriesIterator) optionMap.getHashEntriesIterator();
+        do{
+            try {
+                hashIterator.getIteratorNextElement();
+            }catch(StopIterationException e){e.printStackTrace();}
+        }while(hashIterator.hasIteratorNextElement());
+        hashIterator.getIteratorNextElement();
+    }
+
+    @Test(expected =InvalidArrayIndexException.class)
+    public void testGetInvalidIndex() throws InvalidArrayIndexException {
+        initializeNull();
+        GrCUDAOptionMap.EntriesIterator hashIterator = (GrCUDAOptionMap.EntriesIterator) optionMap.getHashEntriesIterator();
+        try{
+            GrCUDAOptionMap.GrCUDAOptionTuple elem = hashIterator.getIteratorNextElement();
+            assertEquals(2, elem.getArraySize());
+            assertFalse(elem.isArrayElementReadable(2));
+            elem.readArrayElement(2);
+        }catch(StopIterationException e){e.printStackTrace();}
+    }
+    
     @Test
     public void testGetOptionsFunction() {
         try (Context ctx = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", ExecutionPolicyEnum.ASYNC.toString()).build()) {
