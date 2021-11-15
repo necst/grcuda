@@ -37,6 +37,7 @@ package com.nvidia.grcuda;
 
 import com.nvidia.grcuda.cudalibraries.cublas.CUBLASRegistry;
 import com.nvidia.grcuda.cudalibraries.cuml.CUMLRegistry;
+import com.nvidia.grcuda.cudalibraries.tensorrt.TensorRTRegistry;
 import com.nvidia.grcuda.functions.BindAllFunction;
 import com.nvidia.grcuda.functions.BindFunction;
 import com.nvidia.grcuda.functions.BindKernelFunction;
@@ -71,7 +72,7 @@ public final class GrCUDAContext {
 
     private static final String ROOT_NAMESPACE = "CU";
 
-    private static final TruffleLogger LOGGER = TruffleLogger.getLogger(GrCUDALanguage.ID, "com.nvidia.grcuda.GrCUDAContext");
+    private static final TruffleLogger LOGGER = GrCUDALogger.getLogger(GrCUDALogger.GRCUDA_LOGGER);
 
     private final GrCUDAOptionMap grCUDAOptionMap;
 
@@ -203,11 +204,6 @@ public final class GrCUDAContext {
     public int getNumberOfThreads() {
         return Runtime.getRuntime().availableProcessors();
     }
-
-//    @TruffleBoundary
-//    public <T> T getOption(OptionKey<T> key) {
-//        return env.getOptions().get(key);
-//    }
 
     public GrCUDAOptionMap getOptions() {
         return grCUDAOptionMap;
