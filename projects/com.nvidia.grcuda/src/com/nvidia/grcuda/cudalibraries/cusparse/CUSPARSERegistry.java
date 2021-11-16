@@ -244,8 +244,10 @@ public class CUSPARSERegistry {
                             nfiFunction = proxy.getExternalFunctionFactory().makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
 
-                        Object[] formattedArguments = proxy.formatArguments(arguments);
+                        Object[] formattedArguments = proxy.formatArguments(arguments, cusparseHandle);
+//                        System.out.println("length of formatted arguments" + formattedArguments.length);
                         List<ComputationArgumentWithValue> computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, cusparseHandle);
+
 
                         Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
                                 computationArgumentsWithValue).schedule();

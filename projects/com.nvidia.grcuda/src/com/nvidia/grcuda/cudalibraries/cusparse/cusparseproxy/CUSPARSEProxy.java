@@ -241,7 +241,7 @@ public abstract class CUSPARSEProxy {
         return externalFunctionFactory;
     }
 
-    public abstract Object[] formatArguments(Object[] rawArgs) throws UnsupportedTypeException;
+    public abstract Object[] formatArguments(Object[] rawArgs, long handle) throws UnsupportedTypeException;
 
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo", "(pointer, sint64, " +

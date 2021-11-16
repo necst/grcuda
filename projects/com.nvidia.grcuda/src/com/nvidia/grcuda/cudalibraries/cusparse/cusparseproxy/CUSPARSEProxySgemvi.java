@@ -24,21 +24,20 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
     }
 
     @Override
-    public Object[] formatArguments(Object[] rawArgs) throws UnsupportedTypeException {
+    public Object[] formatArguments(Object[] rawArgs, long handle) throws UnsupportedTypeException {
         this.initializeNfi();
         if(rawArgs.length == nArgsRaw){
             return rawArgs;
         } else {
             args = new Object[nArgsRaw];
             UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
-            long handle = expectLong(rawArgs[0]);
             CUSPARSERegistry.cusparseOperation_t transA = CUSPARSERegistry.cusparseOperation_t.values()[expectInt(rawArgs[0])];
-            int m = expectInt(rawArgs[0]);
-            int n = expectInt(rawArgs[0]);
+            int m = expectInt(rawArgs[1]);
+            int n = expectInt(rawArgs[2]);
 //            long alpha = expectLong(rawArgs[0]);
 //            long A = expectLong(rawArgs[0]);
 //            int lda = expectInt(rawArgs[0]);
-            int nnz = expectInt(rawArgs[0]);
+            int nnz = expectInt(rawArgs[6]);
 //            long x = expectLong(rawArgs[0]);
 //            long xInd = expectLong(rawArgs[0]);
 //            long beta = expectLong(rawArgs[0]);
