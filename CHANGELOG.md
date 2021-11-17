@@ -6,6 +6,9 @@
   * Logging of kernel timers is controlled by the grcuda.TimeComputation option, which is false by default
   * Implemented with the ProfilableElement class to store timing values in a hash table and support future business logic
 * Updated documentation for the use of the new TimeComputation option in README
+* Considerations:
+  * ProfilableElement is profilable (=true) by default, and any ConfiguredKernel is initialized with this configuration. To date, there isn't any usage for a ProfilableElement that is not profilable (=false)
+  * To date, we are tracking only the last execution of a ConfiguredKernel on each device. It will be useful in the future to track all the executions and leverage this information in our scheduler
 
 # 2021-09-30, Release 1
 
