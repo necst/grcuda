@@ -108,8 +108,7 @@ public class GrCUDAStreamManager {
 
         // If the computation cannot use customized streams, return immediately;
         if (vertex.getComputation().canUseStream()) {
-
-            System.out.println("is profilable: " + vertex.getComputation().isProfilable());
+            
             CUDAStream stream;
 
             if (vertex.isStart()) {
