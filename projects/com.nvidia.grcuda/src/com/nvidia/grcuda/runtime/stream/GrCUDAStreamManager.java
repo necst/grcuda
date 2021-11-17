@@ -61,6 +61,10 @@ public class GrCUDAStreamManager {
      */
     protected final CUDARuntime runtime;
     /**
+     * Logging of kernel execution times option
+     */
+    protected final Boolean isTimeComputation;
+    /**
      * Track the active computations each stream has, excluding the default stream;
      */
     protected final Map<CUDAStream, Set<ExecutionDAG.DAGVertex>> activeComputationsPerStream = new HashMap<>();
@@ -79,6 +83,7 @@ public class GrCUDAStreamManager {
             RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
             RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
         this.runtime = runtime;
+        this.isTimeComputation = runtime.getContext().getOptions().isTimeComputation();
         // Get how streams are retrieved for computations without parents;
         switch(retrieveNewStreamPolicyEnum) {
             case FIFO:
@@ -144,7 +149,7 @@ public class GrCUDAStreamManager {
     public void assignEventStart(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
 
-        if (vertex.getComputation().canUseStream() && runtime.getContext().getOptions().isTimeComputation() && vertex.getComputation().isProfilable()) {
+        if (isTimeComputation && vertex.getComputation().canUseStream()) {
             // cudaEventRecord is sensitive to the ctx of the device that is currently set, so we call cudaSetDevice
             runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
             CUDAEvent event = runtime.cudaEventCreate();
@@ -266,16 +271,17 @@ public class GrCUDAStreamManager {
 
     protected void setComputationFinishedInner(GrCUDAComputationalElement computation) {
         computation.setComputationFinished();
-        // Destroy the event associated to this computation;
         if (computation.getEventStop().isPresent()) {
-            float timeMilliseconds;
-            if(runtime.getContext().getOptions().isTimeComputation() && computation.isProfilable()){
+            if(isTimeComputation) {
                 runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
-                timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());
+                float timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());
                 STREAM_LOGGER.info("Kernel (" + computation + ") Execution time: " + timeMilliseconds + "ms");
                 computation.setExecutionTime(computation.getStream().getStreamDeviceId(), timeMilliseconds);
             }
+
+            // Destroy the events associated to this computation
             runtime.cudaEventDestroy(computation.getEventStop().get());
+            runtime.cudaEventDestroy(computation.getEventStart().get());
         } else {
             STREAM_LOGGER.warning("\t* missing event to destroy for computation=" + computation);
         }

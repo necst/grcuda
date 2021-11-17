@@ -31,7 +31,6 @@
 package com.nvidia.grcuda.runtime.computation;
 
 import com.nvidia.grcuda.CUDAEvent;
-import com.nvidia.grcuda.runtime.ProfilableElement;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyComputation;
@@ -117,10 +116,6 @@ public abstract class GrCUDAComputationalElement {
 
     public List<ComputationArgumentWithValue> getArgumentList() {
         return argumentList;
-    }
-
-    public boolean isProfilable() {
-        return true;
     }
 
     /**

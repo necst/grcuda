@@ -67,11 +67,6 @@ public class KernelExecution extends GrCUDAComputationalElement {
     }
 
     @Override
-    public boolean isProfilable(){
-        return this.configuredKernel.isProfilable();
-    }
-
-    @Override
     public void setExecutionTime(int deviceId, float time) {
         this.configuredKernel.addExecutionTime(deviceId, time);
     }

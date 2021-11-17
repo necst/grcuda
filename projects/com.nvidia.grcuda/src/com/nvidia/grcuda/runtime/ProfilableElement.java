@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, NECSTLab, Politecnico di Milano. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,19 +27,13 @@
  */
 package com.nvidia.grcuda.runtime;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 public abstract class ProfilableElement {
-    private final boolean profilable;
     // contains latest execution time associated to the GPU on which it was executed
-    Hashtable<Integer, Float> collectionOfExecution;
-    public ProfilableElement(boolean profilable){
-        collectionOfExecution = new Hashtable<Integer, Float>();
-        this.profilable = profilable;
-    }
-
-    public boolean isProfilable(){
-        return this.profilable;
+    HashMap<Integer, Float> collectionOfExecution;
+    public ProfilableElement(){
+        collectionOfExecution = new HashMap<Integer, Float>();
     }
 
     public void addExecutionTime(int deviceId, float executionTime ){
