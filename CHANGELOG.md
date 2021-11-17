@@ -1,3 +1,12 @@
+# 2021-11-17
+
+* Added the support of precise timing of kernels, for debugging and complex scheduling policies
+  * Associated a CUDA event to the start of the computation in order to get the Elapsed time from start to the end
+  * Added ElapsedTime function to compute the elapsed time between events, aka the total execution time
+  * Logging of kernel timers is controlled by the grcuda.TimeComputation option, which is false by default
+  * Implemented with the ProfilableElement class to store timing values in a hash table and support future business logic
+* Updated documentation for the use of the new TimeComputation option in README
+
 # 2021-09-30, Release 1
 
 ## API Changes
