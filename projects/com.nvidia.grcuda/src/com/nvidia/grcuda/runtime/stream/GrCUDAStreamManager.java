@@ -31,9 +31,11 @@
 package com.nvidia.grcuda.runtime.stream;
 
 import com.nvidia.grcuda.CUDAEvent;
+import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
+import com.oracle.truffle.api.TruffleLogger;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -66,8 +68,10 @@ public class GrCUDAStreamManager {
     private final RetrieveNewStream retrieveNewStream;
     private final RetrieveParentStream retrieveParentStream;
 
+    public static final TruffleLogger STREAM_LOGGER = GrCUDALogger.getLogger(GrCUDALogger.STREAM_LOGGER);
+
     public GrCUDAStreamManager(CUDARuntime runtime) { 
-        this(runtime, runtime.getContext().getRetrieveNewStreamPolicy(), runtime.getContext().getRetrieveParentStreamPolicyEnum());
+        this(runtime, runtime.getContext().getOptions().getRetrieveNewStreamPolicy(), runtime.getContext().getOptions().getRetrieveParentStreamPolicy());
     }
 
     public GrCUDAStreamManager(
@@ -140,7 +144,7 @@ public class GrCUDAStreamManager {
     public void assignEventStart(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
 
-        if (vertex.getComputation().canUseStream() && runtime.getContext().isTimeComputation() && vertex.getComputation().isProfilable()) {
+        if (vertex.getComputation().canUseStream() && runtime.getContext().getOptions().isTimeComputation() && vertex.getComputation().isProfilable()) {
             // cudaEventRecord is sensitive to the ctx of the device that is currently set, so we call cudaSetDevice
             runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
             CUDAEvent event = runtime.cudaEventCreate();
@@ -176,7 +180,7 @@ public class GrCUDAStreamManager {
                     CUDAStream stream = additionalStream.get();
                     // If we require synchronization on the default stream, perform it in a specialized way;
                     if (stream.isDefaultStream()) {
-//                        System.out.println("--\tsync stream " + stream + " by " + vertex.getComputation());
+                        STREAM_LOGGER.finest("--\tsync stream " + stream + " by " + vertex.getComputation());
                         // Synchronize the device;
                         syncDevice();
                         // All computations are now finished;
@@ -218,11 +222,11 @@ public class GrCUDAStreamManager {
                     CUDAEvent event = parent.getEventStop().get();
                     runtime.cudaStreamWaitEvent(vertex.getComputation().getStream(), event);
 
-//                    System.out.println("\t* wait event on stream; stream to sync=" + stream.getStreamNumber()
-//                            + "; stream that waits=" + vertex.getComputation().getStream().getStreamNumber()
-//                            + "; event=" + event.getEventNumber());
+                    STREAM_LOGGER.finest("\t* wait event on stream; stream to sync=" + stream.getStreamNumber()
+                            + "; stream that waits=" + vertex.getComputation().getStream().getStreamNumber()
+                            + "; event=" + event.getEventNumber());
                 } else {
-                    System.out.println("\t* WARNING: missing event to sync child computation=" + vertex.getComputation() +
+                    STREAM_LOGGER.warning("\t* missing event to sync child computation=" + vertex.getComputation() +
                             " and parent computation=" + parent);
                 }
             }
@@ -242,7 +246,7 @@ public class GrCUDAStreamManager {
         Set<CUDAStream> streamsToSync = getParentStreams(vertex.getParentComputations());
         // Synchronize streams;
         streamsToSync.forEach(s -> {
-//            System.out.println("--\tsync stream=" + s.getStreamNumber() + " by " + vertex.getComputation());
+            STREAM_LOGGER.finest("--\tsync stream=" + s.getStreamNumber() + " by " + vertex.getComputation());
             syncStream(s);
         });
 
@@ -265,15 +269,15 @@ public class GrCUDAStreamManager {
         // Destroy the event associated to this computation;
         if (computation.getEventStop().isPresent()) {
             float timeMilliseconds;
-            if(runtime.getContext().isTimeComputation() && computation.isProfilable()){
+            if(runtime.getContext().getOptions().isTimeComputation() && computation.isProfilable()){
                 runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
                 timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());
-                System.out.println("print time elapsed in streamManager : "+timeMilliseconds);
+                STREAM_LOGGER.info("Kernel (" + computation + ") Execution time: " + timeMilliseconds + "ms");
                 computation.setExecutionTime(computation.getStream().getStreamDeviceId(), timeMilliseconds);
             }
             runtime.cudaEventDestroy(computation.getEventStop().get());
         } else {
-            System.out.println("\t* WARNING: missing event to destroy for computation=" + computation);
+            STREAM_LOGGER.warning("\t* missing event to destroy for computation=" + computation);
         }
     }
 
