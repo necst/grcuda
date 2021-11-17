@@ -4,6 +4,7 @@ import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
+import com.nvidia.grcuda.runtime.array.MultiDimDeviceArray;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import org.graalvm.polyglot.Value;
@@ -36,8 +37,7 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
             UnsafeHelper.Integer64Object dnVecXDescr = UnsafeHelper.createInteger64Object();
             UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object();
-            UnsafeHelper.Integer64Object cooMatDescr = UnsafeHelper.createInteger64Object();
-            UnsafeHelper.Integer64Object csrMatDescr = UnsafeHelper.createInteger64Object();
+            UnsafeHelper.Integer64Object matDescr = UnsafeHelper.createInteger64Object();
             UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
 
             CUSPARSERegistry.cusparseOperation_t opA = CUSPARSERegistry.cusparseOperation_t.values()[expectInt(rawArgs[0])];
@@ -56,12 +56,15 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             DeviceArray beta = (DeviceArray) rawArgs[13];
             DeviceArray valuesY = (DeviceArray) rawArgs[14];
             CUSPARSERegistry.cusparseSpMVAlg_t alg = CUSPARSERegistry.cusparseSpMVAlg_t.values()[expectInt(rawArgs[15])];
+//            System.out.println("v1 = " + v1);
+//            System.out.println("v2 = " + v2);
+//            System.out.println("values = " + values);
 
             if ((v1.getArraySize() == v2.getArraySize()) && (v2.getArraySize() == values.getArraySize())) { // coo
 
                 // create coo matrix descriptor
                 try {
-                    Object resultCoo = INTEROP.execute(cusparseCreateCooFunction, cooMatDescr.getAddress(), rows, cols, nnz, v1, v2, values, idxType.ordinal(), idxBase.ordinal(),
+                    Object resultCoo = INTEROP.execute(cusparseCreateCooFunction, matDescr.getAddress(), rows, cols, nnz, v1, v2, values, idxType.ordinal(), idxBase.ordinal(),
                                     valueType.ordinal());
                 } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
                     e.printStackTrace();
@@ -69,10 +72,12 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
             } else { // csr
 
+//                System.out.println("working on csr");
                 // create csr matrix descriptor
                 try {
-                    Object resultCsr = INTEROP.execute(cusparseCreateCsrFunction, csrMatDescr.getAddress(), rows, cols, nnz, v1, v2, values, idxType.ordinal(),
+                    Object resultCsr = INTEROP.execute(cusparseCreateCsrFunction, matDescr.getAddress(), rows, cols, nnz, v1, v2, values, idxType.ordinal(),
                                     idxType.ordinal(), idxBase.ordinal(), valueType.ordinal());
+//                    System.out.println("created csr descriptor with output = " + resultCsr);
                 } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
                     e.printStackTrace();
                 } // TODO: re-throw an exception if sth goes wrong
@@ -90,7 +95,7 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
             // create buffer
             try {
-                Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunction, handle, opA.ordinal(), alpha, cooMatDescr.getValue(), dnVecXDescr.getValue(), beta,
+                Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunction, handle, opA.ordinal(), alpha, matDescr.getValue(), dnVecXDescr.getValue(), beta,
                                 dnVecYDescr.getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
             } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
                 e.printStackTrace();
@@ -109,13 +114,15 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             // format new arguments
             args[0] = opA.ordinal();
             args[1] = alpha;
-            args[2] = cooMatDescr.getValue();
+            args[2] = matDescr.getValue();
             args[3] = dnVecXDescr.getValue();
             args[4] = beta;
             args[5] = dnVecYDescr.getValue();
             args[6] = valueType.ordinal();
             args[7] = alg.ordinal();
             args[8] = buffer;
+
+//            System.out.println("args formatted");
 
             return args;
         }
