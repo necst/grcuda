@@ -32,10 +32,11 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
             return rawArgs;
         } else {
 
-            System.out.println("entered format arguments");
+//            System.out.println("entered format arguments");
             args = new Object[nArgsRaw];
 
             UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
+//            UnsafeHelper.Integer64Object outVecDescr = UnsafeHelper.createInteger64Object();
 
             bufferSize.setValue(0); // does not work without initialization
 
@@ -49,10 +50,12 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
             DeviceArray x = (DeviceArray) rawArgs[7];
             DeviceArray xInd = (DeviceArray) rawArgs[8];
             DeviceArray beta = (DeviceArray) rawArgs[9];
-            DeviceArray outVec= (DeviceArray) rawArgs[10];
+            DeviceArray outVec = (DeviceArray) rawArgs[10];
             CUSPARSERegistry.cusparseIndexBase_t idxBase = CUSPARSERegistry.cusparseIndexBase_t.values()[expectInt(rawArgs[11])];
 
-            System.out.println("arguments fetched");
+//            DeviceArray outVec = new DeviceArray(alpha.getGrCUDAExecutionContext(), lda, x.getElementType());
+
+//            System.out.println("arguments fetched");
             // create buffer
             try {
                 Object resultBufferSize = INTEROP.execute(cusparseSgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
@@ -60,7 +63,14 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
                 e.printStackTrace();
             }
 
-            System.out.println("created buffer");
+//            try {
+//                Object resultOutVec = INTEROP.execute(cusparseCreateDnVecFunction, outVecDescr.getAddress(), lda, y, CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal());
+//            }catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e){
+//                e.printStackTrace();
+//            }
+
+//            outVecDescr.setValue(y.getPointer());
+//            System.out.println("created buffer");
 
             long numElements;
 
@@ -70,7 +80,7 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
                 numElements = (long) bufferSize.getValue();
             }
 
-            System.out.println(bufferSize.getValue());
+//            System.out.println(bufferSize.getValue());
 
             DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, alpha.getElementType());
 
@@ -84,7 +94,7 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
             args[7] = x;
             args[8] = xInd;
             args[9] = beta;
-            args[10] = outVec;
+            args[10] = outVec; // outVecDescr.getAddress();//.getValue();
             args[11] = idxBase.ordinal();
             args[12] = buffer;
 

@@ -251,7 +251,7 @@ public class CUSPARSERegistry {
 
                         Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
                                 computationArgumentsWithValue).schedule();
-                        System.out.println(computationArgumentsWithValue);
+//                        System.out.println(computationArgumentsWithValue);
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
                         return result;
 

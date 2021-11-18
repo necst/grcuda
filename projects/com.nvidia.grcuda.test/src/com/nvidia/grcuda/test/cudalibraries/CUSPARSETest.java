@@ -256,23 +256,19 @@ public class CUSPARSETest {
 
             Value xInd = cu.invokeMember("DeviceArray", "int", nnz); // must be the same
 
-            // initialization check vector
-
-            for(int i = 0; i < numElements; i++){
-                outVec.setArrayElement(i, 0.0);
-            }
+            // initialization of outVec not necessary
 
             float edge_value = (float) Math.random();
 
             // fill sparse vector and related arguments
             for(int i = 0; i < nnz; i++){
                 int idxNnz = (int) (Math.random() * numElements); // to make sure indices are valid
-                System.out.println("index " + i + " = " + idxNnz);
+//                System.out.println("index " + i + " = " + idxNnz);
                 xInd.setArrayElement(i, idxNnz); // set indices vector
                 spVec.setArrayElement(idxNnz, 1.0); // set '1' in the corresponding positions of the sparse vector
             }
 
-            System.out.println("sparse vector ok");
+//            System.out.println("sparse vector ok");
 
             // fill dense matrix
             for (int i = 0; i < numElements; ++i) {
@@ -300,8 +296,8 @@ public class CUSPARSETest {
                     CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal()
             );
 
-            System.out.println("execution complete");
-            System.out.println(outVec.getArrayElement(2).asFloat());
+            System.out.println("execution complete, outvec = " + outVec.getArrayElement(2).asFloat());
+//            System.out.println(outVec.getArrayElement(2).asFloat());
 
             for (int i = 0; i < numElements; i++) {
                 assertEquals(outVec.getArrayElement(i).asFloat(), nnz*edge_value, 1e-5);
