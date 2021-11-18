@@ -53,7 +53,7 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
     }
 
     @Override
-    public Object[] formatArguments(Object[] rawArgs, long handle) throws UnsupportedTypeException {
+    public Object[] formatArguments(Object[] rawArgs, long handle) throws UnsupportedTypeException, UnsupportedMessageException, ArityException {
         this.initializeNfi();
         if (rawArgs.length == nArgsRaw) {
             return rawArgs;
@@ -79,11 +79,7 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
             CUSPARSERegistry.cusparseIndexBase_t idxBase = CUSPARSERegistry.cusparseIndexBase_t.values()[expectInt(rawArgs[11])];
 
             // create buffer
-            try {
-                Object resultBufferSize = INTEROP.execute(cusparseSgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
-            } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
-                e.printStackTrace();
-            }
+            Object resultBufferSize = INTEROP.execute(cusparseSgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
 
             long numElements;
 
