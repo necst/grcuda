@@ -195,7 +195,7 @@ public abstract class GrCUDAComputationalElement {
     }
 
     public Optional<CUDAEvent> getEventStart() {
-        if (eventStop != null) {
+        if (eventStart != null) {
             return Optional.of(eventStart);
         } else {
             return Optional.empty();

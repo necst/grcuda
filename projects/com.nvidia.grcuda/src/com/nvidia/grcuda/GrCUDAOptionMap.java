@@ -79,14 +79,16 @@ public class GrCUDAOptionMap implements TruffleObject {
     public static final boolean DEFAULT_TENSORRT_ENABLED = false;
     public static final boolean DEFAULT_TIME_COMPUTATION = false;
 
-    private GrCUDAOptionMap(OptionValues options) {
+    public GrCUDAOptionMap(OptionValues options) {
         optionsMap = new HashMap<>();
         optionNames = new HashMap<>();
 
         // Store the name and value of each option;
         // Map each OptionKey to its name, to retrieve values inside GrCUDA;
-        options.getDescriptors().forEach(o -> {optionsMap.put(o.getName(), options.get(o.getKey()));
-            optionNames.put(o.getKey(), o.getName());});
+        options.getDescriptors().forEach(o -> {
+            optionsMap.put(o.getName(), options.get(o.getKey()));
+            optionNames.put(o.getKey(), o.getName());
+        });
 
         // Parse individual options;
 
@@ -107,11 +109,6 @@ public class GrCUDAOptionMap implements TruffleObject {
         return optionsMap.get(optionNames.get(optionKey));
     }
 
-    public static GrCUDAOptionMap getInstance(OptionValues options){
-        if (instance == null) instance = new GrCUDAOptionMap(options);
-        return instance;
-    }
-
     // Enforces immutability;
     public HashMap<String, Object> getOptions(){
         return new HashMap<>(optionsMap);
@@ -121,7 +118,7 @@ public class GrCUDAOptionMap implements TruffleObject {
         if (policyString.equals(ExecutionPolicyEnum.SYNC.toString())) return ExecutionPolicyEnum.SYNC;
         else if (policyString.equals(ExecutionPolicyEnum.ASYNC.toString())) return ExecutionPolicyEnum.ASYNC;
         else {
-            LOGGER.warning("unknown execution policy=" + policyString + "; using default=" + DEFAULT_EXECUTION_POLICY);
+            LOGGER.severe("unknown execution policy=" + policyString + "; using default=" + DEFAULT_EXECUTION_POLICY);
             return DEFAULT_EXECUTION_POLICY;
         }
     }

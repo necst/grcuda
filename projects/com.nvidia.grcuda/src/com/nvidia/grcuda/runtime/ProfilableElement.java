@@ -30,25 +30,22 @@ package com.nvidia.grcuda.runtime;
 import java.util.HashMap;
 
 public abstract class ProfilableElement {
-    // contains latest execution time associated to the GPU on which it was executed
+
+    // Track the latest execution time associated to the GPU on which it was executed;
     HashMap<Integer, Float> collectionOfExecution;
     public ProfilableElement(){
-        collectionOfExecution = new HashMap<Integer, Float>();
+        collectionOfExecution = new HashMap<>();
     }
 
-    public void addExecutionTime(int deviceId, float executionTime ){
+    public void addExecutionTime(int deviceId, float executionTime) {
         collectionOfExecution.put(deviceId, executionTime);
     }
 
-    public float getExecutionTimeOnDevice(int deviceId){
-        if(collectionOfExecution.get(deviceId) == null){
-            return (float) 0.0;
-        }else{
+    public float getExecutionTimeOnDevice(int deviceId) throws RuntimeException {
+        if (collectionOfExecution.containsKey(deviceId)) {
             return collectionOfExecution.get(deviceId);
+        } else {
+            throw new RuntimeException("Execution time for device=" + deviceId + " has not been collected");
         }
-
     }
-
-
-
 }

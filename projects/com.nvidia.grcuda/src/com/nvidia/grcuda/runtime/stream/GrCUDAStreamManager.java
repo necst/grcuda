@@ -75,15 +75,19 @@ public class GrCUDAStreamManager {
     public static final TruffleLogger STREAM_LOGGER = GrCUDALogger.getLogger(GrCUDALogger.STREAM_LOGGER);
 
     public GrCUDAStreamManager(CUDARuntime runtime) { 
-        this(runtime, runtime.getContext().getOptions().getRetrieveNewStreamPolicy(), runtime.getContext().getOptions().getRetrieveParentStreamPolicy());
+        this(runtime,
+             runtime.getContext().getOptions().getRetrieveNewStreamPolicy(),
+             runtime.getContext().getOptions().getRetrieveParentStreamPolicy(),
+             runtime.getContext().getOptions().isTimeComputation());
     }
 
     public GrCUDAStreamManager(
             CUDARuntime runtime,
             RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
-            RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
+            RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
+            boolean isTimeComputation) {
         this.runtime = runtime;
-        this.isTimeComputation = runtime.getContext().getOptions().isTimeComputation();
+        this.isTimeComputation = isTimeComputation;
         // Get how streams are retrieved for computations without parents;
         switch(retrieveNewStreamPolicyEnum) {
             case FIFO:
@@ -119,7 +123,6 @@ public class GrCUDAStreamManager {
         if (vertex.getComputation().canUseStream()) {
             
             CUDAStream stream;
-
             if (vertex.isStart()) {
                 // Else, if the computation doesn't have parents, provide a new stream to it;
                 stream = this.retrieveNewStream.retrieve();
@@ -272,16 +275,18 @@ public class GrCUDAStreamManager {
     protected void setComputationFinishedInner(GrCUDAComputationalElement computation) {
         computation.setComputationFinished();
         if (computation.getEventStop().isPresent()) {
-            if(isTimeComputation) {
+            if(isTimeComputation && computation.getEventStart().isPresent()) {
+                // Switch to the device where the computation has been done, otherwise we cannot call the cudaEventElapsedTime API;
                 runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
                 float timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());
                 STREAM_LOGGER.info("Kernel (" + computation + ") Execution time: " + timeMilliseconds + "ms");
                 computation.setExecutionTime(computation.getStream().getStreamDeviceId(), timeMilliseconds);
+                // Destroy the start event associated to this computation:
+                runtime.cudaEventDestroy(computation.getEventStart().get());
             }
-
-            // Destroy the events associated to this computation
+            // Destroy the stop event associated to this computation:
             runtime.cudaEventDestroy(computation.getEventStop().get());
-            runtime.cudaEventDestroy(computation.getEventStart().get());
+
         } else {
             STREAM_LOGGER.warning("\t* missing event to destroy for computation=" + computation);
         }
