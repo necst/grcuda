@@ -88,7 +88,7 @@ public class CUSPARSERegistry {
 
     private Long cusparseHandle = null;
 
-    public enum cusparseIndexType_t{
+    public enum cusparseIndexType_t {
         CUSPARSE_INDEX_UNUSED,
         CUSPARSE_INDEX_16U,
         CUSPARSE_INDEX_32I,
@@ -109,7 +109,7 @@ public class CUSPARSERegistry {
         CUDA_C_64F, // 64 bit complex
         CUDA_C_16F, // 16 bit complex
         CUDA_C_8I,  // 8 bit complex as a pair of signed integers
-        CUDA_R_8U,   //8 bit real as a signed integer
+        CUDA_R_8U,   // 8 bit real as a signed integer
         CUDA_C_8U;  // 8 bit complex as a pair of signed integers
     }
 
@@ -146,7 +146,7 @@ public class CUSPARSERegistry {
             cusparseDestroyFunctionNFI = CUSPARSE_CUSPARSEDESTROY.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
             cusparseSetStreamFunctionNFI = CUSPARSE_CUSPARSESETSTREAM.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
 
-           // cusparseStatus_t cusparseCreate(cusparseHandle_t handle)
+            // cusparseStatus_t cusparseCreate(cusparseHandle_t handle)
 
             cusparseCreateFunction = new Function(CUSPARSE_CUSPARSECREATE.getName()) {
                 @Override
@@ -186,7 +186,7 @@ public class CUSPARSERegistry {
             cusparseSetStreamFunction = new Function(CUSPARSE_CUSPARSESETSTREAM.getName()) {
                 @Override
                 @TruffleBoundary
-                public Object call (Object[] arguments) throws ArityException, UnsupportedTypeException {
+                public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
                     checkArgumentLength(arguments, 2);
                     long handle = expectLong(arguments[0]);
                     long streamId = expectLong(arguments[1]);
@@ -194,7 +194,7 @@ public class CUSPARSERegistry {
                         Object result = INTEROP.execute(cusparseSetStreamFunctionNFI, handle, streamId);
                         checkCUSPARSEReturnCode(result, "cusparseSetStream");
                         return result;
-                    } catch (InteropException e){
+                    } catch (InteropException e) {
                         throw new GrCUDAInternalException(e);
                     }
                 }
@@ -239,19 +239,16 @@ public class CUSPARSERegistry {
                     ensureInitialized();
 
                     try {
-                        if (nfiFunction == null){
+                        if (nfiFunction == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = proxy.getExternalFunctionFactory().makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
 
-//                        System.out.println("executing function" + nfiFunction);
                         Object[] formattedArguments = proxy.formatArguments(arguments, cusparseHandle);
-//                        System.out.println(formattedArguments);
                         List<ComputationArgumentWithValue> computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, cusparseHandle);
 
                         Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
-                                computationArgumentsWithValue).schedule();
-//                        System.out.println(computationArgumentsWithValue);
+                                        computationArgumentsWithValue).schedule();
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
                         return result;
 
@@ -310,9 +307,9 @@ public class CUSPARSERegistry {
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSEDESTROY = new ExternalFunctionFactory("cusparseDestroy", "cusparseDestroy", "(sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV = new ExternalFunctionFactory("cusparseSpMV", "cusparseSpMV", "(sint64, sint32, pointer, sint64, " +
-                                                                                                                "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
+                    "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESGEMVI = new ExternalFunctionFactory("cusparseSgemvi", "cusparseSgemvi", "(sint64, sint32, sint32, sint32," +
-                                                                                                                "pointer, pointer, sint32, sint32, pointer, pointer, pointer, pointer, sint32, pointer): sint32");
+                    "pointer, pointer, sint32, sint32, pointer, pointer, pointer, pointer, sint32, pointer): sint32");
 
     private static final ArrayList<CUSPARSEProxy> functions = new ArrayList<>();
 

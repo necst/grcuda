@@ -33,28 +33,20 @@
  */
 package com.nvidia.grcuda.test.cudalibraries;
 
-import static com.nvidia.grcuda.functions.Function.expectInt;
-import static com.nvidia.grcuda.functions.Function.expectLong;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 import java.util.Arrays;
 import java.util.Collection;
 
-import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
-import com.nvidia.grcuda.runtime.UnsafeHelper;
-import com.nvidia.grcuda.runtime.array.DeviceArray;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
-
-import javax.lang.model.util.SimpleElementVisitor7;
 
 @RunWith(Parameterized.class)
 public class CUSPARSETest {
@@ -67,7 +59,7 @@ public class CUSPARSETest {
         }));
     }
 
-//    GrCUDAOptions.CuSPARSEEnabled
+// GrCUDAOptions.CuSPARSEEnabled
     private final String policy;
     private final boolean inputPrefetch;
 
@@ -80,158 +72,153 @@ public class CUSPARSETest {
      * SPARSE SpMV function test with COO matrix.
      */
 
-//    @Test
-//    public void SpMV_COO(){
-//        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option("grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
-//                true).build()) {
-//
-//            //option("grcuda.CuSPARSEEnabled", String.valueOf(true))
-//            int numElements = 1000;
-//
-//            // creating context variables
-//            Value cu = polyglot.eval("grcuda", "CU");
-//
-//            // creating variables for cusparse functions as DeviceArrays
-//            Value alpha = cu.invokeMember("DeviceArray", "float", 1);
-//            Value beta = cu.invokeMember("DeviceArray", "float", 1);
-//            Value coordX = cu.invokeMember("DeviceArray", "int", numElements);
-//            Value coordY = cu.invokeMember("DeviceArray", "int", numElements);
-//            Value nnzVec = cu.invokeMember("DeviceArray", "float", numElements);
-//            Value dnVec = cu.invokeMember("DeviceArray", "float", numElements);
-//            Value outVec = cu.invokeMember("DeviceArray", "float", numElements);
-//
-//            // variables initialization
-//            alpha.setArrayElement(0, 1);
-//            beta.setArrayElement(0, 0);
-//
-//            // initial checks
-//            assertEquals(numElements, coordX.getArraySize());
-//            assertEquals(numElements, coordY.getArraySize());
-//            assertEquals(numElements, nnzVec.getArraySize());
-//
-//            // populating arrays
-//            float edge_value = (float) Math.random();
-//
-//            for (int i = 0; i < numElements; ++i) {
-//                coordX.setArrayElement(i, i);
-//                coordY.setArrayElement(i, i);
-//                nnzVec.setArrayElement(i, edge_value);
-//                dnVec.setArrayElement(i, 1.0);
-//                outVec.setArrayElement(i, 0.0);
-//            }
-//
-//
-//            Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
-//
-//            // order of the arguments should be the following
-//            cusparseSpMV.execute(
-//                    CUSPARSERegistry.cusparseOperation_t.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
-//                    alpha,
-//                    numElements,
-//                    numElements,
-//                    numElements,
-//                    coordX,
-//                    coordY,
-//                    nnzVec,
-//                    CUSPARSERegistry.cusparseIndexType_t.CUSPARSE_INDEX_32I.ordinal(),
-//                    CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
-//                    CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
-//                    dnVec,
-//                    CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
-//                    beta,
-//                    outVec,
-//                    CUSPARSERegistry.cusparseSpMVAlg_t.CUSPARSE_SPMV_ALG_DEFAULT.ordinal()
-//            );
-//
-//            for (int i = 0; i < numElements; i++) {
-//                assertEquals(outVec.getArrayElement(i).asFloat(), edge_value, 1e-5);
-//            }
-////            System.out.println("edge value = " + edge_value);
-//        }
-//    }
-//
-//    /**
-//     * SPARSE SpMV function test with CSR matrix.
-//     */
-//
-//    @Test
-//    public void SpMV_CSR(){
-//        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option("grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
-//                true).build()) {
-//
-//            int numElements = 1000;
-//
-//            // creating context variables
-//            Value cu = polyglot.eval("grcuda", "CU");
-//
-//            // creating variables for cusparse functions as DeviceArrays
-//            Value alpha = cu.invokeMember("DeviceArray", "float", 1);
-//            Value beta = cu.invokeMember("DeviceArray", "float", 1);
-//            Value coordX = cu.invokeMember("DeviceArray", "int", numElements + 1);
-//            Value coordY = cu.invokeMember("DeviceArray", "int", numElements);
-//            Value nnzVec = cu.invokeMember("DeviceArray", "float", numElements);
-//            Value dnVec = cu.invokeMember("DeviceArray", "float", numElements);
-//            Value outVec = cu.invokeMember("DeviceArray", "float", numElements);
-//
-//            // variables initialization
-//            alpha.setArrayElement(0, 1);
-//            beta.setArrayElement(0, 0);
-//
-//            // populating arrays
-//            float edge_value = (float) Math.random();
-//
-//            coordX.setArrayElement(0, 1);
-//
-//            for (int i = 0; i < numElements; ++i) {
-//                coordX.setArrayElement(i + 1, i + 1);
-//                coordY.setArrayElement(i, i);
-//                nnzVec.setArrayElement(i, edge_value);
-//                dnVec.setArrayElement(i, 1.0);
-//                outVec.setArrayElement(i, 0.0);
-//            }
-//
-//            Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
-//
-//            // order of the arguments should be the following
-//            cusparseSpMV.execute(
-//                    CUSPARSERegistry.cusparseOperation_t.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
-//                    alpha,
-//                    numElements,
-//                    numElements,
-//                    numElements,
-//                    coordX,
-//                    coordY,
-//                    nnzVec,
-//                    CUSPARSERegistry.cusparseIndexType_t.CUSPARSE_INDEX_32I.ordinal(),
-//                    CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
-//                    CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
-//                    dnVec,
-//                    CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
-//                    beta,
-//                    outVec,
-//                    CUSPARSERegistry.cusparseSpMVAlg_t.CUSPARSE_SPMV_ALG_DEFAULT.ordinal()
-//            );
-//
-////            System.out.println("edge value = " + edge_value);
-////            System.out.println("outvec value = " + outVec.getArrayElement(0).asFloat()); //
-//
-//            for (int i = 1; i < numElements; i++) {
-//                assertEquals(outVec.getArrayElement(i).asFloat(), edge_value, 1e-5);
-//            }
-//        }
-//    }
+    @Test
+    public void TestSpMV_COO() {
+        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
+                        "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
+                                        true).build()) {
+
+            // option("grcuda.CuSPARSEEnabled", String.valueOf(true))
+            int numElements = 1000;
+
+            // creating context variables
+            Value cu = polyglot.eval("grcuda", "CU");
+
+            // creating variables for cusparse functions as DeviceArrays
+            Value alpha = cu.invokeMember("DeviceArray", "float", 1);
+            Value beta = cu.invokeMember("DeviceArray", "float", 1);
+            Value coordX = cu.invokeMember("DeviceArray", "int", numElements);
+            Value coordY = cu.invokeMember("DeviceArray", "int", numElements);
+            Value nnzVec = cu.invokeMember("DeviceArray", "float", numElements);
+            Value dnVec = cu.invokeMember("DeviceArray", "float", numElements);
+            Value outVec = cu.invokeMember("DeviceArray", "float", numElements);
+
+            // variables initialization
+            alpha.setArrayElement(0, 1);
+            beta.setArrayElement(0, 0);
+
+            // initial checks
+            assertEquals(numElements, coordX.getArraySize());
+            assertEquals(numElements, coordY.getArraySize());
+            assertEquals(numElements, nnzVec.getArraySize());
+
+            // populating arrays
+            float edge_value = (float) Math.random();
+
+            for (int i = 0; i < numElements; ++i) {
+                coordX.setArrayElement(i, i);
+                coordY.setArrayElement(i, i);
+                nnzVec.setArrayElement(i, edge_value);
+                dnVec.setArrayElement(i, 1.0);
+                outVec.setArrayElement(i, 0.0);
+            }
+
+            Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
+
+            // order of the arguments should be the following
+            cusparseSpMV.execute(
+                            CUSPARSERegistry.cusparseOperation_t.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
+                            alpha,
+                            numElements,
+                            numElements,
+                            numElements,
+                            coordX,
+                            coordY,
+                            nnzVec,
+                            CUSPARSERegistry.cusparseIndexType_t.CUSPARSE_INDEX_32I.ordinal(),
+                            CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
+                            CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
+                            dnVec,
+                            CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
+                            beta,
+                            outVec,
+                            CUSPARSERegistry.cusparseSpMVAlg_t.CUSPARSE_SPMV_ALG_DEFAULT.ordinal());
+
+            for (int i = 0; i < numElements; i++) {
+                assertEquals(outVec.getArrayElement(i).asFloat(), edge_value, 1e-5);
+            }
+        }
+    }
+
+    /**
+     * SPARSE SpMV function test with CSR matrix.
+     */
+
+    @Test
+    public void TestSpMV_CSR() {
+        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
+                        "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
+                                        true).build()) {
+
+            int numElements = 1000;
+
+            // creating context variables
+            Value cu = polyglot.eval("grcuda", "CU");
+
+            // creating variables for cusparse functions as DeviceArrays
+            Value alpha = cu.invokeMember("DeviceArray", "float", 1);
+            Value beta = cu.invokeMember("DeviceArray", "float", 1);
+            Value coordX = cu.invokeMember("DeviceArray", "int", numElements + 1);
+            Value coordY = cu.invokeMember("DeviceArray", "int", numElements);
+            Value nnzVec = cu.invokeMember("DeviceArray", "float", numElements);
+            Value dnVec = cu.invokeMember("DeviceArray", "float", numElements);
+            Value outVec = cu.invokeMember("DeviceArray", "float", numElements);
+
+            // variables initialization
+            alpha.setArrayElement(0, 1);
+            beta.setArrayElement(0, 0);
+
+            // populating arrays
+            float edge_value = (float) Math.random();
+
+            coordX.setArrayElement(0, 1);
+
+            for (int i = 0; i < numElements; ++i) {
+                coordX.setArrayElement(i + 1, i + 1);
+                coordY.setArrayElement(i, i);
+                nnzVec.setArrayElement(i, edge_value);
+                dnVec.setArrayElement(i, 1.0);
+                outVec.setArrayElement(i, 0.0);
+            }
+
+            Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
+
+            // order of the arguments should be the following
+            cusparseSpMV.execute(
+                            CUSPARSERegistry.cusparseOperation_t.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
+                            alpha,
+                            numElements,
+                            numElements,
+                            numElements,
+                            coordX,
+                            coordY,
+                            nnzVec,
+                            CUSPARSERegistry.cusparseIndexType_t.CUSPARSE_INDEX_32I.ordinal(),
+                            CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
+                            CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
+                            dnVec,
+                            CUSPARSERegistry.cudaDataType.CUDA_R_32F.ordinal(),
+                            beta,
+                            outVec,
+                            CUSPARSERegistry.cusparseSpMVAlg_t.CUSPARSE_SPMV_ALG_DEFAULT.ordinal());
+
+            for (int i = 1; i < numElements; i++) {
+                assertEquals(outVec.getArrayElement(i).asFloat(), edge_value, 1e-5);
+            }
+        }
+    }
 
     /**
      * SPARSE Sgemvi function test
      */
 
     @Test
-    public void Sgemvi(){
+    public void TestSgemvi() {
 
-        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option("grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
-                true).build()) {
+        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
+                        "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(
+                                        true).build()) {
 
-            //option("grcuda.CuSPARSEEnabled", String.valueOf(true))
             int numElements = 1000;
 
             // creating context variables
@@ -246,61 +233,53 @@ public class CUSPARSETest {
             int nnz = 2; // number of nnz
             Value spVec = cu.invokeMember("DeviceArray", "float", numElements); // x
             Value outVec = cu.invokeMember("DeviceArray", "float", numElements); // output
-            Value matA = polyglot.eval("grcuda", "float[" + numElements +"][" + numElements + "]"); // there must be a smarter way to do this
 
+            Value matA = cu.invokeMember("DeviceArray", "float", numElements * numElements);
             // variables initialization
             alpha.setArrayElement(0, 1);
             beta.setArrayElement(0, 0);
-
-//            System.out.println("variables initialized");
 
             Value xInd = cu.invokeMember("DeviceArray", "int", nnz); // must be the same
 
             // initialization of outVec not necessary
 
-            float edge_value = (float) Math.random();
+            float edgeValue = (float) Math.random();
 
             // fill sparse vector and related arguments
-            for(int i = 0; i < nnz; i++){
+            for (int i = 0; i < nnz; i++) {
                 int idxNnz = (int) (Math.random() * numElements); // to make sure indices are valid
-//                System.out.println("index " + i + " = " + idxNnz);
                 xInd.setArrayElement(i, idxNnz); // set indices vector
-                spVec.setArrayElement(idxNnz, 1.0); // set '1' in the corresponding positions of the sparse vector
+                spVec.setArrayElement(i, 1.0); // set '1' in the corresponding positions of the
+                                               // sparse vector
             }
-
-//            System.out.println("sparse vector ok");
 
             // fill dense matrix
             for (int i = 0; i < numElements; ++i) {
-                for(int j = 0; j < numElements; j++){
-                    matA.getArrayElement(i).setArrayElement(j, edge_value);
+                for (int j = 0; j < numElements; j++) {
+                    matA.setArrayElement(i * numElements + j, edgeValue);
                 }
             }
 
             Value cusparseSgemvi = polyglot.eval("grcuda", "SPARSE::cusparseSgemvi");
 
             // order of the arguments should be the following
-            // transA, m, n, alpha, A, lda, nnz, x, xInd, beta, y, idxBasee
+            // transA, m, n, alpha, A, lda, nnz, x, xInd, beta, y, idxBases
             cusparseSgemvi.execute(
-                    CUSPARSERegistry.cusparseOperation_t.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
-                    rows,
-                    cols,
-                    alpha,
-                    matA,
-                    lda,
-                    nnz,
-                    spVec,
-                    xInd,
-                    beta,
-                    outVec,
-                    CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal()
-            );
-
-            System.out.println("execution complete, outvec = " + outVec.getArrayElement(2).asFloat());
-//            System.out.println(outVec.getArrayElement(2).asFloat());
+                            CUSPARSERegistry.cusparseOperation_t.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
+                            rows,
+                            cols,
+                            alpha,
+                            matA,
+                            lda,
+                            nnz,
+                            spVec,
+                            xInd,
+                            beta,
+                            outVec,
+                            CUSPARSERegistry.cusparseIndexBase_t.CUSPARSE_INDEX_BASE_ZERO.ordinal());
 
             for (int i = 0; i < numElements; i++) {
-                assertEquals(outVec.getArrayElement(i).asFloat(), nnz*edge_value, 1e-5);
+                assertEquals(outVec.getArrayElement(i).asFloat(), nnz * edgeValue, 1e-5);
             }
         }
     }
