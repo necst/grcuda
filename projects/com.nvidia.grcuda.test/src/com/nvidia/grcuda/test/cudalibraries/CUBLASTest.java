@@ -40,13 +40,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Function;
 
-import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
-import com.nvidia.grcuda.test.util.GrCUDATestUtil;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
+
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
+import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 
 @RunWith(Parameterized.class)
 public class CUBLASTest {
