@@ -1,8 +1,10 @@
-# 2021-11-09
+# 2021-11-21
 
 * Enabled support for cuSPARSE
   * Operations with sparse matrices from cuSPARSE library are now supported
   * **Known limitation:** Not all data types are supported
+  * Interoperability between cuSPARSE and cuBLAS is tested
+  * Concurrent operations on parallel streams were analyzed using Nvidia Profiler
 
 
 # 2021-11-04
