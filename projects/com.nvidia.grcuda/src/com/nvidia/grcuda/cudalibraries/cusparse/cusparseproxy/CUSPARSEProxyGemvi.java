@@ -43,19 +43,18 @@ import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-
-public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
+public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
 
     private final int nArgsRaw = 13; // args for library function
 
-    public CUSPARSEProxySgemvi(ExternalFunctionFactory externalFunctionFactory) {
+    public CUSPARSEProxyGemvi(ExternalFunctionFactory externalFunctionFactory) {
         super(externalFunctionFactory);
     }
 
     @Override
     public Object[] formatArguments(Object[] rawArgs, long handle) throws UnsupportedTypeException, UnsupportedMessageException, ArityException {
         this.initializeNfi();
-        if (rawArgs.length == nArgsRaw) {
+        if (rawArgs.length == 0) {
             return rawArgs;
         } else {
 
@@ -77,9 +76,21 @@ public class CUSPARSEProxySgemvi extends CUSPARSEProxy {
             DeviceArray beta = (DeviceArray) rawArgs[9];
             DeviceArray outVec = (DeviceArray) rawArgs[10];
             CUSPARSERegistry.cusparseIndexBase_t idxBase = CUSPARSERegistry.cusparseIndexBase_t.values()[expectInt(rawArgs[11])];
+            char type = (char) rawArgs[12];
 
             // create buffer
-            Object resultBufferSize = INTEROP.execute(cusparseSgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
+
+            switch (type){
+                case 'S':{
+                    Object resultBufferSize = INTEROP.execute(cusparseSgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
+                } case 'D':{
+                    Object resultBufferSize = INTEROP.execute(cusparseDgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
+                } case 'C':{
+                    Object resultBufferSize = INTEROP.execute(cusparseCgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
+                } case 'Z':{
+                    Object resultBufferSize = INTEROP.execute(cusparseZgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
+                }
+            }
 
             long numElements;
 

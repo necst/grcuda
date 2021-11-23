@@ -47,7 +47,7 @@ import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.Namespace;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxy;
-import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySgemvi;
+import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyGemvi;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
@@ -245,10 +245,13 @@ public class CUSPARSERegistry {
                         }
 
                         Object[] formattedArguments = proxy.formatArguments(arguments, cusparseHandle);
+
                         List<ComputationArgumentWithValue> computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, cusparseHandle);
+
 
                         Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
                                         computationArgumentsWithValue).schedule();
+                        System.out.println("execution complete");
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
                         return result;
 
@@ -308,14 +311,17 @@ public class CUSPARSERegistry {
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV = new ExternalFunctionFactory("cusparseSpMV", "cusparseSpMV", "(sint64, sint32, pointer, sint64, " +
                     "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESGEMVI = new ExternalFunctionFactory("cusparseSgemvi", "cusparseSgemvi", "(sint64, sint32, sint32, sint32," +
-                    "pointer, pointer, sint32, sint32, pointer, pointer, pointer, pointer, sint32, pointer): sint32");
-
     private static final ArrayList<CUSPARSEProxy> functions = new ArrayList<>();
 
     static {
+
+        for (char type : new char[]{'S', 'D', 'C', 'Z'}) {
+            final ExternalFunctionFactory CUSPARSE_CUSPARSEGEMVI = new ExternalFunctionFactory("cusparse" + type+ "gemvi", "cusparseSgemvi", "(sint64, sint32, sint32, sint32," +
+                    "pointer, pointer, sint32, sint32, pointer, pointer, pointer, pointer, sint32, pointer): sint32");
+            functions.add(new CUSPARSEProxyGemvi(CUSPARSE_CUSPARSEGEMVI));
+        }
+
         functions.add(new CUSPARSEProxySpMV(CUSPARSE_CUSPARSESPMV));
-        functions.add(new CUSPARSEProxySgemvi(CUSPARSE_CUSPARSESGEMVI));
     }
 
 }
