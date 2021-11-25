@@ -88,19 +88,19 @@ public class CUSPARSERegistry {
 
     private Long cusparseHandle = null;
 
-    public enum cusparseIndexType_t {
+    public enum CUSPARSEIndexType {
         CUSPARSE_INDEX_UNUSED,
         CUSPARSE_INDEX_16U,
         CUSPARSE_INDEX_32I,
         CUSPARSE_INDEX_64I;
     }
 
-    public enum cusparseIndexBase_t {
+    public enum CUSPARSEIndexBase {
         CUSPARSE_INDEX_BASE_ZERO,
         CUSPARSE_INDEX_BASE_ONE;
     }
 
-    public enum cudaDataType {
+    public enum CUDADataType {
         CUDA_R_32F, // 32 bit real
         CUDA_R_64F, // 64 bit real
         CUDA_R_16F, // 16 bit real
@@ -113,13 +113,13 @@ public class CUSPARSERegistry {
         CUDA_C_8U;  // 8 bit complex as a pair of signed integers
     }
 
-    public enum cusparseOperation_t {
+    public enum CUSPARSEOperation {
         CUSPARSE_OPERATION_NON_TRANSPOSE,
         CUSPARSE_OPERATION_TRANSPOSE,
         CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
     }
 
-    public enum cusparseSpMVAlg_t {
+    public enum CUSPARSESpMVAlg {
         CUSPARSE_SPMV_ALG_DEFAULT,
         CUSPARSE_SPMV_COO_ALG1,
         CUSPARSE_SPMV_COO_ALG2,
@@ -251,7 +251,6 @@ public class CUSPARSERegistry {
 
                         Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
                                         computationArgumentsWithValue).schedule();
-                        System.out.println("execution complete");
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
                         return result;
 

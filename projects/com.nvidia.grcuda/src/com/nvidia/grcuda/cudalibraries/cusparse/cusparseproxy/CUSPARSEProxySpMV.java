@@ -37,6 +37,11 @@ import static com.nvidia.grcuda.functions.Function.INTEROP;
 import static com.nvidia.grcuda.functions.Function.expectInt;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 
+import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSEIndexType;
+import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSEIndexBase;
+import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
+import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
+
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
@@ -46,6 +51,11 @@ import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
 public class CUSPARSEProxySpMV extends CUSPARSEProxy {
+
+    public enum CUSPARSESpMVMatrixType {
+        SPMV_MATRIX_TYPE_COO,
+        SPMV_MATRIX_TYPE_CSR
+    }
 
     private final int nArgsRaw = 9; // args for library function
 
@@ -66,34 +76,39 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             DeviceArray v2 = (DeviceArray) rawArgs[6];
             DeviceArray values = (DeviceArray) rawArgs[7];
 
+            // Last argument is the matrix type
+            CUSPARSESpMVMatrixType matrixType = CUSPARSESpMVMatrixType.values()[expectInt(rawArgs[rawArgs.length - 1])];
+
             UnsafeHelper.Integer64Object dnVecXDescr = UnsafeHelper.createInteger64Object();
             UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object();
             UnsafeHelper.Integer64Object matDescr = UnsafeHelper.createInteger64Object();
             UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
 
-            CUSPARSERegistry.cusparseOperation_t opA = CUSPARSERegistry.cusparseOperation_t.values()[expectInt(rawArgs[0])];
+            CUSPARSERegistry.CUSPARSEOperation opA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(rawArgs[0])];
             DeviceArray alpha = (DeviceArray) rawArgs[1];
             long rows = expectLong(rawArgs[2]);
             long cols = expectLong(rawArgs[3]);
             long nnz = expectLong(rawArgs[4]);
-            CUSPARSERegistry.cusparseIndexType_t idxType = CUSPARSERegistry.cusparseIndexType_t.values()[expectInt(rawArgs[8])];
-            CUSPARSERegistry.cusparseIndexBase_t idxBase = CUSPARSERegistry.cusparseIndexBase_t.values()[expectInt(rawArgs[9])];
-            CUSPARSERegistry.cudaDataType valueType = CUSPARSERegistry.cudaDataType.values()[expectInt(rawArgs[10])];
+            CUSPARSEIndexType idxType = CUSPARSEIndexType.values()[expectInt(rawArgs[8])];
+            CUSPARSEIndexBase idxBase = CUSPARSEIndexBase.values()[expectInt(rawArgs[9])];
+            CUDADataType valueType = CUDADataType.values()[expectInt(rawArgs[10])];
             DeviceArray valuesX = (DeviceArray) rawArgs[11];
-            CUSPARSERegistry.cudaDataType valueTypeVec = CUSPARSERegistry.cudaDataType.values()[expectInt(rawArgs[12])];
+            CUDADataType valueTypeVec = CUDADataType.values()[expectInt(rawArgs[12])];
             DeviceArray beta = (DeviceArray) rawArgs[13];
             DeviceArray valuesY = (DeviceArray) rawArgs[14];
-            CUSPARSERegistry.cusparseSpMVAlg_t alg = CUSPARSERegistry.cusparseSpMVAlg_t.values()[expectInt(rawArgs[15])];
+            CUSPARSESpMVAlg alg = CUSPARSESpMVAlg.values()[expectInt(rawArgs[15])];
 
-            if ((v1.getArraySize() == v2.getArraySize()) && (v2.getArraySize() == values.getArraySize())) { // coo
-                // create coo matrix descriptor
-                Object resultCoo = INTEROP.execute(cusparseCreateCooFunction, matDescr.getAddress(), rows, cols, nnz, v1, v2, values, idxType.ordinal(), idxBase.ordinal(),
-                                    valueType.ordinal());
-            } else { // csr
-
-                // create csr matrix descriptor
-                Object resultCsr = INTEROP.execute(cusparseCreateCsrFunction, matDescr.getAddress(), rows, cols, nnz, v1, v2, values, idxType.ordinal(),
-                                    idxType.ordinal(), idxBase.ordinal(), valueType.ordinal());
+            switch (matrixType){
+                case SPMV_MATRIX_TYPE_COO: {
+                    Object resultCoo = INTEROP.execute(cusparseCreateCooFunction, matDescr.getAddress(), rows, cols, nnz, v1, v2, values, idxType.ordinal(), idxBase.ordinal(),
+                            valueType.ordinal());
+                    break;
+                }
+                case SPMV_MATRIX_TYPE_CSR: {
+                    Object resultCsr = INTEROP.execute(cusparseCreateCsrFunction, matDescr.getAddress(), rows, cols, nnz, v1, v2, values, idxType.ordinal(),
+                            idxType.ordinal(), idxBase.ordinal(), valueType.ordinal());
+                    break;
+                }
 
             }
 

@@ -84,7 +84,9 @@ public abstract class CUSPARSEProxy {
     }
 
     protected void initializeNfi() {
+
         assert (context != null);
+
         String libraryPath = context.getOption(GrCUDAOptions.CuSPARSELibrary);
 
         cusparseSetStreamFunctionNFI = CUSPARSE_CUSPARSESETSTREAM.makeFunction(context.getCUDARuntime(), libraryPath, CUSPARSERegistry.DEFAULT_LIBRARY_HINT);
@@ -120,9 +122,9 @@ public abstract class CUSPARSEProxy {
                 DeviceArray cooRowIdx = (DeviceArray) arguments[4];
                 DeviceArray cooColIdx = (DeviceArray) arguments[5];
                 DeviceArray cooValues = (DeviceArray) arguments[6];
-                CUSPARSERegistry.cusparseIndexType_t cooIdxType = CUSPARSERegistry.cusparseIndexType_t.values()[expectInt(arguments[7])];
-                CUSPARSERegistry.cusparseIndexBase_t cooIdxBase = CUSPARSERegistry.cusparseIndexBase_t.values()[expectInt(arguments[8])];
-                CUSPARSERegistry.cudaDataType valueType = CUSPARSERegistry.cudaDataType.values()[expectInt(arguments[9])];
+                CUSPARSERegistry.CUSPARSEIndexType cooIdxType = CUSPARSERegistry.CUSPARSEIndexType.values()[expectInt(arguments[7])];
+                CUSPARSERegistry.CUSPARSEIndexBase cooIdxBase = CUSPARSERegistry.CUSPARSEIndexBase.values()[expectInt(arguments[8])];
+                CUSPARSERegistry.CUDADataType valueType = CUSPARSERegistry.CUDADataType.values()[expectInt(arguments[9])];
                 try {
                     Object result = INTEROP.execute(cusparseCreateCooFunctionNFI, cusparseSpMatDescr, rows, cols, nnz, cooRowIdx, cooColIdx, cooValues,
                                     cooIdxType.ordinal(), cooIdxBase.ordinal(), valueType.ordinal());
@@ -145,7 +147,6 @@ public abstract class CUSPARSEProxy {
         // cusparseIndexType_t csrColIndType,
         // cusparseIndexBase_t idxBase,
         // cudaDataType valueType)
-
         cusparseCreateCsrFunction = new Function(CUSPARSE_CUSPARSECREATECSR.getName()) {
             @Override
             @CompilerDirectives.TruffleBoundary
@@ -158,10 +159,10 @@ public abstract class CUSPARSEProxy {
                 DeviceArray csrRowOffsets = (DeviceArray) arguments[4];
                 DeviceArray csrColIdx = (DeviceArray) arguments[5];
                 DeviceArray csrValues = (DeviceArray) arguments[6];
-                CUSPARSERegistry.cusparseIndexType_t csrRowOffsetsType = CUSPARSERegistry.cusparseIndexType_t.values()[expectInt(arguments[7])];
-                CUSPARSERegistry.cusparseIndexType_t csrColIdxType = CUSPARSERegistry.cusparseIndexType_t.values()[expectInt(arguments[8])];
-                CUSPARSERegistry.cusparseIndexBase_t csrIdxBase = CUSPARSERegistry.cusparseIndexBase_t.values()[expectInt(arguments[9])];
-                CUSPARSERegistry.cudaDataType valueType = CUSPARSERegistry.cudaDataType.values()[expectInt(arguments[10])];
+                CUSPARSERegistry.CUSPARSEIndexType csrRowOffsetsType = CUSPARSERegistry.CUSPARSEIndexType.values()[expectInt(arguments[7])];
+                CUSPARSERegistry.CUSPARSEIndexType csrColIdxType = CUSPARSERegistry.CUSPARSEIndexType.values()[expectInt(arguments[8])];
+                CUSPARSERegistry.CUSPARSEIndexBase csrIdxBase = CUSPARSERegistry.CUSPARSEIndexBase.values()[expectInt(arguments[9])];
+                CUSPARSERegistry.CUDADataType valueType = CUSPARSERegistry.CUDADataType.values()[expectInt(arguments[10])];
                 try {
                     Object result = INTEROP.execute(cusparseCreateCsrFunctionNFI, cusparseSpMatDescr, rows, cols, nnz, csrRowOffsets, csrColIdx, csrValues,
                                     csrRowOffsetsType.ordinal(), csrColIdxType.ordinal(), csrIdxBase.ordinal(), valueType.ordinal());
@@ -177,7 +178,6 @@ public abstract class CUSPARSEProxy {
         // int64_t size,
         // void* values,
         // cudaDataType valueType)
-
         cusparseCreateDnVecFunction = new Function(CUSPARSE_CUSPARSECREATEDNVEC.getName()) {
             @Override
             @CompilerDirectives.TruffleBoundary
@@ -186,7 +186,7 @@ public abstract class CUSPARSEProxy {
                 Long cusparseDnVecDescr = expectLong(arguments[0]);
                 long size = expectLong(arguments[1]);
                 DeviceArray values = (DeviceArray) arguments[2];
-                CUSPARSERegistry.cudaDataType valueType = CUSPARSERegistry.cudaDataType.values()[expectInt(arguments[3])];
+                CUSPARSERegistry.CUDADataType valueType = CUSPARSERegistry.CUDADataType.values()[expectInt(arguments[3])];
                 try {
                     Object result = INTEROP.execute(cusparseCreateDnVecFunctionNFI, cusparseDnVecDescr, size, values, valueType.ordinal());
                     checkCUSPARSEReturnCode(result, "cusparseCreateDnVec");
@@ -208,21 +208,20 @@ public abstract class CUSPARSEProxy {
         // cudaDataType computeType,
         // cusparseSpMVAlg_t alg,
         // size_t* bufferSize)
-
         cusparseSpMV_bufferSizeFunction = new Function(CUSPARSE_CUSPARSESPMV_BUFFERSIZE.getName()) {
             @Override
             @CompilerDirectives.TruffleBoundary
             public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
                 checkArgumentLength(arguments, 10);
                 long handle = expectLong(arguments[0]);
-                CUSPARSERegistry.cusparseOperation_t opA = CUSPARSERegistry.cusparseOperation_t.values()[expectInt(arguments[1])];
+                CUSPARSERegistry.CUSPARSEOperation opA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(arguments[1])];
                 DeviceArray alpha = (DeviceArray) arguments[2];
                 long cusparseSpMatDesc = expectLong(arguments[3]);
                 long vecX = expectLong(arguments[4]);
                 DeviceArray beta = (DeviceArray) arguments[5];
                 long vecY = expectLong(arguments[6]);
-                CUSPARSERegistry.cudaDataType computeType = CUSPARSERegistry.cudaDataType.values()[expectInt(arguments[7])];
-                CUSPARSERegistry.cusparseSpMVAlg_t alg = CUSPARSERegistry.cusparseSpMVAlg_t.values()[expectInt(arguments[8])];
+                CUSPARSERegistry.CUDADataType computeType = CUSPARSERegistry.CUDADataType.values()[expectInt(arguments[7])];
+                CUSPARSERegistry.CUSPARSESpMVAlg alg = CUSPARSERegistry.CUSPARSESpMVAlg.values()[expectInt(arguments[8])];
                 long bufferSize = expectLong(arguments[9]);
                 try {
                     Object result = INTEROP.execute(cusparseSpMV_bufferSizeFunctionNFI, handle, opA.ordinal(), alpha, cusparseSpMatDesc, vecX, beta, vecY, computeType.ordinal(), alg.ordinal(),
@@ -241,14 +240,13 @@ public abstract class CUSPARSEProxy {
         // int n,
         // int nnz,
         // int* pBufferSize)
-
         cusparseSgemvi_bufferSizeFunction = new Function(CUSPARSE_CUSPARSESGEMVI_BUFFERSIZE.getName()) {
             @Override
             @CompilerDirectives.TruffleBoundary
             public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
                 checkArgumentLength(arguments, 6);
                 long handle = expectLong(arguments[0]);
-                CUSPARSERegistry.cusparseOperation_t transA = CUSPARSERegistry.cusparseOperation_t.values()[expectInt(arguments[1])];
+                CUSPARSERegistry.CUSPARSEOperation transA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(arguments[1])];
                 int rows = expectInt(arguments[2]);
                 int cols = expectInt(arguments[3]);
                 int nnz = expectInt(arguments[4]);
@@ -269,7 +267,7 @@ public abstract class CUSPARSEProxy {
             public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
                 checkArgumentLength(arguments, 6);
                 long handle = expectLong(arguments[0]);
-                CUSPARSERegistry.cusparseOperation_t transA = CUSPARSERegistry.cusparseOperation_t.values()[expectInt(arguments[1])];
+                CUSPARSERegistry.CUSPARSEOperation transA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(arguments[1])];
                 int rows = expectInt(arguments[2]);
                 int cols = expectInt(arguments[3]);
                 int nnz = expectInt(arguments[4]);
@@ -290,7 +288,7 @@ public abstract class CUSPARSEProxy {
             public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
                 checkArgumentLength(arguments, 6);
                 long handle = expectLong(arguments[0]);
-                CUSPARSERegistry.cusparseOperation_t transA = CUSPARSERegistry.cusparseOperation_t.values()[expectInt(arguments[1])];
+                CUSPARSERegistry.CUSPARSEOperation transA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(arguments[1])];
                 int rows = expectInt(arguments[2]);
                 int cols = expectInt(arguments[3]);
                 int nnz = expectInt(arguments[4]);
@@ -311,7 +309,7 @@ public abstract class CUSPARSEProxy {
             public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
                 checkArgumentLength(arguments, 6);
                 long handle = expectLong(arguments[0]);
-                CUSPARSERegistry.cusparseOperation_t transA = CUSPARSERegistry.cusparseOperation_t.values()[expectInt(arguments[1])];
+                CUSPARSERegistry.CUSPARSEOperation transA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(arguments[1])];
                 int rows = expectInt(arguments[2]);
                 int cols = expectInt(arguments[3]);
                 int nnz = expectInt(arguments[4]);

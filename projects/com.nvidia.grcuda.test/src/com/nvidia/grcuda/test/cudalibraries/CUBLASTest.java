@@ -244,8 +244,8 @@ public class CUBLASTest {
         }
     }
 
-    private void assertOutputVectorIsCorrect(int len, Value deviceArray,
-                    Function<Integer, Integer> outFunc) {
+    void assertOutputVectorIsCorrect(int len, Value deviceArray,
+                                     Function<Integer, Integer> outFunc) {
         CUBLASTest.assertOutputVectorIsCorrect(len, deviceArray, outFunc, this.typeChar);
     }
 

@@ -64,7 +64,7 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
 
             bufferSize.setValue(0);
 
-            CUSPARSERegistry.cusparseOperation_t transA = CUSPARSERegistry.cusparseOperation_t.values()[expectInt(rawArgs[0])];
+            CUSPARSERegistry.CUSPARSEOperation transA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(rawArgs[0])];
             int rows = expectInt(rawArgs[1]);
             int cols = expectInt(rawArgs[2]);
             DeviceArray alpha = (DeviceArray) rawArgs[3];
@@ -75,7 +75,7 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
             DeviceArray xInd = (DeviceArray) rawArgs[8];
             DeviceArray beta = (DeviceArray) rawArgs[9];
             DeviceArray outVec = (DeviceArray) rawArgs[10];
-            CUSPARSERegistry.cusparseIndexBase_t idxBase = CUSPARSERegistry.cusparseIndexBase_t.values()[expectInt(rawArgs[11])];
+            CUSPARSERegistry.CUSPARSEIndexBase idxBase = CUSPARSERegistry.CUSPARSEIndexBase.values()[expectInt(rawArgs[11])];
             char type = (char) rawArgs[12];
 
             // create buffer
