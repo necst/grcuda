@@ -100,6 +100,7 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
 
             if (bufferSize.getValue() == 0) {
                 numElements = 1;
+                if(type == 'C' || type == 'Z') numElements = 2;
             } else {
                 numElements = (long) bufferSize.getValue();
             }
