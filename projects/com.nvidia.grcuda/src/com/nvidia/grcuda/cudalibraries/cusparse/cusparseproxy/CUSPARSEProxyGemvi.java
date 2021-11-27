@@ -43,6 +43,8 @@ import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import org.graalvm.polyglot.Value;
+
 public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
 
     private final int nArgsRaw = 13; // args for library function
@@ -100,7 +102,6 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
 
             if (bufferSize.getValue() == 0) {
                 numElements = 1;
-                if(type == 'C' || type == 'Z') numElements = 2;
             } else {
                 numElements = (long) bufferSize.getValue();
             }

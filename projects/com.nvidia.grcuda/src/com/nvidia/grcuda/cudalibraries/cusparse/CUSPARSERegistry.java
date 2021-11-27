@@ -66,6 +66,8 @@ import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import org.graalvm.polyglot.Value;
+import org.graalvm.polyglot.Context;
 
 public class CUSPARSERegistry {
     public static final String DEFAULT_LIBRARY = (System.getenv("LIBCUSPARSE_DIR") != null ? System.getenv("LIBCUSPARSE_DIR") : "") + "libcusparse.so";
@@ -248,10 +250,10 @@ public class CUSPARSERegistry {
 
                         List<ComputationArgumentWithValue> computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, cusparseHandle);
 
-
                         Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
                                         computationArgumentsWithValue).schedule();
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
+
                         return result;
 
                     } catch (InteropException e) {

@@ -49,6 +49,9 @@ import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import com.nvidia.grcuda.runtime.CUDARuntime;
+
+import com.sun.jdi.Value;
 
 public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 

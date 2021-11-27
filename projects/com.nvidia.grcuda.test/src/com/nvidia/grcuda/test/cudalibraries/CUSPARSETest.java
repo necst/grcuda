@@ -33,6 +33,7 @@
  */
 package com.nvidia.grcuda.test.cudalibraries;
 
+import static com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV.CUSPARSESpMVMatrixType;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
@@ -47,8 +48,6 @@ import org.junit.runners.Parameterized;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
-
-import static com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV.CUSPARSESpMVMatrixType;
 
 @RunWith(Parameterized.class)
 public class CUSPARSETest {
@@ -248,6 +247,9 @@ public class CUSPARSETest {
                             outVec,
                             CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
                             CUSPARSESpMVMatrixType.SPMV_MATRIX_TYPE_COO.ordinal());
+
+            Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
+
             for (int i = 0; i < numElements; ++i) {
                 assertEquals(edgeValue, outVec.getArrayElement(i * complexScaleSize).asFloat(), 1e-3f);
             }
@@ -336,6 +338,10 @@ public class CUSPARSETest {
                             outVec,
                             CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
                             this.type);
+
+            Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
+            sync.execute();
+
             float expectedResult = nnz * edgeValue;
             for (int i = 0; i < numElements; i++) {
                 for (int j = 0; j < complexScaleSize; ++j) {
