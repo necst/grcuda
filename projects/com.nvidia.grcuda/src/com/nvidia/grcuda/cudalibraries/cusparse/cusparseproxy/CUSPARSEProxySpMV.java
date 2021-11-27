@@ -49,7 +49,6 @@ import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-import com.nvidia.grcuda.runtime.CUDARuntime;
 
 import com.sun.jdi.Value;
 
@@ -119,6 +118,7 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             Object resultX = INTEROP.execute(cusparseCreateDnVecFunction, dnVecXDescr.getAddress(), cols, valuesX, valueTypeVec.ordinal());
             Object resultY = INTEROP.execute(cusparseCreateDnVecFunction, dnVecYDescr.getAddress(), cols, valuesY, valueTypeVec.ordinal());
 
+
             // create buffer
             Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunction, handle, opA.ordinal(), alpha, matDescr.getValue(), dnVecXDescr.getValue(), beta,
                                 dnVecYDescr.getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
@@ -132,6 +132,8 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             }
 
             DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, alpha.getElementType());
+
+            cudaDeviceSynchronize();
 
             // format new arguments
             args[0] = opA.ordinal();

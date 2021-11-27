@@ -34,6 +34,7 @@
 package com.nvidia.grcuda.cudalibraries.cusparse;
 
 import static com.nvidia.grcuda.functions.Function.INTEROP;
+import static com.nvidia.grcuda.functions.Function.checkArgumentLength;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 
 import java.util.ArrayList;
@@ -45,13 +46,16 @@ import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDAInternalException;
 import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.Namespace;
+import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxy;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyGemvi;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
+import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
+import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
 import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.runtime.stream.CUSPARSESetStreamFunction;
@@ -87,6 +91,7 @@ public class CUSPARSERegistry {
     @CompilationFinal private TruffleObject cusparseCreateFunctionNFI;
     @CompilationFinal private TruffleObject cusparseDestroyFunctionNFI;
     @CompilationFinal private TruffleObject cusparseSetStreamFunctionNFI;
+
 
     private Long cusparseHandle = null;
 
@@ -147,6 +152,8 @@ public class CUSPARSERegistry {
             cusparseCreateFunctionNFI = CUSPARSE_CUSPARSECREATE.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
             cusparseDestroyFunctionNFI = CUSPARSE_CUSPARSEDESTROY.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
             cusparseSetStreamFunctionNFI = CUSPARSE_CUSPARSESETSTREAM.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
+
+
 
             // cusparseStatus_t cusparseCreate(cusparseHandle_t handle)
 
@@ -248,11 +255,15 @@ public class CUSPARSERegistry {
 
                         Object[] formattedArguments = proxy.formatArguments(arguments, cusparseHandle);
 
+
                         List<ComputationArgumentWithValue> computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, cusparseHandle);
 
                         Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
                                         computationArgumentsWithValue).schedule();
+
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
+
+                        System.out.println(result);
 
                         return result;
 

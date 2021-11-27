@@ -43,7 +43,6 @@ import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-import org.graalvm.polyglot.Value;
 
 public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
 
@@ -82,21 +81,25 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
 
             // create buffer
 
-            switch (type){
-                case 'S':{
+            switch (type) {
+                case 'S': {
                     Object resultBufferSize = INTEROP.execute(cusparseSgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
                     break;
-                } case 'D':{
+                }
+                case 'D': {
                     Object resultBufferSize = INTEROP.execute(cusparseDgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
                     break;
-                } case 'C':{
+                }
+                case 'C': {
                     Object resultBufferSize = INTEROP.execute(cusparseCgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
                     break;
-                } case 'Z':{
+                }
+                case 'Z': {
                     Object resultBufferSize = INTEROP.execute(cusparseZgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
                     break;
                 }
             }
+
 
             long numElements;
 
@@ -107,6 +110,8 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
             }
 
             DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, alpha.getElementType());
+
+            cudaDeviceSynchronize();
 
             args[0] = transA.ordinal();
             args[1] = rows;

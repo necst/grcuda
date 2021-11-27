@@ -34,18 +34,25 @@
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
 import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.checkCUSPARSEReturnCode;
+import static com.nvidia.grcuda.functions.Function.INTEROP;
+import static com.nvidia.grcuda.functions.Function.checkArgumentLength;
 
 import com.nvidia.grcuda.GrCUDAContext;
+import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDAInternalException;
 import com.nvidia.grcuda.GrCUDAOptions;
+import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
+import com.nvidia.grcuda.functions.CUDAFunction;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
+import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropException;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.UnknownIdentifierException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
@@ -324,6 +331,7 @@ public abstract class CUSPARSEProxy {
             }
         };
 
+
     }
 
     public ExternalFunctionFactory getExternalFunctionFactory() {
@@ -331,6 +339,18 @@ public abstract class CUSPARSEProxy {
     }
 
     public abstract Object[] formatArguments(Object[] rawArgs, long handle) throws UnsupportedTypeException, UnsupportedMessageException, ArityException;
+
+
+    @CompilerDirectives.TruffleBoundary
+    public void cudaDeviceSynchronize() {
+        try {
+            Object callable = CUDARuntime.CUDARuntimeFunction.CUDA_DEVICESYNCHRONIZE.getSymbol(context.getCUDARuntime());
+            Object result = INTEROP.execute(callable);
+        } catch (InteropException e) {
+            throw new GrCUDAException(e);
+        }
+    }
+
 
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo", "(pointer, sint64, " +
@@ -349,5 +369,5 @@ public abstract class CUSPARSEProxy {
                     "sint64, sint64, sint64, pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSEZGEMVI_BUFFERSIZE = new ExternalFunctionFactory("cusparseZgemvi_bufferSize", "cusparseZgemvi_bufferSize", "(sint64, sint32, " +
                     "sint64, sint64, sint64, pointer): sint32");
-
+    private static final ExternalFunctionFactory CUDA_DEVICESYNCHRONIZE = new ExternalFunctionFactory("cudaDeviceSynchronize","cudaDeviceSynchronize","(): sint32");
 }
