@@ -1,7 +1,7 @@
 # # A100
 # DATE=2021_11_02
 # N=20000
-# DIR=../../../grcuda-data/results/scheduling_multiGPU/A100/${DATE}_partition_scaling
+# DIR=../../../grcuda-data/results/scheduling_multi_gpu/A100/${DATE}_partition_scaling
 # mkdir -p ${DIR}
 # for g in 1 2 4 8
 # do
@@ -21,7 +21,7 @@
 # A100
 DATE=2021_11_02
 N=8192
-DIR=../../../grcuda-data/results/scheduling_multiGPU/A100/${DATE}_partition_scaling_m13
+DIR=../../../grcuda-data/results/scheduling_multi_gpu/A100/${DATE}_partition_scaling_m13
 mkdir -p ${DIR}
 for g in 1 2 4
 do

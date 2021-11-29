@@ -28,7 +28,7 @@ GPU = "V100"
 GPU = "A100"
 SIZE = 20000 # 2048
 
-RES_FOLDER = f"../../../../grcuda-data/results/scheduling_multiGPU/{GPU}"
+RES_FOLDER = f"../../../../grcuda-data/results/scheduling_multi_gpu/{GPU}"
 SUBFOLDERS = {
     f"{INPUT_DATE}_partition_scaling_b11_low": 4,
     f"{INPUT_DATE}_partition_scaling_b11_high": 12,
@@ -458,11 +458,11 @@ if __name__ == "__main__":
     #         fig, ax = plot_scaling(g[g["prefetch"] == True]) 
             
     #%% Compare V100 and A100;
-    _, data_agg_v100 = load_data_multiconfig(True, remove_outliers=False, main_res_folder="../../../../grcuda-data/results/scheduling_multiGPU/V100")
+    _, data_agg_v100 = load_data_multiconfig(True, remove_outliers=False, main_res_folder="../../../../grcuda-data/results/scheduling_multi_gpu/V100")
     data_agg_v100["prefetch"] = True
     # Remove thr "18" datapoint for consistent scaling;
     data_agg_v100 = data_agg_v100[data_agg_v100["partitions"] != 18]
-    data_a100, data_agg_a100 = load_data_a100(global_speedup=True, remove_outliers=False, main_res_folder="../../../../grcuda-data/results/scheduling_multiGPU/A100")
+    data_a100, data_agg_a100 = load_data_a100(global_speedup=True, remove_outliers=False, main_res_folder="../../../../grcuda-data/results/scheduling_multi_gpu/A100")
     data_agg_a100 = data_agg_a100[data_agg_a100["prefetch"] == True]
     # Concatenate results;
     data_agg_v100["gpu"] = "V100"

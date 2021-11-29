@@ -50,6 +50,19 @@ PLOT_DIR = "../../../../grcuda-data/plots/multi_gpu"
 # ASYNC_POLICY_NAME = "async"   # If parsing new results;
 ASYNC_POLICY_NAME = "default"  # If parsing older results;
 
+BENCHMARK_NAMES = {
+    "b1m": "VEC",
+    "b5m": "B&S",
+    "b6m": "ML",
+    "b9m": "CG",
+    "b11m": "MUL",
+    }
+
+POLICY_NAMES = {
+    "sync": "SYNC",
+    "default": "ASYNC",
+    }
+
 def load_data(input_date: str, skip_iter=0, remove_inf=True, remove_time_zero=True, benchmark="", phases=None) -> pd.DataFrame:
     """
     Load the benchmark results located in the input sub-folder

@@ -8,7 +8,7 @@ Created on Thu Oct  7 12:54:09 2021
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import seaborn as sns
-ddimport numpy as np
+import numpy as np
 import pandas as pd
 import os
 import matplotlib.gridspec as gridspec
