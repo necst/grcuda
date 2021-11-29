@@ -38,6 +38,8 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.nvidia.grcuda.GrCUDAInternalException;
+import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.GPUPointer;
 import com.nvidia.grcuda.GrCUDAContext;
@@ -47,14 +49,23 @@ import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.GrCUDAException;
+import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
+import com.nvidia.grcuda.runtime.stream.LibrarySetStreamFunction;
+import com.nvidia.grcuda.runtime.stream.TensorRTSetStreamFunction;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropException;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.InvalidArrayIndexException;
+import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+
+import static com.nvidia.grcuda.functions.Function.INTEROP;
+import static com.nvidia.grcuda.functions.Function.expectLong;
 
 public class TensorRTRegistry {
 
@@ -68,10 +79,223 @@ public class TensorRTRegistry {
     private final GrCUDAContext context;
     private final String libraryPath;
 
+    private LibrarySetStreamFunction tensorRTLibrarySetStreamFunction;
+
+    @CompilationFinal private TruffleObject tensorRTCreateInferRuntime;
+    @CompilationFinal private TruffleObject tensorRTDeserializeCudaEngine;
+    @CompilationFinal private TruffleObject tensorRTDestroyInferRuntime;
+    @CompilationFinal private TruffleObject tensorRTCreateExecutionContext;
+    @CompilationFinal private TruffleObject tensorRTGetBindingIndexes;
+    @CompilationFinal private TruffleObject tensorRTGetMaxBatchSize;
+    @CompilationFinal private TruffleObject tensorRTEnqueue;
+    @CompilationFinal private TruffleObject tensorRTDestroyEngine;
+    @CompilationFinal private TruffleObject tensorRTDestroyExecutionContext;
+    @CompilationFinal private TruffleObject tensorRTCreateInferRuntimeNFI;
+    @CompilationFinal private TruffleObject tensorRTDeserializeCudaEngineNFI;
+    @CompilationFinal private TruffleObject tensorRTDestroyInferRuntimeNFI;
+    @CompilationFinal private TruffleObject tensorRTCreateExecutionContextNFI;
+    @CompilationFinal private TruffleObject tensorRTGetBindingIndexesNFI;
+    @CompilationFinal private TruffleObject tensorRTGetMaxBatchSizeNFI;
+    @CompilationFinal private TruffleObject tensorRTEnqueueNFI;
+    @CompilationFinal private TruffleObject tensorRTDestroyEngineNFI;
+    @CompilationFinal private TruffleObject tensorRTDestroyExecutionContextNFI;
+
+    private Integer runtime = null;
+
     public TensorRTRegistry(GrCUDAContext context) {
         this.context = context;
         libraryPath = context.getOption(GrCUDAOptions.TensorRTLibrary);
         context.addDisposable(this::shutdown);
+    }
+
+    public void ensureInitialized() {
+        if (runtime == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+
+            tensorRTCreateInferRuntimeNFI = TensorRTFunctionNFI.TRT_CREATE_INFER_RUNTIME.factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
+            tensorRTDeserializeCudaEngineNFI = TensorRTFunctionNFI.TRT_DESERIALIZE_CUDA_ENGINE.factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
+            tensorRTDestroyInferRuntimeNFI = TensorRTFunctionNFI.TRT_DESTROY_INFER_RUNTIME.factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
+            tensorRTCreateExecutionContextNFI = TensorRTFunctionNFI.TRT_CREATE_EXECUTION_CONTEXT.factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
+            tensorRTGetBindingIndexesNFI = TensorRTFunctionNFI.TRT_GET_BINDING_INDEX.factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
+            tensorRTGetMaxBatchSizeNFI = TensorRTFunctionNFI.TRT_GET_MAX_BATCH_SIZE.factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
+            tensorRTEnqueueNFI = TensorRTFunctionNFI.TRT_ENQUEUE.factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
+            tensorRTDestroyExecutionContextNFI = TensorRTFunctionNFI.TRT_DESTROY_EXECUTION_CONTEXT.factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
+
+            tensorRTCreateInferRuntime = new Function(TensorRTFunctionNFI.TRT_CREATE_INFER_RUNTIME.factory.getName()) {
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException {
+                    checkArgumentLength(arguments, 0);
+                    try {
+                        Object result = INTEROP.execute(tensorRTCreateInferRuntimeNFI);
+                        checkTRTReturnCode(result, "createInferRuntime");
+                        return result;
+                    } catch (InteropException e) {
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
+
+            tensorRTDeserializeCudaEngine = new Function(TensorRTFunctionNFI.TRT_DESERIALIZE_CUDA_ENGINE.factory.getName()) {
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
+                    checkArgumentLength(arguments, 2);
+                    int param1 = expectInt(arguments[0]);
+                    String param2 = expectString(arguments[1],"wrong parameter");
+                    try {
+                        Object result = INTEROP.execute(tensorRTDeserializeCudaEngineNFI, param1, param2);
+                        checkTRTReturnCode(result, "deserializeCudaEngine");
+                        return result;
+                    } catch (InteropException e) {
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
+
+            tensorRTDestroyInferRuntime = new Function(TensorRTFunctionNFI.TRT_DESTROY_INFER_RUNTIME.factory.getName()) {
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
+                    checkArgumentLength(arguments, 1);
+                    int param1 = expectInt(arguments[0]);
+                    try {
+                        Object result = INTEROP.execute(tensorRTDestroyInferRuntimeNFI, param1);
+                        checkTRTReturnCode(result, "destroyInferRuntime");
+                        return result;
+                    } catch (InteropException e) {
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
+
+            tensorRTCreateExecutionContext = new Function(TensorRTFunctionNFI.TRT_CREATE_EXECUTION_CONTEXT.factory.getName()) {
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
+                    checkArgumentLength(arguments, 1);
+                    int param1 = expectInt(arguments[0]);
+                    try {
+                        Object result = INTEROP.execute(tensorRTCreateExecutionContextNFI, param1);
+                        checkTRTReturnCode(result, "createExecutionContext");
+                        return result;
+                    } catch (InteropException e) {
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
+
+
+            tensorRTGetBindingIndexes = new Function(TensorRTFunctionNFI.TRT_GET_BINDING_INDEX.factory.getName()) {
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
+                    checkArgumentLength(arguments, 2);
+                    int param1 = expectInt(arguments[0]);
+                    String param2 = expectString(arguments[1],"wrong paramter");
+                    try {
+                        Object result = INTEROP.execute(tensorRTGetBindingIndexesNFI, param1, param2);
+                        checkTRTReturnCode(result, "getBindingIndex");
+                        return result;
+                    } catch (InteropException e) {
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
+
+            tensorRTGetMaxBatchSize = new Function(TensorRTFunctionNFI.TRT_GET_MAX_BATCH_SIZE.factory.getName()) {
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
+                    checkArgumentLength(arguments, 1);
+                    int param1 = expectInt(arguments[0]);
+                    try {
+                        Object result = INTEROP.execute(tensorRTGetMaxBatchSizeNFI, param1);
+                        checkTRTReturnCode(result, "getMaxBatchSize");
+                        return result;
+                    } catch (InteropException e) {
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
+
+            tensorRTEnqueue = new Function(TensorRTFunctionNFI.TRT_ENQUEUE.factory.getName()) {
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
+                    checkArgumentLength(arguments, 5);
+                    int param1 = expectInt(arguments[0]);
+                    int param2 = expectInt(arguments[1]);
+                    long param3 = expectLong(arguments[2]);
+                    long param4 = expectLong(arguments[3]);
+                    long param5 = expectLong(arguments[4]);
+                    try {
+                        Object result = INTEROP.execute(tensorRTEnqueueNFI, param1, param2, param3, param4, param5);
+                        checkTRTReturnCode(result, "enqueue");
+                        return result;
+                    } catch (InteropException e) {
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
+
+            tensorRTDestroyEngine = new Function(TensorRTFunctionNFI.TRT_DESTROY_ENGINE.factory.getName()) {
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
+                    checkArgumentLength(arguments, 1);
+                    int param1 = expectInt(arguments[0]);
+                    try {
+                        Object result = INTEROP.execute(tensorRTDestroyEngineNFI, param1);
+                        checkTRTReturnCode(result, "destroyEngine");
+                        return result;
+                    } catch (InteropException e) {
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
+
+            tensorRTDestroyExecutionContext = new Function(TensorRTFunctionNFI.TRT_DESTROY_EXECUTION_CONTEXT.factory.getName()) {
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
+                    checkArgumentLength(arguments, 1);
+                    int param1 = expectInt(arguments[0]);
+                    try {
+                        Object result = INTEROP.execute(tensorRTDestroyExecutionContextNFI, param1);
+                        checkTRTReturnCode(result, "destroyExecutionContext");
+                        return result;
+                    } catch (InteropException e) {
+                        throw new GrCUDAInternalException(e);
+                    }
+                }
+            };
+
+            try {
+                Object result = INTEROP.execute(tensorRTCreateInferRuntime);
+                runtime = INTEROP.asInt(result);
+
+                context.addDisposable(this::tensorRTShutdown);
+            } catch (InteropException e) {
+                throw new GrCUDAInternalException(e);
+            }
+        }
+
+        tensorRTLibrarySetStreamFunction = new TensorRTSetStreamFunction((Function) tensorRTEnqueueNFI, (Function) tensorRTCreateExecutionContextNFI, (Function) tensorRTGetBindingIndexesNFI);
+
+    }
+
+    private void tensorRTShutdown() {
+        CompilerAsserts.neverPartOfCompilation();
+        if (runtime != null) {
+            try {
+                Object result = InteropLibrary.getFactory().getUncached().execute(tensorRTDestroyInferRuntime, cublasHandle);
+                checkTRTReturnCode(result, TensorRTFunctionNFI.TRT_DESTROY_INFER_RUNTIME.factory.getName());
+                runtime = null;
+            } catch (InteropException e) {
+                throw new GrCUDAInternalException(e);
+            }
+        }
     }
 
     public void registerTensorRTFunctions(Namespace namespace) {
@@ -133,7 +357,7 @@ public class TensorRTRegistry {
                         new ExternalFunctionFactory("createExecutionContext", "createExecutionContext", "(sint32): sint32"),
                         true),
         TRT_GET_BINDING_INDEX(
-                        new ExternalFunctionFactory("getBindingIndex", "getBindingIndex", "(sint32, string): sint32"),
+                            new ExternalFunctionFactory("getBindingIndex", "getBindingIndex", "(sint32, string): sint32"),
                         false),
         TRT_GET_MAX_BATCH_SIZE(
                         new ExternalFunctionFactory("getMaxBatchSize", "getMaxBatchSize", "(sint32): sint32"),
@@ -165,36 +389,56 @@ public class TensorRTRegistry {
 
         private final ExternalFunctionFactory factory;
         private Function nfiFunction;
+        private TensorRTSetStreamFunction tensorRTSetStreamFunction;
 
         TRTFunction(ExternalFunctionFactory factory) {
             super(factory.getName());
             this.factory = factory;
         }
 
-        @Override
-        @TruffleBoundary
-        public Object call(Object[] arguments) {
-            try {
-                if (nfiFunction == null) {
-                    // load function symbol lazily
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
-                    nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
-                }
-                return INTEROP.execute(nfiFunction, arguments);
-            } catch (InteropException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RuntimeException(e);
-            }
+        void setSetStreamFunction(TensorRTSetStreamFunction tensorRTSetStreamFunction) {
+            this.tensorRTSetStreamFunction = tensorRTSetStreamFunction;
         }
+        public Function registerTensorRTFunction(){
+            final Function wrapperFunction = new CUDALibraryFunction(factory.getName(), factory.getNFISignature()) {
+                @Override
+                @TruffleBoundary
+                public Object call(Object[] arguments) {
+                    try {
+                        if (nfiFunction == null) {
+                            // load function symbol lazily
+                            CompilerDirectives.transferToInterpreterAndInvalidate();
+                            nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
+                        }
+                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, tensorRTLibrarySetStreamFunction,
+                                this.createComputationArgumentWithValueList(arguments)).schedule();
+                        checkTRTReturnCode(result, nfiFunction.getName());
+                        return result;
+
+                        return INTEROP.execute(nfiFunction, arguments);
+                    } catch (InteropException e) {
+                        CompilerDirectives.transferToInterpreter();
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+            return wrapperFunction;
+        }
+
     }
 
     class ErrorCheckedTRTFunction extends Function {
         private final ExternalFunctionFactory factory;
         private Function nfiFunction;
+        private TensorRTSetStreamFunction tensorRTSetStreamFunction;
 
         ErrorCheckedTRTFunction(ExternalFunctionFactory factory) {
             super(factory.getName());
             this.factory = factory;
+        }
+
+        void setSetStreamFunction(TensorRTSetStreamFunction tensorRTSetStreamFunction){
+            this.tensorRTSetStreamFunction = tensorRTSetStreamFunction;
         }
 
         @Override

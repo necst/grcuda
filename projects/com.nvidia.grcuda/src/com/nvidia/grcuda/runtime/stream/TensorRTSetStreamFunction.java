@@ -1,6 +1,5 @@
 package com.nvidia.grcuda.runtime.stream;
 
-import com.nvidia.grcuda.cudalibraries.tensorrt.TensorRTRegistry;
 import com.nvidia.grcuda.functions.Function;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
@@ -13,17 +12,17 @@ public class TensorRTSetStreamFunction extends LibrarySetStreamFunction {
 
     private int context;
     private int engine;
-    private int input_index, output_index;
+    private int inputIndex, outputIndex;
     private CUDAStream stream;
-    private String input_name, output_name;
+    private String inputName, outputName;
     private final int buffers[];
-    private final Function createExecutionContextFunction;  //TensorRTRegistry.TensorRTFunctionNFI.TRT_CREATE_EXECUTION_CONTEXT
-    private final Function getBindingIndexesFunction;       //TensorRTRegistry.TensorRTFunctionNFI.TRT_GET_BINDING_INDEX
+    private final Function createExecutionContextFunctionNFI;  //TensorRTRegistry.TensorRTFunctionNFI.TRT_CREATE_EXECUTION_CONTEXT
+    private final Function getBindingIndexesFunctionNFI;       //TensorRTRegistry.TensorRTFunctionNFI.TRT_GET_BINDING_INDEX
 
-    public TensorRTSetStreamFunction (Function enqueueV2FunctionNFI, Function createExecutionContextFunction, Function getBindingIndexesFunction) {
+    public TensorRTSetStreamFunction (Function enqueueV2FunctionNFI, Function createExecutionContextFunctionNFI, Function getBindingIndexesFunctionNFI  ) {
         super(enqueueV2FunctionNFI);
-        this.createExecutionContextFunction = createExecutionContextFunction;
-        this.getBindingIndexesFunction = getBindingIndexesFunction;
+        this.createExecutionContextFunctionNFI = createExecutionContextFunctionNFI;
+        this.getBindingIndexesFunctionNFI = getBindingIndexesFunctionNFI;
         buffers = new int[2];
     }
 
@@ -33,7 +32,7 @@ public class TensorRTSetStreamFunction extends LibrarySetStreamFunction {
         try {   //Possible fail in this function because of unmatching parameters
             INTEROP.execute(setStreamFunctionNFI,setStreamArgs);
         } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
-            System.out.println("failed to execute TensorRT stream");
+            System.out.println("Failed to execute TensorRT stream");
             e.printStackTrace();
         }
     }
@@ -42,34 +41,34 @@ public class TensorRTSetStreamFunction extends LibrarySetStreamFunction {
         this.engine = engine;
         Object[] createExecutionContext = {engine};
         try {
-            this.context = expectInt(INTEROP.execute(createExecutionContextFunction, createExecutionContext));
+            this.context = expectInt(INTEROP.execute(createExecutionContextFunctionNFI, createExecutionContext));
         } catch(ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
-            System.out.println("failed to create execution context");
+            System.out.println("Failed to create execution context");
             e.printStackTrace();
         }
     }
 
-    public void getBindingIndexes(int input_buffer, String input_name) {
-        this.input_name = input_name;
-        Object[] getBindingIndexesArgsInput = {engine, input_name};
+    public void getBindingIndexes(int inputBuffer, String inputName) {
+        this.inputName = inputName;
+        Object[] getBindingIndexesArgsInput = {engine, inputName};
         try {
-            this.input_index = expectInt(INTEROP.execute(getBindingIndexesFunction, getBindingIndexesArgsInput));
+            this.inputIndex = expectInt(INTEROP.execute(getBindingIndexesFunctionNFI, getBindingIndexesArgsInput));
         } catch(ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
             System.out.println("Failed to bind input Indexes");
             e.printStackTrace();
         }
-        buffers[input_index] = input_buffer;
+        buffers[inputIndex] = inputBuffer;
     }
 
-    public void getBindingIndexesInput(int output_buffer, String output_name) {
-        this.output_name = output_name;
-        Object[] getBindingIndexesArgsOutput = {engine, output_name};
+    public void getBindingIndexesInput(int outputBuffer, String outputName) {
+        this.outputName = outputName;
+        Object[] getBindingIndexesArgsOutput = {engine, outputName};
         try {
-            this.output_index = expectInt(INTEROP.execute(getBindingIndexesFunction, getBindingIndexesArgsOutput));
+            this.outputIndex = expectInt(INTEROP.execute(getBindingIndexesFunctionNFI, getBindingIndexesArgsOutput));
         } catch(ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
             System.out.println("Failed to bind output Indexes");
             e.printStackTrace();
         }
-        buffers[output_index] = output_buffer;
+        buffers[outputIndex] = outputBuffer;
     }
 } 
