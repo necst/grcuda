@@ -28,11 +28,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
-#include "benchmark.cuh"
+#include "../benchmark.cuh"
 
-class Benchmark6 : public Benchmark {
+class Benchmark8 : public Benchmark {
    public:
-    Benchmark6(Options &options) : Benchmark(options) {}
+    Benchmark8(Options &options) : Benchmark(options) {}
     void alloc();
     void init();
     void reset();
@@ -44,18 +44,18 @@ class Benchmark6 : public Benchmark {
     std::string print_result(bool short_form = false);
 
    private:
-    int num_features = 200;
-    int num_classes = 10;
-    int *x;
-    float *z;
-    float *nb_feat_log_prob, *nb_class_log_prior, *ridge_coeff, *ridge_intercept, *nb_amax, *nb_l, *r1, *r2;
-    int *r;
-    cudaStream_t s1, s2;
+    int kernel_small_diameter = 3;
+    int kernel_large_diameter = 5;
+    int kernel_unsharpen_diameter = 3;
+
+    float *image, *image2, *image3, *image_unsharpen, *mask_small, *mask_large, *mask_unsharpen, *blurred_small, *blurred_large, *blurred_unsharpen;
+    float *kernel_small, *kernel_large, *kernel_unsharpen, *maximum, *minimum;
+    cudaStream_t s1, s2, s3, s4, s5;
     cudaGraph_t graph;
     cudaGraphExec_t graphExec;
 
     std::vector<cudaGraphNode_t> nodeDependencies;
-    cudaGraphNode_t kernel_1, kernel_2, kernel_3, kernel_4, kernel_5, kernel_6, kernel_7, kernel_8, kernel_9, kernel_10;
+    cudaGraphNode_t kernel_1, kernel_2, kernel_3, kernel_4, kernel_5, kernel_6, kernel_7, kernel_8, kernel_9, kernel_10, kernel_11;
     cudaKernelNodeParams kernel_1_params;
     cudaKernelNodeParams kernel_2_params;
     cudaKernelNodeParams kernel_3_params;
@@ -66,4 +66,21 @@ class Benchmark6 : public Benchmark {
     cudaKernelNodeParams kernel_8_params;
     cudaKernelNodeParams kernel_9_params;
     cudaKernelNodeParams kernel_10_params;
+    cudaKernelNodeParams kernel_11_params;
+
+    inline void gaussian_kernel(float *kernel, int diameter, float sigma) {
+        int mean = diameter / 2;
+        float sum_tmp = 0;
+        for (int i = 0; i < diameter; i++) {
+            for (int j = 0; j < diameter; j++) {
+                kernel[i * diameter + j] = exp(-0.5 * ((i - mean) * (i - mean) + (j - mean) * (j - mean)) / (sigma * sigma));
+                sum_tmp += kernel[i * diameter + j];
+            }
+        }
+        for (int i = 0; i < diameter; i++) {
+            for (int j = 0; j < diameter; j++) {
+                kernel[i * diameter + j] /= sum_tmp;
+            }
+        }
+    }
 };

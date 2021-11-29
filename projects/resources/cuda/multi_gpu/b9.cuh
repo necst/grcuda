@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, NECSTLab, Politecnico di Milano. All rights reserved.
+// Copyright (c) 2021, NECSTLab, Politecnico di Milano. All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
@@ -28,34 +28,30 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
-#include "benchmark.cuh"
+#include "../benchmark.cuh"
 
-class Benchmark5 : public Benchmark {
+class Benchmark9M : public Benchmark {
    public:
-    Benchmark5(Options &options) : Benchmark(options) {
-        graphs = std::vector<cudaGraph_t>(M);
-        graphExec = std::vector<cudaGraphExec_t>(M);
-        kernels = std::vector<cudaGraphNode_t>(M);
-        kernel_params = std::vector<cudaKernelNodeParams>(M);
-    }
+    Benchmark9M(Options &options) : Benchmark(options) {}
     void alloc();
     void init();
     void reset();
     void execute_sync(int iter);
     void execute_async(int iter);
-    void execute_cudagraph(int iter);
-    void execute_cudagraph_manual(int iter);
-    void execute_cudagraph_single(int iter);
     std::string print_result(bool short_form = false);
 
    private:
-    int M = 10;
-    double **x, **y, *tmp_x;
-    cudaStream_t *s;
-    std::vector<cudaGraph_t> graphs;
-    std::vector<cudaGraphExec_t> graphExec;
+    int S;
 
-    std::vector<cudaGraphNode_t> nodeDependencies;
-    std::vector<cudaGraphNode_t> kernels;
-    std::vector<cudaKernelNodeParams> kernel_params;
+    float **A;
+    float *x, *y, *r, *p, *b;
+    
+    float *t1, *t2;    
+    // Other implementation;
+    // float **t1, **t2;
+    // float t1_tot = 0;
+    // float t2_tot = 0;
+
+    cudaStream_t s1, s2;
+    cudaStream_t *s;
 };

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, NECSTLab, Politecnico di Milano. All rights reserved.
+// Copyright (c) 2021, NECSTLab, Politecnico di Milano. All rights reserved.
 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
@@ -28,30 +28,28 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
-#include "benchmark.cuh"
+#include "../benchmark.cuh"
 
-class Benchmark1 : public Benchmark {
+class Benchmark11M : public Benchmark {
    public:
-    Benchmark1(Options &options) : Benchmark(options) {}
+    Benchmark11M(Options &options) : Benchmark(options) {
+        P = num_partitions;
+    }
     void alloc();
     void init();
     void reset();
     void execute_sync(int iter);
     void execute_async(int iter);
-    void execute_cudagraph(int iter);
-    void execute_cudagraph_manual(int iter);
-    void execute_cudagraph_single(int iter);
-    void prefetch(cudaStream_t &s1, cudaStream_t &s2);
     std::string print_result(bool short_form = false);
 
    private:
-    float *x, *y, *x1, *y1, *res;
-    cudaStream_t s1, s2;
-    cudaGraph_t graph;
-    cudaGraphExec_t graphExec;
-    std::vector<cudaGraphNode_t> nodeDependencies;
-    cudaGraphNode_t kernel_1, kernel_2, kernel_3;
-    cudaKernelNodeParams kernel_1_params;
-    cudaKernelNodeParams kernel_2_params;
-    cudaKernelNodeParams kernel_3_params;
+    int M;
+    int S;
+    int P;
+
+    float **x;
+    float *y, *z;
+    float *x_cpu;
+
+    cudaStream_t *s;
 };
