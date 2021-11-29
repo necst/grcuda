@@ -1,3 +1,7 @@
+# 2021-11-29
+
+* Removed deprecation warning for Truffle's ArityException. 
+
 # 2021-11-17
 
 * Added the support of precise timing of kernels, for debugging and complex scheduling policies
