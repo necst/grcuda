@@ -135,7 +135,7 @@ class Benchmark(ABC):
         else:
             return function(*args)
 
-    def run(self, num_iter: int,size: int, numGPU: int,
+    def run(self, num_iter: int,size: int, number_of_gpus: int,
                 block_size: dict, exec_policy: str,
                 dep_policy: str, nstr_policy: str, pstr_policy: str,
                 heuristic: str, mem_advise: str, prefetch: str,
@@ -150,24 +150,25 @@ class Benchmark(ABC):
         if number_of_blocks:
             self.num_blocks = number_of_blocks
 
-        self.benchmark.start_new_benchmark(name=self.name,
-                                          size=size,
-                                          numGPU=numGPU,
-                                          block_size=block_size,
-                                          num_blocks=number_of_blocks,
-                                          exec_policy=exec_policy,
-                                          dep_policy=dep_policy,
-                                          nstr_policy=nstr_policy,
-                                          pstr_policy=pstr_policy,
-                                          heuristic=heuristic,
-                                          mem_advise=mem_advise,
-                                          prefetch=prefetch,
-                                          str_attach=str_attach,
-                                          timing=timing,
-                                          realloc=realloc,
-                                          reinit=reinit,
-                                          iteration=num_iter,
-                                          time_phases=time_phases)
+        self.benchmark.start_new_benchmark(
+                                        name=self.name,
+                                        size=size,
+                                        number_of_gpus=number_of_gpus,
+                                        block_size=block_size,
+                                        num_blocks=number_of_blocks,
+                                        exec_policy=exec_policy,
+                                        dep_policy=dep_policy,
+                                        nstr_policy=nstr_policy,
+                                        pstr_policy=pstr_policy,
+                                        heuristic=heuristic,
+                                        mem_advise=mem_advise,
+                                        prefetch=prefetch,
+                                        str_attach=str_attach,
+                                        timing=timing,
+                                        realloc=realloc,
+                                        reinit=reinit,
+                                        iteration=num_iter,
+                                        time_phases=time_phases)
         self.current_iter = num_iter
         self.time_phases = time_phases
         self._block_size = block_size

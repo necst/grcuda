@@ -79,7 +79,7 @@ class BenchmarkResult:
         file_name = f"{output_date}_{self.num_iterations}.json"
         return os.path.join(self.DEFAULT_RES_FOLDER, file_name)
 
-    def start_new_benchmark(self, name: str, size: int, numGPU: int,
+    def start_new_benchmark(self, name: str, size: int, number_of_gpus: int,
                             block_size: dict, num_blocks: int, exec_policy: str,
                             dep_policy: str, nstr_policy: str, pstr_policy: str,
                             heuristic: str, mem_advise: str, prefetch: str,
@@ -87,12 +87,12 @@ class BenchmarkResult:
                             time_phases: bool, realloc: bool, reinit: bool) -> None:
         """
         Benchmark results are stored in a nested dictionary with the following structure.
-        self.results["benchmarks"]->{name}->{size}->{numGPU}->{num_blocks}->{exec_policy}->{dep_policy}->
+        self.results["benchmarks"]->{name}->{size}->{number_of_gpus}->{num_blocks}->{exec_policy}->{dep_policy}->
         {nstr_policy}->{pstr_policy}->{heuristic}->{prefetch}->{str_attach}->{timing}->{realloc}->{reinit}->{block_size}_{actual result}
 
         :param name: name of the benchmark
         :param size: size of the input data
-        :param numGPU: number of GPU used in the benchmark
+        :param number_of_gpus: number of GPU used in the benchmark
         :param num_blocks: number of GPU thread blocks 
         :param exec_policy: current execution policy used in the benchmark
         :param dep_policy: current dependency policy used in the benchmark
@@ -123,11 +123,11 @@ class BenchmarkResult:
             dict_nGPU = {}
             dict_size[size] = dict_nGPU
         # 3. Number of GPUs;
-        if numGPU in dict_nGPU:
-            dict_nblock = dict_nGPU[numGPU]
+        if number_of_gpus in dict_nGPU:
+            dict_nblock = dict_nGPU[number_of_gpus]
         else:
             dict_nblock = {}
-            dict_nGPU[numGPU] = dict_nblock
+            dict_nGPU[number_of_gpus] = dict_nblock
         # 4. Number of blocks; 
         if num_blocks in dict_nblock:
             dict_exeP = dict_nblock[num_blocks]
@@ -203,7 +203,7 @@ class BenchmarkResult:
 
         if self.debug:
             BenchmarkResult.log_message(
-                f"starting benchmark={name}, iter={iteration + 1}/{self.num_iterations}, size={size}, numGPU={numGPU}, num_blocks={num_blocks}, "
+                f"starting benchmark={name}, iter={iteration + 1}/{self.num_iterations}, size={size}, number_of_gpus={number_of_gpus}, num_blocks={num_blocks}, "
                 f"exec_policy={exec_policy}, dep_policy={dep_policy}, nstr_policy={nstr_policy}, pstr_policy={pstr_policy}, "
                 f"heuristic={heuristic}, realloc={realloc}, reinit={reinit}, prefetch={prefetch}, str_attach={str_attach}, "
                 f"block_size={BenchmarkResult.create_block_size_key(block_size)}, timing={timing}, time_phases={time_phases}")
@@ -253,7 +253,7 @@ class BenchmarkResult:
         if self.debug and "name" in phase and "time_sec" in phase:
             BenchmarkResult.log_message(f"\t\t{phase['name']}: {phase['time_sec']:.4f} sec")
 
-    def print_current_summary(self, name: str, size: int, numGPU: int,
+    def print_current_summary(self, name: str, size: int, number_of_gpus: int,
                             num_blocks: int, exec_policy: str,
                             dep_policy: str, nstr_policy: str, pstr_policy: str,
                             heuristic: str, mem_advise: str, prefetch: str,
@@ -264,7 +264,7 @@ class BenchmarkResult:
 
         :param name: name of the benchmark
         :param size: size of the input data
-        :param numGPU: number of GPU used in the benchmark
+        :param number_of_gpus: number of GPU used in the benchmark
         :param num_blocks: number of GPU thread blocks 
         :param exec_policy: current execution policy used in the benchmark
         :param dep_policy: current dependency policy used in the benchmark
@@ -281,11 +281,11 @@ class BenchmarkResult:
         :param skip: skip the first N iterations when computing the summary statistics
         """
         try:
-            results_filtered = self._results["benchmarks"][name][size][numGPU][num_blocks][exec_policy][dep_policy][nstr_policy][pstr_policy][heuristic][prefetch][str_attach][timing][realloc][reinit][BenchmarkResult.create_block_size_key(block_size)]
+            results_filtered = self._results["benchmarks"][name][size][number_of_gpus][num_blocks][exec_policy][dep_policy][nstr_policy][pstr_policy][heuristic][prefetch][str_attach][timing][realloc][reinit][BenchmarkResult.create_block_size_key(block_size)]
         except KeyError as e:
             results_filtered = []
             BenchmarkResult.log_message(f"WARNING: benchmark with signature"
-                                        f" [{name}][{size}][{numGPU}][{num_blocks}][{exec_policy}][{dep_policy}][{nstr_policy}][{pstr_policy}][{heuristic}][{prefetch}][{str_attach}][{timing}][{realloc}][{reinit}][{BenchmarkResult.create_block_size_key(block_size)}] not found, exception {e}")
+                                        f" [{name}][{size}][{number_of_gpus}][{num_blocks}][{exec_policy}][{dep_policy}][{nstr_policy}][{pstr_policy}][{heuristic}][{prefetch}][{str_attach}][{timing}][{realloc}][{reinit}][{BenchmarkResult.create_block_size_key(block_size)}] not found, exception {e}")
         # Retrieve execution times;
         exec_times = [x["total_time_sec"] for x in results_filtered][skip:]
         mean_time = np.mean(exec_times) if exec_times else np.nan
@@ -295,7 +295,7 @@ class BenchmarkResult:
         comp_mean_time = np.mean(comp_exec_times) if comp_exec_times else np.nan
         comp_std_time = np.std(comp_exec_times) if comp_exec_times else np.nan
 
-        BenchmarkResult.log_message(f"summary of benchmark={name}, size={size}, numGPU={numGPU}, " +
+        BenchmarkResult.log_message(f"summary of benchmark={name}, size={size}, number_of_gpus={number_of_gpus}, " +
                                     f" num_blocks={num_blocks}, exec_policy={exec_policy}, dep_policy={dep_policy}, " +
                                     f" nstr_policy={nstr_policy}, pstr_policy={pstr_policy}, heuristic={heuristic}, " + 
                                     f" prefetch={prefetch}, str_attach={str_attach}, timing={timing}, " +

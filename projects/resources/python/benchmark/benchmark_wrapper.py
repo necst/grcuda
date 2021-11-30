@@ -50,13 +50,12 @@ HEAP_SIZE = 170 # 2 x V100
 # Benchmark settings;
 benchmarks = [
     # # Single GPU;
-    # "b1",
-    # "b5",
-    # "b6",
-    # "b7",
-    # "b8",
-    # "b10",
-    # "b11",
+    "b1",
+    "b5",
+    "b6",
+    "b7",
+    "b8",
+    "b10",
     # Multi GPU;
     "b1m",
     "b5m",
@@ -73,7 +72,6 @@ benchmarks = [
 #     "b7": [4000],#[4_000_000, 7_000_000, 10_000_000, 15_000_000, 20_000_000], 
 #     "b8": [800],#[1600, 2400, 3200, 4000, 4800],
 #     "b10": [300],#[3000, 4000, 5000, 6000, 7000],
-#     "b11": [1000],
 # }
 
 # GTX 1660 Super
@@ -105,7 +103,6 @@ num_elem = {
     "b7": [25_000_000, 50_000_000, 80_000_000, 130_000_000, 180_000_000], 
     "b8": [6400, 10000, 13000, 16000, 20000],
     "b10": [12000, 16000, 18000, 20000, 22000], 
-    "b11": [20000, 30000, 40000, 50000, 60000],
     # Multi GPU;
     "b1m": [160_000_000, 250_000_000, 500_000_000, 800_000_000, 950_000_000],
     "b5m": [10_000_000, 16_000_000, 21_000_000, 28_000_000, 35_000_000],  # out of core 50_000_000, 80_000_000, 95_000_000]
@@ -113,16 +110,15 @@ num_elem = {
     "b9m": [20000, 30000, 40000, 50000, 60000],
     "b11m": [20000, 30000, 40000, 50000, 60000],
 }
+num_elem = {k: [int(v[0] / 100)] for (k, v) in num_elem.items()}
 
-# cuda_exec_policies = ["default", "sync", "cudagraph", "cudagraphmanual", "cudagraphsingle"] single gpu
-# multi gpu
-cuda_exec_policies = ["sync", "default"]
+cuda_exec_policies = ["sync", "async"], # "cudagraph", "cudagraphmanual", "cudagraphsingle"]
 
-exec_policies = ["default"] #, "sync"]
+exec_policies = ["async"] #, "sync"]
 
-dependency_policies = ["with_const"] #, "default"]
+dependency_policies = ["with-const"] #, "default"]
 
-new_stream_policies = ["always_new"] #, "fifo"]
+new_stream_policies = ["always-new"] #, "fifo"]
 
 parent_stream_policies = ["disjoint"] # "data_aware", "disjoint_data_aware", "stream_aware" to be tested, "default" not to be tested
 
@@ -130,13 +126,13 @@ choose_device_heuristics = ["data_locality"] # "data_locality", "data_locality_n
 
 memAdvisers = ["none"] #, "read_mostly", "preferred"] # not to be tested for now
 
-prefetches = ["none"] #, "default", "sync"]
+prefetches = ["false"] #, "true"]
 
 streamAttachs =  [False] #, True]
 
 timeComputes = [False] #, True]
 
-num_gpus = [1]#, 2]
+num_gpus = [1] #, 2]
 
 block_sizes1d_dict = {
     "b1": 32,
@@ -280,10 +276,10 @@ def execute_cuda_benchmark(benchmark, size, block_size, exec_policy, num_iter, d
 GRAALPYTHON_CMD = "graalpython --vm.XX:MaxHeapSize={}G --jvm --polyglot --experimental-options " \
                   "--grcuda.ExecutionPolicy={} --grcuda.DependencyPolicy={} --grcuda.RetrieveNewStreamPolicy={} " \
                   "--grcuda.NumberOfGPUs={} --grcuda.RetrieveParentStreamPolicy={} " \
-                  "--grcuda.ChooseDeviceHeuristic={} --grcuda.memAdviseOption={} --grcuda.InputPrefetch={} {} {} " \
-                  "benchmark_main.py -i {} -n {} -g {} --numGPU {} --reinit false --realloc false " \
-                  "-b {} --block_size_1d {} --block_size_2d {} --execP {} --depeP {} --new_stream {} "\
-                  "--parent_stream {} --heuristic {} --memAdviser {} --prefetch {} --no_cpu_validation {} {} {} {} -o {}"
+                  "--grcuda.DeviceSelectionHeuristic={} --grcuda.MemAdvisePolicy={} --grcuda.InputPrefetch={} {} {} " \
+                  "benchmark_main.py -i {} -n {} -g {} --number_of_gpus {} --reinit false --realloc false " \
+                  "-b {} --block_size_1d {} --block_size_2d {} --execution_policy {} --dependency_policy {} --new_stream {} "\
+                  "--parent_stream {} --heuristic {} --memory_advise_policy {} --prefetch {} --no_cpu_validation {} {} {} {} -o {}"
 
 def execute_grcuda_benchmark(benchmark, size, num_gpus, block_sizes, exec_policy, dependency_policy, new_stream_policy,
                       parent_stream_policy, choose_device_heuristic, memAdviser, prefetch, num_iter, debug, time_phases, streamAttach=False,
@@ -331,7 +327,7 @@ def execute_grcuda_benchmark(benchmark, size, num_gpus, block_sizes, exec_policy
                                            "--grcuda.ForceStreamAttach" if streamAttach else "", "--grcuda.TimeComputation" if timeCompute else "",
                                            num_iter, size, num_blocks, num_gpus, benchmark, b1d_size, b2d_size, exec_policy, dependency_policy,
                                            new_stream_policy, parent_stream_policy, choose_device_heuristic, memAdviser, prefetch,
-                                           "-d" if debug else "",  "-p" if time_phases else "", "--strAttach" if streamAttach else "", "--timing" if timeCompute else "", output_path)    
+                                           "-d" if debug else "",  "-p" if time_phases else "", "--force_stream_attach" if streamAttach else "", "--timing" if timeCompute else "", output_path)    
     print(benchmark_cmd)
     start = time.time()
     result = subprocess.run(benchmark_cmd,
