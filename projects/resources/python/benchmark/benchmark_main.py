@@ -30,16 +30,22 @@
 import argparse
 from distutils.util import strtobool
 
-from bench.bench_1 import Benchmark1
-from bench.bench_2 import Benchmark2
-from bench.bench_3 import Benchmark3
-from bench.bench_4 import Benchmark4
-from bench.bench_5 import Benchmark5
-from bench.bench_6 import Benchmark6
-from bench.bench_7 import Benchmark7
-from bench.bench_8 import Benchmark8
-from bench.bench_9 import Benchmark9
-from bench.bench_10 import Benchmark10
+from bench.single_gpu.bench_1 import Benchmark1
+from bench.single_gpu.bench_2 import Benchmark2
+from bench.single_gpu.bench_3 import Benchmark3
+from bench.single_gpu.bench_4 import Benchmark4
+from bench.single_gpu.bench_5 import Benchmark5
+from bench.single_gpu.bench_6 import Benchmark6
+from bench.single_gpu.bench_72 import Benchmark7
+from bench.single_gpu.bench_8 import Benchmark8
+from bench.single_gpu.bench_9 import Benchmark9
+from bench.single_gpu.bench_10 import Benchmark10
+from bench.single_gpu.bench_11 import Benchmark11
+from bench.multi_gpu.bench_1 import Benchmark1M
+from bench.multi_gpu.bench_5 import Benchmark5M
+from bench.multi_gpu.bench_6 import Benchmark6M
+from bench.multi_gpu.bench_9 import Benchmark9M
+from bench.multi_gpu.bench_11 import Benchmark11M
 from benchmark_result import BenchmarkResult
 
 ##############################
@@ -47,6 +53,7 @@ from benchmark_result import BenchmarkResult
 
 # Benchmark settings;
 benchmarks = {
+    # Single GPU;
     "b1": Benchmark1,
     "b2": Benchmark2,
     "b3": Benchmark3,
@@ -57,9 +64,17 @@ benchmarks = {
     "b8": Benchmark8,
     "b9": Benchmark9,
     "b10": Benchmark10,
+    "b11": Benchmark11,
+    # Multi GPU;
+    "b1m": Benchmark1M,
+    "b5m": Benchmark5M,
+    "b6m": Benchmark6M,
+    "b9m": Benchmark9M,
+    "b11m": Benchmark11M,
 }
 
 num_elem = {
+    # Single GPU;
     "b1": [100],
     "b2": [100],
     "b3": [100],
@@ -70,19 +85,34 @@ num_elem = {
     "b8": [100],
     "b9": [100],
     "b10": [100],
+    "b11": [100],
+    # Multi GPU;
+    "b1m": [100],
+    "b5m": [100],
+    "b6m": [100],
+    "b9m": [100],
+    "b11m": [100],
 }
 
 policies = {
-    "b1": ["async"],
-    "b2": ["async"],
-    "b3": ["async"],
-    "b4": ["async"],
-    "b5": ["async"],
-    "b6": ["async"],
-    "b7": ["async"],
-    "b8": ["async"],
-    "b9": ["async"],
-    "b10": ["async"],
+    # Single GPU;
+    "b1": ["default"],
+    "b2": ["default"],
+    "b3": ["default"],
+    "b4": ["default"],
+    "b5": ["default"],
+    "b6": ["default"],
+    "b7": ["default"],
+    "b8": ["default"],
+    "b9": ["default"],
+    "b10": ["default"],
+    "b11": ["default"],
+    # Multi GPU;
+    "b1m": ["default"],
+    "b5m": ["default"],
+    "b6m": ["default"],
+    "b9m": ["default"],
+    "b11m": ["default"],
 }
 
 ##############################

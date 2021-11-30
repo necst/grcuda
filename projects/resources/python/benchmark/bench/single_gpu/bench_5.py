@@ -115,7 +115,7 @@ class Benchmark5(Benchmark):
         self.cpu_result = 0
         self.block_size = DEFAULT_BLOCK_SIZE_1D
 
-        self.K = 10
+        self.K = 24
         self.x = [[]] * self.K
         self.x_tmp = None
         self.y = [[]] * self.K
