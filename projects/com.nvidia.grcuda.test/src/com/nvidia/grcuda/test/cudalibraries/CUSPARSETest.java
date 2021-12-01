@@ -38,7 +38,12 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+import com.oracle.truffle.api.TruffleLogger;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Test;
@@ -55,9 +60,9 @@ public class CUSPARSETest {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
-                        {ExecutionPolicyEnum.SYNC.getName(), ExecutionPolicyEnum.ASYNC.getName()},
-                        {true, false},
-                        {'S', 'C', 'D', 'Z'}
+                {ExecutionPolicyEnum.SYNC.getName(), ExecutionPolicyEnum.ASYNC.getName()},
+                {true, false},
+                {'S', 'C', 'D', 'Z'}
         }));
     }
 
@@ -92,8 +97,8 @@ public class CUSPARSETest {
     @Test
     public void TestSpMVCSR() {
         try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy",
-                        this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
-                                        "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
+                this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
+                "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
 
             final int numElements = 1000;
             final boolean isComplex = this.type == 'C' || this.type == 'Z';
@@ -143,23 +148,23 @@ public class CUSPARSETest {
 
             // order of the arguments should be the following
             cusparseSpMV.execute(
-                            CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
-                            alpha,
-                            numElements,
-                            numElements,
-                            numElements,
-                            rowPtr,
-                            colIdx,
-                            nnzVec,
-                            CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I.ordinal(),
-                            CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
-                            cudaDataType,
-                            dnVec,
-                            cudaDataType,
-                            beta,
-                            outVec,
-                            CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
-                            CUSPARSESpMVMatrixType.SPMV_MATRIX_TYPE_CSR.ordinal());
+                    CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
+                    alpha,
+                    numElements,
+                    numElements,
+                    numElements,
+                    rowPtr,
+                    colIdx,
+                    nnzVec,
+                    CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I.ordinal(),
+                    CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
+                    cudaDataType,
+                    dnVec,
+                    cudaDataType,
+                    beta,
+                    outVec,
+                    CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
+                    CUSPARSESpMVMatrixType.SPMV_MATRIX_TYPE_CSR.ordinal());
 
             for (int i = 0; i < numElements; ++i) {
                 for (int j = 0; j < complexScaleSize; ++j) {
@@ -181,7 +186,7 @@ public class CUSPARSETest {
     @Test
     public void TestSpMVCOO() {
         try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
-                        "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
+                "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
 
             final int numElements = 1000;
             final boolean isComplex = this.type == 'C' || this.type == 'Z';
@@ -230,27 +235,27 @@ public class CUSPARSETest {
 
             // order of the arguments should be the following
             cusparseSpMV.execute(
-                            CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
-                            alpha,
-                            numElements,
-                            numElements,
-                            numElements,
-                            coordX,
-                            coordY,
-                            nnzVec,
-                            CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I.ordinal(),
-                            CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
-                            cudaDataType,
-                            dnVec,
-                            cudaDataType,
-                            beta,
-                            outVec,
-                            CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
-                            CUSPARSESpMVMatrixType.SPMV_MATRIX_TYPE_COO.ordinal());
+                    CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
+                    alpha,
+                    numElements,
+                    numElements,
+                    numElements,
+                    coordX,
+                    coordY,
+                    nnzVec,
+                    CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I.ordinal(),
+                    CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
+                    cudaDataType,
+                    dnVec,
+                    cudaDataType,
+                    beta,
+                    outVec,
+                    CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
+                    CUSPARSESpMVMatrixType.SPMV_MATRIX_TYPE_COO.ordinal());
 
 
             for (int i = 0; i < numElements; ++i) {
-                assertEquals(edgeValue, outVec.getArrayElement(i * complexScaleSize).asFloat(), 1e-3f);
+                assertEquals(edgeValue, outVec.getArrayElement(i * complexScaleSize).asFloat(), 1e-5f);
             }
         }
     }
@@ -262,11 +267,13 @@ public class CUSPARSETest {
     @Test
     public void TestTGeMVI() {
         try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy",
-                        this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
-                                        "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
-
-            System.out.println("testing type" + this.type + " for TGemvi");
-            final int numElements = 10;
+                this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
+                "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
+            if (this.type != 'S') {
+                Logger.getGlobal().warning("TGeMVI tests with T=" + this.type + ", ExecutionPolicy=" + this.policy + ", InputPrefetch=" + this.inputPrefetch + " are not supported.");
+                return;
+            }
+            final int numElements = 1000;
             final boolean isComplex = this.type == 'C' || this.type == 'Z';
             final boolean isDouble = this.type == 'D' || this.type == 'Z';
             int complexScaleSize = isComplex ? 2 : 1;
@@ -281,7 +288,7 @@ public class CUSPARSETest {
             int rows = numElements; // m
             int cols = numElements; // n
             int lda = numElements; // leading dim of A
-            int nnz = 1; // number of nnz
+            int nnz = 10; // number of nnz
             Value spVec = cu.invokeMember("DeviceArray", grcudaDataType, nnz * complexScaleSize); // x
             Value outVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize); // output
             Value matA = cu.invokeMember("DeviceArray", grcudaDataType, numElements * numElements * complexScaleSize);
@@ -296,13 +303,21 @@ public class CUSPARSETest {
 
             Value xInd = cu.invokeMember("DeviceArray", "int", nnz); // must be the same
 
-            // initialization of outVec not necessary
-
             float edgeValue = (float) Math.random();
+            // Do this since there's an high chance that,
+            // for small enough numElements
+            // two integers might come up equal
+            List<Integer> indices = ThreadLocalRandom
+                    .current()
+                    .ints(0, numElements)
+                    .distinct()
+                    .limit(nnz)
+                    .boxed()
+                    .collect(Collectors.toList());
 
             // fill sparse vector and related arguments
             for (int i = 0; i < nnz; ++i) {
-                int idxNnz = (int) (Math.random() * numElements); // to make sure indices are valid
+                int idxNnz = indices.get(i);
                 xInd.setArrayElement(i, idxNnz); // set indices vector
                 for (int j = 0; j < complexScaleSize; ++j) {
                     spVec.setArrayElement(i * complexScaleSize + j, j == 0 ? 1.0 : 0.0);
@@ -323,19 +338,19 @@ public class CUSPARSETest {
             // order of the arguments should be the following
             // transA, m, n, alpha, A, lda, nnz, x, xInd, beta, y, idxBases
             cusparseTgemvi.execute(
-                            CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
-                            rows * complexScaleSize,
-                            cols * complexScaleSize,
-                            alpha,
-                            matA,
-                            lda * complexScaleSize,
-                            nnz,
-                            spVec,
-                            xInd,
-                            beta,
-                            outVec,
-                            CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
-                            this.type);
+                    CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
+                    rows,
+                    cols,
+                    alpha,
+                    matA,
+                    lda * complexScaleSize,
+                    nnz,
+                    spVec,
+                    xInd,
+                    beta,
+                    outVec,
+                    CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
+                    this.type);
 
             Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
             sync.execute();
@@ -345,13 +360,13 @@ public class CUSPARSETest {
             for (int i = 0; i < numElements; i++) {
                 for (int j = 0; j < complexScaleSize; ++j) {
                     if (isDouble) {
-//                        assertEquals(j == 0 ? expectedResult : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-3f);
-                         System.out.println("out_vec[" + (i * complexScaleSize + j) + "] -> " +
-                         outVec.getArrayElement(i * complexScaleSize + j).asDouble());
+                        assertEquals(j == 0 ? expectedResult : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-5f);
+//                         System.out.println("out_vec[" + (i * complexScaleSize + j) + "] -> " +
+//                         outVec.getArrayElement(i * complexScaleSize + j).asDouble());
                     } else {
-                        assertEquals(j == 0 ? expectedResult : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-3f);
-                         System.out.println("out_vec[" + (i * complexScaleSize + j) + "] -> " +
-                         outVec.getArrayElement(i * complexScaleSize + j).asFloat());
+                        assertEquals(j == 0 ? expectedResult : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-5f);
+//                         System.out.println("out_vec[" + (i * complexScaleSize + j) + "] -> " +
+//                         outVec.getArrayElement(i * complexScaleSize + j).asFloat());
 
                     }
                 }

@@ -255,16 +255,12 @@ public class CUSPARSERegistry {
 
                         Object[] formattedArguments = proxy.formatArguments(arguments, cusparseHandle);
 
-
                         List<ComputationArgumentWithValue> computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, cusparseHandle);
 
                         Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
                                         computationArgumentsWithValue).schedule();
 
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
-
-                        System.out.println(result);
-
                         return result;
 
                     } catch (InteropException e) {
@@ -328,7 +324,7 @@ public class CUSPARSERegistry {
     static {
 
         for (char type : new char[]{'S', 'D', 'C', 'Z'}) {
-            final ExternalFunctionFactory CUSPARSE_CUSPARSEGEMVI = new ExternalFunctionFactory("cusparse" + type+ "gemvi", "cusparseSgemvi", "(sint64, sint32, sint32, sint32," +
+            final ExternalFunctionFactory CUSPARSE_CUSPARSEGEMVI = new ExternalFunctionFactory("cusparse" + type + "gemvi", "cusparseSgemvi", "(sint64, sint32, sint32, sint32," +
                     "pointer, pointer, sint32, sint32, pointer, pointer, pointer, pointer, sint32, pointer): sint32");
             functions.add(new CUSPARSEProxyGemvi(CUSPARSE_CUSPARSEGEMVI));
         }

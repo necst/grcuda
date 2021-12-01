@@ -84,18 +84,22 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
             switch (type) {
                 case 'S': {
                     Object resultBufferSize = INTEROP.execute(cusparseSgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
+                    CUSPARSERegistry.checkCUSPARSEReturnCode(resultBufferSize, cusparseSgemvi_bufferSizeFunction.toString());
                     break;
                 }
                 case 'D': {
                     Object resultBufferSize = INTEROP.execute(cusparseDgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
+                    CUSPARSERegistry.checkCUSPARSEReturnCode(resultBufferSize, cusparseDgemvi_bufferSizeFunction.toString());
                     break;
                 }
                 case 'C': {
                     Object resultBufferSize = INTEROP.execute(cusparseCgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
+                    CUSPARSERegistry.checkCUSPARSEReturnCode(resultBufferSize, cusparseCgemvi_bufferSizeFunction.toString());
                     break;
                 }
                 case 'Z': {
                     Object resultBufferSize = INTEROP.execute(cusparseZgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
+                    CUSPARSERegistry.checkCUSPARSEReturnCode(resultBufferSize, cusparseZgemvi_bufferSizeFunction.toString());
                     break;
                 }
             }
