@@ -34,6 +34,7 @@
  */
 package com.nvidia.grcuda.cudalibraries.tensorrt;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -50,6 +51,8 @@ import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
+import com.nvidia.grcuda.runtime.computation.ComputationArgument;
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.runtime.stream.LibrarySetStreamFunction;
 import com.nvidia.grcuda.runtime.stream.TensorRTSetStreamFunction;
 import com.oracle.truffle.api.CompilerAsserts;
@@ -281,7 +284,7 @@ public class TensorRTRegistry {
             }
         }
 
-        tensorRTLibrarySetStreamFunction = new TensorRTSetStreamFunction((Function) tensorRTEnqueueNFI, (Function) tensorRTCreateExecutionContextNFI, (Function) tensorRTGetBindingIndexesNFI);
+        tensorRTLibrarySetStreamFunction = new TensorRTSetStreamFunction((Function) tensorRTEnqueueNFI);
 
     }
 
@@ -289,7 +292,7 @@ public class TensorRTRegistry {
         CompilerAsserts.neverPartOfCompilation();
         if (runtime != null) {
             try {
-                Object result = InteropLibrary.getFactory().getUncached().execute(tensorRTDestroyInferRuntime, cublasHandle);
+                Object result = InteropLibrary.getFactory().getUncached().execute(tensorRTDestroyInferRuntime);
                 checkTRTReturnCode(result, TensorRTFunctionNFI.TRT_DESTROY_INFER_RUNTIME.factory.getName());
                 runtime = null;
             } catch (InteropException e) {
@@ -363,7 +366,7 @@ public class TensorRTRegistry {
                         new ExternalFunctionFactory("getMaxBatchSize", "getMaxBatchSize", "(sint32): sint32"),
                         false),
         TRT_ENQUEUE(
-                        new ExternalFunctionFactory("enqueue", "enqueue", "(sint32, sint32, pointer, pointer, pointer): sint32"),
+                        new ExternalFunctionFactory("enqueue", "enqueue", "(sint32, pointer, pointer, pointer): sint32"),
                         false),
         TRT_DESTROY_ENGINE(
                         new ExternalFunctionFactory("destroyEngine", "destroyEngine", "(sint32): sint32"),
@@ -389,40 +392,27 @@ public class TensorRTRegistry {
 
         private final ExternalFunctionFactory factory;
         private Function nfiFunction;
-        private TensorRTSetStreamFunction tensorRTSetStreamFunction;
 
         TRTFunction(ExternalFunctionFactory factory) {
             super(factory.getName());
             this.factory = factory;
         }
 
-        void setSetStreamFunction(TensorRTSetStreamFunction tensorRTSetStreamFunction) {
-            this.tensorRTSetStreamFunction = tensorRTSetStreamFunction;
-        }
-        public Function registerTensorRTFunction(){
-            final Function wrapperFunction = new CUDALibraryFunction(factory.getName(), factory.getNFISignature()) {
-                @Override
-                @TruffleBoundary
-                public Object call(Object[] arguments) {
-                    try {
-                        if (nfiFunction == null) {
-                            // load function symbol lazily
-                            CompilerDirectives.transferToInterpreterAndInvalidate();
-                            nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
-                        }
-                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, tensorRTLibrarySetStreamFunction,
-                                this.createComputationArgumentWithValueList(arguments)).schedule();
-                        checkTRTReturnCode(result, nfiFunction.getName());
-                        return result;
-
-                        return INTEROP.execute(nfiFunction, arguments);
-                    } catch (InteropException e) {
-                        CompilerDirectives.transferToInterpreter();
-                        throw new RuntimeException(e);
-                    }
+        @Override
+        public Object call(Object[] arguments) {
+            try {
+                if (nfiFunction == null) {
+                    // load function symbol lazily
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                 }
-            };
-            return wrapperFunction;
+                Object result = INTEROP.execute(nfiFunction, arguments);
+                checkTRTReturnCode(result, nfiFunction.getName());
+                return result;
+            } catch (InteropException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RuntimeException(e);
+            }
         }
 
     }
@@ -430,15 +420,10 @@ public class TensorRTRegistry {
     class ErrorCheckedTRTFunction extends Function {
         private final ExternalFunctionFactory factory;
         private Function nfiFunction;
-        private TensorRTSetStreamFunction tensorRTSetStreamFunction;
 
         ErrorCheckedTRTFunction(ExternalFunctionFactory factory) {
             super(factory.getName());
             this.factory = factory;
-        }
-
-        void setSetStreamFunction(TensorRTSetStreamFunction tensorRTSetStreamFunction){
-            this.tensorRTSetStreamFunction = tensorRTSetStreamFunction;
         }
 
         @Override
@@ -463,50 +448,61 @@ public class TensorRTRegistry {
     class EnqueueFunction extends Function {
         private final ExternalFunctionFactory factory;
         private Function nfiFunction;
+        private TensorRTSetStreamFunction tensorRTSetStreamFunction;
 
         protected EnqueueFunction(ExternalFunctionFactory factory) {
             super(factory.getName());
             this.factory = factory;
         }
 
-        @Override
-        protected Object call(Object[] arguments) throws ArityException, UnsupportedTypeException, UnsupportedMessageException {
-            checkArgumentLength(arguments, 3);
-            int engineHandle = expectInt(arguments[0]);
-            int batchSize = expectInt(arguments[1]);
+        public void setTensorRTSetStreamFunction (TensorRTSetStreamFunction tensorRTSetStreamFunction){
+            this.tensorRTSetStreamFunction = tensorRTSetStreamFunction;
+        }
 
-            // extract pointers from buffers array argument
-            Object bufferArg = arguments[2];
-            if (!INTEROP.hasArrayElements(bufferArg)) {
-                throw UnsupportedMessageException.create();
-            }
-            int numBuffers = (int) INTEROP.getArraySize(bufferArg);
-            try (UnsafeHelper.PointerArray pointerArray = UnsafeHelper.createPointerArray(numBuffers)) {
-                if (nfiFunction == null) {
-                    // load function symbol lazily
-                    CompilerDirectives.transferToInterpreterAndInvalidate();
-                    nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
-                }
-                for (int i = 0; i < numBuffers; ++i) {
-                    try {
-                        Object buffer = INTEROP.readArrayElement(bufferArg, i);
-                        if (!(buffer instanceof DeviceArray) && !(buffer instanceof GPUPointer)) {
-                            UnsupportedTypeException.create(new Object[]{buffer});
+        public Function registerTensorRTEnqueueFunction(){
+            final Function wrapperFunction = new CUDALibraryFunction(factory.getName(), factory.getNFISignature()) {
+                @Override
+                @TruffleBoundary
+                protected Object call(Object[] arguments) throws ArityException, UnsupportedTypeException, UnsupportedMessageException {
+                    checkArgumentLength(arguments, 3);
+                    int engineHandle = expectInt(arguments[0]);
+                    int batchSize = expectInt(arguments[1]);
+
+                    // extract pointers from buffers array argument
+                    Object bufferArg = arguments[2];
+                    if (!INTEROP.hasArrayElements(bufferArg)) {
+                        throw UnsupportedMessageException.create();
+                    }
+                    int numBuffers = (int) INTEROP.getArraySize(bufferArg);
+                    try (UnsafeHelper.PointerArray pointerArray = UnsafeHelper.createPointerArray(numBuffers)) {
+                        if (nfiFunction == null) {
+                            // load function symbol lazily
+                            CompilerDirectives.transferToInterpreterAndInvalidate();
+                            nfiFunction = factory.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
-                        pointerArray.setValueAt(i, INTEROP.asPointer(buffer));
-                    } catch (InvalidArrayIndexException e) {
-                        InvalidArrayIndexException.create(i);
+                        for (int i = 0; i < numBuffers; ++i) {
+                            try {
+                                Object buffer = INTEROP.readArrayElement(bufferArg, i);
+                                if (!(buffer instanceof DeviceArray) && !(buffer instanceof GPUPointer)) {
+                                    UnsupportedTypeException.create(new Object[]{buffer});
+                                }
+                                pointerArray.setValueAt(i, INTEROP.asPointer(buffer));
+                            } catch (InvalidArrayIndexException e) {
+                                InvalidArrayIndexException.create(i);
+                            }
+                        }
+                        long stream = 0;
+                        long eventConsumed = 0;
+                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, tensorRTSetStreamFunction, this.createComputationArgumentWithoutHandle(arguments)).schedule();
+                        if (!INTEROP.fitsInInt(result)) {
+                            CompilerDirectives.transferToInterpreter();
+                            throw new RuntimeException("result of 'enqueue' is not an int");
+                        }
+                        return INTEROP.asInt(result) == 1;
                     }
                 }
-                long stream = 0;
-                long eventConsumed = 0;
-                Object result = INTEROP.execute(nfiFunction, engineHandle, batchSize, pointerArray.getAddress(), stream, eventConsumed);
-                if (!INTEROP.fitsInInt(result)) {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RuntimeException("result of 'enqueue' is not an int");
-                }
-                return INTEROP.asInt(result) == 1;
-            }
+            };
+            return wrapperFunction;
         }
     }
 }
