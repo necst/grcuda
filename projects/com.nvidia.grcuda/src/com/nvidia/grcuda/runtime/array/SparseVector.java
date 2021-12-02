@@ -37,16 +37,17 @@ package com.nvidia.grcuda.runtime.array;
 
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.Type;
-import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayReadExecution;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayWriteExecution;
+import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Cached.Shared;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.InvalidArrayIndexException;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
@@ -54,23 +55,42 @@ import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
 @ExportLibrary(InteropLibrary.class)
-public class DeviceArray extends AbstractArray implements TruffleObject {
+public class SparseVector extends AbstractArray implements TruffleObject {
 
-    /** Total number of elements stored in the array. */
-    private final long numElements;
+
+
+    /**
+     * Values of non zero elements stored in the array.
+     */
+    private final DeviceArray nnz = null;
+
+    /**
+     * Indices of non
+     */
+    private final DeviceArray indices = null;
+
+    /**
+     * Number non zero elements stored in the array.
+     * */
+    private final long numNnz;
 
     /**
      * Total number of bytes allocated and used to store the array data (includes padding).
      */
     private final long sizeBytes;
 
+
     /** Mutable view onto the underlying memory buffer. */
     private final LittleEndianNativeArrayView nativeView;
 
-    public DeviceArray(AbstractGrCUDAExecutionContext grCUDAExecutionContext, long numElements, Type elementType) {
+    public SparseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray nnz, Type elementType, DeviceArray indices) {
         super(grCUDAExecutionContext, elementType);
-        this.numElements = numElements;
-        this.sizeBytes = numElements * elementType.getSizeBytes();
+        this.numNnz = nnz.getArraySize();
+        this.sizeBytes = numNnz * elementType.getSizeBytes() + indices.getSizeBytes();
+        System.arraycopy(nnz, 0, this.nnz, 0, (int) this.numNnz);
+//        this.nnz = (DeviceArray) nnz;
+        System.arraycopy(indices, 0, this.indices, 0, (int) this.numNnz);
+//        this.indices = (DeviceArray) indices;
         // Allocate the GPU memory;
         this.nativeView = allocateMemory();
         // Register the array in the GrCUDAExecutionContext;
@@ -117,7 +137,7 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
         if (arrayFreed) {
             return "DeviceArray(memory freed)";
         } else {
-            return "DeviceArray(elementType=" + elementType + ", numElements=" + numElements + ", nativeView=" + nativeView + ')';
+            return "DeviceArray(elementType=" + elementType + ", numNnz=" + numNnz + ", nativeView=" + nativeView + ')';
         }
     }
 
@@ -146,17 +166,17 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
             CompilerDirectives.transferToInterpreter();
             throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
         }
-        return numElements;
+        return numNnz * 2; // dim_values + dim_indices, which have the same dimension
     }
 
     @ExportMessage
     boolean isArrayElementReadable(long index) {
-        return !arrayFreed && index >= 0 && index < numElements;
+        return !arrayFreed && index >= 0 && index < numNnz;
     }
 
     @ExportMessage
     boolean isArrayElementModifiable(long index) {
-        return index >= 0 && index < numElements;
+        return index >= 0 && index < numNnz;
     }
 
     @SuppressWarnings("static-method")
@@ -172,18 +192,24 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
             CompilerDirectives.transferToInterpreter();
             throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
         }
-        if ((index < 0) || (index >= numElements)) {
+        if ((index < 0) || (index >= numNnz)) {
             CompilerDirectives.transferToInterpreter();
             throw InvalidArrayIndexException.create(index);
         }
         try {
             if (this.canSkipScheduling()) {
-                // Fast path, skip the DAG scheduling;
-                return AbstractArray.readArrayElementNative(this.nativeView, index, this.elementType, elementTypeProfile);
+                // check whether index corresponds to a value's position
+                Object element = 0;
+                for(int i = 0; i < numNnz; i++){
+                    if(((long) this.indices.readArrayElement(i)) == index){ // si fa così?
+                        element = AbstractArray.readArrayElementNative(this.nativeView, i, this.elementType, elementTypeProfile);
+                    }
+                }
+                return element;
             } else {
-                return new DeviceArrayReadExecution(this, index, elementTypeProfile).schedule();
+                return new DeviceArrayReadExecution(this.nnz, index, elementTypeProfile).schedule(); // controllare se ha senso
             }
-        } catch (UnsupportedTypeException e) {
+        } catch (UnsupportedTypeException | UnsupportedMessageException e) {
             e.printStackTrace();
             return null;
         }
@@ -202,21 +228,22 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
             CompilerDirectives.transferToInterpreter();
             throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
         }
-        if ((index < 0) || (index >= numElements)) {
+        if ((index < 0) || (index >= numNnz)) {
             CompilerDirectives.transferToInterpreter();
             throw InvalidArrayIndexException.create(index);
         }
         if (this.canSkipScheduling()) {
             // Fast path, skip the DAG scheduling;
-            AbstractArray.writeArrayElementNative(this.nativeView, index, value, elementType, valueLibrary, elementTypeProfile);
+            this.indices.writeArrayElement(numNnz, index, valueLibrary, elementTypeProfile); // vanno riordinati
+            this.nnz.writeArrayElement(numNnz, index, valueLibrary, elementTypeProfile); // forte l'assunzione su numNnz = nnz.size()
         } else {
-            new DeviceArrayWriteExecution(this, index, value, valueLibrary, elementTypeProfile).schedule();
+            new DeviceArrayWriteExecution(this.nnz, index, value, valueLibrary, elementTypeProfile).schedule(); // non si può fare, che ci inventiamo? idem per read
         }
     }
 
     @Override
     public void writeNativeView(long index, Object value, @CachedLibrary(limit = "3") InteropLibrary valueLibrary,
-                    @Cached.Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException {
+                    @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException {
         AbstractArray.writeArrayElementNative(this.nativeView, index, value, elementType, valueLibrary, elementTypeProfile);
     }
 }
