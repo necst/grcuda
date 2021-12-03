@@ -55,128 +55,114 @@ import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
 @ExportLibrary(InteropLibrary.class)
-public class SparseVector extends AbstractArray implements TruffleObject {
+public class SparseVector implements TruffleObject {
 
-
+    public enum SparseDimension{
+        SP_VEC_VALUES,
+        SP_VEC_INDICES;
+    }
 
     /**
      * Values of non zero elements stored in the array.
      */
-    private final DeviceArray nnz = null;
+    private final Type valueElementType;
+    private final Type indexElementType;
+    private boolean vectorFreed;
 
     /**
      * Indices of non
      */
-    private final DeviceArray indices = null;
+    private final DeviceArray indices;
+    private final DeviceArray nnz;
 
     /**
      * Number non zero elements stored in the array.
      * */
     private final long numNnz;
 
-    /**
-     * Total number of bytes allocated and used to store the array data (includes padding).
-     */
-    private final long sizeBytes;
-
-
-    /** Mutable view onto the underlying memory buffer. */
-    private final LittleEndianNativeArrayView nativeView;
-
-    public SparseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray nnz, Type elementType, DeviceArray indices) {
-        super(grCUDAExecutionContext, elementType);
-        this.numNnz = nnz.getArraySize();
-        this.sizeBytes = numNnz * elementType.getSizeBytes() + indices.getSizeBytes();
-        System.arraycopy(nnz, 0, this.nnz, 0, (int) this.numNnz);
-//        this.nnz = (DeviceArray) nnz;
-        System.arraycopy(indices, 0, this.indices, 0, (int) this.numNnz);
-//        this.indices = (DeviceArray) indices;
-        // Allocate the GPU memory;
-        this.nativeView = allocateMemory();
-        // Register the array in the GrCUDAExecutionContext;
-        this.registerArray();
+    public SparseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, long numNnz, Type valueElementType, Type indexElementType) {
+        this.numNnz = numNnz;
+        this.nnz = new DeviceArray(grCUDAExecutionContext, numNnz, valueElementType);
+        this.indices = new DeviceArray(grCUDAExecutionContext, numNnz, indexElementType);
+        this.valueElementType = valueElementType;
+        this.indexElementType = indexElementType;
     }
 
-    /**
-     * Allocate the GPU memory. It can be overridden to mock the array;
-     * 
-     * @return a reference to the GPU memory
-     */
-    protected LittleEndianNativeArrayView allocateMemory() {
-        return this.grCUDAExecutionContext.getCudaRuntime().cudaMallocManaged(getSizeBytes());
+    private DeviceArray asDimensionArray(SparseDimension sparseDimension) {
+        switch (sparseDimension){
+            case SP_VEC_INDICES:
+                return indices;
+            case SP_VEC_VALUES:
+                return nnz;
+        }
+        throw new GrCUDAException("Invalid Dimension = " + sparseDimension.name());
     }
 
-    @Override
+    private void checkFreeVector() {
+        if (vectorFreed) {
+            CompilerDirectives.transferToInterpreter();
+            throw new GrCUDAException("Vector freed already");
+        }
+    }
+
+    final long indexOfNonZero(long idx) throws InvalidArrayIndexException, UnsupportedMessageException {
+        // returns the index corresponds to nnz element if present, -1 otherwise
+        long index = -1;
+        for(int i = 0; i < numNnz; i++){
+            if(((long) this.indices.readArrayElement(i)) == idx){
+                index = i;
+            }
+        }
+        return index;
+    }
+
     final public long getSizeBytes() {
-        if (arrayFreed) {
-            CompilerDirectives.transferToInterpreter();
-            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
-        }
-        return sizeBytes;
+        checkFreeVector();
+        return numNnz * (valueElementType.getSizeBytes() + indexElementType.getSizeBytes());
     }
 
-    @Override
-    public long getPointer() {
-        if (arrayFreed) {
-            CompilerDirectives.transferToInterpreter();
-            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
-        }
-        return nativeView.getStartAddress();
+    public long getPointer(SparseDimension sparseDimension) {
+        checkFreeVector();
+        return asDimensionArray(sparseDimension).getPointer();
     }
 
-    public Type getElementType() {
-        if (arrayFreed) {
-            CompilerDirectives.transferToInterpreter();
-            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
-        }
-        return elementType;
+    public Type getElementType(SparseDimension sparseDimension) {
+        checkFreeVector();
+        return asDimensionArray(sparseDimension).getElementType();
     }
 
-    @Override
     public String toString() {
-        if (arrayFreed) {
-            return "DeviceArray(memory freed)";
-        } else {
-            return "DeviceArray(elementType=" + elementType + ", numNnz=" + numNnz + ", nativeView=" + nativeView + ')';
-        }
+        return "SparseVector{" +
+                "valueElementType=" + valueElementType +
+                ", indexElementType=" + indexElementType +
+                ", indices=" + indices +
+                ", nnz=" + nnz +
+                ", numNnz=" + numNnz +
+                '}';
     }
 
-    @Override
     protected void finalize() throws Throwable {
-        if (!arrayFreed) {
-            grCUDAExecutionContext.getCudaRuntime().cudaFree(nativeView);
+        if (!vectorFreed) {
+            this.freeMemory();
         }
         super.finalize();
     }
 
-    @Override
     public void freeMemory() {
-        if (arrayFreed) {
-            throw new GrCUDAException("device array already freed");
-        }
-        grCUDAExecutionContext.getCudaRuntime().cudaFree(nativeView);
-        arrayFreed = true;
-    }
-
-    // Implementation of InteropLibrary
-
-    @ExportMessage
-    public long getArraySize() {
-        if (arrayFreed) {
-            CompilerDirectives.transferToInterpreter();
-            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
-        }
-        return numNnz * 2; // dim_values + dim_indices, which have the same dimension
-    }
-
-    @ExportMessage
-    boolean isArrayElementReadable(long index) {
-        return !arrayFreed && index >= 0 && index < numNnz;
+        checkFreeVector();
+        nnz.freeMemory();
+        indices.freeMemory();
+        vectorFreed = true;
     }
 
     @ExportMessage
     boolean isArrayElementModifiable(long index) {
         return index >= 0 && index < numNnz;
+    }
+
+    @ExportMessage
+    boolean isArrayElementReadable(long index) {
+        return !vectorFreed && isArrayElementModifiable(index);
     }
 
     @SuppressWarnings("static-method")
@@ -186,64 +172,57 @@ public class SparseVector extends AbstractArray implements TruffleObject {
     }
 
     @ExportMessage
-    Object readArrayElement(long index,
-                    @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws InvalidArrayIndexException {
-        if (arrayFreed) {
+    Object readArrayElement(long idx,
+                    @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws InvalidArrayIndexException, UnsupportedMessageException {
+        checkFreeVector();
+        if (!isArrayElementModifiable(idx)) {
             CompilerDirectives.transferToInterpreter();
-            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
+            throw InvalidArrayIndexException.create(idx);
         }
-        if ((index < 0) || (index >= numNnz)) {
-            CompilerDirectives.transferToInterpreter();
-            throw InvalidArrayIndexException.create(index);
+        // TODO: conasider DAG scheduling related issues
+        Object element = 0;
+        long index = indexOfNonZero(idx);
+        if(index != -1){
+            element = nnz.readArrayElement(index);
         }
-        try {
-            if (this.canSkipScheduling()) {
-                // check whether index corresponds to a value's position
-                Object element = 0;
-                for(int i = 0; i < numNnz; i++){
-                    if(((long) this.indices.readArrayElement(i)) == index){ // si fa così?
-                        element = AbstractArray.readArrayElementNative(this.nativeView, i, this.elementType, elementTypeProfile);
-                    }
-                }
-                return element;
-            } else {
-                return new DeviceArrayReadExecution(this.nnz, index, elementTypeProfile).schedule(); // controllare se ha senso
-            }
-        } catch (UnsupportedTypeException | UnsupportedMessageException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    @Override
-    public Object readNativeView(long index, @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) {
-        return AbstractArray.readArrayElementNative(this.nativeView, index, this.elementType, elementTypeProfile);
+        return element;
+//            if (this.canSkipScheduling()) {
+//                // check whether index corresponds to a value's position
+//                Object element = 0;
+//                for(int i = 0; i < numNnz; i++){
+//                    if(((long) this.indices.readArrayElement(i)) == index){ // si fa così?
+//                        element = AbstractArray.readArrayElementNative(this.nativeView, i, this.elementType, elementTypeProfile);
+//                    }
+//                }
+//                return element;
+//            } else {
+//                return new DeviceArrayReadExecution(this.nnz, index, elementTypeProfile).schedule(); // controllare se ha senso
+//                return new DeviceArrayReadExecution(this.indices, index, elementTypeProfile).schedule(); // controllare se ha senso
+//            }
     }
 
     @ExportMessage
-    public void writeArrayElement(long index, Object value,
+    public void writeArrayElement(Object idx, Object value,
                     @CachedLibrary(limit = "3") InteropLibrary valueLibrary,
                     @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException, InvalidArrayIndexException {
-        if (arrayFreed) {
+        checkFreeVector();
+        if (!isArrayElementModifiable((long) idx)) { // to avoid casting we should change elements' modifiability totally, maybe it's not the case
             CompilerDirectives.transferToInterpreter();
-            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
+            throw InvalidArrayIndexException.create((long) idx);
         }
-        if ((index < 0) || (index >= numNnz)) {
-            CompilerDirectives.transferToInterpreter();
-            throw InvalidArrayIndexException.create(index);
-        }
-        if (this.canSkipScheduling()) {
-            // Fast path, skip the DAG scheduling;
-            this.indices.writeArrayElement(numNnz, index, valueLibrary, elementTypeProfile); // vanno riordinati
-            this.nnz.writeArrayElement(numNnz, index, valueLibrary, elementTypeProfile); // forte l'assunzione su numNnz = nnz.size()
-        } else {
-            new DeviceArrayWriteExecution(this.nnz, index, value, valueLibrary, elementTypeProfile).schedule(); // non si può fare, che ci inventiamo? idem per read
-        }
+        // TODO: consider DAG scheduling related issues
+        this.nnz.writeArrayElement(nnz.getArraySize(), value, valueLibrary, elementTypeProfile);
+        this.indices.writeArrayElement(indices.getArraySize(), idx, valueLibrary, elementTypeProfile);
+//        if (this.canSkipScheduling()) {
+//            // Fast path, skip the DAG scheduling;
+//            this.indices.writeArrayElement(numNnz, index, valueLibrary, elementTypeProfile); // vanno riordinati
+//            this.nnz.writeArrayElement(numNnz, index, valueLibrary, elementTypeProfile);
+//        } else {
+//            new DeviceArrayWriteExecution(this.nnz, index, value, valueLibrary, elementTypeProfile).schedule(); // non si può fare, che ci inventiamo? idem per read
+//            new DeviceArrayWriteExecution(this.indices, index, index, valueLibrary, elementTypeProfile).schedule(); // non si può fare, che ci inventiamo? idem per read
+//
+//        }
     }
 
-    @Override
-    public void writeNativeView(long index, Object value, @CachedLibrary(limit = "3") InteropLibrary valueLibrary,
-                    @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException {
-        AbstractArray.writeArrayElementNative(this.nativeView, index, value, elementType, valueLibrary, elementTypeProfile);
-    }
+
 }

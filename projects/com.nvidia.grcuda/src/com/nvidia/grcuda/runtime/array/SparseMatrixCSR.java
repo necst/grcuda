@@ -37,27 +37,22 @@ package com.nvidia.grcuda.runtime.array;
 
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.Type;
-import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.InvalidArrayIndexException;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
-import com.oracle.truffle.api.interop.UnsupportedTypeException;
-import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
-import com.oracle.truffle.api.profiles.ValueProfile;
 
 @ExportLibrary(InteropLibrary.class)
-public class SparseMatrixCOO implements TruffleObject {
+public class SparseMatrixCSR implements TruffleObject {
 
-    public enum CooDimension {
-        COO_DIMENSION_ROW,
-        COO_DIMENSION_COL,
-        COO_DIMENSION_VAL;
+    public enum CsrDimension {
+        CSR_DIMENSION_COL,
+        CSR_DIMENSION_CUMULATIVE_NNZ,
+        CSR_DIMENSION_VAL;
     }
 
     /**
@@ -77,7 +72,7 @@ public class SparseMatrixCOO implements TruffleObject {
     /**
      * Row and column indices of nnz elements.
      */
-    private final DeviceArray rowIdx;
+    private final DeviceArray cumulativeNnz;
     private final DeviceArray colIdx;
 
     /**
@@ -85,27 +80,27 @@ public class SparseMatrixCOO implements TruffleObject {
      */
     private final DeviceArray nnzValues;
 
-    public SparseMatrixCOO(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Type valueElementType, Type indexElementType, long dimRows, long dimCols, long numNnz) {
+    public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Type valueElementType, Type indexElementType, long dimRows, long dimCols, long numNnz) {
         this.dimRows = dimRows;
         this.dimCols = dimCols;
         this.numNnz = numNnz;
-        this.rowIdx = new DeviceArray(grCUDAExecutionContext, numNnz, indexElementType);
+        this.cumulativeNnz = new DeviceArray(grCUDAExecutionContext, (dimRows + 1), indexElementType);
         this.colIdx = new DeviceArray(grCUDAExecutionContext, numNnz, indexElementType);
         this.nnzValues = new DeviceArray(grCUDAExecutionContext, numNnz, valueElementType);
         this.valueElementType = valueElementType;
         this.indexElementType = indexElementType;
     }
 
-    private DeviceArray asDimensionArray(CooDimension cooDimension) {
-        switch (cooDimension) {
-            case COO_DIMENSION_ROW:
-                return rowIdx;
-            case COO_DIMENSION_COL:
+    private DeviceArray asDimensionArray(CsrDimension csrDimension) {
+        switch (csrDimension) {
+            case CSR_DIMENSION_COL:
                 return colIdx;
-            case COO_DIMENSION_VAL:
+            case CSR_DIMENSION_CUMULATIVE_NNZ:
+                return cumulativeNnz;
+            case CSR_DIMENSION_VAL:
                 return nnzValues;
         }
-        throw new GrCUDAException("Invalid Dimension = " + cooDimension.name());
+        throw new GrCUDAException("Invalid Dimension = " + csrDimension.name());
     }
 
     private void checkFreeMatrix() {
@@ -121,36 +116,44 @@ public class SparseMatrixCOO implements TruffleObject {
         return ((row >= 0) && (row < dimRows) && (col >= 0) && (col < dimCols));
     }
 
-    final long indexOfNonZero(long row, long col) throws InvalidArrayIndexException, UnsupportedMessageException {
-        // returns the index corresponds to nnz element if present, -1 otherwise
-        long index = -1;
-        // check rows
-        for (int i = 0; i < this.nnzValues.getArraySize(); i++) {
-            if (((long) this.rowIdx.readArrayElement(i) == row) && ((long) this.colIdx.readArrayElement(i) == col)) {
-                index = i;
-            }
-        }
-        return index;
+    final boolean isCumulativeVectorValid() throws InvalidArrayIndexException, UnsupportedMessageException { // might be useful
+        return ((long) this.cumulativeNnz.readArrayElement(0) == 0);
     }
+
+    final boolean isIndexOfNonZero(long row, long col) throws InvalidArrayIndexException, UnsupportedMessageException {
+        // returns true if element is nnz
+        boolean check = false;
+        // check rows
+        long tmpIndex = (long) this.cumulativeNnz.readArrayElement(row);
+        if (((long) this.cumulativeNnz.readArrayElement(row + 1) > tmpIndex) && ((long) this.colIdx.readArrayElement(tmpIndex) == col)){ // make sure that there's at least one element in that row
+            check = true;
+        }
+        return check;
+    }
+
 
     final public long getSizeBytes() {
-        return nnzValues.getSizeBytes() + rowIdx.getSizeBytes() + colIdx.getSizeBytes(); // must be same size
+        return colIdx.getSizeBytes() + cumulativeNnz.getSizeBytes() + nnzValues.getSizeBytes();
     }
 
-    public final long getPointer(CooDimension cooDimension) { // add exception, must not be called
+    public final long getPointer(CsrDimension csrDimension) { // add exception, must not be called
         checkFreeMatrix();
-        return asDimensionArray(cooDimension).getPointer();
+        return asDimensionArray(csrDimension).getPointer();
     }
 
+    @Override
     public String toString() {
-        return "SparseMatrix{" +
-                        "dimRows=" + dimRows +
-                        ", dimCols=" + dimCols +
-                        ", numNnz=" + numNnz +
-                        ", rowIdx=" + rowIdx +
-                        ", colIdx=" + colIdx +
-                        ", nnzValues=" + nnzValues +
-                        '}';
+        return "SparseMatrixCSR{" +
+                "dimRows=" + dimRows +
+                ", dimCols=" + dimCols +
+                ", numNnz=" + numNnz +
+                ", valueElementType=" + valueElementType +
+                ", indexElementType=" + indexElementType +
+                ", matrixFreed=" + matrixFreed +
+                ", cumulativeNnz=" + cumulativeNnz +
+                ", colIdx=" + colIdx +
+                ", nnzValues=" + nnzValues +
+                '}';
     }
 
     protected void finalize() throws Throwable {
@@ -163,7 +166,7 @@ public class SparseMatrixCOO implements TruffleObject {
     public void freeMemory() {
         checkFreeMatrix();
         nnzValues.freeMemory();
-        rowIdx.freeMemory();
+        cumulativeNnz.freeMemory();
         colIdx.freeMemory();
         matrixFreed = true;
     }
@@ -196,15 +199,14 @@ public class SparseMatrixCOO implements TruffleObject {
             throw InvalidArrayIndexException.create(row);
         }
         Object element = 0;
-        long index = indexOfNonZero(row, col);
-        if (index != -1) {
-            element = nnzValues.readArrayElement(index);
+        if (isIndexOfNonZero(row, col)) {
+            element = nnzValues.readArrayElement((long) this.cumulativeNnz.readArrayElement(row));
         }
         return element;
     }
 
-    Object readCooDimension(CooDimension cooDimension, long index) throws InvalidArrayIndexException, UnsupportedMessageException {
+    Object readCsrDimension(CsrDimension csrDimension, long index) throws InvalidArrayIndexException, UnsupportedMessageException {
         checkFreeMatrix();
-        return asDimensionArray(cooDimension).readArrayElement(index);
+        return asDimensionArray(csrDimension).readArrayElement(index);
     }
 }
