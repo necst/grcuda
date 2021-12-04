@@ -30,31 +30,45 @@
  */
 package com.nvidia.grcuda.test.util.mock;
 
+import com.nvidia.grcuda.GrCUDAOptionMap;
+import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
 import com.nvidia.grcuda.runtime.computation.streamattach.PrePascalStreamAttachPolicy;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.computation.prefetch.PrefetcherEnum;
-import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 
 /**
  * Mock class to test the GrCUDAExecutionContextTest, it has a null CUDARuntime;
  */
-public class GrCUDAExecutionContextMock extends GrCUDAExecutionContext {
+public class AsyncGrCUDAExecutionContextMock extends AsyncGrCUDAExecutionContext {
 
-    public GrCUDAExecutionContextMock() {
-        super(null, new GrCUDAStreamManagerMock(null), DependencyPolicyEnum.NO_CONST, PrefetcherEnum.NONE);
+    public AsyncGrCUDAExecutionContextMock() {
+        super(null,
+                new GrCUDAOptionMap(new OptionValuesMockBuilder()
+                        .add(GrCUDAOptions.DependencyPolicy, DependencyPolicyEnum.NO_CONST.toString())
+                        .add(GrCUDAOptions.InputPrefetch, false).build()),
+                new GrCUDAStreamManagerMock(null));
     }
 
-    public GrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy) {
-        super(null, new GrCUDAStreamManagerMock(null), dependencyPolicy, PrefetcherEnum.NONE);
+    public AsyncGrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy) {
+        super(null,
+                new GrCUDAOptionMap(new OptionValuesMockBuilder()
+                        .add(GrCUDAOptions.DependencyPolicy, dependencyPolicy.toString())
+                        .add(GrCUDAOptions.InputPrefetch, false).build()),
+                new GrCUDAStreamManagerMock(null));
     }
 
-    public GrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy,
-                    RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
-                    RetrieveParentStreamPolicyEnum parentStreamPolicyEnum) {
-        super(null, new GrCUDAStreamManagerMock(null, retrieveStreamPolicy, parentStreamPolicyEnum), dependencyPolicy, PrefetcherEnum.NONE);
+    public AsyncGrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy,
+                                           RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
+                                           RetrieveParentStreamPolicyEnum parentStreamPolicyEnum) {
+        super(null,
+                new GrCUDAOptionMap(new OptionValuesMockBuilder()
+                        .add(GrCUDAOptions.DependencyPolicy, dependencyPolicy.toString())
+                        .add(GrCUDAOptions.InputPrefetch, false).build()),
+                new GrCUDAStreamManagerMock(null, retrieveStreamPolicy, parentStreamPolicyEnum));
     }
 
     public StreamAttachArchitecturePolicy getArrayStreamArchitecturePolicy() {

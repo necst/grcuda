@@ -73,7 +73,7 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
         this.sizeBytes = numElements * elementType.getSizeBytes();
         // Allocate the GPU memory;
         this.nativeView = allocateMemory();
-        // Register the array in the GrCUDAExecutionContext;
+        // Register the array in the AsyncGrCUDAExecutionContext;
         this.registerArray();
     }
 

@@ -32,10 +32,10 @@ package com.nvidia.grcuda.runtime.executioncontext;
 
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDALogger;
+import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
-import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
-import com.nvidia.grcuda.runtime.computation.prefetch.PrefetcherEnum;
+import com.nvidia.grcuda.runtime.computation.prefetch.AsyncArrayPrefetcher;
 import com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -44,7 +44,7 @@ import com.oracle.truffle.api.interop.UnsupportedTypeException;
  * Class used to monitor the state of GrCUDA execution, keep track of memory allocated,
  * kernels and other executable functions, and dependencies between elements.
  */
-public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
+public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
 
     /**
      * Reference to the {@link com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager} that takes care of
@@ -52,26 +52,25 @@ public class GrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
      */
     private final GrCUDAStreamManager streamManager;
 
-    public GrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        this(new CUDARuntime(context, env), dependencyPolicy, inputPrefetch);
+    public AsyncGrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env) {
+        this(new CUDARuntime(context, env), context.getOptions());
     }
 
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        this(cudaRuntime, new GrCUDAStreamManager(cudaRuntime), dependencyPolicy, inputPrefetch);
+    public AsyncGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {
+        this(cudaRuntime, options, new GrCUDAStreamManager(cudaRuntime));
     }
 
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy) {
-        super(cudaRuntime, dependencyPolicy, PrefetcherEnum.NONE, ExecutionPolicyEnum.ASYNC);
+    public AsyncGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options, GrCUDAStreamManager streamManager) {
+        super(cudaRuntime, options);
         this.streamManager = streamManager;
-    }
-
-    public GrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAStreamManager streamManager, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch) {
-        super(cudaRuntime, dependencyPolicy, inputPrefetch, ExecutionPolicyEnum.ASYNC);
-        this.streamManager = streamManager;
+        // Compute if we should use a prefetcher;
+        if (options.isInputPrefetch() && this.cudaRuntime.isArchitectureIsPascalOrNewer()) {
+            arrayPrefetcher = new AsyncArrayPrefetcher(this.cudaRuntime);
+        }
     }
 
     /**
-     * Register this computation for future execution by the {@link GrCUDAExecutionContext},
+     * Register this computation for future execution by the {@link AsyncGrCUDAExecutionContext},
      * and add it to the current computational DAG.
      * The actual execution might be deferred depending on the inferred data dependencies;
      */

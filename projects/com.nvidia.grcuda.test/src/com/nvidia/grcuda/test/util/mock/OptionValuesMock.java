@@ -30,6 +30,7 @@
  */
 package com.nvidia.grcuda.test.util.mock;
 
+import com.nvidia.grcuda.GrCUDALanguage;
 import org.graalvm.options.OptionDescriptors;
 import org.graalvm.options.OptionKey;
 import org.graalvm.options.OptionValues;
@@ -40,16 +41,15 @@ import java.util.Map;
 public class OptionValuesMock implements OptionValues {
 
     private final Map<OptionKey<?>, Object> values;
-    private final Map<OptionKey<?>, String> unparsedValues;
 
     public OptionValuesMock() {
         this.values =  new HashMap<>();
-        this.unparsedValues =  new HashMap<>();
+        GrCUDALanguage.getOptionDescriptorsStatic().forEach(o -> values.put(o.getKey(), o.getKey().getDefaultValue()));
     }
 
     @Override
     public OptionDescriptors getDescriptors() {
-        return null;
+        return GrCUDALanguage.getOptionDescriptorsStatic();
     }
 
     @Override
@@ -64,11 +64,28 @@ public class OptionValuesMock implements OptionValues {
 
     @Override
     public boolean hasBeenSet(OptionKey<?> optionKey) {
-        return values.containsKey(optionKey) || unparsedValues.containsKey(optionKey);
+        return values.containsKey(optionKey);
     }
 
     @Override
     public boolean hasSetOptions() {
         return OptionValues.super.hasSetOptions();
+    }
+}
+
+class OptionValuesMockBuilder {
+    private final OptionValuesMock options;
+
+    public OptionValuesMockBuilder() {
+        this.options = new OptionValuesMock();
+    }
+
+    public <T> OptionValuesMockBuilder add(OptionKey<T> optionKey, T value) {
+        this.options.set(optionKey, value);
+        return this;
+    }
+
+    public OptionValuesMock build() {
+        return options;
     }
 }

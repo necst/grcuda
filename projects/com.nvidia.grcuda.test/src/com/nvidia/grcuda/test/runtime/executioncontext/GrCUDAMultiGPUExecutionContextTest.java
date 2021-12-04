@@ -1,4 +1,5 @@
 package com.nvidia.grcuda.test.runtime.executioncontext;
+import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.graalvm.polyglot.Context;
@@ -18,7 +19,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
     // FIXME: add multi-gpu policies;
 
     /**
-     * Tests are executed for each of the {@link com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext} values;
+     * Tests are executed for each of the {@link AsyncGrCUDAExecutionContext} values;
      * @return the current stream policy
      */
 

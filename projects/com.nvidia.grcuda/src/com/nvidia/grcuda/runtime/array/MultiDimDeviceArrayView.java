@@ -79,7 +79,7 @@ public class MultiDimDeviceArrayView extends AbstractArray implements TruffleObj
         this.thisDimension = dim;
         this.offset = offset; // Index at which this array view starts;
         this.stride = stride;
-        // Register the array in the GrCUDAExecutionContext;
+        // Register the array in the AsyncGrCUDAExecutionContext;
         this.registerArray();
     }
 

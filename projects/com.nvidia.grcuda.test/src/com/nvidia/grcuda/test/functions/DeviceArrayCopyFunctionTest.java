@@ -48,7 +48,7 @@ import com.nvidia.grcuda.runtime.computation.arraycomputation.ArrayCopyFunctionE
 import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import com.nvidia.grcuda.test.util.TestLogHandler;
-import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMock;
+import com.nvidia.grcuda.test.util.mock.AsyncGrCUDAExecutionContextMock;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Test;
@@ -69,7 +69,7 @@ public class DeviceArrayCopyFunctionTest {
     public static class DeviceArrayCopyFunctionTestNotParameterized {
         protected static class DeviceArrayMock extends DeviceArray {
             DeviceArrayMock() {
-                super(new GrCUDAExecutionContextMock(), 0, Type.SINT32);
+                super(new AsyncGrCUDAExecutionContextMock(), 0, Type.SINT32);
             }
 
             @Override
@@ -80,7 +80,7 @@ public class DeviceArrayCopyFunctionTest {
 
         protected static class MultiDimDeviceArrayMock extends MultiDimDeviceArray {
             MultiDimDeviceArrayMock(long[] dimensions, boolean columnMajor) {
-                super(new GrCUDAExecutionContextMock(), Type.SINT32, dimensions, columnMajor);
+                super(new AsyncGrCUDAExecutionContextMock(), Type.SINT32, dimensions, columnMajor);
             }
 
             @Override

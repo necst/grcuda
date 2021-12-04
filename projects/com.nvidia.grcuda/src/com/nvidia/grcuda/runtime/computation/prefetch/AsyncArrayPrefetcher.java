@@ -36,9 +36,9 @@ import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 
-public class DefaultArrayPrefetcher extends AbstractArrayPrefetcher {
+public class AsyncArrayPrefetcher extends AbstractArrayPrefetcher {
 
-    public DefaultArrayPrefetcher(CUDARuntime runtime) {
+    public AsyncArrayPrefetcher(CUDARuntime runtime) {
         super(runtime);
     }
 

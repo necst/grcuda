@@ -31,7 +31,9 @@
 package com.nvidia.grcuda.runtime.executioncontext;
 
 import com.nvidia.grcuda.Binding;
-import com.nvidia.grcuda.GrCUDAContext;
+import com.nvidia.grcuda.GrCUDAException;
+import com.nvidia.grcuda.GrCUDALogger;
+import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Kernel;
@@ -39,14 +41,10 @@ import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitectu
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.dependency.DefaultDependencyComputationBuilder;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyComputationBuilder;
-import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.computation.dependency.WithConstDependencyComputationBuilder;
 import com.nvidia.grcuda.runtime.computation.prefetch.AbstractArrayPrefetcher;
-import com.nvidia.grcuda.runtime.computation.prefetch.DefaultArrayPrefetcher;
 import com.nvidia.grcuda.runtime.computation.prefetch.NoneArrayPrefetcher;
-import com.nvidia.grcuda.runtime.computation.prefetch.PrefetcherEnum;
-import com.nvidia.grcuda.runtime.computation.prefetch.SyncArrayPrefetcher;
-import com.oracle.truffle.api.TruffleLanguage;
+import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
 import java.util.HashSet;
@@ -58,6 +56,8 @@ import java.util.Set;
  * kernels and other executable functions, and dependencies between elements.
  */
 public abstract class AbstractGrCUDAExecutionContext {
+
+    protected static final TruffleLogger LOGGER = GrCUDALogger.getLogger(GrCUDALogger.EXECUTIONCONTEXT_LOGGER);
 
     /**
      * Reference to the inner {@link CUDARuntime} used to execute kernels and other {@link GrCUDAComputationalElement}
@@ -83,29 +83,16 @@ public abstract class AbstractGrCUDAExecutionContext {
      * Reference to how dependencies between computational elements are computed within this execution context;
      */
     private final DependencyComputationBuilder dependencyBuilder;
-    /**
-     * Identify the policy name associated to this execution context;
-     */
-    private final ExecutionPolicyEnum executionPolicy;
 
     /**
      * Reference to the prefetching strategy to use in this execution context;
      */
-    protected final AbstractArrayPrefetcher arrayPrefetcher;
+    protected AbstractArrayPrefetcher arrayPrefetcher;
 
-    public AbstractGrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy, ExecutionPolicyEnum executionPolicy) {
-        this(new CUDARuntime(context, env), dependencyPolicy, PrefetcherEnum.NONE, executionPolicy);
-    }
-
-    public AbstractGrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch, ExecutionPolicyEnum executionPolicy) {
-        this(new CUDARuntime(context, env), dependencyPolicy, inputPrefetch, executionPolicy);
-    }
-
-    public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, DependencyPolicyEnum dependencyPolicy, PrefetcherEnum inputPrefetch, ExecutionPolicyEnum executionPolicy) {
+    public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {
         this.cudaRuntime = cudaRuntime;
-        this.executionPolicy = executionPolicy;
         // Compute the dependency policy to use;
-        switch (dependencyPolicy) {
+        switch (options.getDependencyPolicy()) {
             case WITH_CONST:
                 this.dependencyBuilder = new WithConstDependencyComputationBuilder();
                 break;
@@ -113,23 +100,13 @@ public abstract class AbstractGrCUDAExecutionContext {
                 this.dependencyBuilder = new DefaultDependencyComputationBuilder();
                 break;
             default:
-                this.dependencyBuilder = new DefaultDependencyComputationBuilder();
+                LOGGER.severe("Cannot create a GrCUDAExecutionContext. The selected dependency policy is not valid: " + options.getDependencyPolicy());
+                throw new GrCUDAException("selected dependency policy is not valid: " + options.getDependencyPolicy());
         }
-        // Compute the prefetcher to use;
-        boolean pascalGpu;
-        switch (inputPrefetch) {
-            case ASYNC:
-                pascalGpu = this.cudaRuntime.isArchitectureIsPascalOrNewer();
-                arrayPrefetcher = pascalGpu ? new DefaultArrayPrefetcher(this.cudaRuntime) : new NoneArrayPrefetcher(this.cudaRuntime);
-                break;
-            case SYNC:
-                pascalGpu = this.cudaRuntime.isArchitectureIsPascalOrNewer();
-                arrayPrefetcher = pascalGpu ? new SyncArrayPrefetcher(this.cudaRuntime) : new NoneArrayPrefetcher(this.cudaRuntime);
-                break;
-            default:
-                arrayPrefetcher = new NoneArrayPrefetcher(this.cudaRuntime);
-        }
-        this.dag = new ExecutionDAG(dependencyPolicy);
+        // By default, assume no prefetching;
+        arrayPrefetcher = new NoneArrayPrefetcher(this.cudaRuntime);
+        // Initialize the DAG;
+        this.dag = new ExecutionDAG(options.getDependencyPolicy());
     }
 
     /**
@@ -157,10 +134,6 @@ public abstract class AbstractGrCUDAExecutionContext {
 
     public DependencyComputationBuilder getDependencyBuilder() {
         return dependencyBuilder;
-    }
-
-    public ExecutionPolicyEnum getExecutionPolicy() {
-        return executionPolicy;
     }
 
     // Functions used to interface directly with the CUDA runtime;
