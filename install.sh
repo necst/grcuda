@@ -1,5 +1,4 @@
 #!/bin/sh
-
 mx build;
 
 # Install for Java 8+;

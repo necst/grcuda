@@ -31,7 +31,9 @@
 package com.nvidia.grcuda;
 
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
+import com.nvidia.grcuda.runtime.computation.memadvise.MemAdviserEnum;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.DeviceSelectionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 import com.oracle.truffle.api.TruffleLogger;
@@ -71,15 +73,13 @@ public class GrCUDAOptionMap implements TruffleObject {
     public static final DependencyPolicyEnum DEFAULT_DEPENDENCY_POLICY = DependencyPolicyEnum.NO_CONST;
     public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.FIFO;
     public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
+    public static final DeviceSelectionPolicyEnum DEFAULT_DEVICE_SELECTION_POLICY = DeviceSelectionPolicyEnum.DATA_LOCALITY;
+    public static final MemAdviserEnum DEFAULT_MEM_ADVISE_POLICY = MemAdviserEnum.NONE;
+    public static final boolean DEFAULT_INPUT_PREFETCH = false;  // Value obtained from the input flags;
     public static final boolean DEFAULT_FORCE_STREAM_ATTACH = false;
-    public static final boolean DEFAULT_INPUT_PREFETCH = false;
-    public static final boolean DEFAULT_ENABLE_MULTIGPU = false;
     public static final boolean DEFAULT_TENSORRT_ENABLED = false;
     public static final boolean DEFAULT_ENABLE_COMPUTATION_TIMERS = false;
     public static final Integer DEFAULT_NUMBER_OF_GPUs = 1;
-    // FIXME: not yet implemented!
-    public static final String DEFAULT_DEVICE_SELECTION_HEURISTIC = "";
-    public static final String DEFAULT_MEM_ADVISE_POLICY = "";
 
     public GrCUDAOptionMap(OptionValues options) {
         optionsMap = new HashMap<>();
@@ -102,6 +102,10 @@ public class GrCUDAOptionMap implements TruffleObject {
         optionsMap.replace(optionNames.get(GrCUDAOptions.DependencyPolicy), parseDependencyPolicy(options.get(GrCUDAOptions.DependencyPolicy)));
         // Execution policy;
         optionsMap.replace(optionNames.get(GrCUDAOptions.ExecutionPolicy), parseExecutionPolicy(options.get(GrCUDAOptions.ExecutionPolicy)));
+        // Device selection policy;
+        optionsMap.replace(optionNames.get(GrCUDAOptions.DeviceSelectionPolicy), parseDeviceSelectionPolicy(options.get(GrCUDAOptions.DeviceSelectionPolicy)));
+        // Memory advise policy;
+        optionsMap.replace(optionNames.get(GrCUDAOptions.MemAdvisePolicy), parseMemAdvisePolicy(options.get(GrCUDAOptions.MemAdvisePolicy)));
     }
 
     /**
@@ -152,6 +156,27 @@ public class GrCUDAOptionMap implements TruffleObject {
         }
     }
 
+    private static DeviceSelectionPolicyEnum parseDeviceSelectionPolicy(String policyString) {
+        if (Objects.equals(policyString, DeviceSelectionPolicyEnum.DATA_LOCALITY.toString())) return DeviceSelectionPolicyEnum.DATA_LOCALITY;
+        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.DATA_LOCALITY_NEW.toString())) return DeviceSelectionPolicyEnum.DATA_LOCALITY_NEW;
+        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.TRANSFER_TIME_MIN.toString())) return DeviceSelectionPolicyEnum.TRANSFER_TIME_MIN;
+        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.TRANSFER_TIME_MAX.toString())) return DeviceSelectionPolicyEnum.TRANSFER_TIME_MAX;
+        else {
+            LOGGER.warning("Warning: unknown device selection policy=" + policyString + "; using default=" + DEFAULT_DEVICE_SELECTION_POLICY);
+            return DEFAULT_DEVICE_SELECTION_POLICY;
+        }
+    }
+
+    private static MemAdviserEnum parseMemAdvisePolicy(String policyString) {
+        if (Objects.equals(policyString, MemAdviserEnum.ADVISE_READ_MOSTLY.toString())) return MemAdviserEnum.ADVISE_READ_MOSTLY;
+        else if (Objects.equals(policyString, MemAdviserEnum.ADVISE_PREFERRED_LOCATION.toString())) return MemAdviserEnum.ADVISE_PREFERRED_LOCATION;
+        else if (Objects.equals(policyString, MemAdviserEnum.NONE.toString())) return MemAdviserEnum.NONE;
+        else {
+            LOGGER.warning("Warning: unknown memory advice policy=" + policyString + "; using default=" + DEFAULT_MEM_ADVISE_POLICY);
+            return DEFAULT_MEM_ADVISE_POLICY;
+        }
+    }
+
     public Boolean isCuBLASEnabled(){
         return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.CuBLASEnabled);
     }
@@ -191,11 +216,7 @@ public class GrCUDAOptionMap implements TruffleObject {
     public Boolean isInputPrefetch(){
         return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.InputPrefetch);
     }
-
-    public Boolean isEnableMultiGPU(){
-        return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.EnableMultiGPU);
-    }
-
+    
     public Boolean isTimeComputation() { return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.EnableComputationTimers); }
 
     public Boolean isTensorRTEnabled(){
@@ -205,6 +226,24 @@ public class GrCUDAOptionMap implements TruffleObject {
     public String getTensorRTLibrary(){
         return (String) getOptionValueFromOptionKey(GrCUDAOptions.TensorRTLibrary);
     }
+
+    public Integer getNumberOfGPUs() {
+        return (Integer) getOptionValueFromOptionKey(GrCUDAOptions.NumberOfGPUs);
+    }
+
+    public MemAdviserEnum getMemAdvisePolicy() {
+        return (MemAdviserEnum) getOptionValueFromOptionKey(GrCUDAOptions.MemAdvisePolicy);
+    }
+
+    public DeviceSelectionPolicyEnum getDeviceSelectionPolicy() {
+        return (DeviceSelectionPolicyEnum) getOptionValueFromOptionKey(GrCUDAOptions.DeviceSelectionPolicy);
+    }
+
+    public void setNumberOfGPUs(int numberOfGPUs) {
+        LOGGER.info("updated the number of GPUs to use from " + getNumberOfGPUs() + " to " + numberOfGPUs);
+        optionsMap.replace(optionNames.get(GrCUDAOptions.NumberOfGPUs), numberOfGPUs);
+    }
+
 
     // Implement InteropLibrary;
 
@@ -259,7 +298,7 @@ public class GrCUDAOptionMap implements TruffleObject {
         public boolean hasIteratorNextElement() {
             try {
                 return iterator.hasNext();
-            }catch(NoSuchElementException e){
+            } catch(NoSuchElementException e) {
                 return false;
             }
         }

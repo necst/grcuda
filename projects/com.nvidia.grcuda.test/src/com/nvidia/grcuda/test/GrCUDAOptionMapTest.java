@@ -160,7 +160,7 @@ public class GrCUDAOptionMapTest {
 
     @Test
     public void testGetOptionsFunction() {
-        try (Context ctx = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", ExecutionPolicyEnum.ASYNC.toString()).build()) {
+        try (Context ctx = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", ExecutionPolicyEnum.ASYNC.toString()).option("grcuda.EnableComputationTimers", "true").build()) {
             // Obtain the options map;
             Value options = ctx.eval("grcuda", "getoptions").execute();
             // Check the we have a map;
@@ -168,7 +168,9 @@ public class GrCUDAOptionMapTest {
 
             // Obtain some options;
             assertEquals(ExecutionPolicyEnum.ASYNC.toString(), options.getHashValue("grcuda.ExecutionPolicy").asString());
-            assertEquals(GrCUDAOptionMap.DEFAULT_ENABLE_MULTIGPU, Boolean.valueOf(options.getHashValue("grcuda.EnableMultiGPU").asString()));
+            assertTrue(Boolean.parseBoolean(options.getHashValue("grcuda.EnableComputationTimers").asString()));
+            assertFalse(Boolean.parseBoolean(options.getHashValue("grcuda.ForceStreamAttach").asString()));
+            assertEquals(GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs, Integer.valueOf(options.getHashValue("grcuda.NumberOfGPUs").asString()));
         }
     }
 

@@ -86,15 +86,12 @@ public final class GrCUDAOptions {
     @Option(category = OptionCategory.USER, help = "Always prefetch input arrays to GPU if possible (e.g. post-Pascal GPUs).", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<Boolean> InputPrefetch = new OptionKey<>(GrCUDAOptionMap.DEFAULT_INPUT_PREFETCH);
 
-    @Option(category = OptionCategory.USER, help = "Enable the option to set the current GPU in use.", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<Boolean> EnableMultiGPU = new OptionKey<>(GrCUDAOptionMap.DEFAULT_ENABLE_MULTIGPU);
-
     @Option(category = OptionCategory.USER, help = "Set how many GPUs can be used during computation. It must be at least 1, and if > 1 more than 1 GPUs are used (if available).", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<String> NumberOfGPUs = new OptionKey<>(GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs.toString());
+    public static final OptionKey<Integer> NumberOfGPUs = new OptionKey<>(GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs);
 
     @Option(category = OptionCategory.USER, help = "Choose the heuristic that manages how GPU computations are mapped to devices, if multiple GPUs are available.", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<String> DeviceSelectionHeuristic = new OptionKey<>(GrCUDAOptionMap.DEFAULT_DEVICE_SELECTION_HEURISTIC);
+    public static final OptionKey<String> DeviceSelectionPolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_DEVICE_SELECTION_POLICY.toString());
 
     @Option(category = OptionCategory.USER, help = "Select a managed memory memAdvise flag, if multiple GPUs are available.", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<String> MemAdvisePolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_MEM_ADVISE_POLICY);
+    public static final OptionKey<String> MemAdvisePolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_MEM_ADVISE_POLICY.toString());
 }

@@ -55,7 +55,6 @@ import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.SyncGrCUDAExecutionContext;
-import com.nvidia.grcuda.cudalibraries.tensorrt.TensorRTRegistry;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.TruffleLanguage.Env;
 import com.oracle.truffle.api.TruffleLogger;
@@ -116,7 +115,8 @@ public final class GrCUDAContext {
                 this.grCUDAExecutionContext = new GrCUDAExecutionContext(this, env ,dependencyPolicy, inputPrefetch ? PrefetcherEnum.ASYNC : PrefetcherEnum.NONE);
                 break;
             default:
-                this.grCUDAExecutionContext = new GrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.ASYNC : PrefetcherEnum.NONE);
+                LOGGER.severe("Cannot create an ExecutionContext. The selected execution policy is not valid: " + executionPolicy);
+                throw new GrCUDAException("selected execution policy is not valid: " + executionPolicy);
         }
 
         Namespace namespace = new Namespace(ROOT_NAMESPACE);

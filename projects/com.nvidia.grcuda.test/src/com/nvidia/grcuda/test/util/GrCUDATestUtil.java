@@ -62,7 +62,7 @@ public class GrCUDATestUtil {
     }
 
     /**
-     * Return a list of {@link GrCUDATestOptionsStruct}, where each elemenent is a combination of input policy options.
+     * Return a list of {@link GrCUDATestOptionsStruct}, where each element is a combination of input policy options.
      * Useful to perform tests that cover all cases;
      * @return the cross-product of all options
      */
@@ -74,7 +74,7 @@ public class GrCUDATestUtil {
                 {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT},
                 {DependencyPolicyEnum.NO_CONST, DependencyPolicyEnum.WITH_CONST},
                 {true, false},  // ForceStreamAttach
-                {true, false},  // With and without logging
+                {true, false},  // With and without timing of kernels
         }));
         List<Object[]> combinations = new ArrayList<>();
         options.forEach(optionArray -> {
@@ -106,7 +106,6 @@ public class GrCUDATestUtil {
     public static Context.Builder buildTestContext() {
         return Context.newBuilder().allowAllAccess(true).allowExperimentalOptions(true).logHandler(new TestLogHandler())
                 .option("log.grcuda.com.nvidia.grcuda.level", "WARNING")
-                .option("log.grcuda.com.nvidia.grcuda.GrCUDAContext.level", "SEVERE")
 //                .option("log.grcuda." + GrCUDALogger.STREAM_LOGGER + ".level", "INFO")  // Uncomment to print kernel log;
                 ;
     }

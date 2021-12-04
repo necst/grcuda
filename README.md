@@ -389,17 +389,20 @@ Individual benchmarks are executed from `benchmark_main.py`, while running all b
 ## DAG Scheduling Settings
 The automatic DAG scheduling of GrCUDA supports different settings that can be used for debugging or to simplify the dependency computation in some circumstances. These options are provided at startup, using `--experimental-options --grcuda.OptionName=value`.
 
+* `EnableComputationTimers`: measure the execution time of GPU computations; `false` by default;
 * `ExecutionPolicy`: this regulates the global scheduling policy;
  `async` uses the DAG for asynchronous parallel execution, while `sync` executes each computation synchronously and can be used for debugging or to measure the execution time of each kernel
 * `DependencyPolicy`: choose how data dependencies between GrCUDA computations are computed;
-`with-const` considers read-only parameter, while `no-const` assumes that all arguments can be modified in a computation
+`with-const` considers read-only parameter, while `no-const` assumes that all arguments can be modified in a computation;
 * `RetrieveNewStreamPolicy`: choose how streams for new GrCUDA computations are created;
  `fifo` (the default) reuses free streams whenever possible, while `always-new` creates new streams every time a computation should use a stream different from its parent
 * `RetrieveParentStreamPolicy`: choose how streams for new GrCUDA computations are obtained from parent computations;
-`same-as-parent` simply reuse the stream of one of the parent computations, while `disjoint` allows parallel scheduling of multiple child computations as long as their arguments are disjoint
-* `InputPrefetch`: if present, prefetch the data on GPUs with architecture starting from Pascal. In most cases, it improves performance.
-* `ForceStreamAttach`: if present, force association between arrays and CUDA streams. True by default on architectures older than Pascal, to allow concurrent CPU/GPU computation. On architectures starting from Pascal, it can improve performance.
-* `--grcuda.TimeComputation`: Enable time computation to get execution time of the kernels, default is false;
+`same-as-parent` simply reuse the stream of one of the parent computations, while `disjoint` allows parallel scheduling of multiple child computations as long as their arguments are disjoint;
+* `InputPrefetch`: if present, prefetch the data on GPUs with architecture starting from Pascal. In most cases, it improves performance;
+* `ForceStreamAttach`: if present, force association between arrays and CUDA streams. `true` by default on architectures older than Pascal, to allow concurrent CPU/GPU computation. On architectures starting from Pascal, it can improve performance;
+* `NumberOfGPUs`: set how many GPUs can be used during computation. It must be at least 1, and if > 1 more than 1 GPUs are used (if available). 1 by default;
+* `DeviceSelectionPolicy`: choose the heuristic that manages how GPU computations are mapped to devices, if multiple GPUs are available;
+* `MemAdvisePolicy`: select a managed memory `memAdvise` flag, if multiple GPUs are available. Options: `read-mostly`, `preferred-location`, `none` (default);
 
 ## Publications
 
