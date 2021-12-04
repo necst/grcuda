@@ -44,6 +44,9 @@ import com.nvidia.grcuda.GrCUDALanguage;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.MultiDimDeviceArray;
+import com.nvidia.grcuda.runtime.array.SparseVector;
+import com.nvidia.grcuda.runtime.array.SparseMatrixCOO;
+import com.nvidia.grcuda.runtime.array.SparseMatrixCSR;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.CachedContext;
@@ -83,5 +86,59 @@ public abstract class ArrayNode extends ExpressionNode {
             final boolean columnMajorOrder = false;
             return new MultiDimDeviceArray(grCUDAExecutionContext, elementType, elementsPerDim, columnMajorOrder);
         }
+    }
+
+//    @Specialization
+    SparseVector doDefaultSpVec(VirtualFrame frame,
+                            @CachedContext(GrCUDALanguage.class) GrCUDAContext context) {
+        final AbstractGrCUDAExecutionContext grCUDAExecutionContext = context.getGrCUDAExecutionContext();
+        long[] elements = new long[sizeNodes.length];
+        int dim = 0;
+        for (ExpressionNode sizeNode : sizeNodes) {
+            Object size = sizeNode.execute(frame);
+            if (!(size instanceof Number)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new GrCUDAInternalException("size in dimension " + dim + " must be a number", this);
+            }
+            elements[dim] = ((Number) size).longValue();
+            dim += 1;
+        }
+        return new SparseVector(grCUDAExecutionContext, elements[0], Type.values()[(int) elements[1]], Type.values()[(int) elements[2]]);
+    }
+
+//    @Specialization
+    SparseMatrixCOO doDefaultCOO(VirtualFrame frame,
+                            @CachedContext(GrCUDALanguage.class) GrCUDAContext context) {
+        final AbstractGrCUDAExecutionContext grCUDAExecutionContext = context.getGrCUDAExecutionContext();
+        long[] elements = new long[sizeNodes.length];
+        int dim = 0;
+        for (ExpressionNode sizeNode : sizeNodes) {
+            Object size = sizeNode.execute(frame);
+            if (!(size instanceof Number)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new GrCUDAInternalException("size in dimension " + dim + " must be a number", this);
+            }
+            elements[dim] = ((Number) size).longValue();
+            dim += 1;
+        }
+        return new SparseMatrixCOO(grCUDAExecutionContext, Type.values()[(int) elements[0]], Type.values()[(int) elements[1]], elements[2], elements[3], elements[4]);
+    }
+
+//    @Specialization
+    SparseMatrixCSR doDefaultCSR(VirtualFrame frame,
+                            @CachedContext(GrCUDALanguage.class) GrCUDAContext context) {
+        final AbstractGrCUDAExecutionContext grCUDAExecutionContext = context.getGrCUDAExecutionContext();
+        long[] elements = new long[sizeNodes.length];
+        int dim = 0;
+        for (ExpressionNode sizeNode : sizeNodes) {
+            Object size = sizeNode.execute(frame);
+            if (!(size instanceof Number)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new GrCUDAInternalException("size in dimension " + dim + " must be a number", this);
+            }
+            elements[dim] = ((Number) size).longValue();
+            dim += 1;
+        }
+        return new SparseMatrixCSR(grCUDAExecutionContext, Type.values()[(int) elements[0]], Type.values()[(int) elements[1]], elements[2], elements[3], elements[4]);
     }
 }
