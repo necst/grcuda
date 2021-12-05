@@ -4,6 +4,7 @@ import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -12,6 +13,7 @@ import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(Parameterized.class)
 public class GrCUDAMultiGPUExecutionContextTest {
@@ -29,6 +31,11 @@ public class GrCUDAMultiGPUExecutionContextTest {
     }
 
     private final GrCUDATestOptionsStruct options;
+
+    /**
+     * Set to false if we discover that only a single GPU is available. Doing other tests is not useful;
+     */
+    private static boolean multipleGPUs = true;
 
     public GrCUDAMultiGPUExecutionContextTest(GrCUDATestOptionsStruct options) {
         this.options = options;
@@ -81,6 +88,19 @@ public class GrCUDAMultiGPUExecutionContextTest {
                     "    }\n" +
                     "}";
 
+    @Before
+    public void skipIfSingleGPU() {
+        assumeTrue(multipleGPUs);
+    }
+
+    private void checkIfMultiGPU(Context context) {
+        Value deviceCount = context.eval("grcuda", "cudaGetDeviceCount()");
+        if (deviceCount.asInt() < 2) {
+            multipleGPUs = false;
+            System.out.println("warning: only 1 GPU available, skipping further multi-GPU tests");
+        }
+    }
+
     /**
      * Execute 2 independent kernels, 2 times in a row;
      */
@@ -88,6 +108,8 @@ public class GrCUDAMultiGPUExecutionContextTest {
     public void dependency2KernelsSimpleTest() {
 
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
+
+            checkIfMultiGPU(context);
 
             final int numElements = 10;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -131,6 +153,8 @@ public class GrCUDAMultiGPUExecutionContextTest {
 
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
 
+            checkIfMultiGPU(context);
+
             final int numElements = 1000000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
             Value deviceArrayConstructor = context.eval("grcuda", "DeviceArray");
@@ -170,6 +194,8 @@ public class GrCUDAMultiGPUExecutionContextTest {
     public void dependencyPipelineWithArrayCopyTest() {
 
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
+
+            checkIfMultiGPU(context);
 
             final int numElements = 100000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;

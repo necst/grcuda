@@ -36,6 +36,7 @@ package com.nvidia.grcuda.test.cudalibraries;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeNoException;
+import static org.junit.Assume.assumeTrue;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,6 +44,7 @@ import java.util.function.Function;
 
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -71,6 +73,17 @@ public class CUBLASTest {
         this.inputPrefetch = inputPrefetch;
         this.typeChar = typeChar;
     }
+
+    /**
+     * Set to false if we discover that cuBLAS is not available;
+     */
+    private static boolean cuBLASAvailable = true;
+
+    @Before
+    public void skipIfcuBLASNotAvailable() {
+        assumeTrue(cuBLASAvailable);
+    }
+
 
     /**
      * BLAS Level-1 Test.
@@ -107,6 +120,7 @@ public class CUBLASTest {
             assertOutputVectorIsCorrect(numElements, y, (Integer i) -> i);
         } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
+            cuBLASAvailable = false;
             assumeNoException(e);
         }
     }
@@ -166,6 +180,7 @@ public class CUBLASTest {
             assertOutputVectorIsCorrect(numElements, y, (Integer i) -> i);
         } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
+            cuBLASAvailable = false;
             assumeNoException(e);
         }
     }
@@ -230,6 +245,7 @@ public class CUBLASTest {
             assertOutputMatrixIsCorrect(numDim, numElements, matrixC, (Integer i) -> i);
         } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
+            cuBLASAvailable = false;
             assumeNoException(e);
         }
     }

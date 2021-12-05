@@ -34,6 +34,7 @@ import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -42,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static org.junit.Assume.assumeNoException;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(Parameterized.class)
 public class CUMLTest {
@@ -64,6 +66,16 @@ public class CUMLTest {
         this.policy = policy;
         this.inputPrefetch = inputPrefetch;
         this.typeChar = typeChar;
+    }
+
+    /**
+     * Set to false if we discover that cuML is not available;
+     */
+    private static boolean cuMLAvailable = true;
+
+    @Before
+    public void skipIfcuMLNotAvailable() {
+        assumeTrue(cuMLAvailable);
     }
 
     @Test
@@ -93,9 +105,12 @@ public class CUMLTest {
                     CUBLASTest.assertOutputVectorIsCorrect(numRows, labels, (Integer i) -> i / 10, this.typeChar);
                 } catch (Exception e) {
                     System.out.println("warning: failed to launch cuML, skipping test");
+                    cuMLAvailable = false;
+                    assumeNoException(e);
                 }
             } catch (Exception e) {
                 System.out.println("warning: cuML not enabled, skipping test");
+                cuMLAvailable = false;
                 assumeNoException(e);
             }
         }

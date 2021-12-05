@@ -36,12 +36,14 @@ package com.nvidia.grcuda.test.cudalibraries;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeNoException;
+import static org.junit.Assume.assumeTrue;
 
 import java.util.Collection;
 import java.util.function.Function;
 
 import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -67,6 +69,16 @@ public class CUBLASWithScheduleTest {
 
     private final GrCUDATestOptionsStruct options;
     private final char typeChar = 'D';
+
+    /**
+     * Set to false if we discover that cuBLAS is not available;
+     */
+    private static boolean cuBLASAvailable = true;
+
+    @Before
+    public void skipIfcuBLASNotAvailable() {
+        assumeTrue(cuBLASAvailable);
+    }
 
     public CUBLASWithScheduleTest(GrCUDATestOptionsStruct options) {
         this.options = options;
@@ -123,6 +135,7 @@ public class CUBLASWithScheduleTest {
             assertOutputVectorIsCorrect(numElements, z, (Integer i) -> -2 * i);
         } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
+            cuBLASAvailable = false;
             assumeNoException(e);
         }
     }
@@ -179,6 +192,7 @@ public class CUBLASWithScheduleTest {
             assertOutputVectorIsCorrect(numElements, y, (Integer i) -> 2 * i);
         } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
+            cuBLASAvailable = false;
             assumeNoException(e);
         }
     }
@@ -238,6 +252,7 @@ public class CUBLASWithScheduleTest {
             assertOutputVectorIsCorrect(numElements, y, (Integer i) -> 2 * i);
         } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
+            cuBLASAvailable = false;
             assumeNoException(e);
         }
     }
@@ -295,6 +310,7 @@ public class CUBLASWithScheduleTest {
             assertOutputVectorIsCorrect(numElements, z, (Integer i) -> 2 * i);
         } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
+            cuBLASAvailable = false;
             assumeNoException(e);
         }
     }
@@ -358,6 +374,7 @@ public class CUBLASWithScheduleTest {
             assertOutputVectorIsCorrect(numElements, x, (Integer i) -> 4 * i);
         } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
+            cuBLASAvailable = false;
             assumeNoException(e);
         }
     }
@@ -435,6 +452,7 @@ public class CUBLASWithScheduleTest {
             assertOutputMatrixIsCorrect(numDim, numDim, matrixG, (Integer i) -> -i);
         } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
+            cuBLASAvailable = false;
             assumeNoException(e);
         }
     }

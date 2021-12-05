@@ -87,15 +87,11 @@ public final class CUDARuntime {
     public static final String CUDA_LIBRARY_NAME = "cuda";
     static final String NVRTC_LIBRARY_NAME = "nvrtc";
 
-    private int lastDeviceSet = 0;
     private final GrCUDAContext context;
     private final NVRuntimeCompiler nvrtc;
 
     private final List<GPUPointer> innerCudaContexts = new ArrayList<>();
-    /**
-     * How many GPUs are available in this system;
-     */
-    private int numberOfAvailableGPUs = GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs;
+
     /**
      * How many GPUs are actually used by GrCUDA. It must hold 1 <= numberOfGPUsToUse <= numberOfAvailableGPUs;
      */
@@ -165,7 +161,7 @@ public final class CUDARuntime {
     /**
      * Interface used to load and build GPU kernels, optimized for single or multi-GPU systems;
      */
-    private final LoadBuildKernelInterface loadBuildKernel;
+    private final KernelManagementInterface kernelManagement;
 
     public CUDARuntime(GrCUDAContext context, Env env) {
         this.context = context;
@@ -184,9 +180,9 @@ public final class CUDARuntime {
             setupSupportForMultiGPU();
             // Setup the right interface for loading and building kernels;
             if (isMultiGPUEnabled()) {
-                this.loadBuildKernel = new LoadBuildKernelMultiGPU();
+                this.kernelManagement = new KernelManagementMultiGPU();
             } else {
-                this.loadBuildKernel = new LoadBuildKernelSingleGPU();
+                this.kernelManagement = new KernelManagementSingleGPU();
             }
         } catch (UnsatisfiedLinkError e) {
             throw new GrCUDAException(e.getMessage());
@@ -208,8 +204,8 @@ public final class CUDARuntime {
      */
     private void setupSupportForMultiGPU() {
         // Find how many GPUs are available on this system;
-        this.numberOfAvailableGPUs = cudaGetDeviceCount();
-        RUNTIME_LOGGER.fine("identified " + this.numberOfAvailableGPUs + " GPUs available on this machine");
+        int numberOfAvailableGPUs = cudaGetDeviceCount();
+        RUNTIME_LOGGER.fine("identified " + numberOfAvailableGPUs + " GPUs available on this machine");
         this.numberOfGPUsToUse = numberOfAvailableGPUs;
         if (numberOfAvailableGPUs <= 0) {
             RUNTIME_LOGGER.severe("GrCUDA initialization failed, no GPU device is available (devices count = " + numberOfAvailableGPUs + ")");
@@ -232,7 +228,7 @@ public final class CUDARuntime {
         for (int i = 0; i < this.numberOfGPUsToUse; i++) {
             this.loadedModules.add(new HashMap<String, CUModule>());
         }
-        RUNTIME_LOGGER.info("initialized GrCUDA to use " + this.numberOfGPUsToUse + "/" + this.numberOfAvailableGPUs + " GPUs");
+        RUNTIME_LOGGER.info("initialized GrCUDA to use " + this.numberOfGPUsToUse + "/" + numberOfAvailableGPUs + " GPUs");
     }
     
     // using this slow/uncached instance since all calls are non-critical
@@ -813,10 +809,6 @@ public final class CUDARuntime {
         return callable;
     }
 
-    public void setLastDeviceUsed(int device) {
-        this.lastDeviceSet = device;
-    }
-
     private void checkCUDAReturnCode(Object result, String... function) {
         if (!(result instanceof Integer)) {
             CompilerDirectives.transferToInterpreter();
@@ -956,10 +948,9 @@ public final class CUDARuntime {
             public Object call(CUDARuntime cudaRuntime, Object[] args) throws UnsupportedMessageException, UnknownIdentifierException, UnsupportedTypeException, ArityException {
                 checkArgumentLength(args, 1);
                 int device = expectInt(args[0]);
-                if (cudaRuntime.isMultiGPUEnabled()) {
-                    cudaRuntime.setLastDeviceUsed(device);
+                if (cudaRuntime.isMultiGPUEnabled() && device >= 0 && device < cudaRuntime.numberOfGPUsToUse) {
+                    callSymbol(cudaRuntime, device);
                 }
-                callSymbol(cudaRuntime, device);
                 return NoneValue.get();
             }
         },
@@ -1349,24 +1340,54 @@ public final class CUDARuntime {
      *************************************************************/
 
     /**
-     * Provide optimized interfaces to load and build GPU kernels on single and multi-GPU systems;
+     * Provide optimized interfaces to load, build and launch GPU kernels on single and multi-GPU systems;
      */
-    interface LoadBuildKernelInterface {
-        @TruffleBoundary
+    interface KernelManagementInterface {
         Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature);
 
-        @TruffleBoundary
         Kernel buildKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String signature, String moduleName, PTXKernel ptx);
+
+        void launchKernel(CUDARuntime runtime, Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream);
+
+        @TruffleBoundary
+        default void launchKernelInternal(CUDARuntime runtime, KernelConfig config, KernelArguments args, CUDAStream stream, long kernelFunctionHandle) {
+            try {
+                Object callable = CUDADriverFunction.CU_LAUNCHKERNEL.getSymbol(runtime);
+                Dim3 gridSize = config.getGridSize();
+                Dim3 blockSize = config.getBlockSize();
+                Object result = INTEROP.execute(
+                    callable,
+                    kernelFunctionHandle,
+                    gridSize.getX(),
+                    gridSize.getY(),
+                    gridSize.getZ(),
+                    blockSize.getX(),
+                    blockSize.getY(),
+                    blockSize.getZ(),
+                    config.getDynamicSharedMemoryBytes(),
+                    stream.getRawPointer(),
+                    args.getPointer(),              // pointer to kernel arguments array
+                    0                               // extra args
+                );
+                checkCUReturnCode(result, "cuLaunchKernel");
+            } catch (InteropException e) {
+                throw new GrCUDAException(e);
+            }
+        }
     }
 
-    class LoadBuildKernelSingleGPU implements LoadBuildKernelInterface {
+    class KernelManagementSingleGPU implements KernelManagementInterface {
+
+        // TODO: we might want to support single-GPU system on systems with multiple GPUs,
+        //  without having to enable all GPUs. In this case, specify a custom deviceId instead of "0";
+
         @TruffleBoundary
         @Override
         public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature) {
             // Load module from GPU 0;
             CUModule module = loadedModules.get(0).get(cubinFile);
             if (module == null) {
-                // load module as it is not yet loaded
+                // Load module as it is not yet loaded;
                 module = cuModuleLoad(cubinFile);
                 loadedModules.get(0).put(cubinFile, module);
             }
@@ -1383,9 +1404,15 @@ public final class CUDARuntime {
             return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), List.of(kernelFunctionHandle),
                     signature, List.of(module), ptx.getPtxSource());
         }
+
+        @Override
+        public void launchKernel(CUDARuntime runtime, Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream) {
+            long kernelFunctionHandle = kernel.getKernelFunctionHandle(0);
+            launchKernelInternal(runtime, config, args, stream, kernelFunctionHandle);
+        }
     }
 
-    class LoadBuildKernelMultiGPU implements LoadBuildKernelInterface {
+    class KernelManagementMultiGPU implements KernelManagementInterface {
         @TruffleBoundary
         @Override
         public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature) {
@@ -1394,6 +1421,7 @@ public final class CUDARuntime {
             int currentDevice = cudaGetDevice();
 
             for (int i = 0; i < numberOfGPUsToUse; i++) {
+                // Load the kernel on each GPU;
                 CUModule module = loadedModules.get(i).get(cubinFile);
                 cudaSetDevice(i);
                 if (module == null) {
@@ -1405,6 +1433,7 @@ public final class CUDARuntime {
                 long kernelFunctionHandle = cuModuleGetFunction(module, symbolName);
                 kernelFunctionHandles.add(kernelFunctionHandle);
             }
+            // Restore the device previously active;
             cudaSetDevice(currentDevice);
 
             return new Kernel(grCUDAExecutionContext, kernelName, symbolName, kernelFunctionHandles, signature, modules);
@@ -1418,36 +1447,49 @@ public final class CUDARuntime {
             int currentDevice = cudaGetDevice();
 
             for (int i = 0; i < numberOfGPUsToUse; i++) {
+                // Load the kernel on each GPU;
                 cudaSetDevice(i);
                 CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
                 long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
                 kernelFunctionHandles.add(kernelFunctionHandle);
                 modules.add(module);
+
                 loadedModules.get(i).put(moduleName, module);
             }
+            // Restore the device previously active;
             cudaSetDevice(currentDevice);
             return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), kernelFunctionHandles,
-                    signature, modules, ptx.getPtxSource());
+                              signature, modules, ptx.getPtxSource());
+        }
+
+        @Override
+        public void launchKernel(CUDARuntime runtime, Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream) {
+            // Set the device where the kernel is executed;
+            cudaSetDevice(stream.getStreamDeviceId());
+            long kernelFunctionHandle = kernel.getKernelFunctionHandle(stream.getStreamDeviceId());
+            launchKernelInternal(runtime, config, args, stream, kernelFunctionHandle);
         }
     }
 
-    @TruffleBoundary
     public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Binding binding) {
-        return loadBuildKernel.loadKernel(grCUDAExecutionContext, binding.getLibraryFileName(), binding.getName(), binding.getSymbolName(), binding.getNIDLParameterSignature());
+        return kernelManagement.loadKernel(grCUDAExecutionContext, binding.getLibraryFileName(), binding.getName(), binding.getSymbolName(), binding.getNIDLParameterSignature());
     }
 
-    @TruffleBoundary
     public Kernel buildKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String code, String kernelName, String signature) {
         RUNTIME_LOGGER.finest("buildKernel device:" + cudaGetDevice());
         String moduleName = "truffle" + context.getNextModuleId();
         PTXKernel ptx = nvrtc.compileKernel(code, kernelName, moduleName, "--std=c++14");
-        return loadBuildKernel.buildKernel(grCUDAExecutionContext, kernelName, signature, moduleName, ptx);
+        return kernelManagement.buildKernel(grCUDAExecutionContext, kernelName, signature, moduleName, ptx);
+    }
+
+    public void cuLaunchKernel(Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream) {
+        this.kernelManagement.launchKernel(this, kernel, config, args, stream);
     }
 
     @TruffleBoundary
     public CUModule cuModuleLoad(String cubinName) {
         assertCUDAInitialized();
-        int currDevice = isMultiGPUEnabled() ? cudaGetDevice() : 0;
+        int currDevice = cudaGetDevice();
         if (this.loadedModules.get(currDevice).containsKey(cubinName)) {
             throw new GrCUDAException("A module for " + cubinName + " was already loaded.");
         }
@@ -1464,7 +1506,7 @@ public final class CUDARuntime {
     @TruffleBoundary
     public CUModule cuModuleLoadData(String ptx, String moduleName) {
         assertCUDAInitialized();
-        int currDevice = isMultiGPUEnabled() ? cudaGetDevice() : 0;
+        int currDevice = cudaGetDevice();
         if (this.loadedModules.get(currDevice).containsKey(moduleName)) {
             throw new GrCUDAException("A module for " + moduleName + " was already loaded.");
         }
@@ -1490,14 +1532,14 @@ public final class CUDARuntime {
         }
     }
 
-    @TruffleBoundary
     /**
      * Get function handle to kernel in module.
      *
      * @param kernelModule CUmodule containing the kernel function
-     * @param kernelName
+     * @param kernelName name of the kernel to load from the module
      * @return native CUfunction function handle
      */
+    @TruffleBoundary
     public long cuModuleGetFunction(CUModule kernelModule, String kernelName) {
         try (UnsafeHelper.Integer64Object functionPtr = UnsafeHelper.createInteger64Object()) {
             Object callable = CUDADriverFunction.CU_MODULEGETFUNCTION.getSymbol(this);
@@ -1517,51 +1559,6 @@ public final class CUDARuntime {
             Object callable = CUDADriverFunction.CU_CTXSYNCHRONIZE.getSymbol(this);
             Object result = INTEROP.execute(callable);
             checkCUReturnCode(result, "cuCtxSynchronize");
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
-    @TruffleBoundary
-    public void cuLaunchKernel(Kernel kernel, KernelConfig config, KernelArguments args) {
-        this.cuLaunchKernel(kernel, config, args, config.getStream());
-    }
-
-    @TruffleBoundary
-    public void cuLaunchKernel(Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream) {
-
-        // FIXME: as multigpu is not ~properly~ supported in this branch
-        // using multiple gpu requires the stream associated to the device to be
-        // set manually.
-        long kernelFunctionHandle;
-        if (isMultiGPUEnabled()) {
-            stream.setDeviceId(this.lastDeviceSet);
-            cudaSetDevice(stream.getStreamDeviceId());
-            assert stream.getStreamDeviceId() == cudaGetDevice();
-            kernelFunctionHandle = kernel.getKernelFunctionHandle(stream.getStreamDeviceId());
-        } else {
-            kernelFunctionHandle = kernel.getKernelFunctionHandle(0);
-        }
-
-        try {
-
-            Object callable = CUDADriverFunction.CU_LAUNCHKERNEL.getSymbol(this);
-            Dim3 gridSize = config.getGridSize();
-            Dim3 blockSize = config.getBlockSize();
-            Object result = INTEROP.execute(callable,
-                    kernelFunctionHandle,
-                            gridSize.getX(),
-                            gridSize.getY(),
-                            gridSize.getZ(),
-                            blockSize.getX(),
-                            blockSize.getY(),
-                            blockSize.getZ(),
-                            config.getDynamicSharedMemoryBytes(),
-                            stream.getRawPointer(),
-                            args.getPointer(),              // pointer to kernel arguments array
-                            0                               // extra args
-            );
-            checkCUReturnCode(result, "cuLaunchKernel");
         } catch (InteropException e) {
             throw new GrCUDAException(e);
         }
@@ -1679,25 +1676,15 @@ public final class CUDARuntime {
     private void assertCUDAInitialized() {
         if (!context.isCUDAInitialized()) {
             int currentDevice = cudaGetDevice();
-            if (isMultiGPUEnabled()) {
-                int numDevices = cudaGetDeviceCount();
-                for (int i = 0; i < numDevices; i++) {
-                    cudaSetDevice(i);
-                    cuInit();
-                    // A simple way to create the device context in the driver is to call any CUDA
-                    // API function;
-                    cudaDeviceSynchronize();
-                    this.innerCudaContexts.add(initializeInnerCudaContext(i));
-                }
-                cudaSetDevice(currentDevice);
-            } else {
+            for (int i = 0; i < numberOfGPUsToUse; i++) {
+                cudaSetDevice(i);
                 cuInit();
-                // A simple way to create the device context in the driver is to call any CUDA API
-                // function;
+                // A simple way to create the device context in the driver is to call any CUDA
+                // API function;
                 cudaDeviceSynchronize();
-                // Initialize only device 0;
-                this.innerCudaContexts.add(initializeInnerCudaContext(0));
+                this.innerCudaContexts.add(initializeInnerCudaContext(i));
             }
+            cudaSetDevice(currentDevice);
             context.setCUDAInitialized();
         }
     }
