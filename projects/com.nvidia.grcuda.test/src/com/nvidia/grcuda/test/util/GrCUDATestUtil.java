@@ -112,7 +112,7 @@ public class GrCUDATestUtil {
     public static Context.Builder buildTestContext() {
         return Context.newBuilder().allowAllAccess(true).allowExperimentalOptions(true).logHandler(new TestLogHandler())
                 .option("log.grcuda.com.nvidia.grcuda.level", "WARNING")
-//                .option("log.grcuda." + GrCUDALogger.STREAM_LOGGER + ".level", "INFO")  // Uncomment to print kernel log;
+                .option("log.grcuda." + GrCUDALogger.COMPUTATION_LOGGER + ".level", "FINE")  // Uncomment to print kernel log;
                 ;
     }
 

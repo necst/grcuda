@@ -29,11 +29,18 @@ package com.nvidia.grcuda.runtime;
 
 import java.util.HashMap;
 
-public abstract class ProfilableElement {
+/**
+ * Abstract class that stores the historical execution data of a given computation (for example, a certain GPU kernel).
+ * Classes that need to store execution times or other profiling information should use this class.
+ * How the execution time (or other information) are actually measured is not specified by this class,
+ * which simply defines how such information is stored for future utilization;
+ */
+public abstract class ProfiledComputation {
 
-    // Track the latest execution time associated to the GPU on which it was executed;
+    // Track the last execution time associated to the GPU on which it was executed;
     HashMap<Integer, Float> collectionOfExecution;
-    public ProfilableElement(){
+
+    public ProfiledComputation() {
         collectionOfExecution = new HashMap<>();
     }
 

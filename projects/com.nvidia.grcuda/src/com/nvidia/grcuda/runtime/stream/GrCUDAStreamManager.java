@@ -151,7 +151,6 @@ public class GrCUDAStreamManager {
      */
     public void assignEventStart(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
-
         if (isTimeComputation && vertex.getComputation().canUseStream()) {
             // cudaEventRecord is sensitive to the ctx of the device that is currently set, so we call cudaSetDevice
             runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
@@ -279,8 +278,7 @@ public class GrCUDAStreamManager {
                 // Switch to the device where the computation has been done, otherwise we cannot call the cudaEventElapsedTime API;
                 runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
                 float timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());
-                STREAM_LOGGER.info("Kernel (" + computation + ") Execution time: " + timeMilliseconds + "ms");
-                computation.setExecutionTime(computation.getStream().getStreamDeviceId(), timeMilliseconds);
+                computation.setExecutionTime(timeMilliseconds);
                 // Destroy the start event associated to this computation:
                 runtime.cudaEventDestroy(computation.getEventStart().get());
             }
@@ -288,7 +286,7 @@ public class GrCUDAStreamManager {
             runtime.cudaEventDestroy(computation.getEventStop().get());
 
         } else {
-            STREAM_LOGGER.warning("\t* missing event to destroy for computation=" + computation);
+            STREAM_LOGGER.warning("missing event to destroy for computation=" + computation);
         }
     }
 

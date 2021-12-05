@@ -86,7 +86,7 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         arrayPrefetcher.prefetchToGpu(vertex);
 
         // Start the computation;
-        Object result = executeComputationSync(vertex);
+        Object result = executeComputation(vertex);
 
         // Associate a CUDA event to this computation, if performed asynchronously;
         streamManager.assignEventStop(vertex);
@@ -113,7 +113,7 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         streamManager.cleanup();
     }
 
-    private Object executeComputationSync(ExecutionDAG.DAGVertex vertex) throws UnsupportedTypeException {
+    private Object executeComputation(ExecutionDAG.DAGVertex vertex) throws UnsupportedTypeException {
         // Before starting this computation, ensure that all its parents have finished their computation;
         streamManager.syncParentStreams(vertex);
 

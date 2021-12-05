@@ -31,6 +31,8 @@
 package com.nvidia.grcuda.runtime.computation;
 
 import com.nvidia.grcuda.CUDAEvent;
+import com.nvidia.grcuda.GrCUDAException;
+import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyComputation;
@@ -38,17 +40,22 @@ import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
+import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import static com.nvidia.grcuda.GrCUDALogger.COMPUTATION_LOGGER;
+
 /**
  * Basic class that represents GrCUDA computations,
  * and is used to model data dependencies between computations;
  */
 public abstract class GrCUDAComputationalElement {
+
+    private TruffleLogger LOGGER = GrCUDALogger.getLogger(COMPUTATION_LOGGER);
 
     /**
      * This list contains the original set of input arguments that are used to compute dependencies;
@@ -94,6 +101,18 @@ public abstract class GrCUDAComputationalElement {
     private final DependencyComputation dependencyComputation;
 
     /**
+     * True IFF {@link GrCUDAComputationalElement#executionTimeMs} has been set;
+     */
+    private boolean executionTimeMeasured = false;
+
+    /**
+     * Execution time in milliseconds of this computation. The execution time is available only after the end of this computation,
+     * and whether the time has been measured is given by {@link GrCUDAComputationalElement#executionTimeMeasured}.
+     * Whether the execution time is measurable (and measured) depends on the GrCUDAComputationalElement and on user-specified settings.
+     */
+    private float executionTimeMs = 0;
+
+    /**
      * Constructor that takes an argument set initializer to build the set of arguments used in the dependency computation
      * @param grCUDAExecutionContext execution context in which this computational element will be scheduled
      * @param initializer the initializer used to build the internal set of arguments considered in the dependency computation
@@ -119,21 +138,22 @@ public abstract class GrCUDAComputationalElement {
     }
 
     /**
-     * Set in Profilable Element the elapsed time between start event of the computation and the end event
-     *
-     * @param deviceId
-     * @param time
-     *
+     * Store the execution time for this ComputationalElement (in milliseconds)
+     * @param executionTimeMs the execution time of this ComputationalElement
      */
-    public void setExecutionTime(int deviceId, float time){ }
+    public void setExecutionTime(float executionTimeMs) {
+        this.executionTimeMs = executionTimeMs;
+        this.executionTimeMeasured = true;
+        LOGGER.fine("computation (" + this + "), execution time: " + executionTimeMs + " ms");
+    }
 
-    /**
-     * Get execution time of the computation on the device deviceId,
-     * if computation has not yet been executed on the device then it returns null.
-     * @param deviceId
-     * @return execution time
-     */
-    public float getExecutionTimeOnDevice(int deviceId){ return 0; }
+    public float getExecutionTime() {
+        if (this.executionTimeMeasured) {
+            return this.executionTimeMs;
+        } else {
+            throw new GrCUDAException("execution time for computation " + this + " has not been measured!");
+        }
+    }
 
     /**
      * Return if this computation could lead to dependencies with future computations.
