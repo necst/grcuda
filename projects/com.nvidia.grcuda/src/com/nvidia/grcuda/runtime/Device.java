@@ -51,6 +51,9 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
+// TODO: we assume that all devices are GPUs. It might make sense to have an "abstract device" from which we inherit CPUDevice and GPUDevice (this class),
+//  and have "deviceId" as parameter of the class;
+
 @ExportLibrary(InteropLibrary.class)
 public final class Device implements TruffleObject {
 
@@ -59,7 +62,6 @@ public final class Device implements TruffleObject {
     private static final String IS_CURRENT = "isCurrent";
     private static final String SET_CURRENT = "setCurrent";
     private static final MemberSet PUBLIC_MEMBERS = new MemberSet(ID, PROPERTIES, IS_CURRENT, SET_CURRENT);
-
     private final int deviceId;
     private final GPUDeviceProperties properties;
     private final CUDARuntime runtime;
@@ -72,6 +74,10 @@ public final class Device implements TruffleObject {
 
     public GPUDeviceProperties getProperties() {
         return properties;
+    }
+
+    public int getDeviceId() {
+        return deviceId;
     }
 
     @Override
@@ -155,6 +161,9 @@ public final class Device implements TruffleObject {
     }
 }
 
+/**
+ * Find if the specified device is the one currently in use;
+ */
 @ExportLibrary(InteropLibrary.class)
 final class IsCurrentFunction implements TruffleObject {
     private final int deviceId;
@@ -184,9 +193,12 @@ final class IsCurrentFunction implements TruffleObject {
     }
 }
 
+/**
+ * Set the specified device as the one currently in use;
+ */
 @ExportLibrary(InteropLibrary.class)
 class SetCurrentFunction implements TruffleObject {
-    private int deviceId;
+    private final int deviceId;
     private final CUDARuntime runtime;
 
     SetCurrentFunction(int deviceId, CUDARuntime runtime) {
