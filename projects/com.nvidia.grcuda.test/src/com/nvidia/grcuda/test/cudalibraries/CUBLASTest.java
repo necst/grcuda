@@ -41,7 +41,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Function;
 
-import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.junit.Test;
@@ -106,7 +105,7 @@ public class CUBLASTest {
             Value taxpy = polyglot.eval("grcuda", "BLAS::cublas" + typeChar + "axpy");
             taxpy.execute(numDim, alpha, x, 1, y, 1);
             assertOutputVectorIsCorrect(numElements, y, (Integer i) -> i);
-        } catch (GrCUDAException e) {
+        } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
             assumeNoException(e);
         }
@@ -165,7 +164,7 @@ public class CUBLASTest {
                             beta,
                             y, 1);
             assertOutputVectorIsCorrect(numElements, y, (Integer i) -> i);
-        } catch (GrCUDAException e) {
+        } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
             assumeNoException(e);
         }
@@ -229,7 +228,7 @@ public class CUBLASTest {
                             beta,
                             matrixC, numDim);
             assertOutputMatrixIsCorrect(numDim, numElements, matrixC, (Integer i) -> i);
-        } catch (GrCUDAException e) {
+        } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
             assumeNoException(e);
         }

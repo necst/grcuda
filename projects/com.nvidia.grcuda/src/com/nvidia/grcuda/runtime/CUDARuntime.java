@@ -162,6 +162,11 @@ public final class CUDARuntime {
      */
     private final boolean architectureIsPascalOrNewer;
 
+    /**
+     * Interface used to load and build GPU kernels, optimized for single or multi-GPU systems;
+     */
+    private final LoadBuildKernelInterface loadBuildKernel;
+
     public CUDARuntime(GrCUDAContext context, Env env) {
         this.context = context;
         try {
@@ -177,6 +182,12 @@ public final class CUDARuntime {
 
             // Initialize support for multiple GPUs in GrCUDA;
             setupSupportForMultiGPU();
+            // Setup the right interface for loading and building kernels;
+            if (isMultiGPUEnabled()) {
+                this.loadBuildKernel = new LoadBuildKernelMultiGPU();
+            } else {
+                this.loadBuildKernel = new LoadBuildKernelSingleGPU();
+            }
         } catch (UnsatisfiedLinkError e) {
             throw new GrCUDAException(e.getMessage());
         }
@@ -1330,73 +1341,99 @@ public final class CUDARuntime {
         }
     }
 
-// @TruffleBoundary
-// public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile,
-// String kernelName, String signature) {
-// CUModule module = loadedModules.get(cubinFile);
-// try {
-// if (module == null) {
-// module = cuModuleLoad(cubinFile);
-// }
-// long kernelFunction = cuModuleGetFunction(module, kernelName);
-// return new Kernel(grCUDAExecutionContext, kernelName, module, kernelFunction, signature);
-// } catch (Exception e) {
-// if ((module != null) && (module.getRefCount() == 1)) {
-// cuModuleUnload(module);
-// }
-// throw e;
-
-    /*************************************************************
+    /************************************************************
      *************************************************************
      * Implementation of CUDA driver API available within GrCUDA *
      * (not exposed to the host language);                       *
      *************************************************************
      *************************************************************/
 
+    /**
+     * Provide optimized interfaces to load and build GPU kernels on single and multi-GPU systems;
+     */
+    interface LoadBuildKernelInterface {
+        @TruffleBoundary
+        Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature);
+
+        @TruffleBoundary
+        Kernel buildKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String signature, String moduleName, PTXKernel ptx);
+    }
+
+    class LoadBuildKernelSingleGPU implements LoadBuildKernelInterface {
+        @TruffleBoundary
+        @Override
+        public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature) {
+            // Load module from GPU 0;
+            CUModule module = loadedModules.get(0).get(cubinFile);
+            if (module == null) {
+                // load module as it is not yet loaded
+                module = cuModuleLoad(cubinFile);
+                loadedModules.get(0).put(cubinFile, module);
+            }
+            long kernelFunctionHandle = cuModuleGetFunction(module, symbolName);
+            return new Kernel(grCUDAExecutionContext, kernelName, symbolName, List.of(kernelFunctionHandle), signature, List.of(module));
+        }
+
+        @TruffleBoundary
+        @Override
+        public Kernel buildKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String signature, String moduleName, PTXKernel ptx) {
+            CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
+            loadedModules.get(0).put(moduleName, module);
+            long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
+            return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), List.of(kernelFunctionHandle),
+                    signature, List.of(module), ptx.getPtxSource());
+        }
+    }
+
+    class LoadBuildKernelMultiGPU implements LoadBuildKernelInterface {
+        @TruffleBoundary
+        @Override
+        public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature) {
+            ArrayList<Long> kernelFunctionHandles = new ArrayList<>();
+            ArrayList<CUModule> modules = new ArrayList<>();
+            int currentDevice = cudaGetDevice();
+
+            for (int i = 0; i < numberOfGPUsToUse; i++) {
+                CUModule module = loadedModules.get(i).get(cubinFile);
+                cudaSetDevice(i);
+                if (module == null) {
+                    module = cuModuleLoad(cubinFile);
+                    loadedModules.get(i).put(cubinFile, module);
+                }
+                modules.add(module);
+
+                long kernelFunctionHandle = cuModuleGetFunction(module, symbolName);
+                kernelFunctionHandles.add(kernelFunctionHandle);
+            }
+            cudaSetDevice(currentDevice);
+
+            return new Kernel(grCUDAExecutionContext, kernelName, symbolName, kernelFunctionHandles, signature, modules);
+        }
+
+        @TruffleBoundary
+        @Override
+        public Kernel buildKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String signature, String moduleName, PTXKernel ptx) {
+            ArrayList<Long> kernelFunctionHandles = new ArrayList<>();
+            ArrayList<CUModule> modules = new ArrayList<>();
+            int currentDevice = cudaGetDevice();
+
+            for (int i = 0; i < numberOfGPUsToUse; i++) {
+                cudaSetDevice(i);
+                CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
+                long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
+                kernelFunctionHandles.add(kernelFunctionHandle);
+                modules.add(module);
+                loadedModules.get(i).put(moduleName, module);
+            }
+            cudaSetDevice(currentDevice);
+            return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), kernelFunctionHandles,
+                    signature, modules, ptx.getPtxSource());
+        }
+    }
+
     @TruffleBoundary
     public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Binding binding) {
-        if (isMultiGPUEnabled()) {
-            return this.loadKernelMultiGPU(grCUDAExecutionContext, binding.getLibraryFileName(), binding.getName(), binding.getSymbolName(), binding.getNIDLParameterSignature());
-        } else {
-            return this.loadKernelSingleGPU(grCUDAExecutionContext, binding.getLibraryFileName(), binding.getName(), binding.getSymbolName(), binding.getNIDLParameterSignature());
-        }
-    }
-
-    @TruffleBoundary
-    public Kernel loadKernelSingleGPU(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature) {
-        // Load module from GPU 0;
-        CUModule module = loadedModules.get(0).get(cubinFile);
-        if (module == null) {
-            // load module as it is not yet loaded
-            module = cuModuleLoad(cubinFile);
-            loadedModules.get(0).put(cubinFile, module);
-        }
-        long kernelFunctionHandle = cuModuleGetFunction(module, symbolName);
-        return new Kernel(grCUDAExecutionContext, kernelName, symbolName, List.of(kernelFunctionHandle), signature, List.of(module));
-    }
-
-    @TruffleBoundary
-    public Kernel loadKernelMultiGPU(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature) {
-
-        ArrayList<Long> kernelFunctionHandles = new ArrayList<>();
-        ArrayList<CUModule> modules = new ArrayList<>();
-        int currentDevice = cudaGetDevice();
-
-        for (int i = 0; i < numberOfGPUsToUse; i++) {
-            CUModule module = loadedModules.get(i).get(cubinFile);
-            cudaSetDevice(i);
-            if (module == null) {
-                module = cuModuleLoad(cubinFile);
-                loadedModules.get(i).put(cubinFile, module);
-            }
-            modules.add(module);
-
-            long kernelFunctionHandle = cuModuleGetFunction(module, symbolName);
-            kernelFunctionHandles.add(kernelFunctionHandle);
-        }
-        cudaSetDevice(currentDevice);
-
-        return new Kernel(grCUDAExecutionContext, kernelName, symbolName, kernelFunctionHandles, signature, modules);
+        return loadBuildKernel.loadKernel(grCUDAExecutionContext, binding.getLibraryFileName(), binding.getName(), binding.getSymbolName(), binding.getNIDLParameterSignature());
     }
 
     @TruffleBoundary
@@ -1404,37 +1441,7 @@ public final class CUDARuntime {
         RUNTIME_LOGGER.finest("buildKernel device:" + cudaGetDevice());
         String moduleName = "truffle" + context.getNextModuleId();
         PTXKernel ptx = nvrtc.compileKernel(code, kernelName, moduleName, "--std=c++14");
-        if (isMultiGPUEnabled()) {
-            return this.buildKernelMultiGPU(grCUDAExecutionContext, kernelName, signature, moduleName, ptx);
-        } else {
-            return this.buildKernelSingleGPU(grCUDAExecutionContext, kernelName, signature, moduleName, ptx);
-        }
-    }
-
-    public Kernel buildKernelSingleGPU(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String signature, String moduleName, PTXKernel ptx) {
-        CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
-        loadedModules.get(0).put(moduleName, module);
-        long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
-        return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), List.of(kernelFunctionHandle),
-                signature, List.of(module), ptx.getPtxSource());
-    }
-
-    public Kernel buildKernelMultiGPU(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String signature, String moduleName, PTXKernel ptx) {
-        ArrayList<Long> kernelFunctionHandles = new ArrayList<>();
-        ArrayList<CUModule> modules = new ArrayList<>();
-        int currentDevice = cudaGetDevice();
-
-        for (int i = 0; i < numberOfGPUsToUse; i++) {
-            cudaSetDevice(i);
-            CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
-            long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
-            kernelFunctionHandles.add(kernelFunctionHandle);
-            modules.add(module);
-            loadedModules.get(i).put(moduleName, module);
-        }
-        cudaSetDevice(currentDevice);
-        return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), kernelFunctionHandles,
-                signature, modules, ptx.getPtxSource());
+        return loadBuildKernel.buildKernel(grCUDAExecutionContext, kernelName, signature, moduleName, ptx);
     }
 
     @TruffleBoundary

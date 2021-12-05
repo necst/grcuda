@@ -40,7 +40,6 @@ import static org.junit.Assume.assumeNoException;
 import java.util.Collection;
 import java.util.function.Function;
 
-import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.junit.Test;
@@ -122,7 +121,7 @@ public class CUBLASWithScheduleTest {
             taxpy.execute(numElements, alpha, y, 1, z, 1);
 
             assertOutputVectorIsCorrect(numElements, z, (Integer i) -> -2 * i);
-        } catch (GrCUDAException e) {
+        } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
             assumeNoException(e);
         }
@@ -178,7 +177,7 @@ public class CUBLASWithScheduleTest {
 
             assertOutputVectorIsCorrect(numElements, z, (Integer i) -> 2 * i);
             assertOutputVectorIsCorrect(numElements, y, (Integer i) -> 2 * i);
-        } catch (GrCUDAException e) {
+        } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
             assumeNoException(e);
         }
@@ -237,7 +236,7 @@ public class CUBLASWithScheduleTest {
 
             assertOutputVectorIsCorrect(numElements, z, (Integer i) -> 2 * i);
             assertOutputVectorIsCorrect(numElements, y, (Integer i) -> 2 * i);
-        } catch (GrCUDAException e) {
+        } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
             assumeNoException(e);
         }
@@ -294,7 +293,7 @@ public class CUBLASWithScheduleTest {
             taxpy.execute(numElements, alpha, z, 1, y, 1);
 
             assertOutputVectorIsCorrect(numElements, z, (Integer i) -> 2 * i);
-        } catch (GrCUDAException e) {
+        } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
             assumeNoException(e);
         }
@@ -357,7 +356,7 @@ public class CUBLASWithScheduleTest {
 
             assertOutputVectorIsCorrect(numElements, z, (Integer i) -> 2 * i);
             assertOutputVectorIsCorrect(numElements, x, (Integer i) -> 4 * i);
-        } catch (GrCUDAException e) {
+        } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
             assumeNoException(e);
         }
@@ -434,7 +433,7 @@ public class CUBLASWithScheduleTest {
             taxpy.execute(numDim * numDim, alpha3, matrixC, 1, matrixG, 1);
             assertOutputMatrixIsCorrect(numDim, numDim, matrixC, (Integer i) -> i);
             assertOutputMatrixIsCorrect(numDim, numDim, matrixG, (Integer i) -> -i);
-        } catch (GrCUDAException e) {
+        } catch (Exception e) {
             System.out.println("warning: cuBLAS not enabled, skipping test");
             assumeNoException(e);
         }
