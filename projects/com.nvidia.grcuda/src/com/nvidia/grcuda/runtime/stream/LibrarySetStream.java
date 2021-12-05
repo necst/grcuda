@@ -7,11 +7,11 @@ import com.nvidia.grcuda.runtime.stream.CUDAStream;
  * Abstract class to manage async streams for supported libraries
  */
 
-abstract public class LibrarySetStreamFunction {
+abstract public class LibrarySetStream {
 
     protected final Function setStreamFunctionNFI;
 
-    protected LibrarySetStreamFunction(Function setStreamFunctionNFI) {
+    protected LibrarySetStream(Function setStreamFunctionNFI) {
         this.setStreamFunctionNFI = setStreamFunctionNFI;
     }
 
@@ -21,5 +21,4 @@ abstract public class LibrarySetStreamFunction {
      * @param stream a CUDAstream
      */
     public abstract void setStream(CUDAStream stream);
-
 }

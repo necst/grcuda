@@ -87,6 +87,8 @@ public final class CUDARuntime {
     public static final String CUDA_LIBRARY_NAME = "cuda";
     static final String NVRTC_LIBRARY_NAME = "nvrtc";
 
+    public static final int DEFAULT_DEVICE = 0;
+
     private final GrCUDAContext context;
     private final NVRuntimeCompiler nvrtc;
 
@@ -100,7 +102,7 @@ public final class CUDARuntime {
     /**
      * Identifier of the GPU that is currently active;
      */
-    private int currentGPU = 0;
+    private int currentGPU = DEFAULT_DEVICE;
 
     public boolean isMultiGPUEnabled() {
         return this.numberOfGPUsToUse > 1;
@@ -1400,11 +1402,11 @@ public final class CUDARuntime {
         @Override
         public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String cubinFile, String kernelName, String symbolName, String signature) {
             // Load module from GPU 0;
-            CUModule module = loadedModules.get(0).get(cubinFile);
+            CUModule module = loadedModules.get(DEFAULT_DEVICE).get(cubinFile);
             if (module == null) {
                 // Load module as it is not yet loaded;
                 module = cuModuleLoad(cubinFile);
-                loadedModules.get(0).put(cubinFile, module);
+                loadedModules.get(DEFAULT_DEVICE).put(cubinFile, module);
             }
             long kernelFunctionHandle = cuModuleGetFunction(module, symbolName);
             return new Kernel(grCUDAExecutionContext, kernelName, symbolName, List.of(kernelFunctionHandle), signature, List.of(module));
@@ -1414,7 +1416,7 @@ public final class CUDARuntime {
         @Override
         public Kernel buildKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String kernelName, String signature, String moduleName, PTXKernel ptx) {
             CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
-            loadedModules.get(0).put(moduleName, module);
+            loadedModules.get(DEFAULT_DEVICE).put(moduleName, module);
             long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
             return new Kernel(grCUDAExecutionContext, kernelName, ptx.getLoweredKernelName(), List.of(kernelFunctionHandle),
                     signature, List.of(module), ptx.getPtxSource());
@@ -1422,7 +1424,7 @@ public final class CUDARuntime {
 
         @Override
         public void launchKernel(CUDARuntime runtime, Kernel kernel, KernelConfig config, KernelArguments args, CUDAStream stream) {
-            long kernelFunctionHandle = kernel.getKernelFunctionHandle(0);
+            long kernelFunctionHandle = kernel.getKernelFunctionHandle(DEFAULT_DEVICE);
             launchKernelInternal(runtime, config, args, stream, kernelFunctionHandle);
         }
     }
