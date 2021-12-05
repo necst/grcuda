@@ -88,7 +88,7 @@ public class GrCUDAOptionMapTest {
     private <T> void setOption(OptionKey<T> key, T value) {
         optionValues.set(key, value);
     }
-    
+
     @Test
     public void testGetOption(){
         initializeDefault();

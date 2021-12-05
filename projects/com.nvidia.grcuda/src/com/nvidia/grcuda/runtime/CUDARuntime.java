@@ -198,6 +198,7 @@ public final class CUDARuntime {
     private void setupSupportForMultiGPU() {
         // Find how many GPUs are available on this system;
         this.numberOfAvailableGPUs = cudaGetDeviceCount();
+        RUNTIME_LOGGER.info("identified " + this.numberOfAvailableGPUs + " GPUs available on this machine");
         this.numberOfGPUsToUse = numberOfAvailableGPUs;
         if (numberOfAvailableGPUs <= 0) {
             RUNTIME_LOGGER.severe("GrCUDA initialization failed, no GPU device is available (devices count = " + numberOfAvailableGPUs + ")");
@@ -221,6 +222,7 @@ public final class CUDARuntime {
             HashMap<String, CUModule> modules = new HashMap<>();
             this.loadedModules.add(modules);
         }
+        RUNTIME_LOGGER.info("initialized GrCUDA to use " + this.numberOfGPUsToUse + "/" + this.numberOfAvailableGPUs + " GPUs");
     }
     
     // using this slow/uncached instance since all calls are non-critical

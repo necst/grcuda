@@ -150,6 +150,9 @@ public class GrCUDAOptionMap implements TruffleObject {
     private static RetrieveParentStreamPolicyEnum parseParentStreamPolicy(String policyString) {
         if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT.toString())) return RetrieveParentStreamPolicyEnum.DISJOINT;
         else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT.toString())) return RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
+        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DATA_AWARE.toString())) return RetrieveParentStreamPolicyEnum.DATA_AWARE;
+        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.STREAM_AWARE.toString())) return RetrieveParentStreamPolicyEnum.STREAM_AWARE;
+        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT_DATA_AWARE.toString())) return RetrieveParentStreamPolicyEnum.DISJOINT_DATA_AWARE;
         else {
             LOGGER.warning("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + DEFAULT_PARENT_STREAM_POLICY);
             return DEFAULT_PARENT_STREAM_POLICY;
@@ -243,7 +246,6 @@ public class GrCUDAOptionMap implements TruffleObject {
         LOGGER.info("updated the number of GPUs to use from " + getNumberOfGPUs() + " to " + numberOfGPUs);
         optionsMap.replace(optionNames.get(GrCUDAOptions.NumberOfGPUs), numberOfGPUs);
     }
-
 
     // Implement InteropLibrary;
 

@@ -49,7 +49,6 @@ import com.nvidia.grcuda.functions.GetOptionsFunction;
 import com.nvidia.grcuda.functions.map.MapFunction;
 import com.nvidia.grcuda.functions.map.ShredFunction;
 import com.nvidia.grcuda.runtime.CUDARuntime;
-import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
