@@ -68,8 +68,8 @@ public class CUMLTest {
 
     @Test
     public void testDbscan() {
-        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(
-                        true).build()) {
+        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy)
+                .option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).allowAllAccess(true).build()) {
             Value cu = polyglot.eval("grcuda", "CU");
             int numRows = 100;
             int numCols = 2;

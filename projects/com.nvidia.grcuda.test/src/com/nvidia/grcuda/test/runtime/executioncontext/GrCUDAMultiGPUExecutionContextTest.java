@@ -87,8 +87,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
     @Test
     public void dependency2KernelsSimpleTest() {
 
-        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
-
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
 
             final int numElements = 10;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -130,7 +129,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
     @Test
     public void dependencyKernelsTestA() {
 
-        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
 
             final int numElements = 1000000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -170,7 +169,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
     @Test
     public void dependencyPipelineWithArrayCopyTest() {
 
-        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
 
             final int numElements = 100000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;

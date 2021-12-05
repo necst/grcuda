@@ -43,6 +43,7 @@ public class GrCUDATestOptionsStruct {
     public final DependencyPolicyEnum dependencyPolicy;
     public final boolean forceStreamAttach;
     public final boolean timeComputation;
+    public final int numberOfGPUs;
 
     /**
      * A simple struct that holds a combination of GrCUDA options, extracted from the output of {@link GrCUDATestUtil#getAllOptionCombinations}
@@ -53,7 +54,8 @@ public class GrCUDATestOptionsStruct {
                                    RetrieveParentStreamPolicyEnum retrieveParentStreamPolicy,
                                    DependencyPolicyEnum dependencyPolicy,
                                    boolean forceStreamAttach,
-                                   boolean timeComputation) {
+                                   boolean timeComputation,
+                                   int numberOfGPUs) {
         this.policy = policy;
         this.inputPrefetch = inputPrefetch;
         this.retrieveNewStreamPolicy = retrieveNewStreamPolicy;
@@ -61,6 +63,7 @@ public class GrCUDATestOptionsStruct {
         this.dependencyPolicy = dependencyPolicy;
         this.forceStreamAttach = forceStreamAttach;
         this.timeComputation = timeComputation;
+        this.numberOfGPUs = numberOfGPUs;
     }
 
     @Override
@@ -73,6 +76,7 @@ public class GrCUDATestOptionsStruct {
                 ", dependencyPolicy=" + dependencyPolicy +
                 ", forceStreamAttach=" + forceStreamAttach +
                 ", timeComputation=" + timeComputation +
+                ", numberOfGPUs=" + numberOfGPUs +
                 '}';
     }
 }
