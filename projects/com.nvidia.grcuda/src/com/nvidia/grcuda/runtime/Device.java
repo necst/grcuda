@@ -189,7 +189,7 @@ final class IsCurrentFunction implements TruffleObject {
             //  Truffle currently uses -1 to handle an unbound number of arguments;
             throw ArityException.create(0, -1, arguments.length);
         }
-        return runtime.cudaGetDevice() == deviceId;
+        return runtime.getCurrentGPU() == deviceId;
     }
 }
 

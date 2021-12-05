@@ -60,7 +60,7 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
 
     @Override
     public CUDAStream createStream() {
-        CUDAStream newStream = new CUDAStream(0, numStreams++);
+        CUDAStream newStream = new CUDAStream(0, numStreams++, 0);
         streams.add(newStream);
         return newStream;
     }

@@ -204,7 +204,7 @@ public final class GPUDeviceProperties implements TruffleObject {
         private Optional<DeviceMemoryInfo> info = Optional.empty();
 
         private void getTotalAndFreeDeviceMemory(int deviceId, CUDARuntime runtime) {
-            int currentDevice = runtime.cudaGetDevice();
+            int currentDevice = runtime.getCurrentGPU();
             try {
                 if (currentDevice != deviceId) {
                     runtime.cudaSetDevice(deviceId);

@@ -37,7 +37,7 @@ public class DefaultStream extends CUDAStream {
     private static final DefaultStream defaultStream = new DefaultStream();
     
     private DefaultStream() {
-        super(0, DEFAULT_STREAM_NUMBER);
+        super(0, DEFAULT_STREAM_NUMBER, 0);
     }
 
     public static DefaultStream get() { return defaultStream; }
