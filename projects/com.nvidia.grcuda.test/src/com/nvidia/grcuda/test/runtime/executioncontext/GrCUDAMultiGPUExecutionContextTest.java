@@ -93,12 +93,13 @@ public class GrCUDAMultiGPUExecutionContextTest {
         assumeTrue(multipleGPUs);
     }
 
-    private void checkIfMultiGPU(Context context) {
+    private boolean checkIfMultiGPU(Context context) {
         Value deviceCount = context.eval("grcuda", "cudaGetDeviceCount()");
         if (deviceCount.asInt() < 2) {
             multipleGPUs = false;
             System.out.println("warning: only 1 GPU available, skipping further multi-GPU tests");
         }
+        return multipleGPUs;
     }
 
     /**
@@ -106,10 +107,10 @@ public class GrCUDAMultiGPUExecutionContextTest {
      */
     @Test
     public void dependency2KernelsSimpleTest() {
+        int numOfGPUs = 2;
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, numOfGPUs)) {
 
-        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
-
-            checkIfMultiGPU(context);
+            assumeTrue(checkIfMultiGPU(context));
 
             final int numElements = 10;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -125,7 +126,6 @@ public class GrCUDAMultiGPUExecutionContextTest {
             for (int i = 0; i < numElements; ++i) {
                 x.setArrayElement(i, 2.0);
                 y.setArrayElement(i, 4.0);
-
             }
 
             Value configuredSquareKernel = squareKernel.execute(numBlocks, NUM_THREADS_PER_BLOCK);
@@ -145,6 +145,49 @@ public class GrCUDAMultiGPUExecutionContextTest {
     }
 
     /**
+     * Execute 2 independent kernels, 2 times in a row, manually specifying the GPU for them;
+     */
+    @Test
+    public void dependency2KernelsManualGPUChoiceTest() {
+        int numOfGPUs = 2;
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, numOfGPUs)) {
+
+            assumeTrue(checkIfMultiGPU(context));
+
+            Value setDevice = context.eval("grcuda", "cudaSetDevice");
+
+            final int numElements = 100000;
+            final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
+            Value deviceArrayConstructor = context.eval("grcuda", "DeviceArray");
+            Value x = deviceArrayConstructor.execute("float", numElements);
+            Value y = deviceArrayConstructor.execute("float", numElements);
+            Value[] inputs = {x, y};
+
+            Value buildkernel = context.eval("grcuda", "buildkernel");
+            Value squareKernel = buildkernel.execute(SQUARE_KERNEL, "square", "pointer, sint32");
+            assertNotNull(squareKernel);
+
+            // init arrays with values
+            for (int i = 0; i < numElements; ++i) {
+                x.setArrayElement(i, 2.0);
+                y.setArrayElement(i, 4.0);
+            }
+            Value configuredSquareKernel = squareKernel.execute(numBlocks, NUM_THREADS_PER_BLOCK);
+
+            for (int i = 0; i < numOfGPUs; i++) {
+                setDevice.execute(i);
+                // Perform the computation, twice;
+                configuredSquareKernel.execute(inputs[i], numElements);
+                configuredSquareKernel.execute(inputs[i], numElements);
+            }
+
+            // Verify the output;
+            assertEquals(16.0, x.getArrayElement(0).asFloat(), 0.1);
+            assertEquals(256.0, y.getArrayElement(0).asFloat(), 0.1);
+        }
+    }
+
+    /**
      * Test with 3 kernels: kernel0 does not have dependencies.
      * kernel1 is the parent of kernek2;
      */
@@ -153,7 +196,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
 
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
 
-            checkIfMultiGPU(context);
+            assumeTrue(checkIfMultiGPU(context));
 
             final int numElements = 1000000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -195,7 +238,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
 
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
 
-            checkIfMultiGPU(context);
+            assumeTrue(checkIfMultiGPU(context));
 
             final int numElements = 100000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
