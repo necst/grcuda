@@ -34,6 +34,7 @@ import com.nvidia.grcuda.Binding;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.GrCUDAOptionMap;
+import com.nvidia.grcuda.runtime.CPUDevice;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Kernel;
@@ -161,4 +162,17 @@ public abstract class AbstractGrCUDAExecutionContext {
      * Delete internal structures that require manual cleanup operations;
      */
     public void cleanup() { }
+
+    /**
+     * Initialize the location of an abstract array.
+     * On pre-Pascal devices, the default location is the current GPU. Since Pascal, it is the CPU;
+     * @param array the array for which we initialize the location;
+     */
+    public void initializeArrayLocation(AbstractArray array) {
+        if (cudaRuntime.isArchitectureIsPascalOrNewer()) {
+            array.addArrayUpToDateLocations(CPUDevice.CPU_DEVICE_ID);
+        } else {
+            array.addArrayUpToDateLocations(cudaRuntime.getCurrentGPU());
+        }
+    }
 }

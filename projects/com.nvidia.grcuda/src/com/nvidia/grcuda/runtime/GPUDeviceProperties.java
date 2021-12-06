@@ -175,7 +175,6 @@ public final class GPUDeviceProperties implements TruffleObject {
         String getName();
 
         Object getValue(int deviceId, CUDARuntime runtime);
-
     }
 
     private static class DeviceAttributeProperty implements DeviceProperty {

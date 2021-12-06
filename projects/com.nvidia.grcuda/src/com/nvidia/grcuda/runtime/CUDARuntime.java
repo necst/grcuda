@@ -99,6 +99,10 @@ public final class CUDARuntime {
      */
     private int numberOfGPUsToUse = GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs;
 
+    public int getNumberOfGPUsToUse() {
+        return numberOfGPUsToUse;
+    }
+
     /**
      * Identifier of the GPU that is currently active;
      */

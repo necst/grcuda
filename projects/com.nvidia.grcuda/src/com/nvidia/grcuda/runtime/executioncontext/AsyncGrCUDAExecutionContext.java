@@ -119,6 +119,8 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
 
         // Perform the computation;
         vertex.getComputation().setComputationStarted();
+
+        // For all input arrays, update whether this computation is an array access done by the CPU;
         vertex.getComputation().updateIsComputationArrayAccess();
 
         // Associate a CUDA event to the starting phase of the computation in order to get the Elapsed time from start to the end

@@ -284,7 +284,7 @@ public abstract class GrCUDAComputationalElement {
     public void updateIsComputationArrayAccess() {
         for (ComputationArgumentWithValue o : this.argumentList) {
             if (o.getArgumentValue() instanceof AbstractArray) {
-                ((AbstractArray) o.getArgumentValue()).setLastComputationArrayAccess(isComputationArrayAccess);
+                ((AbstractArray) o.getArgumentValue()).setLastComputationCPUAccess(isComputationArrayAccess);
             }
         }
     }

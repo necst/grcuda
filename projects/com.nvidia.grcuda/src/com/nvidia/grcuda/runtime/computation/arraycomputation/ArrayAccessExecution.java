@@ -43,7 +43,10 @@ import java.util.Optional;
  */
 public abstract class ArrayAccessExecution<T extends AbstractArray> extends GrCUDAComputationalElement {
 
-    protected boolean isComputationArrayAccess = true;
+    public static final boolean COMPUTATION_IS_ARRAY_ACCESS = true;
+
+    protected boolean isComputationArrayAccess = COMPUTATION_IS_ARRAY_ACCESS;
+
     protected T array;
 
     public ArrayAccessExecution(AbstractGrCUDAExecutionContext grCUDAExecutionContext, InitializeDependencyList initializer, T array) {
@@ -53,7 +56,7 @@ public abstract class ArrayAccessExecution<T extends AbstractArray> extends GrCU
 
     @Override
     public void updateIsComputationArrayAccess() {
-        this.array.setLastComputationArrayAccess(isComputationArrayAccess);
+        this.array.setLastComputationCPUAccess(COMPUTATION_IS_ARRAY_ACCESS);
     }
 
     @Override

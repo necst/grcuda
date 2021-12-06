@@ -74,7 +74,7 @@ public class MultiDimDeviceArrayView extends AbstractArray implements TruffleObj
      * @param stride value used to jump to consecutive values in the array, and determined by the slice that has been extracted
      */
     public MultiDimDeviceArrayView(MultiDimDeviceArray mdDeviceArray, int dim, long offset, long stride) {
-        super(mdDeviceArray.grCUDAExecutionContext, mdDeviceArray.elementType, mdDeviceArray.isLastComputationArrayAccess());
+        super(mdDeviceArray.grCUDAExecutionContext, mdDeviceArray.elementType, mdDeviceArray.isLastComputationCPUAccess());
         this.mdDeviceArray = mdDeviceArray;
         this.thisDimension = dim;
         this.offset = offset; // Index at which this array view starts;
@@ -112,16 +112,16 @@ public class MultiDimDeviceArrayView extends AbstractArray implements TruffleObj
 
     /**
      * Propagate the flag to the parent array, so other temporary views are aware of this computation;
-     * @param lastComputationArrayAccess if the last computation on this array is a host read/write
+     * @param lastComputationCPUAccess if the last computation on this array is a host read/write
      */
     @Override
-    public void setLastComputationArrayAccess(boolean lastComputationArrayAccess) {
-        super.setLastComputationArrayAccess(lastComputationArrayAccess);
-        this.mdDeviceArray.setLastComputationArrayAccess(lastComputationArrayAccess);
+    public void setLastComputationCPUAccess(boolean lastComputationCPUAccess) {
+        super.setLastComputationCPUAccess(lastComputationCPUAccess);
+        this.mdDeviceArray.setLastComputationCPUAccess(lastComputationCPUAccess);
     }
 
     @Override
-    public boolean isLastComputationArrayAccess() { return this.mdDeviceArray.isLastComputationArrayAccess(); }
+    public boolean isLastComputationCPUAccess() { return this.mdDeviceArray.isLastComputationCPUAccess(); }
 
     /**
      * Propagate the stream mapping to the parent array, so other temporary views are aware of this mapping;
