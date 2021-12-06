@@ -182,6 +182,15 @@ public abstract class AbstractArray implements TruffleObject {
         this.arrayUpToDateLocations.add(deviceId);
     }
 
+    /**
+     * True if this array is up-to-date for the input device;
+     * @param deviceId a device for which we want to check if this array is up-to-date;
+     * @return if this array is up-to-date with respect to the input device
+     */
+    public boolean isArrayUpdatedInLocation(int deviceId) {
+        return this.arrayUpToDateLocations.contains(deviceId);
+    }
+
     public abstract long getPointer();
     public abstract long getSizeBytes();
     public abstract void freeMemory();

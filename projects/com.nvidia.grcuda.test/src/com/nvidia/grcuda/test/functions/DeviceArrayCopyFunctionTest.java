@@ -49,6 +49,8 @@ import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import com.nvidia.grcuda.test.util.TestLogHandler;
 import com.nvidia.grcuda.test.util.mock.AsyncGrCUDAExecutionContextMock;
+import com.nvidia.grcuda.test.util.mock.DeviceArrayMock;
+import com.nvidia.grcuda.test.util.mock.MultiDimDeviceArrayMock;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Test;
@@ -67,27 +69,7 @@ import java.util.List;
 public class DeviceArrayCopyFunctionTest {
 
     public static class DeviceArrayCopyFunctionTestNotParameterized {
-        protected static class DeviceArrayMock extends DeviceArray {
-            DeviceArrayMock() {
-                super(new AsyncGrCUDAExecutionContextMock(), 0, Type.SINT32);
-            }
 
-            @Override
-            protected LittleEndianNativeArrayView allocateMemory() {
-                return null;
-            }
-        }
-
-        protected static class MultiDimDeviceArrayMock extends MultiDimDeviceArray {
-            MultiDimDeviceArrayMock(long[] dimensions, boolean columnMajor) {
-                super(new AsyncGrCUDAExecutionContextMock(), Type.SINT32, dimensions, columnMajor);
-            }
-
-            @Override
-            protected LittleEndianNativeArrayView allocateMemory() {
-                return null;
-            }
-        }
 
         @Test
         public void testIfSlowPathIsChosenCorrectly() {

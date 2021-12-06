@@ -39,9 +39,10 @@ public class GrCUDAExecutionContextMockBuilder {
     DependencyPolicyEnum dependencyPolicy = DependencyPolicyEnum.NO_CONST;
     RetrieveNewStreamPolicyEnum retrieveStreamPolicy = RetrieveNewStreamPolicyEnum.FIFO;
     RetrieveParentStreamPolicyEnum parentStreamPolicyEnum = RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
+    boolean isArchitecturePascalOrNewer = true;
 
     public AsyncGrCUDAExecutionContextMock build() {
-        return new AsyncGrCUDAExecutionContextMock(dependencyPolicy, retrieveStreamPolicy, parentStreamPolicyEnum);
+        return new AsyncGrCUDAExecutionContextMock(dependencyPolicy, retrieveStreamPolicy, parentStreamPolicyEnum, isArchitecturePascalOrNewer);
     }
 
     public GrCUDAExecutionContextMockBuilder setDependencyPolicy(DependencyPolicyEnum dependencyPolicy) {
@@ -56,6 +57,11 @@ public class GrCUDAExecutionContextMockBuilder {
 
     public GrCUDAExecutionContextMockBuilder setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum retrieveStreamPolicy) {
         this.parentStreamPolicyEnum = retrieveStreamPolicy;
+        return this;
+    }
+
+    public GrCUDAExecutionContextMockBuilder setArchitecturePascalOrNewer(boolean isArchitecturePascalOrNewer) {
+        this.isArchitecturePascalOrNewer = isArchitecturePascalOrNewer;
         return this;
     }
 }

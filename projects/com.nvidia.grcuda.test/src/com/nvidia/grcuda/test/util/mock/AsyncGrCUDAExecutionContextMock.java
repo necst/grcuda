@@ -62,16 +62,12 @@ public class AsyncGrCUDAExecutionContextMock extends AsyncGrCUDAExecutionContext
     }
 
     public AsyncGrCUDAExecutionContextMock() {
-        this(true);
-    }
-
-    public AsyncGrCUDAExecutionContextMock(boolean architectureIsPascalOrNewer) {
         super(null,
                 new GrCUDAOptionMap(new OptionValuesMockBuilder()
                         .add(GrCUDAOptions.DependencyPolicy, DependencyPolicyEnum.NO_CONST.toString())
                         .add(GrCUDAOptions.InputPrefetch, false).build()),
                 new GrCUDAStreamManagerMock(null));
-        this.architectureIsPascalOrNewer = architectureIsPascalOrNewer;
+        this.architectureIsPascalOrNewer = true;
     }
 
     public AsyncGrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy) {
