@@ -52,7 +52,7 @@ public class AsyncGrCUDAExecutionContextMock extends AsyncGrCUDAExecutionContext
 
     // Store it here to avoid using a mocked runtime;
     private final boolean architectureIsPascalOrNewer;
-    public int currentGPU = 0;
+    public static int currentGPU = 0;
 
     public void setCurrentGPU(int gpu) {
         currentGPU = gpu;

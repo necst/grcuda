@@ -31,6 +31,7 @@
 package com.nvidia.grcuda.runtime.computation.arraycomputation;
 
 import com.nvidia.grcuda.NoneValue;
+import com.nvidia.grcuda.runtime.CPUDevice;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.functions.DeviceArrayCopyFunction;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
@@ -59,13 +60,12 @@ public abstract class ArrayCopyFunctionExecution extends GrCUDAComputationalElem
 
     public static final boolean COMPUTATION_IS_ARRAY_ACCESS = true;
 
-    protected boolean isComputationArrayAccess = COMPUTATION_IS_ARRAY_ACCESS;
-
     public ArrayCopyFunctionExecution(AbstractArray array, DeviceArrayCopyFunction.CopyDirection direction, long numElements, ArrayCopyFunctionExecutionInitializer dependencyInitializer) {
         super(array.getGrCUDAExecutionContext(), dependencyInitializer);
         this.array = array;
         this.direction = direction;
         this.numElements = numElements;
+        this.isComputationDoneByCPU = COMPUTATION_IS_ARRAY_ACCESS;
     }
 
     @Override
@@ -85,10 +85,22 @@ public abstract class ArrayCopyFunctionExecution extends GrCUDAComputationalElem
     abstract void executeInner();
 
     @Override
-    public void updateIsComputationCPUAccess() {
-        this.array.setLastComputationCPUAccess(COMPUTATION_IS_ARRAY_ACCESS);
+    public void updateLocationOfArrays() {
+        // FIXME: we should also consider the other array: if it is a DeviceArray its location is also updated;
+        if (direction == DeviceArrayCopyFunction.CopyDirection.FROM_POINTER) {
+            // We are copying new data to the array, so reset its status to updated on CPU;
+            array.resetArrayUpToDateLocations(CPUDevice.CPU_DEVICE_ID);
+        } else {
+            // We are copying new data from the array (on the CPU) to somewhere else,
+            // so the CPU must have updated data. It requires a sync if the context is not const-aware;
+            if (array.getGrCUDAExecutionContext().isConstAware()) {
+                array.addArrayUpToDateLocations(CPUDevice.CPU_DEVICE_ID);
+            } else {
+                // Clear the list of up-to-date locations: only the CPU has the updated array;
+                array.resetArrayUpToDateLocations(CPUDevice.CPU_DEVICE_ID);
+            }
+        }
     }
-
     @Override
     protected Optional<CUDAStream> additionalStreamDependencyImpl() {
         return Optional.of(array.getStreamMapping());

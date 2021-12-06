@@ -28,28 +28,42 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.nvidia.grcuda.runtime.computation.arraycomputation;
+package com.nvidia.grcuda.test.util.mock;
 
-import com.nvidia.grcuda.runtime.array.AbstractArray;
-import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
-import com.nvidia.grcuda.runtime.computation.InitializeDependencyList;
-import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
-import com.nvidia.grcuda.runtime.stream.CUDAStream;
+import java.util.stream.Collectors;
 
-import java.util.Optional;
+import com.nvidia.grcuda.NoneValue;
+import com.nvidia.grcuda.runtime.array.DeviceArray;
+import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayWriteExecution;
 
 /**
- * Abstract class that wraps all computational elements representing accesses on managed memory by the CPU;
+ * Mock class that represents a synchronous write execution,
+ * it can be used to synchronize previous computations using the specified arguments;
  */
-public abstract class ArrayAccessExecution<T extends AbstractArray> extends GrCUDAComputationalElement {
+public class DeviceArrayWriteExecutionMock extends DeviceArrayWriteExecution {
 
-    protected T array;
-
-    public ArrayAccessExecution(AbstractGrCUDAExecutionContext grCUDAExecutionContext, InitializeDependencyList initializer, T array) {
-        super(grCUDAExecutionContext, initializer);
-        this.array = array;
+    public DeviceArrayWriteExecutionMock(DeviceArray array,
+                                         long index,
+                                         Object value) {
+        super(array, index, value, null, null);
     }
 
     @Override
-    protected Optional<CUDAStream> additionalStreamDependencyImpl() { return Optional.of(array.getStreamMapping()); }
+    public Object execute() {
+        this.setComputationFinished();
+        return NoneValue.get();
+    }
+
+    @Override
+    public boolean canUseStream() { return false; }
+
+    @Override
+    public void associateArraysToStreamImpl() { }
+
+    @Override
+    public String toString() {
+        return "sync write" + "; args=[" +
+                this.argumentList.stream().map(Object::toString).collect(Collectors.joining(", ")) +
+                "]";
+    }
 }
