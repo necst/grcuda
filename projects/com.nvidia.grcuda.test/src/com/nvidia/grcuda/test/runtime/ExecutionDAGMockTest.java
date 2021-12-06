@@ -37,6 +37,8 @@ import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.mock.ArgumentMock;
 import com.nvidia.grcuda.test.util.mock.AsyncGrCUDAExecutionContextMock;
+import com.nvidia.grcuda.test.util.mock.DeviceArrayMock;
+import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
 import com.nvidia.grcuda.test.util.mock.KernelExecutionMock;
 import com.nvidia.grcuda.test.util.mock.SyncExecutionMock;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -224,5 +226,44 @@ public class ExecutionDAGMockTest {
         assertFalse(dag.getVertices().get(3).isFrontier());
         assertFalse(dag.getVertices().get(4).isFrontier());
         assertFalse(dag.getVertices().get(5).isFrontier());
+    }
+
+    @Test
+    public void concurrentReadMockTest() throws UnsupportedTypeException {
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setArchitecturePascalOrNewer(true).build();
+
+        // This time, simulate a computation on the GPU, and a concurrent CPU read.
+        // As the array is not modified, there should be no dependency between them;
+        DeviceArrayMock x = new DeviceArrayMock(context);
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(x, true))).schedule();
+        assertTrue(x.canSkipScheduling());
+    }
+
+    @Test
+    public void concurrentReadMockTest2() throws UnsupportedTypeException {
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setArchitecturePascalOrNewer(false).build();
+
+        // This time, simulate a computation on the GPU, and a concurrent CPU read.
+        // As the GPU is pre-pascal, and we are running the kernel on the default stream, we must have a sync;
+        DeviceArrayMock x = new DeviceArrayMock(context);
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(x, true))).schedule();
+        assertFalse(x.canSkipScheduling());
+    }
+
+    @Test
+    public void concurrentReadNoConstMockTest() throws UnsupportedTypeException {
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setDependencyPolicy(DependencyPolicyEnum.NO_CONST)
+                .setArchitecturePascalOrNewer(true).build();
+
+        // This time, simulate a computation on the GPU, and a concurrent CPU read.
+        // As we are not considering "const", there should be a dependency;
+        DeviceArrayMock x = new DeviceArrayMock(context);
+        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(x, true))).schedule();
+        assertFalse(x.canSkipScheduling());
     }
 }

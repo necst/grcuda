@@ -34,6 +34,7 @@ import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.runtime.CPUDevice;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
+import com.nvidia.grcuda.runtime.computation.streamattach.PostPascalStreamAttachPolicy;
 import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
 import com.nvidia.grcuda.runtime.computation.streamattach.PrePascalStreamAttachPolicy;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
@@ -50,7 +51,7 @@ public class AsyncGrCUDAExecutionContextMock extends AsyncGrCUDAExecutionContext
     // FIXME: handling current GPU etc. should be done with a mocked device manager;
 
     // Store it here to avoid using a mocked runtime;
-    public final boolean architectureIsPascalOrNewer;
+    private final boolean architectureIsPascalOrNewer;
     public int currentGPU = 0;
 
     public void setCurrentGPU(int gpu) {
@@ -98,15 +99,11 @@ public class AsyncGrCUDAExecutionContextMock extends AsyncGrCUDAExecutionContext
     }
 
     public StreamAttachArchitecturePolicy getArrayStreamArchitecturePolicy() {
-        return new PrePascalStreamAttachPolicy();
+        return architectureIsPascalOrNewer ? new PrePascalStreamAttachPolicy() : new PostPascalStreamAttachPolicy();
     }
 
     @Override
-    public void initializeArrayLocation(AbstractArray array) {
-        if (architectureIsPascalOrNewer) {
-            array.addArrayUpToDateLocations(CPUDevice.CPU_DEVICE_ID);
-        } else {
-            array.addArrayUpToDateLocations(currentGPU);
-        }
+    public boolean isArchitecturePascalOrNewer() {
+        return architectureIsPascalOrNewer;
     }
 }

@@ -107,6 +107,11 @@ public abstract class AbstractArray implements TruffleObject {
      */
     private boolean isLastComputationCPUAccess;
 
+    /**
+     * Function used to compute if we can skip the scheduling of a computational element for a given array access;
+     */
+    private final SkipSchedulingInterface skipSchedule;
+
     /** Flag set when underlying off-heap memory has been freed. */
     protected boolean arrayFreed = false;
 
@@ -129,8 +134,18 @@ public abstract class AbstractArray implements TruffleObject {
         this.grCUDAExecutionContext = grCUDAExecutionContext;
         this.elementType = elementType;
         this.isLastComputationCPUAccess = isLastComputationCPUAccess;
-        // Initialize the location of the array with a callback to the execution context, to avoid leaking access to the runtime here;
-        grCUDAExecutionContext.initializeArrayLocation(this);
+
+        // Initialize the location of an abstract array.
+        // On pre-Pascal devices, the default location is the current GPU. Since Pascal, it is the CPU.
+        // Also, specify how we can identify if we can skip the scheduling of array accesses;
+        if (this.grCUDAExecutionContext.isArchitecturePascalOrNewer()) {
+            this.addArrayUpToDateLocations(CPUDevice.CPU_DEVICE_ID);
+            this.skipSchedule = this::isLastComputationCPUAccess;
+        } else {
+            this.addArrayUpToDateLocations(grCUDAExecutionContext.getCurrentGPU());
+            // On pre-Pascal devices, we cannot access GPU memory while some other computation is active on the default stream;
+            this.skipSchedule = () -> isLastComputationCPUAccess() && !(streamMapping.isDefaultStream() && grCUDAExecutionContext.isAnyComputationActive());
+        }
     }
 
     /**
@@ -296,8 +311,12 @@ public abstract class AbstractArray implements TruffleObject {
      * and the array is not exposed on the default stream while other GPU computations are running.
      * @return if this array can be accessed by the host without scheduling a computation
      */
-    protected boolean canSkipScheduling() {
-        return this.isLastComputationCPUAccess() && !(this.streamMapping.isDefaultStream() && grCUDAExecutionContext.isAnyComputationActive());
+    public boolean canSkipScheduling() {
+        return this.skipSchedule.canSkipScheduling();
+    }
+
+    protected interface SkipSchedulingInterface {
+        boolean canSkipScheduling();
     }
 
     /**

@@ -85,7 +85,7 @@ public abstract class ArrayCopyFunctionExecution extends GrCUDAComputationalElem
     abstract void executeInner();
 
     @Override
-    public void updateIsComputationArrayAccess() {
+    public void updateIsComputationCPUAccess() {
         this.array.setLastComputationCPUAccess(COMPUTATION_IS_ARRAY_ACCESS);
     }
 

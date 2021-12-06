@@ -90,14 +90,21 @@ public abstract class AbstractGrCUDAExecutionContext {
      */
     protected AbstractArrayPrefetcher arrayPrefetcher;
 
+    /**
+     * True if we consider that an argument can be "const" in the scheduling;
+     */
+    private final boolean isConstAware;
+
     public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {
         this.cudaRuntime = cudaRuntime;
         // Compute the dependency policy to use;
         switch (options.getDependencyPolicy()) {
             case WITH_CONST:
+                this.isConstAware = true;
                 this.dependencyBuilder = new WithConstDependencyComputationBuilder();
                 break;
             case NO_CONST:
+                this.isConstAware = false;
                 this.dependencyBuilder = new DefaultDependencyComputationBuilder();
                 break;
             default:
@@ -137,6 +144,10 @@ public abstract class AbstractGrCUDAExecutionContext {
         return dependencyBuilder;
     }
 
+    public boolean isConstAware() {
+        return isConstAware;
+    }
+
     // Functions used to interface directly with the CUDA runtime;
 
     public Kernel loadKernel(Binding binding) {
@@ -151,6 +162,14 @@ public abstract class AbstractGrCUDAExecutionContext {
         return cudaRuntime.getArrayStreamArchitecturePolicy();
     }
 
+    public boolean isArchitecturePascalOrNewer() {
+        return this.cudaRuntime.isArchitectureIsPascalOrNewer();
+    }
+
+    public int getCurrentGPU() {
+        return this.cudaRuntime.getCurrentGPU();
+    }
+
     /**
      * Check if any computation is currently marked as active, and is running on a stream managed by this context.
      * If so, scheduling of new computations is likely to require synchronizations of some sort;
@@ -162,17 +181,4 @@ public abstract class AbstractGrCUDAExecutionContext {
      * Delete internal structures that require manual cleanup operations;
      */
     public void cleanup() { }
-
-    /**
-     * Initialize the location of an abstract array.
-     * On pre-Pascal devices, the default location is the current GPU. Since Pascal, it is the CPU;
-     * @param array the array for which we initialize the location;
-     */
-    public void initializeArrayLocation(AbstractArray array) {
-        if (cudaRuntime.isArchitectureIsPascalOrNewer()) {
-            array.addArrayUpToDateLocations(CPUDevice.CPU_DEVICE_ID);
-        } else {
-            array.addArrayUpToDateLocations(cudaRuntime.getCurrentGPU());
-        }
-    }
 }

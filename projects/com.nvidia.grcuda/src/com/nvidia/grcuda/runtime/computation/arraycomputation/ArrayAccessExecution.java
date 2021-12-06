@@ -55,7 +55,7 @@ public abstract class ArrayAccessExecution<T extends AbstractArray> extends GrCU
     }
 
     @Override
-    public void updateIsComputationArrayAccess() {
+    public void updateIsComputationCPUAccess() {
         this.array.setLastComputationCPUAccess(COMPUTATION_IS_ARRAY_ACCESS);
     }
 
