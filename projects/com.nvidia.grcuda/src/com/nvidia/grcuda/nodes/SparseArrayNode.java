@@ -36,34 +36,37 @@
 package com.nvidia.grcuda.nodes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
-import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAInternalException;
 import com.nvidia.grcuda.GrCUDALanguage;
-import com.nvidia.grcuda.runtime.array.AbstractArray;
-import com.nvidia.grcuda.runtime.array.DeviceArray;
-import com.nvidia.grcuda.runtime.array.MultiDimDeviceArray;
+import com.nvidia.grcuda.Type;
+import com.nvidia.grcuda.runtime.array.SparseMatrixCOO;
+import com.nvidia.grcuda.runtime.array.SparseMatrixCSR;
+import com.nvidia.grcuda.runtime.array.SparseVector;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.CachedContext;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public abstract class ArrayNode extends ExpressionNode {
+public abstract class SparseArrayNode extends ExpressionNode {
 
     @Children private ExpressionNode[] sizeNodes;
 
-    private final Type elementType;
+    private final Type valueElementType;
+    private final Type indexElementType;
 
-    ArrayNode(Type elementType, ArrayList<ExpressionNode> sizeNodes) {
-        this.elementType = elementType;
+    SparseArrayNode(Type valueElementType, Type indexElementType, ArrayList<ExpressionNode> sizeNodes) {
+        this.indexElementType = indexElementType;
+        this.valueElementType = valueElementType;
         this.sizeNodes = new ExpressionNode[sizeNodes.size()];
         sizeNodes.toArray(this.sizeNodes);
     }
 
     @Specialization
-    AbstractArray doDefault(VirtualFrame frame,
+    SparseVector doDefault(VirtualFrame frame,
                             @CachedContext(GrCUDALanguage.class) GrCUDAContext context) {
         final AbstractGrCUDAExecutionContext grCUDAExecutionContext = context.getGrCUDAExecutionContext();
         long[] elementsPerDim = new long[sizeNodes.length];
@@ -77,11 +80,14 @@ public abstract class ArrayNode extends ExpressionNode {
             elementsPerDim[dim] = ((Number) size).longValue();
             dim += 1;
         }
-        if (sizeNodes.length == 1) {
-            return new DeviceArray(grCUDAExecutionContext, elementsPerDim[0], elementType);
+        if (elementsPerDim.length == 1) {
+            return new SparseVector(grCUDAExecutionContext, elementsPerDim[0], valueElementType, indexElementType);
         } else {
-            final boolean columnMajorOrder = false;
-            return new MultiDimDeviceArray(grCUDAExecutionContext, elementType, elementsPerDim, columnMajorOrder);
+            if((elementsPerDim[0] == elementsPerDim[1]) && (elementsPerDim[1] == elementsPerDim[2])){ // COO
+                return new SparseMatrixCOO(grCUDAExecutionContext, valueElementType, indexElementType, elementsPerDim[0], elementsPerDim[1], elementsPerDim[2]);
+            } else {
+                return new SparseMatrixCSR(grCUDAExecutionContext, valueElementType, indexElementType, elementsPerDim[0], elementsPerDim[1], elementsPerDim[2]);
+            }
         }
     }
 }

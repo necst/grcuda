@@ -47,7 +47,7 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 
 @ExportLibrary(InteropLibrary.class)
-public class SparseMatrixCSR implements TruffleObject {
+public class SparseMatrixCSR extends SparseVector implements TruffleObject {
 
     public enum CsrDimension {
         CSR_DIMENSION_COL,
@@ -81,6 +81,7 @@ public class SparseMatrixCSR implements TruffleObject {
     private final DeviceArray nnzValues;
 
     public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Type valueElementType, Type indexElementType, long dimRows, long dimCols, long numNnz) {
+        super(grCUDAExecutionContext, numNnz, valueElementType, indexElementType);
         this.dimRows = dimRows;
         this.dimCols = dimCols;
         this.numNnz = numNnz;

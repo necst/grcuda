@@ -52,7 +52,7 @@ import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
 @ExportLibrary(InteropLibrary.class)
-public class SparseMatrixCOO implements TruffleObject {
+public class SparseMatrixCOO extends SparseVector implements TruffleObject {
 
     public enum CooDimension {
         COO_DIMENSION_ROW,
@@ -86,6 +86,7 @@ public class SparseMatrixCOO implements TruffleObject {
     private final DeviceArray nnzValues;
 
     public SparseMatrixCOO(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Type valueElementType, Type indexElementType, long dimRows, long dimCols, long numNnz) {
+        super(grCUDAExecutionContext, numNnz, valueElementType, indexElementType);
         this.dimRows = dimRows;
         this.dimCols = dimCols;
         this.numNnz = numNnz;

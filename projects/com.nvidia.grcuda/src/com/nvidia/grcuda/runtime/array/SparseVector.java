@@ -116,7 +116,7 @@ public class SparseVector implements TruffleObject {
         return index;
     }
 
-    final public long getSizeBytes() {
+    public long getSizeBytes() {
         checkFreeVector();
         return numNnz * (valueElementType.getSizeBytes() + indexElementType.getSizeBytes());
     }
