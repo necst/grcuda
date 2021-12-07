@@ -43,11 +43,13 @@ import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.InvalidArrayIndexException;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
+import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
+import com.oracle.truffle.api.profiles.ValueProfile;
 
 @ExportLibrary(InteropLibrary.class)
-public class SparseMatrixCSR extends SparseVector implements TruffleObject {
+public class SparseMatrixCSR implements TruffleObject {
 
     public enum CsrDimension {
         CSR_DIMENSION_COL,
@@ -81,7 +83,6 @@ public class SparseMatrixCSR extends SparseVector implements TruffleObject {
     private final DeviceArray nnzValues;
 
     public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Type valueElementType, Type indexElementType, long dimRows, long dimCols, long numNnz) {
-        super(grCUDAExecutionContext, numNnz, valueElementType, indexElementType);
         this.dimRows = dimRows;
         this.dimCols = dimCols;
         this.numNnz = numNnz;
@@ -180,19 +181,19 @@ public class SparseMatrixCSR extends SparseVector implements TruffleObject {
 //    }
 // I don't think we need it anymore since numNnz belongs to the constructor already
 
-    @ExportMessage
+//    @ExportMessage
     @SuppressWarnings("static-method")
     boolean isArrayElementModifiable(long row, long col) {
         return row >= 0 && col >= 0 && row < dimRows && col < dimCols;
     }
 
-    @ExportMessage
+//    @ExportMessage
     @SuppressWarnings("static-method")
     boolean isArrayElementReadable(long row, long col) {
         return !matrixFreed && isArrayElementModifiable(row, col);
     }
 
-    @ExportMessage
+//    @ExportMessage
     Object readMatrixElement(long row, long col) throws InvalidArrayIndexException, UnsupportedMessageException {
         checkFreeMatrix();
         if (!isIndexValid(row, col)) {
@@ -204,6 +205,22 @@ public class SparseMatrixCSR extends SparseVector implements TruffleObject {
             element = nnzValues.readArrayElement((long) this.cumulativeNnz.readArrayElement(row));
         }
         return element;
+    }
+
+    void writeMatrixElement(long row, long col, long position, Object value, InteropLibrary valueLibrary, ValueProfile elementTypeProfile) throws InvalidArrayIndexException, UnsupportedMessageException, UnsupportedTypeException {
+        checkFreeMatrix();
+        if (!isIndexValid(row, col)) {
+            CompilerDirectives.transferToInterpreter();
+            throw InvalidArrayIndexException.create(row);
+        }
+        if (position >= numNnz){
+            CompilerDirectives.transferToInterpreter();
+            throw InvalidArrayIndexException.create(position);
+        }
+        nnzValues.writeArrayElement(position, value, valueLibrary, elementTypeProfile);
+        colIdx.writeArrayElement(position, col, valueLibrary, elementTypeProfile);
+        Object tmp = cumulativeNnz.readArrayElement((row + 1));
+        cumulativeNnz.writeArrayElement((row + 1), tmp, valueLibrary, elementTypeProfile);
     }
 
     Object readCsrDimension(CsrDimension csrDimension, long index) throws InvalidArrayIndexException, UnsupportedMessageException {
