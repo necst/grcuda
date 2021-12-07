@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, NECSTLab, Politecnico di Milano. All rights reserved.
+ * Copyright (c) 2021, NECSTLab, Politecnico di Milano. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -9,10 +9,7 @@
  *  * Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *  * Neither the name of NECSTLab nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *  * Neither the name of Politecnico di Milano nor the names of its
+ *  * Neither the name of NVIDIA CORPORATION nor the names of its
  *    contributors may be used to endorse or promote products derived
  *    from this software without specific prior written permission.
  *
@@ -28,20 +25,27 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.nvidia.grcuda.runtime.stream;
+package com.nvidia.grcuda.runtime;
 
-public enum RetrieveParentStreamPolicyEnum {
-    SAME_AS_PARENT("same-as-parent"),
-    DISJOINT("disjoint");
+import java.util.HashMap;
 
-    private final String name;
+public abstract class ProfilableElement {
 
-    RetrieveParentStreamPolicyEnum(String name) {
-        this.name = name;
+    // Track the latest execution time associated to the GPU on which it was executed;
+    HashMap<Integer, Float> collectionOfExecution;
+    public ProfilableElement(){
+        collectionOfExecution = new HashMap<>();
     }
 
-    @Override
-    public String toString() {
-        return name;
+    public void addExecutionTime(int deviceId, float executionTime) {
+        collectionOfExecution.put(deviceId, executionTime);
+    }
+
+    public float getExecutionTimeOnDevice(int deviceId) throws RuntimeException {
+        if (collectionOfExecution.containsKey(deviceId)) {
+            return collectionOfExecution.get(deviceId);
+        } else {
+            throw new RuntimeException("Execution time for device=" + deviceId + " has not been collected");
+        }
     }
 }

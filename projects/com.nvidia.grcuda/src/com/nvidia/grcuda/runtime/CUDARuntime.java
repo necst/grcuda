@@ -178,7 +178,7 @@ public final class CUDARuntime {
         this.architectureIsPascalOrNewer = cudaDeviceGetAttribute(CUDADeviceAttribute.COMPUTE_CAPABILITY_MAJOR, 0) >= 6;
 
         // Use pre-Pascal stream attachment policy if the CC is < 6 or if the attachment is forced by options;
-        this.streamAttachArchitecturePolicy = (!this.architectureIsPascalOrNewer || context.isForceStreamAttach()) ? new PrePascalStreamAttachPolicy() : new PostPascalStreamAttachPolicy();
+        this.streamAttachArchitecturePolicy = (!this.architectureIsPascalOrNewer || context.getOptions().isForceStreamAttach()) ? new PrePascalStreamAttachPolicy() : new PostPascalStreamAttachPolicy();
     }
 
     // using this slow/uncached instance since all calls are non-critical
@@ -527,6 +527,25 @@ public final class CUDARuntime {
     }
 
     /**
+     * Computes the elapsed time between events.
+     * @param start Starting event
+     * @param end Ending event
+     */
+    @TruffleBoundary
+    public float cudaEventElapsedTime(CUDAEvent start, CUDAEvent end) {
+
+        try(UnsafeHelper.Float32Object outPointer = UnsafeHelper.createFloat32Object()) {
+            Object callable = CUDARuntimeFunction.CUDA_EVENTELAPSEDTIME.getSymbol(this);
+            Object result = INTEROP.execute(callable, outPointer.getAddress(),start.getRawPointer(), end.getRawPointer());
+            checkCUDAReturnCode(result, "cudaEventElapsedTime");
+            float time = outPointer.getValue();
+            return time;
+        } catch (InteropException e) {
+            throw new GrCUDAException(e);
+        }
+    }
+
+    /**
      * Add a given event to a stream. The event is a stream-ordered checkpoint on which we can
      * perform synchronization, or force another stream to wait for the event to occur before
      * executing any other scheduled operation queued on that stream;
@@ -770,7 +789,7 @@ public final class CUDARuntime {
             public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
                 checkArgumentLength(args, 1);
                 int device = expectInt(args[0]);
-                if (cudaRuntime.context.isEnableMultiGPU()) {
+                if (cudaRuntime.context.getOptions().isEnableMultiGPU()) {
                     cudaRuntime.setLastDeviceUsed(device);
                 }
                 callSymbol(cudaRuntime, device);
@@ -980,6 +999,37 @@ public final class CUDARuntime {
                 return NoneValue.get();
             }
         },
+        CUDA_EVENTELAPSEDTIME("cudaEventElapsedTime", "(pointer, pointer, pointer): sint32") {
+            @Override
+            @TruffleBoundary
+            public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
+                checkArgumentLength(args, 3);
+
+                Object pointerFloat = args[0];
+                Object pointerStartEvent = args[1];
+                Object pointerEndEvent = args[2];
+                long addrStart;
+                long addrEnd;
+                long addrFloat;
+
+                if (pointerStartEvent instanceof CUDAEvent) {
+                    addrStart = ((CUDAEvent) pointerStartEvent).getRawPointer();
+                } else {
+                    throw new GrCUDAException("expected CUDAEvent object");
+                }
+                if (pointerEndEvent instanceof CUDAEvent) {
+                    addrEnd = ((CUDAEvent) pointerEndEvent).getRawPointer();
+                } else {
+                    throw new GrCUDAException("expected CUDAEvent object");
+                }
+
+                try (UnsafeHelper.Float32Object floatPointer = UnsafeHelper.createFloat32Object()) {
+                    callSymbol(cudaRuntime, floatPointer.getAddress(), addrStart, addrEnd );
+                    return NoneValue.get();
+                }
+
+            }
+        },
         CUDA_EVENTRECORD("cudaEventRecord", "(pointer, pointer): sint32") {
             @Override
             @TruffleBoundary
@@ -1098,7 +1148,7 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Binding binding) {
-        if (this.context.isEnableMultiGPU()) {
+        if (this.context.getOptions().isEnableMultiGPU()) {
             return this.loadKernelMultiGPU(grCUDAExecutionContext, binding.getLibraryFileName(), binding.getName(), binding.getSymbolName(), binding.getNIDLParameterSignature());
         } else {
             return this.loadKernelSingleGPU(grCUDAExecutionContext, binding.getLibraryFileName(), binding.getName(), binding.getSymbolName(), binding.getNIDLParameterSignature());
@@ -1147,7 +1197,7 @@ public final class CUDARuntime {
         RUNTIME_LOGGER.finest("buildKernel device:" + cudaGetDevice());
         String moduleName = "truffle" + context.getNextModuleId();
         PTXKernel ptx = nvrtc.compileKernel(code, kernelName, moduleName, "--std=c++14");
-        if (this.context.isEnableMultiGPU()) {
+        if (this.context.getOptions().isEnableMultiGPU()) {
             return this.buildKernelMultiGPU(grCUDAExecutionContext, kernelName, signature, moduleName, ptx);
         } else {
             return this.buildKernelSingleGPU(grCUDAExecutionContext, kernelName, signature, moduleName, ptx);
@@ -1183,7 +1233,7 @@ public final class CUDARuntime {
     @TruffleBoundary
     public CUModule cuModuleLoad(String cubinName) {
         assertCUDAInitialized();
-        int currDevice = this.context.isEnableMultiGPU() ? cudaGetDevice() : 0;
+        int currDevice = this.context.getOptions().isEnableMultiGPU() ? cudaGetDevice() : 0;
         if (this.loadedModules.get(currDevice).containsKey(cubinName)) {
             throw new GrCUDAException("A module for " + cubinName + " was already loaded.");
         }
@@ -1200,7 +1250,7 @@ public final class CUDARuntime {
     @TruffleBoundary
     public CUModule cuModuleLoadData(String ptx, String moduleName) {
         assertCUDAInitialized();
-        int currDevice = this.context.isEnableMultiGPU() ? cudaGetDevice() : 0;
+        int currDevice = this.context.getOptions().isEnableMultiGPU() ? cudaGetDevice() : 0;
         if (this.loadedModules.get(currDevice).containsKey(moduleName)) {
             throw new GrCUDAException("A module for " + moduleName + " was already loaded.");
         }
@@ -1270,7 +1320,7 @@ public final class CUDARuntime {
         // using multiple gpu requires the stream associated to the device to be
         // set manually.
         long kernelFunctionHandle;
-        if (this.context.isEnableMultiGPU()) {
+        if (this.context.getOptions().isEnableMultiGPU()) {
             stream.setDeviceId(this.lastDeviceSet);
             cudaSetDevice(stream.getStreamDeviceId());
             assert stream.getStreamDeviceId() == cudaGetDevice();
@@ -1415,7 +1465,7 @@ public final class CUDARuntime {
     private void assertCUDAInitialized() {
         if (!context.isCUDAInitialized()) {
             int currentDevice = cudaGetDevice();
-            if (this.context.isEnableMultiGPU()) {
+            if (this.context.getOptions().isEnableMultiGPU()) {
                 int numDevices = cudaGetDeviceCount();
                 for (int i = 0; i < numDevices; i++) {
                     cudaSetDevice(i);
