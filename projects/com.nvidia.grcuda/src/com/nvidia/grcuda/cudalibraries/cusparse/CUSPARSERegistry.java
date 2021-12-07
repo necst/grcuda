@@ -137,7 +137,7 @@ public class CUSPARSERegistry {
     public CUSPARSERegistry(GrCUDAContext context) {
         this.context = context;
         // created field in GrCUDAOptions
-        libraryPath = context.getOption(GrCUDAOptions.CuSPARSELibrary);
+        libraryPath = context.getOptions().getCuSPARSELibrary();
     }
 
     public void ensureInitialized() {

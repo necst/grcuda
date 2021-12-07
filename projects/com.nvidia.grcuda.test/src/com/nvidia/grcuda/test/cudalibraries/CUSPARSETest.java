@@ -60,7 +60,7 @@ public class CUSPARSETest {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
-                {ExecutionPolicyEnum.SYNC.getName(), ExecutionPolicyEnum.ASYNC.getName()},
+                {ExecutionPolicyEnum.SYNC.name(), ExecutionPolicyEnum.ASYNC.name()},
                 {true, false},
                 {'S', 'C', 'D', 'Z'}
         }));

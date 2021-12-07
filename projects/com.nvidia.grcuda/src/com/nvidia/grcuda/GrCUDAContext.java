@@ -90,30 +90,12 @@ public final class GrCUDAContext {
     public GrCUDAContext(Env env) {
         this.env = env;
 
-
-        // Retrieve if we should force array stream attachment;
-        forceStreamAttach = env.getOptions().get(GrCUDAOptions.ForceStreamAttach);
-
-        // Retrieve if we should prefetch input data to GPU;
-        inputPrefetch = env.getOptions().get(GrCUDAOptions.InputPrefetch);
-
-        // See if we allow the use of multiple GPUs in the system;
-        enableMultiGPU = env.getOptions().get(GrCUDAOptions.EnableMultiGPU);
-
-        // Retrieve the stream retrieval policy;
-        retrieveNewStreamPolicy = parseRetrieveStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveNewStreamPolicy));
-
-        // Retrieve how streams are obtained from parent computations;
-        retrieveParentStreamPolicyEnum = parseParentStreamPolicy(env.getOptions().get(GrCUDAOptions.RetrieveParentStreamPolicy));
-
         this.grCUDAOptionMap = new GrCUDAOptionMap(env.getOptions());
 
         // Retrieve the dependency computation policy;
         DependencyPolicyEnum dependencyPolicy = grCUDAOptionMap.getDependencyPolicy();
 
         // Retrieve the execution policy;
-        ExecutionPolicyEnum executionPolicy = parseExecutionPolicy(env.getOptions().get(GrCUDAOptions.ExecutionPolicy));
-
 
         // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it.
         ExecutionPolicyEnum executionPolicy = grCUDAOptionMap.getExecutionPolicy();
@@ -221,22 +203,6 @@ public final class GrCUDAContext {
 
     public ConcurrentHashMap<Class<?>, CallTarget> getMapCallTargets() {
         return uncachedMapCallTargets;
-    }
-
-    public RetrieveNewStreamPolicyEnum getRetrieveNewStreamPolicy() {
-        return retrieveNewStreamPolicy;
-    }
-
-    public RetrieveParentStreamPolicyEnum getRetrieveParentStreamPolicyEnum() {
-        return retrieveParentStreamPolicyEnum;
-    }
-
-    public boolean isForceStreamAttach() {
-        return forceStreamAttach;
-    }
-
-    public boolean isEnableMultiGPU() {
-        return enableMultiGPU;
     }
 
 
