@@ -163,11 +163,6 @@ public final class GrCUDAContext {
             }
         }
 
-        if (this.getOption(GrCUDAOptions.CuBLASEnabled)) {
-            Namespace blas = new Namespace(CUBLASRegistry.NAMESPACE);
-            namespace.addNamespace(blas);
-            new CUBLASRegistry(this).registerCUBLASFunctions(blas);
-
         if (grCUDAOptionMap.isCuBLASEnabled()) {
                 Namespace blas = new Namespace(CUBLASRegistry.NAMESPACE);
                 namespace.addNamespace(blas);
@@ -178,7 +173,7 @@ public final class GrCUDAContext {
             namespace.addNamespace(trt);
             new TensorRTRegistry(this).registerTensorRTFunctions(trt);
         }
-        if (this.getOption(GrCUDAOptions.CuSPARSEEnabled)) {
+        if (grCUDAOptionMap.isCuSPARSEEnabled()) {
             Namespace sparse = new Namespace(CUSPARSERegistry.NAMESPACE);
             namespace.addNamespace(sparse);
             new CUSPARSERegistry(this).registerCUSPARSEFunctions(sparse);

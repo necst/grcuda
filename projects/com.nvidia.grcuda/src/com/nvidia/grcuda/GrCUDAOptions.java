@@ -98,7 +98,6 @@ public final class GrCUDAOptions {
     @Option(category = OptionCategory.USER, help = "Set the location of the CUSPARSE library.", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> CuSPARSELibrary = new OptionKey<>(CUSPARSERegistry.DEFAULT_LIBRARY);
 
-}
     @Option(category = OptionCategory.USER, help = "Log the kernels execution time.", stability = OptionStability.STABLE) //
     public static final OptionKey<Boolean> TimeComputation = new OptionKey<>(GrCUDAOptionMap.DEFAULT_TIME_COMPUTATION);
 }
