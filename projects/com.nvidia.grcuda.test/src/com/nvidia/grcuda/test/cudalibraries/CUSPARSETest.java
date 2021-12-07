@@ -60,7 +60,7 @@ public class CUSPARSETest {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
-                {ExecutionPolicyEnum.SYNC.name(), ExecutionPolicyEnum.ASYNC.name()},
+                {ExecutionPolicyEnum.SYNC.toString(), ExecutionPolicyEnum.ASYNC.toString()},
                 {true, false},
                 {'S', 'C', 'D', 'Z'}
         }));
@@ -111,7 +111,7 @@ public class CUSPARSETest {
             // creating variables for cusparse functions as DeviceArrays
             Value alpha = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
             Value beta = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
-            Value rowPtr = cu.invokeMember("DeviceArray", "int", numElements + 1);
+            Value rowPtr = cu.invokeMember("DeviceArray", "int", (numElements + 1));
             Value colIdx = cu.invokeMember("DeviceArray", "int", numElements);
             Value nnzVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
             Value dnVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
@@ -132,11 +132,16 @@ public class CUSPARSETest {
             for (int i = 0; i < numElements; ++i) {
                 rowPtr.setArrayElement(i, i);
                 colIdx.setArrayElement(i, i);
-
                 for (int j = 0; j < complexScaleSize; ++j) {
-                    nnzVec.setArrayElement(i * complexScaleSize + j, j == 0 ? edgeValue : 0.0);
-                    dnVec.setArrayElement(i * complexScaleSize + j, j == 0 ? 1.0 : 0.0);
-                    outVec.setArrayElement(i * complexScaleSize + j, 0.0);
+                    if(j == 0){
+                        nnzVec.setArrayElement((i * complexScaleSize), edgeValue);
+                        dnVec.setArrayElement((i * complexScaleSize), 1.0);
+                        outVec.setArrayElement((i * complexScaleSize),0.0);
+                    } else {
+                        nnzVec.setArrayElement((i * complexScaleSize + j), 0.0);
+                        dnVec.setArrayElement((i * complexScaleSize + j), 0.0);
+                        outVec.setArrayElement((i * complexScaleSize + j), 0.0);
+                    }
                 }
             }
 
@@ -166,17 +171,17 @@ public class CUSPARSETest {
                     CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
                     CUSPARSESpMVMatrixType.SPMV_MATRIX_TYPE_CSR.ordinal());
 
-            for (int i = 0; i < numElements; ++i) {
-                for (int j = 0; j < complexScaleSize; ++j) {
-                    if (isDouble) {
-                        assertEquals(j == 0 ? edgeValue : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-5);
-                    } else {
-                        assertEquals(j == 0 ? edgeValue : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-5);
-                    }
 
+            for (int i = 0; i < numElements; ++i) {
+                for (int j = 0; j < complexScaleSize; j++) {
+                        if(j == 0) {
+                            assertEquals(edgeValue, outVec.getArrayElement(i * complexScaleSize).asFloat(), 1e-5);
+                        } else {
+                            assertEquals(0.0, outVec.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-5);
+                        }
+                    }
                 }
             }
-        }
     }
 
     /**
@@ -222,9 +227,16 @@ public class CUSPARSETest {
                 coordX.setArrayElement(i, i);
                 coordY.setArrayElement(i, i);
                 for (int j = 0; j < complexScaleSize; ++j) {
-                    nnzVec.setArrayElement(i * complexScaleSize + j, j == 0 ? edgeValue : 0.0);
-                    dnVec.setArrayElement(i * complexScaleSize + j, j == 0 ? 1.0 : 0.0);
-                    outVec.setArrayElement(i * complexScaleSize + j, 0.0);
+                    if (j == 0){
+                        nnzVec.setArrayElement(i * complexScaleSize, edgeValue);
+                        dnVec.setArrayElement(i * complexScaleSize, 1.0);
+                        outVec.setArrayElement(i * complexScaleSize, 0.0);
+                    }
+                    if(j > 0){
+                        nnzVec.setArrayElement(i * complexScaleSize + j, 0.0);
+                        dnVec.setArrayElement(i * complexScaleSize + j, 0.0);
+                        outVec.setArrayElement(i * complexScaleSize + j, 0.0);
+                    }
                 }
 
             }
@@ -253,9 +265,14 @@ public class CUSPARSETest {
                     CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
                     CUSPARSESpMVMatrixType.SPMV_MATRIX_TYPE_COO.ordinal());
 
-
             for (int i = 0; i < numElements; ++i) {
-                assertEquals(edgeValue, outVec.getArrayElement(i * complexScaleSize).asFloat(), 1e-5f);
+                for (int j = 0; j < complexScaleSize; j++) {
+                    if(j == 0) {
+                        assertEquals(edgeValue, outVec.getArrayElement(i * complexScaleSize).asFloat(), 1e-5);
+                    } else {
+                        assertEquals(0.0, outVec.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-5);
+                    }
+                }
             }
         }
     }
@@ -288,7 +305,7 @@ public class CUSPARSETest {
             int rows = numElements; // m
             int cols = numElements; // n
             int lda = numElements; // leading dim of A
-            int nnz = 10; // number of nnz
+            int nnz = 2; // number of nnz
             Value spVec = cu.invokeMember("DeviceArray", grcudaDataType, nnz * complexScaleSize); // x
             Value outVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize); // output
             Value matA = cu.invokeMember("DeviceArray", grcudaDataType, numElements * numElements * complexScaleSize);

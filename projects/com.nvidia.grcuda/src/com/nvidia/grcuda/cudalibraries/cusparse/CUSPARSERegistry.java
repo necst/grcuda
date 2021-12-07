@@ -153,8 +153,6 @@ public class CUSPARSERegistry {
             cusparseDestroyFunctionNFI = CUSPARSE_CUSPARSEDESTROY.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
             cusparseSetStreamFunctionNFI = CUSPARSE_CUSPARSESETSTREAM.makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
 
-
-
             // cusparseStatus_t cusparseCreate(cusparseHandle_t handle)
 
             cusparseCreateFunction = new Function(CUSPARSE_CUSPARSECREATE.getName()) {
