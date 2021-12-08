@@ -183,6 +183,10 @@ public abstract class AbstractArray implements TruffleObject {
      * for array accesses that are immediately following the last one, as they are performed synchronously and there is no
      * reason to explicitly model them in the {@link ExecutionDAG};
      */
+    // FIXME: Possible error: Array A is up-to-date on CPU and GPU0. There's an ongoing kernel on GPU0 that uses A read-only.
+    //  If we write A on the CPU, is the scheduling skipped? That's an error.
+    //  In the case of a read, no problem (a kernel that modifies the data would take exclusive ownership),
+    //  while in the case of a write we need to check that arrayUpToDateLocations == CPU
     public boolean isArrayUpdatedOnCPU() {
         return this.arrayUpToDateLocations.contains(CPUDevice.CPU_DEVICE_ID);
     }
