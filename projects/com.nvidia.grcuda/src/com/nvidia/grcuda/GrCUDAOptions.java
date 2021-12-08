@@ -48,21 +48,16 @@ import com.oracle.truffle.api.Option;
 @Option.Group(GrCUDALanguage.ID)
 public final class GrCUDAOptions {
 
-    private GrCUDAOptions() {
-        // no instances
-    }
-
-
     @Option(category = OptionCategory.USER, help = "Enable cuBLAS support.", stability = OptionStability.STABLE) //
     public static final OptionKey<Boolean> CuBLASEnabled = new OptionKey<>(true);
 
-    @Option(category = OptionCategory.USER, help = "Set the location of the cublas library.", stability = OptionStability.STABLE) //
+    @Option(category = OptionCategory.USER, help = "Set the location of the cuBLAS library.", stability = OptionStability.STABLE) //
     public static final OptionKey<String> CuBLASLibrary = new OptionKey<>(CUBLASRegistry.DEFAULT_LIBRARY);
 
     @Option(category = OptionCategory.USER, help = "Enable cuML support.", stability = OptionStability.STABLE) //
     public static final OptionKey<Boolean> CuMLEnabled = new OptionKey<>(true);
 
-    @Option(category = OptionCategory.USER, help = "Set the location of the cuml library.", stability = OptionStability.STABLE) //
+    @Option(category = OptionCategory.USER, help = "Set the location of the cuML library.", stability = OptionStability.STABLE) //
     public static final OptionKey<String> CuMLLibrary = new OptionKey<>(CUMLRegistry.DEFAULT_LIBRARY);
 
     @Option(category = OptionCategory.USER, help = "Choose the scheduling policy of GrCUDA computations", stability = OptionStability.EXPERIMENTAL) //
@@ -92,10 +87,10 @@ public final class GrCUDAOptions {
     @Option(category = OptionCategory.USER, help = "Set the location of the TensorRT library.", stability = OptionStability.STABLE) //
     public static final OptionKey<String> TensorRTLibrary = new OptionKey<>(TensorRTRegistry.DEFAULT_LIBRARY);
 
-    @Option(category = OptionCategory.USER, help = "Enable CUSPARSE support.", stability = OptionStability.STABLE) //
-    public static final OptionKey<Boolean> CuSPARSEEnabled = new OptionKey<>(false);
+    @Option(category = OptionCategory.USER, help = "Enable cuSPARSE support.", stability = OptionStability.STABLE) //
+    public static final OptionKey<Boolean> CuSPARSEEnabled = new OptionKey<>(true);
 
-    @Option(category = OptionCategory.USER, help = "Set the location of the CUSPARSE library.", stability = OptionStability.EXPERIMENTAL) //
+    @Option(category = OptionCategory.USER, help = "Set the location of the cuSPARSE library.", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> CuSPARSELibrary = new OptionKey<>(CUSPARSERegistry.DEFAULT_LIBRARY);
 
     @Option(category = OptionCategory.USER, help = "Log the kernels execution time.", stability = OptionStability.STABLE) //

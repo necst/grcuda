@@ -96,8 +96,6 @@ public final class GrCUDAContext {
         DependencyPolicyEnum dependencyPolicy = grCUDAOptionMap.getDependencyPolicy();
 
         // Retrieve the execution policy;
-
-        // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it.
         ExecutionPolicyEnum executionPolicy = grCUDAOptionMap.getExecutionPolicy();
 
         // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it. 
@@ -144,7 +142,6 @@ public final class GrCUDAContext {
                 LOGGER.warning("cuML is supported only on GPUs with compute capability >= 6.0 (Pascal and newer). It cannot be enabled.");
             }
         }
-
         if (grCUDAOptionMap.isCuBLASEnabled()) {
                 Namespace blas = new Namespace(CUBLASRegistry.NAMESPACE);
                 namespace.addNamespace(blas);

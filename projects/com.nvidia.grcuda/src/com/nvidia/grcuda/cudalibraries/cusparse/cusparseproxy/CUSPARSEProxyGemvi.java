@@ -46,7 +46,7 @@ import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
 public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
 
-    private final int nArgsRaw = 13; // args for library function
+    private final int N_ARGS_RAW = 13; // args for library function
 
     public CUSPARSEProxyGemvi(ExternalFunctionFactory externalFunctionFactory) {
         super(externalFunctionFactory);
@@ -59,7 +59,7 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
             return rawArgs;
         } else {
 
-            args = new Object[nArgsRaw];
+            args = new Object[N_ARGS_RAW];
 
             UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
 
@@ -115,7 +115,8 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
 
             DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, alpha.getElementType());
 
-            cudaDeviceSynchronize();
+            // FIXME: getting the runtime from an argument is not very clean, the proxy should maybe hold a direct reference of the runtime;
+            alpha.getGrCUDAExecutionContext().getCudaRuntime().cudaDeviceSynchronize();
 
             args[0] = transA.ordinal();
             args[1] = rows;

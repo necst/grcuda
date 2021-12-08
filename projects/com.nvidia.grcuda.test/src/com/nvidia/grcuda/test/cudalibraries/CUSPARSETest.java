@@ -109,8 +109,8 @@ public class CUSPARSETest {
             Value cu = polyglot.eval("grcuda", "CU");
 
             // creating variables for cusparse functions as DeviceArrays
-            Value alpha = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
-            Value beta = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
+            Value alpha = cu.invokeMember("DeviceArray", grcudaDataType, complexScaleSize);
+            Value beta = cu.invokeMember("DeviceArray", grcudaDataType, complexScaleSize);
             Value rowPtr = cu.invokeMember("DeviceArray", "int", (numElements + 1));
             Value colIdx = cu.invokeMember("DeviceArray", "int", numElements);
             Value nnzVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
@@ -193,7 +193,7 @@ public class CUSPARSETest {
         try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy", this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
                 "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
 
-            final int numElements = 1000;
+            final int numElements = 10000;
             final boolean isComplex = this.type == 'C' || this.type == 'Z';
             final boolean isDouble = this.type == 'D' || this.type == 'Z';
             final int complexScaleSize = isComplex ? 2 : 1;
@@ -203,8 +203,8 @@ public class CUSPARSETest {
             Value cu = polyglot.eval("grcuda", "CU");
 
             // creating variables for cusparse functions as DeviceArrays
-            Value alpha = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
-            Value beta = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
+            Value alpha = cu.invokeMember("DeviceArray", grcudaDataType, complexScaleSize);
+            Value beta = cu.invokeMember("DeviceArray", grcudaDataType, complexScaleSize);
             Value coordX = cu.invokeMember("DeviceArray", "int", numElements);
             Value coordY = cu.invokeMember("DeviceArray", "int", numElements);
             Value nnzVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
@@ -238,7 +238,6 @@ public class CUSPARSETest {
                         outVec.setArrayElement(i * complexScaleSize + j, 0.0);
                     }
                 }
-
             }
 
             Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
@@ -287,7 +286,7 @@ public class CUSPARSETest {
                 this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
                 "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
             if (this.type != 'S') {
-                Logger.getGlobal().warning("TGeMVI tests with T=" + this.type + ", ExecutionPolicy=" + this.policy + ", InputPrefetch=" + this.inputPrefetch + " are not supported.");
+                System.out.println("warning: TGeMVI tests with T=" + this.type + ", ExecutionPolicy=" + this.policy + ", InputPrefetch=" + this.inputPrefetch + " are not supported, skipping test");
                 return;
             }
             final int numElements = 1000;
@@ -300,8 +299,8 @@ public class CUSPARSETest {
             Value cu = polyglot.eval("grcuda", "CU");
 
             // creating variables for cusparse functions as DeviceArrays
-            Value alpha = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
-            Value beta = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
+            Value alpha = cu.invokeMember("DeviceArray", grcudaDataType, complexScaleSize);
+            Value beta = cu.invokeMember("DeviceArray", grcudaDataType, complexScaleSize);
             int rows = numElements; // m
             int cols = numElements; // n
             int lda = numElements; // leading dim of A
@@ -368,9 +367,6 @@ public class CUSPARSETest {
                     outVec,
                     CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
                     this.type);
-
-            Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
-            sync.execute();
 
             float expectedResult = nnz * edgeValue;
 

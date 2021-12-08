@@ -59,7 +59,10 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
         SPMV_MATRIX_TYPE_CSR
     }
 
-    private final int nArgsRaw = 9; // args for library function
+    // Number of arguments expected to directly call the original SpMV function in cuSPARSE;
+    private final int NUM_SPMV_ARGS_READ = 9;
+    // Number of arguments expected to call SpMV by automatically wrapping input arrays;
+    private final int NUM_SPMV_ARGS_WRAPPED = 14;
 
     public CUSPARSEProxySpMV(ExternalFunctionFactory externalFunctionFactory) {
         super(externalFunctionFactory);
@@ -68,10 +71,10 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
     @Override
     public Object[] formatArguments(Object[] rawArgs, long handle) throws UnsupportedTypeException, UnsupportedMessageException, ArityException {
         this.initializeNfi();
-        if (rawArgs.length == nArgsRaw) {
+        if (rawArgs.length == NUM_SPMV_ARGS_READ) {
             return rawArgs;
         } else {
-            args = new Object[nArgsRaw];
+            args = new Object[NUM_SPMV_ARGS_WRAPPED];
 
             // v1 and v2 can be X, Y, rowPtr
             DeviceArray v1 = (DeviceArray) rawArgs[5];
@@ -118,7 +121,6 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             Object resultX = INTEROP.execute(cusparseCreateDnVecFunction, dnVecXDescr.getAddress(), cols, valuesX, valueTypeVec.ordinal());
             Object resultY = INTEROP.execute(cusparseCreateDnVecFunction, dnVecYDescr.getAddress(), cols, valuesY, valueTypeVec.ordinal());
 
-
             // create buffer
             Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunction, handle, opA.ordinal(), alpha, matDescr.getValue(), dnVecXDescr.getValue(), beta,
                                 dnVecYDescr.getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
@@ -128,12 +130,13 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             if (bufferSize.getValue() == 0) {
                 numElements = 1;
             } else {
-                numElements = (long) bufferSize.getValue() / 4;
+                numElements = bufferSize.getValue() / 4;
             }
 
             DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, alpha.getElementType());
 
-            cudaDeviceSynchronize();
+            // FIXME: getting the runtime from an argument is not very clean, the proxy should maybe hold a direct reference of the runtime;
+            alpha.getGrCUDAExecutionContext().getCudaRuntime().cudaDeviceSynchronize();
 
             // format new arguments
             args[0] = opA.ordinal();
@@ -145,6 +148,13 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             args[6] = valueType.ordinal();
             args[7] = alg.ordinal();
             args[8] = buffer;
+
+            // Extra arguments, required to track dependencies on the original input arrays;
+            args[9] = v1;
+            args[10] = v2;
+            args[11] = values;
+            args[12] = valuesX;
+            args[13] = valuesY;
 
             return args;
         }

@@ -176,7 +176,7 @@ fi
 # sudo apt-get install tensorrt
 
 # reboot the machine to load the Nvidia drivers;
-#sudo reboot
+sudo reboot
 
 ##########################################
 ##########################################

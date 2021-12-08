@@ -77,7 +77,7 @@ public abstract class CUSPARSEProxy {
     @CompilerDirectives.CompilationFinal protected TruffleObject cusparseDgemvi_bufferSizeFunction;
     @CompilerDirectives.CompilationFinal protected TruffleObject cusparseZgemvi_bufferSizeFunction;
 
-    private ExternalFunctionFactory externalFunctionFactory;
+    private final ExternalFunctionFactory externalFunctionFactory;
     protected Object[] args;
     private static GrCUDAContext context = null;
 
@@ -86,7 +86,6 @@ public abstract class CUSPARSEProxy {
     }
 
     // we need to create a new context
-
     public static void setContext(GrCUDAContext context) {
         CUSPARSEProxy.context = context;
     }
@@ -331,8 +330,6 @@ public abstract class CUSPARSEProxy {
                 }
             }
         };
-
-
     }
 
     public ExternalFunctionFactory getExternalFunctionFactory() {
@@ -340,18 +337,6 @@ public abstract class CUSPARSEProxy {
     }
 
     public abstract Object[] formatArguments(Object[] rawArgs, long handle) throws UnsupportedTypeException, UnsupportedMessageException, ArityException;
-
-
-    @CompilerDirectives.TruffleBoundary
-    public void cudaDeviceSynchronize() {
-        try {
-            Object callable = CUDARuntime.CUDARuntimeFunction.CUDA_DEVICESYNCHRONIZE.getSymbol(context.getCUDARuntime());
-            Object result = INTEROP.execute(callable);
-        } catch (InteropException e) {
-            throw new GrCUDAException(e);
-        }
-    }
-
 
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo", "(pointer, sint64, " +
@@ -370,5 +355,4 @@ public abstract class CUSPARSEProxy {
                     "sint64, sint64, sint64, pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSEZGEMVI_BUFFERSIZE = new ExternalFunctionFactory("cusparseZgemvi_bufferSize", "cusparseZgemvi_bufferSize", "(sint64, sint32, " +
                     "sint64, sint64, sint64, pointer): sint32");
-    private static final ExternalFunctionFactory CUDA_DEVICESYNCHRONIZE = new ExternalFunctionFactory("cudaDeviceSynchronize","cudaDeviceSynchronize","(): sint32");
 }

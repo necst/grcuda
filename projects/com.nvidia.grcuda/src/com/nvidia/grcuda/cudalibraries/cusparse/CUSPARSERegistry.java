@@ -34,7 +34,6 @@
 package com.nvidia.grcuda.cudalibraries.cusparse;
 
 import static com.nvidia.grcuda.functions.Function.INTEROP;
-import static com.nvidia.grcuda.functions.Function.checkArgumentLength;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 
 import java.util.ArrayList;
@@ -44,19 +43,17 @@ import java.util.List;
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDAInternalException;
-import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.Namespace;
-import com.nvidia.grcuda.NoneValue;
+import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxy;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyGemvi;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
-import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
-import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
+import com.nvidia.grcuda.runtime.computation.ComputationArgument;
 import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.runtime.stream.CUSPARSESetStreamFunction;
 import com.nvidia.grcuda.runtime.stream.LibrarySetStreamFunction;
@@ -70,8 +67,6 @@ import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-import org.graalvm.polyglot.Value;
-import org.graalvm.polyglot.Context;
 
 public class CUSPARSERegistry {
     public static final String DEFAULT_LIBRARY = (System.getenv("LIBCUSPARSE_DIR") != null ? System.getenv("LIBCUSPARSE_DIR") : "") + "libcusparse.so";
@@ -241,6 +236,25 @@ public class CUSPARSERegistry {
                 private Function nfiFunction;
 
                 @Override
+                public List<ComputationArgumentWithValue> createComputationArgumentWithValueList(Object[] args, Long libraryHandle) {
+                    ArrayList<ComputationArgumentWithValue> argumentsWithValue = new ArrayList<>();
+                    // Set the library handle;
+                    argumentsWithValue.add(new ComputationArgumentWithValue(this.computationArguments.get(0), libraryHandle));
+                    // Set the other arguments (size - 1 as we skip the handle, i.e. the argument 0);
+                    for (int i = 0; i < this.computationArguments.size() - 1; i++) {
+                        argumentsWithValue.add(new ComputationArgumentWithValue(this.computationArguments.get(i + 1), args[i]));
+                    }
+                    // Add extra arguments at the end: they are used to track input DeviceArrays;
+                    int numExtraArrays = args.length - (this.computationArguments.size() - 1);
+                    for (int i = 0; i < numExtraArrays; i++) {
+                        argumentsWithValue.add(new ComputationArgumentWithValue(
+                                "cusparse_extra_array_" + i, Type.NFI_POINTER, ComputationArgument.Kind.POINTER_INOUT,
+                                args[this.computationArguments.size() - 1 + i]));
+                    }
+                    return argumentsWithValue;
+                }
+
+                @Override
                 @TruffleBoundary
                 protected Object call(Object[] arguments) {
                     ensureInitialized();
@@ -250,17 +264,18 @@ public class CUSPARSERegistry {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = proxy.getExternalFunctionFactory().makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
-
+                        // This list of arguments might have extra arguments: the DeviceArrays that can cause dependencies but are not directly used by the cuSPARSE function,
+                        //   as these DeviceArrays might be wrapped using cuSparseMatrices/Vectors/Buffers.
+                        // We still need to pass these DeviceArrays to the GrCUDAComputationalElement so we track dependencies correctly,
+                        // but they are removed from the final list of arguments passed to the cuSPARSE library;
                         Object[] formattedArguments = proxy.formatArguments(arguments, cusparseHandle);
-
                         List<ComputationArgumentWithValue> computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, cusparseHandle);
-
+                        int extraArraysToTrack = computationArgumentsWithValue.size() - this.computationArguments.size();  // Both lists also contain the handle;
                         Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
-                                        computationArgumentsWithValue).schedule();
+                                computationArgumentsWithValue, extraArraysToTrack).schedule();
 
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
                         return result;
-
                     } catch (InteropException e) {
                         throw new GrCUDAInternalException(e);
                     }
