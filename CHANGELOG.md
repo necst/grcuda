@@ -2,8 +2,8 @@
 
 * Enabled support for cuSPARSE
   * Operations with sparse matrices from cuSPARSE library are now supported
-  * **Known limitation:** Not all data types are supported
-  * Interoperability between cuSPARSE and cuBLAS is tested
+  * **Known limitation:** Not all data types are supported: in particular Tgemvi does not support double data types 
+  (both complex and not)
   * Concurrent operations on parallel streams were analyzed using Nvidia Profiler
 
 =======
