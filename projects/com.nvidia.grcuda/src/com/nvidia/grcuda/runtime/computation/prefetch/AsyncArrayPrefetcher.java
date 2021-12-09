@@ -52,7 +52,7 @@ public class AsyncArrayPrefetcher extends AbstractArrayPrefetcher {
      */
     @Override
     public void prefetchToGpu(GrCUDAComputationalElement computation) {
-        for (ComputationArgumentWithValue a : computation.getArgumentList()) {
+        for (ComputationArgumentWithValue a : computation.getArgumentsThatCanCreateDependencies()) {
             if (a.getArgumentValue() instanceof AbstractArray) {
                 AbstractArray array = (AbstractArray) a.getArgumentValue();
                 // The array has been used by the CPU, so we should prefetch it;

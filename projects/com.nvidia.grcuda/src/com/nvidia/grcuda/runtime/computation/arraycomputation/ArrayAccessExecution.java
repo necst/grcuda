@@ -44,10 +44,12 @@ import java.util.Optional;
 public abstract class ArrayAccessExecution<T extends AbstractArray> extends GrCUDAComputationalElement {
 
     protected T array;
+    public static final boolean COMPUTATION_IS_DONE_BY_CPU = true;
 
     public ArrayAccessExecution(AbstractGrCUDAExecutionContext grCUDAExecutionContext, InitializeDependencyList initializer, T array) {
         super(grCUDAExecutionContext, initializer);
         this.array = array;
+        this.isComputationDoneByCPU = COMPUTATION_IS_DONE_BY_CPU;
     }
 
     @Override

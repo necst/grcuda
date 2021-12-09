@@ -60,7 +60,7 @@ public abstract class GrCUDAComputationalElement {
     /**
      * This list contains the original set of input arguments that are used to compute dependencies;
      */
-    protected final List<ComputationArgumentWithValue> argumentList;
+    protected final List<ComputationArgumentWithValue> argumentsThatCanCreateDependencies;
     /**
      * Reference to the execution context where this computation is executed;
      */
@@ -119,10 +119,10 @@ public abstract class GrCUDAComputationalElement {
      * @param initializer the initializer used to build the internal set of arguments considered in the dependency computation
      */
     public GrCUDAComputationalElement(AbstractGrCUDAExecutionContext grCUDAExecutionContext, InitializeDependencyList initializer) {
-        this.argumentList = initializer.initialize();
+        this.argumentsThatCanCreateDependencies = initializer.initialize();
         // Initialize by making a copy of the original set;
         this.grCUDAExecutionContext = grCUDAExecutionContext;
-        this.dependencyComputation = grCUDAExecutionContext.getDependencyBuilder().initialize(this.argumentList);
+        this.dependencyComputation = grCUDAExecutionContext.getDependencyBuilder().initialize(this.argumentsThatCanCreateDependencies);
     }
 
     /**
@@ -134,8 +134,8 @@ public abstract class GrCUDAComputationalElement {
         this(grCUDAExecutionContext, new DefaultExecutionInitializer(args));
     }
 
-    public List<ComputationArgumentWithValue> getArgumentList() {
-        return argumentList;
+    public List<ComputationArgumentWithValue> getArgumentsThatCanCreateDependencies() {
+        return argumentsThatCanCreateDependencies;
     }
 
     /**
@@ -291,7 +291,7 @@ public abstract class GrCUDAComputationalElement {
      * and there's no benefit in tracking their location;
      */
     public void updateLocationOfArrays() {
-        for (ComputationArgumentWithValue o : this.argumentList) {
+        for (ComputationArgumentWithValue o : this.argumentsThatCanCreateDependencies) {
             // Ignore non-array arguments. Also, don't update locations if the ComputationalElement does not use streams;
             if (o.getArgumentValue() instanceof AbstractArray && this.canUseStream()) {
                 AbstractArray a = (AbstractArray) o.getArgumentValue();

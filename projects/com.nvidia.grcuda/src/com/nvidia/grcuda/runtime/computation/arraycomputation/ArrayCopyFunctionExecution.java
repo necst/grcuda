@@ -58,14 +58,14 @@ public abstract class ArrayCopyFunctionExecution extends GrCUDAComputationalElem
      */
     protected final long numElements;
 
-    public static final boolean COMPUTATION_IS_ARRAY_ACCESS = true;
+    public static final boolean COMPUTATION_IS_DONE_BY_CPU = true;
 
     public ArrayCopyFunctionExecution(AbstractArray array, DeviceArrayCopyFunction.CopyDirection direction, long numElements, ArrayCopyFunctionExecutionInitializer dependencyInitializer) {
         super(array.getGrCUDAExecutionContext(), dependencyInitializer);
         this.array = array;
         this.direction = direction;
         this.numElements = numElements;
-        this.isComputationDoneByCPU = COMPUTATION_IS_ARRAY_ACCESS;
+        this.isComputationDoneByCPU = COMPUTATION_IS_DONE_BY_CPU;
     }
 
     @Override

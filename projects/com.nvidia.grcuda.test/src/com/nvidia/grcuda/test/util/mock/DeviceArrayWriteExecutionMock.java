@@ -63,7 +63,7 @@ public class DeviceArrayWriteExecutionMock extends DeviceArrayWriteExecution {
     @Override
     public String toString() {
         return "sync write" + "; args=[" +
-                this.argumentList.stream().map(Object::toString).collect(Collectors.joining(", ")) +
+                this.argumentsThatCanCreateDependencies.stream().map(Object::toString).collect(Collectors.joining(", ")) +
                 "]";
     }
 }

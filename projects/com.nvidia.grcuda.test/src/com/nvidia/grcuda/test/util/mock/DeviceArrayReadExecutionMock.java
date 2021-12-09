@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayReadExecution;
-import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayWriteExecution;
 
 /**
  * Mock class that represents a synchronous read execution,
@@ -63,7 +62,7 @@ public class DeviceArrayReadExecutionMock extends DeviceArrayReadExecution {
     @Override
     public String toString() {
         return "sync read" + "; args=[" +
-                this.argumentList.stream().map(Object::toString).collect(Collectors.joining(", ")) +
+                this.argumentsThatCanCreateDependencies.stream().map(Object::toString).collect(Collectors.joining(", ")) +
                 "]";
     }
 }

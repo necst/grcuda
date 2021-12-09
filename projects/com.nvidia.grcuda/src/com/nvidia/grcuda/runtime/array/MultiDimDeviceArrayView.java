@@ -76,8 +76,8 @@ public class MultiDimDeviceArrayView extends AbstractArray implements TruffleObj
      * @param stride value used to jump to consecutive values in the array, and determined by the slice that has been extracted
      */
     public MultiDimDeviceArrayView(MultiDimDeviceArray mdDeviceArray, int dim, long offset, long stride) {
-        // The up-to-date locations of the view are the same of the parent;
-        super(mdDeviceArray.grCUDAExecutionContext, mdDeviceArray.elementType, mdDeviceArray.arrayUpToDateLocations);
+        // The up-to-date locations of the view are the same of the parent, along with the context and type;
+        super(mdDeviceArray);
         this.mdDeviceArray = mdDeviceArray;
         this.thisDimension = dim;
         this.offset = offset; // Index at which this array view starts;
@@ -269,7 +269,7 @@ public class MultiDimDeviceArrayView extends AbstractArray implements TruffleObj
             throw InvalidArrayIndexException.create(index);
         }
         try {
-            if (this.canSkipScheduling()) {
+            if (this.canSkipSchedulingRead()) {
                 // Fast path, skip the DAG scheduling;
                 return readNativeView(index, elementTypeProfile);
             } else {
@@ -305,7 +305,7 @@ public class MultiDimDeviceArrayView extends AbstractArray implements TruffleObj
             CompilerDirectives.transferToInterpreter();
             throw InvalidArrayIndexException.create(index);
         }
-        if (this.canSkipScheduling()) {
+        if (this.canSkipSchedulingWrite()) {
             // Fast path, skip the DAG scheduling;
             writeNativeView(index, value, valueLibrary, elementTypeProfile);
         } else {

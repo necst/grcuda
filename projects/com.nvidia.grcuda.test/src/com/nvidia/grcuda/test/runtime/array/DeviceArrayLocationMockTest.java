@@ -5,6 +5,7 @@ import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.MultiDimDeviceArray;
 import com.nvidia.grcuda.runtime.array.MultiDimDeviceArrayView;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.test.util.mock.ArgumentMock;
 import com.nvidia.grcuda.test.util.mock.AsyncGrCUDAExecutionContextMock;
@@ -18,6 +19,7 @@ import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
