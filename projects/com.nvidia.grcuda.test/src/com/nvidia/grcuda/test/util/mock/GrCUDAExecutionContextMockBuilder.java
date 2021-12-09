@@ -37,7 +37,7 @@ import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 public class GrCUDAExecutionContextMockBuilder {
 
     DependencyPolicyEnum dependencyPolicy = DependencyPolicyEnum.NO_CONST;
-    RetrieveNewStreamPolicyEnum retrieveStreamPolicy = RetrieveNewStreamPolicyEnum.FIFO;
+    RetrieveNewStreamPolicyEnum retrieveStreamPolicy = RetrieveNewStreamPolicyEnum.REUSE;
     RetrieveParentStreamPolicyEnum parentStreamPolicyEnum = RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
     boolean isArchitecturePascalOrNewer = true;
 

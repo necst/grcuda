@@ -360,7 +360,7 @@ public class WithConstDependencyComputationTest {
     @Test
     public void complexFrontierWithSyncMockTest() throws UnsupportedTypeException {
         AsyncGrCUDAExecutionContext context = new AsyncGrCUDAExecutionContextMock(DependencyPolicyEnum.WITH_CONST,
-                RetrieveNewStreamPolicyEnum.FIFO, RetrieveParentStreamPolicyEnum.DISJOINT);
+                RetrieveNewStreamPolicyEnum.REUSE, RetrieveParentStreamPolicyEnum.DISJOINT);
 
         // A(1R,2) -> B(1) ---> D(1R,3)
         //        \-> C(2R) \-> E(1R,4) -> F(4)
@@ -419,7 +419,7 @@ public class WithConstDependencyComputationTest {
     @Test
     public void complexFrontier2WithSyncMockTest() throws UnsupportedTypeException {
         AsyncGrCUDAExecutionContext context = new AsyncGrCUDAExecutionContextMock(DependencyPolicyEnum.WITH_CONST,
-                RetrieveNewStreamPolicyEnum.FIFO, RetrieveParentStreamPolicyEnum.DISJOINT);
+                RetrieveNewStreamPolicyEnum.REUSE, RetrieveParentStreamPolicyEnum.DISJOINT);
 
         // A(1R,2) -> B(1) -> D(1R,3) ---------> G(1, 3, 4)
         //        \-> C(2R) \-> E(1R,4) -> F(4) -/

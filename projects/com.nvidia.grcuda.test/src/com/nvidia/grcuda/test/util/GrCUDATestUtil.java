@@ -30,7 +30,6 @@
  */
 package com.nvidia.grcuda.test.util;
 
-import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
@@ -70,7 +69,7 @@ public class GrCUDATestUtil {
         Collection<Object[]> options = GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
                 {ExecutionPolicyEnum.SYNC, ExecutionPolicyEnum.ASYNC},
                 {true, false},  // InputPrefetch
-                {RetrieveNewStreamPolicyEnum.FIFO, RetrieveNewStreamPolicyEnum.ALWAYS_NEW},
+                {RetrieveNewStreamPolicyEnum.REUSE, RetrieveNewStreamPolicyEnum.ALWAYS_NEW},
                 {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT},
                 {DependencyPolicyEnum.NO_CONST, DependencyPolicyEnum.WITH_CONST},
                 {true, false},  // ForceStreamAttach

@@ -62,7 +62,7 @@ public class GrCUDAStreamManagerMockTest {
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {RetrieveNewStreamPolicyEnum.ALWAYS_NEW},
-                {RetrieveNewStreamPolicyEnum.FIFO},
+                {RetrieveNewStreamPolicyEnum.REUSE},
         });
     }
 
@@ -282,9 +282,9 @@ public class GrCUDAStreamManagerMockTest {
 
         ExecutionDAG dag = context.getDag();
         // Check that kernels have been given the right stream;
-        int numStreams = this.policy == RetrieveNewStreamPolicyEnum.FIFO ? 2 : numLoops * 2;
-        int streamCheck1 = this.policy == RetrieveNewStreamPolicyEnum.FIFO ? 0 : numLoops * 2 - 2;
-        int streamCheck2 = this.policy == RetrieveNewStreamPolicyEnum.FIFO ? 1 : numLoops * 2 - 1;
+        int numStreams = this.policy == RetrieveNewStreamPolicyEnum.REUSE ? 2 : numLoops * 2;
+        int streamCheck1 = this.policy == RetrieveNewStreamPolicyEnum.REUSE ? 0 : numLoops * 2 - 2;
+        int streamCheck2 = this.policy == RetrieveNewStreamPolicyEnum.REUSE ? 1 : numLoops * 2 - 1;
 
         assertEquals(numStreams, context.getStreamManager().getNumberOfStreams());
         assertEquals(streamCheck1, dag.getVertices().get(numLoops * 3 - 3).getComputation().getStream().getStreamNumber());

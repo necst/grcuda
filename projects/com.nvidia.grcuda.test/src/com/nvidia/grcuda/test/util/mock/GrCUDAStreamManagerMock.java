@@ -37,6 +37,7 @@ import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.StreamPolicy;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,22 +49,16 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
 
     GrCUDAStreamManagerMock(CUDARuntime runtime,
                             RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
-                            RetrieveParentStreamPolicyEnum parentStreamPolicyEnum) {
-        super(runtime, retrieveStreamPolicy, parentStreamPolicyEnum, false);
+                            RetrieveParentStreamPolicyEnum parentStreamPolicy) {
+        super(runtime, false, new StreamPolicyMock(retrieveStreamPolicy, parentStreamPolicy));
     }
 
     GrCUDAStreamManagerMock(CUDARuntime runtime) {
-        super(runtime, RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, false);
+        super(runtime, false, new StreamPolicyMock(RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT));
     }
 
-    int numStreams = 0;
-
-    @Override
-    public CUDAStream createStream() {
-        // FIXME: we really need a mocked runtime to avoid using a static variable!
-        CUDAStream newStream = new CUDAStream(0, numStreams++, AsyncGrCUDAExecutionContextMock.currentGPU);
-        streams.add(newStream);
-        return newStream;
+    public List<CUDAStream> getStreams() {
+        return this.streamPolicy.getStreams();
     }
 
     @Override
@@ -85,8 +80,6 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
 
     @Override
     protected void syncDevice() { }
-
-    public List<CUDAStream> getStreams() { return this.streams; }
 
     public Map<CUDAStream, Set<GrCUDAComputationalElement>> getActiveComputationsMap() {
         Map<CUDAStream, Set<GrCUDAComputationalElement>> activeComputations = new HashMap<>();

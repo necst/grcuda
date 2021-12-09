@@ -71,7 +71,7 @@ public class GrCUDAOptionMap implements TruffleObject {
 
     public static final ExecutionPolicyEnum DEFAULT_EXECUTION_POLICY = ExecutionPolicyEnum.ASYNC;
     public static final DependencyPolicyEnum DEFAULT_DEPENDENCY_POLICY = DependencyPolicyEnum.NO_CONST;
-    public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.FIFO;
+    public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.REUSE;
     public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
     public static final DeviceSelectionPolicyEnum DEFAULT_DEVICE_SELECTION_POLICY = DeviceSelectionPolicyEnum.DATA_LOCALITY;
     public static final MemAdviserEnum DEFAULT_MEM_ADVISE_POLICY = MemAdviserEnum.NONE;
@@ -139,7 +139,7 @@ public class GrCUDAOptionMap implements TruffleObject {
     }
 
     private static RetrieveNewStreamPolicyEnum parseRetrieveStreamPolicy(String policyString) {
-        if (policyString.equals(RetrieveNewStreamPolicyEnum.FIFO.toString())) return RetrieveNewStreamPolicyEnum.FIFO;
+        if (policyString.equals(RetrieveNewStreamPolicyEnum.REUSE.toString())) return RetrieveNewStreamPolicyEnum.REUSE;
         else if (policyString.equals(RetrieveNewStreamPolicyEnum.ALWAYS_NEW.toString())) return RetrieveNewStreamPolicyEnum.ALWAYS_NEW;
         else {
             LOGGER.warning("Warning: unknown new stream retrieval policy=" + policyString + "; using default=" + DEFAULT_RETRIEVE_STREAM_POLICY);
@@ -150,9 +150,9 @@ public class GrCUDAOptionMap implements TruffleObject {
     private static RetrieveParentStreamPolicyEnum parseParentStreamPolicy(String policyString) {
         if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT.toString())) return RetrieveParentStreamPolicyEnum.DISJOINT;
         else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT.toString())) return RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
-        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DATA_AWARE.toString())) return RetrieveParentStreamPolicyEnum.DATA_AWARE;
-        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.STREAM_AWARE.toString())) return RetrieveParentStreamPolicyEnum.STREAM_AWARE;
-        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT_DATA_AWARE.toString())) return RetrieveParentStreamPolicyEnum.DISJOINT_DATA_AWARE;
+        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.MULTIGPU_DATA_AWARE.toString())) return RetrieveParentStreamPolicyEnum.MULTIGPU_DATA_AWARE;
+        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.MULTIGPU_STREAM_AWARE.toString())) return RetrieveParentStreamPolicyEnum.MULTIGPU_STREAM_AWARE;
+        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT_DATA_AWARE.toString())) return RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT_DATA_AWARE;
         else {
             LOGGER.warning("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + DEFAULT_PARENT_STREAM_POLICY);
             return DEFAULT_PARENT_STREAM_POLICY;

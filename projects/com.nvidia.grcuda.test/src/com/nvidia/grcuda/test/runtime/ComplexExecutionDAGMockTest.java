@@ -60,7 +60,7 @@ public class ComplexExecutionDAGMockTest {
     public static Collection<Object[]> data() {
 
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
-                {RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveNewStreamPolicyEnum.FIFO},
+                {RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveNewStreamPolicyEnum.REUSE},
                 {RetrieveParentStreamPolicyEnum.DISJOINT, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT},
                 {DependencyPolicyEnum.WITH_CONST, DependencyPolicyEnum.NO_CONST}
         }));

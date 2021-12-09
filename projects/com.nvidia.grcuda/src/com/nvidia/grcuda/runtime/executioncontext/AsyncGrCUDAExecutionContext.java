@@ -57,7 +57,7 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
     }
 
     public AsyncGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {
-        this(cudaRuntime, options, new GrCUDAStreamManager(cudaRuntime));
+        this(cudaRuntime, options, new GrCUDAStreamManager(cudaRuntime, options));
     }
 
     public AsyncGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options, GrCUDAStreamManager streamManager) {

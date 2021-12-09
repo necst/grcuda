@@ -33,9 +33,9 @@ package com.nvidia.grcuda.runtime.stream;
 public enum RetrieveParentStreamPolicyEnum {
     SAME_AS_PARENT("same-as-parent"),
     DISJOINT("disjoint"),
-    DATA_AWARE("data-aware"),
-    STREAM_AWARE("stream-aware"),
-    DISJOINT_DATA_AWARE("disjoint-data-aware");
+    MULTIGPU_DATA_AWARE("multigpu-data-aware"),
+    MULTIGPU_STREAM_AWARE("multigpu-stream-aware"),
+    MULTIGPU_DISJOINT_DATA_AWARE("multigpu-disjoint-data-aware");
 
     private final String name;
 
