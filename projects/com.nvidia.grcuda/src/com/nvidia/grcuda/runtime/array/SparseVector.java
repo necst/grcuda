@@ -37,19 +37,13 @@ package com.nvidia.grcuda.runtime.array;
 
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.Type;
-import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;
-import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayReadExecution;
-import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayWriteExecution;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.Cached;
-import com.oracle.truffle.api.dsl.Cached.Shared;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.InvalidArrayIndexException;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
@@ -107,7 +101,8 @@ public class SparseVector implements TruffleObject {
         }
     }
 
-    final boolean isIndexValid(long idx){
+    @ExportMessage
+    final boolean isSparseIndexValid(long idx){
         return idx >= 0 && idx < n;
     }
 
@@ -213,7 +208,7 @@ public class SparseVector implements TruffleObject {
             CompilerDirectives.transferToInterpreter();
             throw InvalidArrayIndexException.create((long) position);
         }
-        if(!isIndexValid((long) idx)){
+        if(!isSparseIndexValid((long) idx)){
             CompilerDirectives.transferToInterpreter();
             throw InvalidArrayIndexException.create((long) idx);
         }
