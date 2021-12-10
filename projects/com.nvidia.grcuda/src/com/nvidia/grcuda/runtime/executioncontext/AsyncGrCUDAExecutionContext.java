@@ -34,6 +34,8 @@ import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.runtime.CUDARuntime;
+import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.DeviceList;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.prefetch.AsyncArrayPrefetcher;
 import com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager;
@@ -94,6 +96,20 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         GrCUDALogger.getLogger(GrCUDALogger.EXECUTIONCONTEXT_LOGGER).finest("-- running " + vertex.getComputation());
 
         return result;
+    }
+
+    @Override
+    public DeviceList getDeviceList() {
+        // The device list is created only once, and we always return the same device list object.
+        // This is just an optimization to avoid creating new objects;
+        return this.getStreamManager().getDeviceList();
+    }
+
+    @Override
+    public Device getDevice(int deviceId) {
+        // The device list is created only once, and we always return the same device object.
+        // This is just an optimization to avoid creating new objects;
+        return this.getStreamManager().getDevice(deviceId);
     }
 
     @Override

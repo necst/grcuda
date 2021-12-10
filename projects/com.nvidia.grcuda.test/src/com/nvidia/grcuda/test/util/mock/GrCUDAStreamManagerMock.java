@@ -37,7 +37,6 @@ import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.StreamPolicy;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,11 +49,11 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
     GrCUDAStreamManagerMock(CUDARuntime runtime,
                             RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
                             RetrieveParentStreamPolicyEnum parentStreamPolicy) {
-        super(runtime, false, new StreamPolicyMock(retrieveStreamPolicy, parentStreamPolicy));
+        super(runtime, false, new GrCUDAStreamPolicyMock(retrieveStreamPolicy, parentStreamPolicy));
     }
 
     GrCUDAStreamManagerMock(CUDARuntime runtime) {
-        super(runtime, false, new StreamPolicyMock(RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT));
+        super(runtime, false, new GrCUDAStreamPolicyMock(RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT));
     }
 
     public List<CUDAStream> getStreams() {

@@ -121,8 +121,8 @@ public final class GrCUDAContext {
         namespace.addFunction(new ShredFunction());
         namespace.addFunction(new BindKernelFunction(this.grCUDAExecutionContext));
         namespace.addFunction(new BuildKernelFunction(this.grCUDAExecutionContext));
-        namespace.addFunction(new GetDevicesFunction(this.grCUDAExecutionContext.getCudaRuntime()));
-        namespace.addFunction(new GetDeviceFunction(this.grCUDAExecutionContext.getCudaRuntime()));
+        namespace.addFunction(new GetDevicesFunction(this.grCUDAExecutionContext));
+        namespace.addFunction(new GetDeviceFunction(this.grCUDAExecutionContext));
         namespace.addFunction(new GetOptionsFunction(grCUDAOptionMap));
         this.grCUDAExecutionContext.getCudaRuntime().registerCUDAFunctions(namespace);
         if (grCUDAOptionMap.isCuMLEnabled()) {

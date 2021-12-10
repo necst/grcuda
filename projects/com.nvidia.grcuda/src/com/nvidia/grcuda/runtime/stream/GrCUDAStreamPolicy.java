@@ -3,6 +3,7 @@ package com.nvidia.grcuda.runtime.stream;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.runtime.CUDARuntime;
+import com.nvidia.grcuda.runtime.GrCUDADevicesManager;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.oracle.truffle.api.TruffleLogger;
 
@@ -13,12 +14,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class StreamPolicy {
+public class GrCUDAStreamPolicy {
 
     /**
      * List of all the {@link CUDAStream} that have been currently allocated;
      */
     protected List<CUDAStream> streams = new ArrayList<>();
+
+    /**
+     * Reference to the class that manages the GPU devices in this system;
+     */
+    private final GrCUDADevicesManager devicesManager;
 
     private final CUDARuntime runtime;
     private final RetrieveNewStream retrieveNewStream;
@@ -26,13 +32,15 @@ public class StreamPolicy {
 //    private final DeviceSelectionPolicy deviceSelectionPolicy;
 
     private static final TruffleLogger STREAM_LOGGER = GrCUDALogger.getLogger(GrCUDALogger.STREAM_LOGGER);
-    
-    public StreamPolicy(CUDARuntime runtime,
-                        RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
-                        RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
+
+    public GrCUDAStreamPolicy(CUDARuntime runtime,
+                              GrCUDADevicesManager devicesManager,
+                              RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
+                              RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
         this.runtime = runtime;
+        this.devicesManager = devicesManager;
         // Get how streams are retrieved for computations without parents;
-        switch(retrieveNewStreamPolicyEnum) {
+        switch (retrieveNewStreamPolicyEnum) {
             case REUSE:
                 this.retrieveNewStream = new FifoRetrieveStream();
                 break;
@@ -44,7 +52,7 @@ public class StreamPolicy {
                 throw new GrCUDAException("selected RetrieveNewStreamPolicy is not valid: " + retrieveNewStreamPolicyEnum);
         }
         // Get how streams are retrieved for computations with parents;
-        switch(retrieveParentStreamPolicyEnum) {
+        switch (retrieveParentStreamPolicyEnum) {
             case DISJOINT:
                 this.retrieveParentStream = new DisjointRetrieveParentStream(this.retrieveNewStream);
                 break;
@@ -64,6 +72,12 @@ public class StreamPolicy {
                 STREAM_LOGGER.severe("Cannot select a RetrieveParentStreamPolicy. The selected execution policy is not valid: " + retrieveParentStreamPolicyEnum);
                 throw new GrCUDAException("selected RetrieveParentStreamPolicy is not valid: " + retrieveParentStreamPolicyEnum);
         }
+    }
+
+    public GrCUDAStreamPolicy(CUDARuntime runtime,
+                              RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
+                              RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
+        this(runtime, new GrCUDADevicesManager(runtime), retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum);
     }
 
     /**
@@ -113,6 +127,10 @@ public class StreamPolicy {
 
     public List<CUDAStream> getStreams() {
         return streams;
+    }
+
+    public GrCUDADevicesManager getDevicesManager() {
+        return devicesManager;
     }
 
     /**

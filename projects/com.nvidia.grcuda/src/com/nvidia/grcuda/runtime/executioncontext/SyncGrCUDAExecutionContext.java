@@ -33,6 +33,8 @@ package com.nvidia.grcuda.runtime.executioncontext;
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.runtime.CUDARuntime;
+import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.DeviceList;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.prefetch.SyncArrayPrefetcher;
 import com.oracle.truffle.api.TruffleLanguage;
@@ -79,6 +81,18 @@ public class SyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
         cudaRuntime.cudaDeviceSynchronize();
 
         return result;
+    }
+
+    @Override
+    public DeviceList getDeviceList() {
+        // Create a new device list object when requested;
+        return new DeviceList(cudaRuntime);
+    }
+
+    @Override
+    public Device getDevice(int deviceId) {
+        // Create a new device list object when requested;
+        return new Device(deviceId, cudaRuntime);
     }
 
     /**

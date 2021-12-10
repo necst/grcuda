@@ -87,12 +87,11 @@ public final class Device extends AbstractDevice implements TruffleObject {
     }
 
     @Override
-    public boolean equals(Object other) {
-        if (other instanceof Device) {
-            Device otherDevice = (Device) other;
-            return otherDevice.deviceId == deviceId;
-        }
-        return false;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Device that = (Device) o;
+        return deviceId == that.deviceId;
     }
 
     @Override

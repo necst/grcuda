@@ -31,21 +31,20 @@
 package com.nvidia.grcuda.runtime.stream;
 
 import com.nvidia.grcuda.CUDAEvent;
-import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.runtime.CUDARuntime;
+import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.DeviceList;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.oracle.truffle.api.TruffleLogger;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -71,7 +70,7 @@ public class GrCUDAStreamManager {
     /**
      * Handle for all the policies to assign streams and devices to a new computation that can run on CUDA stream;
      */
-    protected final StreamPolicy streamPolicy;
+    protected final GrCUDAStreamPolicy streamPolicy;
     
     public GrCUDAStreamManager(CUDARuntime runtime, GrCUDAOptionMap options) {
         this(runtime,
@@ -85,13 +84,13 @@ public class GrCUDAStreamManager {
             RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
             RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
             boolean isTimeComputation) {
-        this(runtime, isTimeComputation, new StreamPolicy(runtime, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum));
+        this(runtime, isTimeComputation, new GrCUDAStreamPolicy(runtime, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum));
     }
 
     public GrCUDAStreamManager(
             CUDARuntime runtime,
             boolean isTimeComputation,
-            StreamPolicy streamPolicy) {
+            GrCUDAStreamPolicy streamPolicy) {
         this.runtime = runtime;
         this.isTimeComputation = isTimeComputation;
         this.streamPolicy = streamPolicy;
@@ -375,6 +374,14 @@ public class GrCUDAStreamManager {
         activeComputationsPerStream.clear();
         // All streams are free;
         this.streamPolicy.updateNewStreamRetrieval();
+    }
+
+    public DeviceList getDeviceList() {
+        return this.streamPolicy.getDevicesManager().getDeviceList();
+    }
+
+    public Device getDevice(int deviceId) {
+        return this.streamPolicy.getDevicesManager().getDevice(deviceId);
     }
 
     /**

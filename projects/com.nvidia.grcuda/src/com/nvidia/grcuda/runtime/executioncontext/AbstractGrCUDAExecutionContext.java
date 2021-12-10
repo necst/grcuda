@@ -35,6 +35,9 @@ import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.runtime.CPUDevice;
+import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.DeviceList;
+import com.nvidia.grcuda.runtime.GrCUDADevicesManager;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Kernel;
@@ -169,6 +172,18 @@ public abstract class AbstractGrCUDAExecutionContext {
     public int getCurrentGPU() {
         return this.cudaRuntime.getCurrentGPU();
     }
+
+    /**
+     * Return a list of GPU devices managed by this execution context;
+     * @return a list of GPU devices managed by this execution context;
+     */
+    public abstract DeviceList getDeviceList();
+
+    /**
+     * Return a specific GPU device managed by this execution context;
+     * @return a GPU device managed by this execution context;
+     */
+    public abstract Device getDevice(int deviceId);
 
     /**
      * Check if any computation is currently marked as active, and is running on a stream managed by this context.

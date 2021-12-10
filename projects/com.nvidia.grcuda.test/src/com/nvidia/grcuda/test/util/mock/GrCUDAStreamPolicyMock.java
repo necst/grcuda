@@ -3,13 +3,13 @@ package com.nvidia.grcuda.test.util.mock;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.StreamPolicy;
+import com.nvidia.grcuda.runtime.stream.GrCUDAStreamPolicy;
 
-public class StreamPolicyMock extends StreamPolicy {
+public class GrCUDAStreamPolicyMock extends GrCUDAStreamPolicy {
     private int streamCount;
 
-    public StreamPolicyMock(RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum, RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
-        super(null, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum);
+    public GrCUDAStreamPolicyMock(RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum, RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
+        super(null, null, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum);
     }
 
     @Override

@@ -148,6 +148,10 @@ public abstract class AbstractArray implements TruffleObject {
         this.skipScheduleWrite = otherArray.skipScheduleWrite;
         // Initialize the location of an abstract array, copying the ones specified in the input;
         this.arrayUpToDateLocations.addAll(otherArray.getArrayUpToDateLocations());
+        this.arrayFreed = otherArray.arrayFreed;
+        this.streamMapping = otherArray.streamMapping;
+        // Registration must be done afterwards;
+        this.registeredInContext = false;
     }
 
     /**

@@ -95,9 +95,17 @@ public final class CUDARuntime {
     private final List<GPUPointer> innerCudaContexts = new ArrayList<>();
 
     /**
+     * Total number of GPUs available in the system, even if they are not used. It must be > 0;
+     */
+    private int numberOfAvailableGPUs = GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs;
+    /**
      * How many GPUs are actually used by GrCUDA. It must hold 1 <= numberOfGPUsToUse <= numberOfAvailableGPUs;
      */
     private int numberOfGPUsToUse = GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs;
+
+    public int getNumberOfAvailableGPUs() {
+        return numberOfAvailableGPUs;
+    }
 
     public int getNumberOfGPUsToUse() {
         return numberOfGPUsToUse;
@@ -215,7 +223,7 @@ public final class CUDARuntime {
      */
     private void setupSupportForMultiGPU() {
         // Find how many GPUs are available on this system;
-        int numberOfAvailableGPUs = cudaGetDeviceCount();
+        this.numberOfAvailableGPUs = cudaGetDeviceCount();
         RUNTIME_LOGGER.fine("identified " + numberOfAvailableGPUs + " GPUs available on this machine");
         this.numberOfGPUsToUse = numberOfAvailableGPUs;
         if (numberOfAvailableGPUs <= 0) {
