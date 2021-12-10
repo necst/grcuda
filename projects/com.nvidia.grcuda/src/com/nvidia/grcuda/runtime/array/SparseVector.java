@@ -155,23 +155,23 @@ public class SparseVector implements TruffleObject {
         vectorFreed = true;
     }
 
-//    @ExportMessage
+    @ExportMessage
     boolean isArrayElementModifiable(long index) {
         return index >= 0 && index < numNnz;
     }
 
-//    @ExportMessage
+    @ExportMessage
     boolean isArrayElementReadable(long index) {
         return !vectorFreed && isArrayElementModifiable(index);
     }
 
     @SuppressWarnings("static-method")
-//    @ExportMessage
+    @ExportMessage
     boolean isArrayElementInsertable(@SuppressWarnings("unused") long index) {
         return false;
     }
 
-//    @ExportMessage
+    @ExportMessage
     Object readArrayElement(long idx) throws InvalidArrayIndexException, UnsupportedMessageException {
         checkFreeVector();
         if (!isArrayElementModifiable(idx)) {
@@ -200,7 +200,7 @@ public class SparseVector implements TruffleObject {
 //            }
     }
 
-//    @ExportMessage
+    @ExportMessage
     public void writeSparseArrayElement(long position, Object idx, Object value, InteropLibrary valueLibrary, ValueProfile elementTypeProfile) throws UnsupportedTypeException, InvalidArrayIndexException {
         checkFreeVector();
         if (!isArrayElementModifiable((long) idx)) { // to avoid casting we should change elements' modifiability totally, maybe it's not the case

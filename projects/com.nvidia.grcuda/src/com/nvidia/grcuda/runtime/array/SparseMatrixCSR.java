@@ -60,16 +60,13 @@ public class SparseMatrixCSR implements TruffleObject {
     /**
      * Row and column dimensions.
      */
+
     private final long dimRows;
     private final long dimCols;
     private final long numNnz;
     private final Type valueElementType;
     private final Type indexElementType;
     private boolean matrixFreed;
-
-// /** Stride in each dimension. */
-// private final long[] stridePerDimension;
-// non credo serva
 
     /**
      * Row and column indices of nnz elements.
@@ -181,19 +178,19 @@ public class SparseMatrixCSR implements TruffleObject {
 //    }
 // I don't think we need it anymore since numNnz belongs to the constructor already
 
-//    @ExportMessage
+    @ExportMessage
     @SuppressWarnings("static-method")
     boolean isArrayElementModifiable(long row, long col) {
         return row >= 0 && col >= 0 && row < dimRows && col < dimCols;
     }
 
-//    @ExportMessage
+    @ExportMessage
     @SuppressWarnings("static-method")
     boolean isArrayElementReadable(long row, long col) {
         return !matrixFreed && isArrayElementModifiable(row, col);
     }
 
-//    @ExportMessage
+    @ExportMessage
     Object readMatrixElement(long row, long col) throws InvalidArrayIndexException, UnsupportedMessageException {
         checkFreeMatrix();
         if (!isIndexValid(row, col)) {
@@ -227,4 +224,5 @@ public class SparseMatrixCSR implements TruffleObject {
         checkFreeMatrix();
         return asDimensionArray(csrDimension).readArrayElement(index);
     }
+
 }
