@@ -74,18 +74,20 @@ public class SparseVector implements TruffleObject {
      */
     private final DeviceArray indices;
     private final DeviceArray nnz;
+    private final long n;
 
     /**
      * Number non zero elements stored in the array.
      * */
     private final long numNnz;
 
-    public SparseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, long numNnz, Type valueElementType, Type indexElementType) {
+    public SparseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, long numNnz, Type valueElementType, Type indexElementType, long n) {
         this.numNnz = numNnz;
         this.nnz = new DeviceArray(grCUDAExecutionContext, numNnz, valueElementType);
         this.indices = new DeviceArray(grCUDAExecutionContext, numNnz, indexElementType);
         this.valueElementType = valueElementType;
         this.indexElementType = indexElementType;
+        this.n = n;
     }
 
     private DeviceArray asDimensionArray(SparseDimension sparseDimension) {
@@ -103,6 +105,10 @@ public class SparseVector implements TruffleObject {
             CompilerDirectives.transferToInterpreter();
             throw new GrCUDAException("Vector freed already");
         }
+    }
+
+    final boolean isIndexValid(long idx){
+        return idx >= 0 && idx < n;
     }
 
     final long indexOfNonZero(long idx) throws InvalidArrayIndexException, UnsupportedMessageException {
@@ -156,8 +162,8 @@ public class SparseVector implements TruffleObject {
     }
 
     @ExportMessage
-    boolean isArrayElementModifiable(long index) {
-        return index >= 0 && index < numNnz;
+    boolean isArrayElementModifiable(long position) {
+        return position >= 0 && position < numNnz;
     }
 
     @ExportMessage
@@ -203,7 +209,11 @@ public class SparseVector implements TruffleObject {
     @ExportMessage
     public void writeSparseArrayElement(long position, Object idx, Object value, InteropLibrary valueLibrary, ValueProfile elementTypeProfile) throws UnsupportedTypeException, InvalidArrayIndexException {
         checkFreeVector();
-        if (!isArrayElementModifiable((long) idx)) { // to avoid casting we should change elements' modifiability totally, maybe it's not the case
+        if (!isArrayElementModifiable((long) position)) { // to avoid casting we should change elements' modifiability totally, maybe it's not the case
+            CompilerDirectives.transferToInterpreter();
+            throw InvalidArrayIndexException.create((long) position);
+        }
+        if(!isIndexValid((long) idx)){
             CompilerDirectives.transferToInterpreter();
             throw InvalidArrayIndexException.create((long) idx);
         }
@@ -224,6 +234,4 @@ public class SparseVector implements TruffleObject {
 //
 //        }
     }
-
-
 }
