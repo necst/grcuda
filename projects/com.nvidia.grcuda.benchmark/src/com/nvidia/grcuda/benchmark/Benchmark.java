@@ -52,14 +52,14 @@ abstract class Benchmark {
 
 
     @Before
-    public final void reset(){
+    public void reset(){
         if (this.reInit) this.init();
         this.resetIteration();
     }
 
 
     @Theory
-    public final void run(int iteration){
+    public void run(int iteration){
         long beginTime = System.nanoTime();
         this.runTest(iteration);
         executionTime = System.nanoTime() - beginTime;
@@ -72,7 +72,7 @@ abstract class Benchmark {
      * Save the results in a file or print them
      */
     @After
-    public final void saveResults() {
+    public void saveResults() {
         System.out.println("Benchmark " + this.getBenchmarkName() + " took " + this.executionTime + "ns");
     }
 
