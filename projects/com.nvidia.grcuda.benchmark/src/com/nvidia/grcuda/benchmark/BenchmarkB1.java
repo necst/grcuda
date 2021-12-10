@@ -50,32 +50,23 @@ public class BenchmarkB1 extends Benchmark {
             "        atomicAdd(z, sum); // The first thread in the warp updates the output;\n" +
             "}";
 
-    private static Context grcudaContext;
 
-    private static Value squareKernelFunction;
-    private static Value diffKernelFunction;
-    private static Value reduceKernelFunction;
+    private Value squareKernelFunction;
+    private Value diffKernelFunction;
+    private Value reduceKernelFunction;
 
-    private static Value x, x1, y, y1, res;
+    private Value x, x1, y, y1, res;
 
-    // The following variables should be read from a config file
-    // For simplicity, I'm initializing them statically now
-    private boolean randomInit = false;
-    private static int NUM_BLOCKS = 8;
-    private static int NUM_THREADS = 128;
-    private boolean cpuValidate = false;
-    private long executionTime;
 
     @DataPoints
     public static int[] iterations() {
         return Benchmark.iterations();
     }
 
-    @BeforeClass
-    public static void init() {
+    @Override
+    public void init() {
         // Context initialization
-        grcudaContext = Benchmark.buildBenchmarkContext();
-        Value buildkernel = grcudaContext.eval("grcuda", "buildkernel");
+        Value buildkernel = this.getGrcudaContext().eval("grcuda", "buildkernel");
 
         // Kernel build
         squareKernelFunction = buildkernel.execute(SQUARE_KERNEL, "square", "pointer, pointer, sint32");
@@ -83,7 +74,7 @@ public class BenchmarkB1 extends Benchmark {
         reduceKernelFunction = buildkernel.execute(REDUCE_KERNEL, "reduce", "pointer, pointer, pointer, sint32");
 
         // Array initialization
-        Value deviceArray = grcudaContext.eval("grcuda", "DeviceArray");
+        Value deviceArray = this.getGrcudaContext().eval("grcuda", "DeviceArray");
         x = deviceArray.execute("float", TEST_SIZE);
         x1 = deviceArray.execute("float", TEST_SIZE);
         y = deviceArray.execute("float", TEST_SIZE);
@@ -93,9 +84,7 @@ public class BenchmarkB1 extends Benchmark {
     }
 
     @Override
-    @Before
-    public void reset() {
-        // Do not do random reset for now
+    public void resetIteration() {
         assert(!randomInit);
         for (int i = 0; i < TEST_SIZE; i++) {
             x.setArrayElement(i, 1.0f / (i + 1));

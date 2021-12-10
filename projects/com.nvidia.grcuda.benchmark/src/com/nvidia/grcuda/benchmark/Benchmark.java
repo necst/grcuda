@@ -14,7 +14,22 @@ import org.junit.runner.RunWith;
 @RunWith(Theories.class)
 abstract class Benchmark {
     private static final int MAX_ITERATIONS = 100;
-    protected static final int TEST_SIZE = 1000;
+    private final boolean reInit = false;
+    private final Context grcudaContext;
+    // The following variables should be read from a config file
+    // For simplicity, I'm initializing them statically now
+    protected final int TEST_SIZE = 1000;
+    protected final boolean randomInit = false;
+    protected final int NUM_BLOCKS = 8;
+    protected final int NUM_THREADS = 128;
+    protected final boolean cpuValidate = false;
+    protected long executionTime;
+
+    Benchmark(){
+        // Parse options from a file
+        this.grcudaContext = this.buildBenchmarkContext();
+        this.init();
+    }
 
     public static int[] iterations(){
         int[] iterations = new int[MAX_ITERATIONS];
@@ -25,12 +40,9 @@ abstract class Benchmark {
     }
 
     /**
-     * This is a direct copy of GrCUDATestUtil::buildTestContext
-     * for the moment being it stays here as I could not find how to import things
-     * from com.nvidia.grcuda.test
-     * @return
+     * Utility function to build the GrCUDA Context
      */
-    public static Context buildBenchmarkContext(){
+    private Context buildBenchmarkContext(){
         return Context.newBuilder().allowAllAccess(true).allowExperimentalOptions(true)
                 .option("log.grcuda.com.nvidia.grcuda.level", "WARNING")
                 .option("log.grcuda.com.nvidia.grcuda.GrCUDAContext.level", "SEVERE")
@@ -42,17 +54,19 @@ abstract class Benchmark {
      * the initialization of the necessary arrays
      * and the creation of the kernels (if applicable)
      */
-    @BeforeClass
-    public static void init() {
-        throw new RuntimeException("This shouldn't ever be called");
-    }
+    public abstract void init();
+
+    public abstract void resetIteration();
 
     /**
      * Reset code, to be run before each test
      * Here you clean up the arrays and other reset stuffs
      */
     @Before
-    public abstract void reset();
+    public void reset(){
+        if (this.reInit) this.init();
+        this.resetIteration();
+    }
 
     /**
      * Run the actual test
@@ -61,12 +75,17 @@ abstract class Benchmark {
     public abstract void run(int iteration);
 
     /**
-     * Save the results in a file
+     * Save the results in a file or print them
      */
     @After
     public abstract void saveResults();
 
     protected abstract void cpuValidation();
+
+    public Context getGrcudaContext() {
+        return grcudaContext;
+    }
+
 
 
 }
