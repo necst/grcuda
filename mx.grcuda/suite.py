@@ -136,6 +136,20 @@ suite = {
             "workingSets": "Truffle,CUDA",
             "testProject": True,
         },
+	"com.nvidia.grcuda.benchmark": {
+            "subDir": "projects",
+            "sourceDirs": ["src"],
+            "dependencies": [
+                "com.nvidia.grcuda",
+                "mx:JUNIT",
+                "truffle:TRUFFLE_TEST",
+            ],
+            "checkstyle": "com.nvidia.grcuda.benchmark",
+            "javaCompliance": "8+",
+            "annotationProcessors": ["truffle:TRUFFLE_DSL_PROCESSOR"],
+            "workingSets": "Truffle,CUDA",
+            "testProject": True,
+        },
     },
 
     "licenses": {
@@ -175,6 +189,22 @@ suite = {
                 "truffle:TRUFFLE_TEST"
             ],
             "sourcesPath": "grcuda.tests.src.zip",
+            "testDistribution": True,
+            "javaCompliance": "8+",
+        },
+        "GRCUDA_BENCHMARK": {
+            "description": "GrCUDA benchmarks",
+            "dependencies": [
+		"com.nvidia.grcuda.test",
+                "com.nvidia.grcuda.benchmark",
+            ],
+            "exclude": ["mx:JUNIT"],
+            "distDependencies": [
+                "GRCUDA",
+		"GRCUDA_UNIT_TESTS",
+                "truffle:TRUFFLE_TEST"
+            ],
+            "sourcesPath": "grcuda.benchmark.src.zip",
             "testDistribution": True,
             "javaCompliance": "8+",
         },
