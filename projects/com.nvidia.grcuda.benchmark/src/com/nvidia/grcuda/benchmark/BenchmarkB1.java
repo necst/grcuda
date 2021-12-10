@@ -1,11 +1,8 @@
 package com.nvidia.grcuda.benchmark;
 
-import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
-import org.junit.After;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
@@ -117,25 +114,25 @@ public class BenchmarkB1 extends Benchmark {
     protected void cpuValidation() {
         assert(!randomInit);
 
-        float[] x_host = new float[TEST_SIZE];
-        float[] y_host = new float[TEST_SIZE];
-        float[] res_host_tmp = new float[TEST_SIZE];
+        float[] xHost = new float[TEST_SIZE];
+        float[] yHost = new float[TEST_SIZE];
+        float[] resHostTmp = new float[TEST_SIZE];
         for (int i = 0; i < TEST_SIZE; i++) {
-            x_host[i] = 1.0f / (i + 1);
-            y_host[i] = 2.0f / (i + 1);
-            res_host_tmp[i] = 0.0f;
+            xHost[i] = 1.0f / (i + 1);
+            yHost[i] = 2.0f / (i + 1);
+            resHostTmp[i] = 0.0f;
         }
 
         for (int i = 0; i < TEST_SIZE; i++) {
-            float x_host_tmp = x_host[i] * x_host[i];
-            float y_host_tmp = y_host[i] * y_host[i];
-            res_host_tmp[i] = x_host_tmp - y_host_tmp;
+            float xHostTmp = xHost[i] * xHost[i];
+            float yHostTmp = yHost[i] * yHost[i];
+            resHostTmp[i] = xHostTmp - yHostTmp;
         }
 
         float acc = 0.0f;
 
         for(int i = 0; i < TEST_SIZE; i++){
-            acc += res_host_tmp[i];
+            acc += resHostTmp[i];
         }
 
         assertEquals(res.getArrayElement(0).asFloat(), acc, 1e-5);
