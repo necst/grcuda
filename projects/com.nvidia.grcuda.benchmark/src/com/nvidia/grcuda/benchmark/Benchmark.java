@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(Theories.class)
 abstract class Benchmark {
+
     private static final int MAX_ITERATIONS = 100;
     private final boolean reInit = false;
     private final Context grcudaContext;
@@ -49,6 +50,39 @@ abstract class Benchmark {
                 .build();
     }
 
+
+    @Before
+    public final void reset(){
+        if (this.reInit) this.init();
+        this.resetIteration();
+    }
+
+
+    @Theory
+    public final void run(int iteration){
+        long beginTime = System.nanoTime();
+        this.runTest(iteration);
+        executionTime = System.nanoTime() - beginTime;
+
+        if(cpuValidate) cpuValidation();
+
+    }
+
+    /**
+     * Save the results in a file or print them
+     */
+    @After
+    public final void saveResults() {
+        System.out.println("Benchmark " + this.getBenchmarkName() + " took " + this.executionTime + "ns");
+    }
+
+    public Context getGrcudaContext() {
+        return grcudaContext;
+    }
+
+    public abstract String getBenchmarkName();
+
+
     /**
      * Here goes the read of the test parameters,
      * the initialization of the necessary arrays
@@ -56,35 +90,23 @@ abstract class Benchmark {
      */
     public abstract void init();
 
-    public abstract void resetIteration();
-
     /**
      * Reset code, to be run before each test
      * Here you clean up the arrays and other reset stuffs
      */
-    @Before
-    public void reset(){
-        if (this.reInit) this.init();
-        this.resetIteration();
-    }
+    public abstract void resetIteration();
+
 
     /**
      * Run the actual test
      */
-    @Theory
-    public abstract void run(int iteration);
+    public abstract void runTest(int iteration);
+
 
     /**
-     * Save the results in a file or print them
+     * (numerically) validate results against CPU
      */
-    @After
-    public abstract void saveResults();
-
     protected abstract void cpuValidation();
-
-    public Context getGrcudaContext() {
-        return grcudaContext;
-    }
 
 
 

@@ -3,8 +3,6 @@ package com.nvidia.grcuda.benchmark;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -51,11 +49,14 @@ public class BenchmarkB1 extends Benchmark {
             "}";
 
 
+    protected final String benchmarkName = "B1";
+
     private Value squareKernelFunction;
     private Value diffKernelFunction;
     private Value reduceKernelFunction;
 
     private Value x, x1, y, y1, res;
+
 
 
     @DataPoints
@@ -93,9 +94,8 @@ public class BenchmarkB1 extends Benchmark {
         res.setArrayElement(0, 0.0f);
     }
 
-    @Theory
-    public void run(int iteration) {
-        long beginTime = System.nanoTime();
+    @Override
+    public void runTest(int iteration) {
 
         squareKernelFunction
                 .execute(NUM_BLOCKS, NUM_THREADS) // Set parameters
@@ -109,11 +109,8 @@ public class BenchmarkB1 extends Benchmark {
                 .execute(NUM_BLOCKS, NUM_THREADS) // Set parameters
                 .execute(x1, y1, res, TEST_SIZE); // Execute actual kernel
 
-        executionTime = System.nanoTime() - beginTime;
-
-        if(cpuValidate) cpuValidation();
-
     }
+
 
 
     @Override
@@ -146,8 +143,8 @@ public class BenchmarkB1 extends Benchmark {
     }
 
     @Override
-    @After
-    public void saveResults() {
-        System.out.println("Benchmark 1 took " + this.executionTime + "ns");
+    public String getBenchmarkName() {
+        return benchmarkName;
     }
+
 }
