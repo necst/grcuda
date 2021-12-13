@@ -91,6 +91,34 @@ public abstract class Function implements TruffleObject {
         return expectLong(number, "expected long number argument");
     }
 
+    protected static float expectFloat(Object number, String message) throws UnsupportedTypeException {
+        CompilerAsserts.neverPartOfCompilation();
+        try {
+            return INTEROP.asFloat(number);
+        } catch (UnsupportedMessageException e) {
+            throw UnsupportedTypeException.create(new Object[]{number}, message);
+        }
+    }
+
+    public static float expectFloat(Object number) throws UnsupportedTypeException {
+        return expectFloat(number, "expected float number argument");
+    }
+
+
+    public static double expectDouble(Object number) throws UnsupportedTypeException {
+        return expectDouble(number, "expected double number argument");
+    }
+
+
+    protected static double expectDouble(Object number, String message) throws UnsupportedTypeException {
+        CompilerAsserts.neverPartOfCompilation();
+        try {
+            return INTEROP.asDouble(number);
+        } catch (UnsupportedMessageException e) {
+            throw UnsupportedTypeException.create(new Object[]{number}, message);
+        }
+    }
+
     protected static int expectPositiveInt(Object number) throws UnsupportedTypeException {
         int value = expectInt(number);
         if (value < 0) {

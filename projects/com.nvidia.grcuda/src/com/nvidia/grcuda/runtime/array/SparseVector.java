@@ -36,109 +36,265 @@
 package com.nvidia.grcuda.runtime.array;
 
 import com.nvidia.grcuda.GrCUDAException;
-import com.nvidia.grcuda.Type;
+import com.nvidia.grcuda.MemberSet;
+import com.nvidia.grcuda.NoneValue;
+
+import static com.nvidia.grcuda.functions.Function.expectDouble;
+import static com.nvidia.grcuda.functions.Function.expectFloat;
+import static com.nvidia.grcuda.functions.Function.expectInt;
+import static com.nvidia.grcuda.functions.Function.expectLong;
+
+import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
+import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayCopyException;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropLibrary;
-import com.oracle.truffle.api.interop.InvalidArrayIndexException;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.api.interop.UnknownIdentifierException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 
 @ExportLibrary(InteropLibrary.class)
 public class SparseVector implements TruffleObject {
 
-    public enum SparseDimension{
-        SP_VEC_VALUES,
-        SP_VEC_INDICES;
-    }
+    private static final String ACCESSED_FREED_MEMORY_MESSAGE = "memory of array freed";
+    private static final String UNSUPPORTED_WRITE_ON_SPARSE_DS = "unsupported write on sparse data structures";
+    private static final String UNSUPPORTED_DIRECT_READ_ON_SPARSE_DS = "unsupported direct read on sparse data structures";
+
+    protected static final String FREE = "free";
+    protected static final String IS_MEMORY_FREED = "isMemoryFreed";
+    protected static final String VALUES = "values";
+    protected static final String INDICES = "indices";
+    protected static final String GEMVI = "gemvi";
+
 
     /**
      * Values of non zero elements stored in the array.
      */
-    private final Type valueElementType;
-    private final Type indexElementType;
     private boolean vectorFreed;
 
+
     /**
-     * Indices of non
+     * Inner arrays
      */
     private final DeviceArray indices;
-    private final DeviceArray nnz;
-    private final long n;
+    private final DeviceArray values;
 
     /**
      * Number non zero elements stored in the array.
-     * */
+     */
     private final long numNnz;
 
-    public SparseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, long numNnz, Type valueElementType, Type indexElementType, long n) {
-        this.numNnz = numNnz;
-        this.nnz = new DeviceArray(grCUDAExecutionContext, numNnz, valueElementType);
-        this.indices = new DeviceArray(grCUDAExecutionContext, numNnz, indexElementType);
-        this.valueElementType = valueElementType;
-        this.indexElementType = indexElementType;
-        this.n = n;
+    /**
+     * Array properties
+     */
+    private final long N;
+    private final long sizeBytes;
+
+    /**
+     * Handle to cusparse
+     */
+    private Context polyglot = Context.getCurrent();
+    private Value cu = polyglot.eval("grcuda", "CU");
+
+    /**
+     * Callable functions or general accessible members
+     */
+    protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, INDICES, GEMVI);
+
+    public SparseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray indices, DeviceArray values, long N) {
+        this.values = values;
+        this.indices = indices;
+        this.numNnz = values.getArraySize();
+        this.sizeBytes = values.getSizeBytes() + indices.getSizeBytes();
+        this.N = N;
     }
 
-    private DeviceArray asDimensionArray(SparseDimension sparseDimension) {
-        switch (sparseDimension){
-            case SP_VEC_INDICES:
-                return indices;
-            case SP_VEC_VALUES:
-                return nnz;
+    @ExportMessage
+    boolean isArrayElementReadable(long index) {
+        return !vectorFreed && index >= 0 && index < numNnz;
+    }
+
+    @ExportMessage
+    boolean isArrayElementModifiable(long index) {
+        return index >= 0 && index < numNnz;
+    }
+
+    @SuppressWarnings("static-method")
+    @ExportMessage
+    boolean isArrayElementInsertable(@SuppressWarnings("unused") long index) {
+        return false;
+    }
+
+    @ExportMessage
+    @SuppressWarnings("static-method")
+    boolean hasMembers() {
+        return true;
+    }
+
+    @ExportMessage
+    @SuppressWarnings("static-method")
+    Object getMembers(@SuppressWarnings("unused") boolean includeInternal) {
+        return MEMBERS;
+    }
+
+    @ExportMessage
+    @SuppressWarnings("static-method")
+    boolean isMemberReadable(String memberName,
+                             @Cached.Shared("memberName") @Cached("createIdentityProfile()") ValueProfile memberProfile) {
+        String name = memberProfile.profile(memberName);
+        return FREE.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || INDICES.equals(name) || GEMVI.equals(name);
+    }
+
+    @ExportMessage
+    Object readMember(String memberName,
+                      @Cached.Shared("memberName") @Cached("createIdentityProfile()") ValueProfile memberProfile) throws UnknownIdentifierException {
+        if (!isMemberReadable(memberName, memberProfile)) {
+            CompilerDirectives.transferToInterpreter();
+            throw UnknownIdentifierException.create(memberName);
         }
-        throw new GrCUDAException("Invalid Dimension = " + sparseDimension.name());
+        if (FREE.equals(memberName)) {
+            return new SparseVectorFreeFunction();
+        }
+
+        if(GEMVI.equals(memberName)){
+            return new SparseVectorGemviFunction();
+        }
+
+        if (IS_MEMORY_FREED.equals(memberName)) {
+            return isVectorFreed();
+        }
+
+        if(VALUES.equals(memberName)){
+            return getValues();
+        }
+
+        if(INDICES.equals(memberName)){
+            return getIndices();
+        }
+
+        CompilerDirectives.transferToInterpreter();
+        throw UnknownIdentifierException.create(memberName);
+    }
+
+
+    @ExportMessage
+    final boolean hasArrayElements() {
+        return true;
+    }
+
+    @ExportMessage
+    final void writeArrayElement(@SuppressWarnings("unused") long index, @SuppressWarnings("unused") Object value) throws GrCUDAException {
+        throw new GrCUDAException(UNSUPPORTED_WRITE_ON_SPARSE_DS);
+    }
+
+
+    @ExportMessage
+    final Object readArrayElement(@SuppressWarnings("unused") long index) throws GrCUDAException {
+        throw new GrCUDAException(UNSUPPORTED_DIRECT_READ_ON_SPARSE_DS);
+    }
+
+
+    @ExportMessage
+    @SuppressWarnings("static-method")
+    boolean isMemberInvocable(String memberName) {
+        return FREE.equals(memberName) || GEMVI.equals(memberName);
+    }
+
+    @ExportMessage
+    Object invokeMember(String memberName,
+                        Object[] arguments,
+                        @CachedLibrary("this") InteropLibrary interopRead,
+                        @CachedLibrary(limit = "1") InteropLibrary interopExecute)
+            throws UnsupportedTypeException, ArityException, UnsupportedMessageException, UnknownIdentifierException {
+        return interopExecute.execute(interopRead.readMember(this, memberName), arguments);
+    }
+
+    @ExportMessage
+    final long getArraySize() throws UnsupportedMessageException {
+        return this.N;
+    }
+
+    public void freeMemory() {
+        checkFreeVector();
+        values.freeMemory();
+        indices.freeMemory();
+        vectorFreed = true;
+    }
+
+    private void executeGemvi(int numRows, int numCols, float alpha, DeviceArray matA, float beta, DeviceArray outVec){
+
+        Value deviceAlpha = cu.invokeMember("DeviceArray", "float", 1);
+        Value deviceBeta = cu.invokeMember("DeviceArray", "float", 1);
+
+        deviceAlpha.setArrayElement(0, alpha);
+        deviceBeta.setArrayElement(0, beta);
+
+        this.polyglot
+                .eval("grcuda", "SPARSE::cusparseSgemvi")
+                .execute(
+                        CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
+                        numRows,
+                        numCols,
+                        deviceAlpha,
+                        matA,
+                        numRows,
+                        this.numNnz,
+                        this.values,
+                        this.indices,
+                        deviceBeta,
+                        outVec,
+                        CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO,
+                        'S'
+                );
+
+        Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
+        sync.execute();
     }
 
     private void checkFreeVector() {
         if (vectorFreed) {
             CompilerDirectives.transferToInterpreter();
-            throw new GrCUDAException("Vector freed already");
+            throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
         }
     }
 
-    @ExportMessage
-    final boolean isSparseIndexValid(long idx){
-        return idx >= 0 && idx < n;
+
+    public DeviceArray getIndices() {
+        return indices;
     }
 
-    final long indexOfNonZero(long idx) throws InvalidArrayIndexException, UnsupportedMessageException {
-        // returns the index corresponds to nnz element if present, -1 otherwise
-        long index = -1;
-        for(int i = 0; i < numNnz; i++){
-            if(((long) this.indices.readArrayElement(i)) == idx){
-                index = i;
-            }
-        }
-        return index;
+    public DeviceArray getValues() {
+        return values;
     }
 
-    public long getSizeBytes() {
+    final public long getSizeBytes() {
         checkFreeVector();
-        return numNnz * (valueElementType.getSizeBytes() + indexElementType.getSizeBytes());
+        return sizeBytes;
     }
 
-    public long getPointer(SparseDimension sparseDimension) {
-        checkFreeVector();
-        return asDimensionArray(sparseDimension).getPointer();
+    public boolean isVectorFreed() {
+        return vectorFreed;
     }
 
-    public Type getElementType(SparseDimension sparseDimension) {
-        checkFreeVector();
-        return asDimensionArray(sparseDimension).getElementType();
-    }
-
+    @Override
     public String toString() {
         return "SparseVector{" +
-                "valueElementType=" + valueElementType +
-                ", indexElementType=" + indexElementType +
+                "vectorFreed=" + vectorFreed +
                 ", indices=" + indices +
-                ", nnz=" + nnz +
+                ", values=" + values +
                 ", numNnz=" + numNnz +
+                ", N=" + N +
+                ", sizeBytes=" + sizeBytes +
                 '}';
     }
 
@@ -149,84 +305,55 @@ public class SparseVector implements TruffleObject {
         super.finalize();
     }
 
-    public void freeMemory() {
-        checkFreeVector();
-        nnz.freeMemory();
-        indices.freeMemory();
-        vectorFreed = true;
+
+    @ExportLibrary(InteropLibrary.class)
+    final class SparseVectorFreeFunction implements TruffleObject {
+        @ExportMessage
+        @SuppressWarnings("static-method")
+        boolean isExecutable() {
+            return true;
+        }
+
+        @ExportMessage
+        Object execute(Object[] arguments) throws ArityException {
+            checkFreeVector();
+            if (arguments.length != 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw ArityException.create(0, arguments.length);
+            }
+            freeMemory();
+            return NoneValue.get();
+        }
     }
 
-    @ExportMessage
-    boolean isArrayElementModifiable(long position) {
-        return position >= 0 && position < numNnz;
-    }
+    @ExportLibrary(InteropLibrary.class)
+    final class SparseVectorGemviFunction implements TruffleObject {
 
-    @ExportMessage
-    boolean isArrayElementReadable(long index) {
-        return !vectorFreed && isArrayElementModifiable(index);
-    }
+        private static final int NUM_ARGS = 6;
 
-    @SuppressWarnings("static-method")
-    @ExportMessage
-    boolean isArrayElementInsertable(@SuppressWarnings("unused") long index) {
-        return false;
-    }
+        @ExportMessage
+        @SuppressWarnings("static-method")
+        boolean isExecutable() {
+            return true;
+        }
 
-    @ExportMessage
-    Object readArrayElement(long idx) throws InvalidArrayIndexException, UnsupportedMessageException {
-        checkFreeVector();
-        if (!isArrayElementModifiable(idx)) {
-            CompilerDirectives.transferToInterpreter();
-            throw InvalidArrayIndexException.create(idx);
-        }
-        // TODO: conasider DAG scheduling related issues
-        Object element = 0;
-        long index = indexOfNonZero(idx);
-        if(index != -1){
-            element = nnz.readArrayElement(index);
-        }
-        return element;
-//            if (this.canSkipScheduling()) {
-//                // check whether index corresponds to a value's position
-//                Object element = 0;
-//                for(int i = 0; i < numNnz; i++){
-//                    if(((long) this.indices.readArrayElement(i)) == index){ // si fa così?
-//                        element = AbstractArray.readArrayElementNative(this.nativeView, i, this.elementType, elementTypeProfile);
-//                    }
-//                }
-//                return element;
-//            } else {
-//                return new DeviceArrayReadExecution(this.nnz, index, elementTypeProfile).schedule(); // controllare se ha senso
-//                return new DeviceArrayReadExecution(this.indices, index, elementTypeProfile).schedule(); // controllare se ha senso
-//            }
-    }
+        @ExportMessage
+        Object execute(Object[] arguments) throws ArityException, UnsupportedTypeException {
+            checkFreeVector();
+            if (arguments.length != NUM_ARGS) {
+                CompilerDirectives.transferToInterpreter();
+                throw ArityException.create(NUM_ARGS, arguments.length);
+            }
 
-    @ExportMessage
-    public void writeSparseArrayElement(long position, Object idx, Object value, InteropLibrary valueLibrary, ValueProfile elementTypeProfile) throws UnsupportedTypeException, InvalidArrayIndexException {
-        checkFreeVector();
-        if (!isArrayElementModifiable((long) position)) { // to avoid casting we should change elements' modifiability totally, maybe it's not the case
-            CompilerDirectives.transferToInterpreter();
-            throw InvalidArrayIndexException.create((long) position);
+            int row = expectInt(arguments[0]);
+            int col = expectInt(arguments[1]);
+            float alpha = expectFloat(arguments[2]);
+            DeviceArray matA = (DeviceArray) arguments[3];
+            float beta = expectFloat(arguments[4]);
+            DeviceArray outVec = (DeviceArray) arguments[5];
+
+            executeGemvi(row, col, alpha, matA, beta, outVec);
+            return NoneValue.get();
         }
-        if(!isSparseIndexValid((long) idx)){
-            CompilerDirectives.transferToInterpreter();
-            throw InvalidArrayIndexException.create((long) idx);
-        }
-        if (position >= numNnz){
-            CompilerDirectives.transferToInterpreter();
-            throw InvalidArrayIndexException.create(position);
-        }
-        // TODO: consider DAG scheduling related issues
-        this.nnz.writeArrayElement(position, value, valueLibrary, elementTypeProfile);
-        this.indices.writeArrayElement(position, idx, valueLibrary, elementTypeProfile);
-//        if (this.canSkipScheduling()) {
-//            // Fast path, skip the DAG scheduling;
-//            this.indices.writeArrayElement(numNnz, index, valueLibrary, elementTypeProfile); // vanno riordinati
-//            this.nnz.writeArrayElement(numNnz, index, valueLibrary, elementTypeProfile);
-//        } else {
-//            new DeviceArrayWriteExecution(this.nnz, index, value, valueLibrary, elementTypeProfile).schedule(); // non si può fare, che ci inventiamo? idem per read
-//            new DeviceArrayWriteExecution(this.indices, index, index, valueLibrary, elementTypeProfile).schedule(); // non si può fare, che ci inventiamo? idem per read
-//
-//        }
     }
 }
