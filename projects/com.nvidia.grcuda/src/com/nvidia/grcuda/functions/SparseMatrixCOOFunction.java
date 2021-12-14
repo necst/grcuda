@@ -1,0 +1,41 @@
+package com.nvidia.grcuda.functions;
+
+import com.nvidia.grcuda.runtime.array.DeviceArray;
+import com.nvidia.grcuda.runtime.array.SparseMatrixCOO;
+import com.nvidia.grcuda.runtime.array.SparseVector;
+import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
+import com.oracle.truffle.api.interop.ArityException;
+import com.oracle.truffle.api.interop.InteropLibrary;
+import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import com.oracle.truffle.api.library.ExportLibrary;
+
+@ExportLibrary(InteropLibrary.class)
+public class SparseMatrixCOOFunction extends Function {
+    private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
+    private final int NUM_ARGUMENTS = 5;
+
+    public SparseMatrixCOOFunction(AbstractGrCUDAExecutionContext grCUDAExecutionContext) {
+        super("SparseVector");
+        this.grCUDAExecutionContext = grCUDAExecutionContext;
+    }
+
+// private boolean isDeviceArrayConstructor(Object[] arguments){
+// return arguments[0] instanceof DeviceArray && arguments[1] instanceof DeviceArray;
+// }
+
+    @Override
+    public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
+        if (arguments.length != NUM_ARGUMENTS) {
+            throw ArityException.create(NUM_ARGUMENTS, arguments.length);
+        }
+
+        DeviceArray colIdx = (DeviceArray) arguments[0];
+        DeviceArray rowIdx = (DeviceArray) arguments[1];
+        DeviceArray nnzValues = (DeviceArray) arguments[2];
+        long dimRow = expectLong(arguments[3]);
+        long dimCol = expectLong(arguments[4]);
+
+        return new SparseMatrixCOO(grCUDAExecutionContext, colIdx, rowIdx, nnzValues, dimCol, dimRow);
+    }
+
+}
