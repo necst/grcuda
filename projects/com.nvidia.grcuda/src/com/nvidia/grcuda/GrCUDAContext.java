@@ -47,6 +47,7 @@ import com.nvidia.grcuda.functions.DeviceArrayFunction;
 import com.nvidia.grcuda.functions.GetDeviceFunction;
 import com.nvidia.grcuda.functions.GetDevicesFunction;
 import com.nvidia.grcuda.functions.SparseMatrixCOOFunction;
+import com.nvidia.grcuda.functions.SparseMatrixCSRFunction;
 import com.nvidia.grcuda.functions.SparseVectorFunction;
 import com.nvidia.grcuda.functions.map.MapFunction;
 import com.nvidia.grcuda.functions.map.ShredFunction;
@@ -186,6 +187,7 @@ public final class GrCUDAContext {
 
         namespace.addFunction(new SparseVectorFunction(this.grCUDAExecutionContext));
         namespace.addFunction(new SparseMatrixCOOFunction(grCUDAExecutionContext));
+        namespace.addFunction(new SparseMatrixCSRFunction(grCUDAExecutionContext));
 
         this.rootNamespace = namespace;
     }
