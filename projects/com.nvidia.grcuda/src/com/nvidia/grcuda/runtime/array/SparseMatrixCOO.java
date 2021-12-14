@@ -316,6 +316,21 @@ public class SparseMatrixCOO implements TruffleObject {
         throw new GrCUDAException(UNSUPPORTED_DIRECT_READ_ON_SPARSE_DS);
     }
 
+    @ExportMessage
+    @SuppressWarnings("static-method")
+    boolean isMemberInvocable(String memberName) {
+        return FREE.equals(memberName);
+    }
+
+    @ExportMessage
+    Object invokeMember(String memberName,
+                        Object[] arguments,
+                        @CachedLibrary("this") InteropLibrary interopRead,
+                        @CachedLibrary(limit = "1") InteropLibrary interopExecute)
+            throws UnsupportedTypeException, ArityException, UnsupportedMessageException, UnknownIdentifierException {
+        return interopExecute.execute(interopRead.readMember(this, memberName), arguments);
+    }
+
     @ExportLibrary(InteropLibrary.class)
     final class SparseMatrixCOOFreeFunction implements TruffleObject {
         @ExportMessage

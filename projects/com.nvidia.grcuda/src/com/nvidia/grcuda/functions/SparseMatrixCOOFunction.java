@@ -15,7 +15,7 @@ public class SparseMatrixCOOFunction extends Function {
     private final int NUM_ARGUMENTS = 5;
 
     public SparseMatrixCOOFunction(AbstractGrCUDAExecutionContext grCUDAExecutionContext) {
-        super("SparseVector");
+        super("SparseMatrixCOO");
         this.grCUDAExecutionContext = grCUDAExecutionContext;
     }
 

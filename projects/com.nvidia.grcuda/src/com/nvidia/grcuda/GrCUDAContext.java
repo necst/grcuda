@@ -158,7 +158,6 @@ public final class GrCUDAContext {
         namespace.addFunction(new BuildKernelFunction(this.grCUDAExecutionContext));
         namespace.addFunction(new GetDevicesFunction(this.grCUDAExecutionContext.getCudaRuntime()));
         namespace.addFunction(new GetDeviceFunction(this.grCUDAExecutionContext.getCudaRuntime()));
-        namespace.addFunction(new SparseMatrixCOOFunction(grCUDAExecutionContext));
         this.grCUDAExecutionContext.getCudaRuntime().registerCUDAFunctions(namespace);
         if (this.getOption(GrCUDAOptions.CuMLEnabled)) {
             if (this.getCUDARuntime().isArchitectureIsPascalOrNewer()) {
@@ -186,6 +185,7 @@ public final class GrCUDAContext {
         }
 
         namespace.addFunction(new SparseVectorFunction(this.grCUDAExecutionContext));
+        namespace.addFunction(new SparseMatrixCOOFunction(grCUDAExecutionContext));
 
         this.rootNamespace = namespace;
     }
