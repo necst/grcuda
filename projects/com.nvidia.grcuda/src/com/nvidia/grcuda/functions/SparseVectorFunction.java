@@ -27,13 +27,13 @@ public class SparseVectorFunction extends Function {
 
     @Override
     public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
-        if (arguments.length < NUM_ARGUMENTS) {
-            throw ArityException.create(1, arguments.length);
+        if (arguments.length != NUM_ARGUMENTS) {
+            throw ArityException.create(NUM_ARGUMENTS, arguments.length);
         }
 
         if(isDeviceArrayConstructor(arguments)){
-            DeviceArray indices = (DeviceArray) arguments[0];
-            DeviceArray values = (DeviceArray) arguments[1];
+            DeviceArray indices = ((DeviceArray) arguments[0]);
+            DeviceArray values = ((DeviceArray) arguments[1]);
             long N = expectLong(arguments[2]);
             return createSparseVectorFromDeviceArrays(indices, values, N);
         }

@@ -70,6 +70,7 @@ public abstract class AbstractArray implements TruffleObject {
     protected static final String FREE = "free";
     protected static final String IS_MEMORY_FREED = "isMemoryFreed";
     protected static final String ACCESSED_FREED_MEMORY_MESSAGE = "memory of array freed";
+    protected static final String MODIFYING_IMMUTABLE_ARRAY = "attempting to modify an immutable DeviceArray";
 
     protected static final MemberSet PUBLIC_MEMBERS = new MemberSet(COPY_FROM, COPY_TO, FREE, IS_MEMORY_FREED);
     protected static final MemberSet MEMBERS = new MemberSet(POINTER, COPY_FROM, COPY_TO, FREE, IS_MEMORY_FREED);

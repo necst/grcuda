@@ -37,6 +37,7 @@ package com.nvidia.grcuda.runtime.array;
 
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.Type;
+import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayReadExecution;
@@ -56,7 +57,9 @@ import com.oracle.truffle.api.profiles.ValueProfile;
 @ExportLibrary(InteropLibrary.class)
 public class DeviceArray extends AbstractArray implements TruffleObject {
 
-    /** Total number of elements stored in the array. */
+    /**
+     * Total number of elements stored in the array.
+     */
     private final long numElements;
 
     /**
@@ -64,8 +67,15 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
      */
     private final long sizeBytes;
 
-    /** Mutable view onto the underlying memory buffer. */
+    /**
+     * Mutable view onto the underlying memory buffer.
+     */
     private final LittleEndianNativeArrayView nativeView;
+
+    /**
+     * The underlying native view can be modified
+     */
+    private boolean mutable = true;
 
     public DeviceArray(AbstractGrCUDAExecutionContext grCUDAExecutionContext, long numElements, Type elementType) {
         super(grCUDAExecutionContext, elementType);
@@ -79,7 +89,7 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
 
     /**
      * Allocate the GPU memory. It can be overridden to mock the array;
-     * 
+     *
      * @return a reference to the GPU memory
      */
     protected LittleEndianNativeArrayView allocateMemory() {
@@ -156,7 +166,7 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
 
     @ExportMessage
     boolean isArrayElementModifiable(long index) {
-        return index >= 0 && index < numElements;
+        return mutable && index >= 0 && index < numElements;
     }
 
     @SuppressWarnings("static-method")
@@ -167,7 +177,7 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
 
     @ExportMessage
     Object readArrayElement(long index,
-                    @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws InvalidArrayIndexException {
+                            @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws InvalidArrayIndexException {
         if (arrayFreed) {
             CompilerDirectives.transferToInterpreter();
             throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
@@ -196,8 +206,9 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
 
     @ExportMessage
     public void writeArrayElement(long index, Object value,
-                    @CachedLibrary(limit = "3") InteropLibrary valueLibrary,
-                    @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException, InvalidArrayIndexException {
+                                  @CachedLibrary(limit = "3") InteropLibrary valueLibrary,
+                                  @Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException, InvalidArrayIndexException {
+
         if (arrayFreed) {
             CompilerDirectives.transferToInterpreter();
             throw new GrCUDAException(ACCESSED_FREED_MEMORY_MESSAGE);
@@ -206,6 +217,12 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
             CompilerDirectives.transferToInterpreter();
             throw InvalidArrayIndexException.create(index);
         }
+
+        if (!mutable) {
+            CompilerDirectives.transferToInterpreter();
+            throw new GrCUDAException(MODIFYING_IMMUTABLE_ARRAY);
+        }
+
         if (this.canSkipScheduling()) {
             // Fast path, skip the DAG scheduling;
             AbstractArray.writeArrayElementNative(this.nativeView, index, value, elementType, valueLibrary, elementTypeProfile);
@@ -216,7 +233,25 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
 
     @Override
     public void writeNativeView(long index, Object value, @CachedLibrary(limit = "3") InteropLibrary valueLibrary,
-                    @Cached.Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException {
+                                @Cached.Shared("elementType") @Cached("createIdentityProfile()") ValueProfile elementTypeProfile) throws UnsupportedTypeException {
         AbstractArray.writeArrayElementNative(this.nativeView, index, value, elementType, valueLibrary, elementTypeProfile);
     }
+
+    /**
+     * Uncomment this in the case we want to prevent modifications to the DeviceVector
+     * This could be useful if we wanted to skip some computations in the DAG Scheduler
+     */
+//
+//    public void seal() {
+//        this.mutable = false;
+//    }
+//
+//    public DeviceArray asImmutableReference(){
+//        DeviceArray deviceArray = new DeviceArray(this.grCUDAExecutionContext, this.numElements, this.elementType);
+//        grCUDAExecutionContext.getCudaRuntime().cudaMemcpy(deviceArray.getPointer(), this.getPointer(), this.getSizeBytes());
+//        deviceArray.seal();
+//        return deviceArray;
+//    }
+
+
 }
