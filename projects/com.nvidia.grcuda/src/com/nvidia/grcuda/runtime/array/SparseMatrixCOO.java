@@ -122,7 +122,7 @@ public class SparseMatrixCOO implements TruffleObject {
 
     @ExportMessage
     final long getArraySize() throws UnsupportedMessageException {
-        throw new GrCUDAException("Matrix has no Array Size");
+        return values.getArraySize() + rowIndices.getArraySize() + colIndices.getArraySize();
     }
 
     protected void finalize() throws Throwable {

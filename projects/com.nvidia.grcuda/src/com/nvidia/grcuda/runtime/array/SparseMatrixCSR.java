@@ -100,10 +100,10 @@ public class SparseMatrixCSR implements TruffleObject {
 
     protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, ROW_CUMULATIVE, COL_INDICES);
 
-    public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray rowIdx, DeviceArray colIdx, DeviceArray nnzValues, long dimRows, long dimCols) {
+    public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray cumulativeNnz, DeviceArray colIdx, DeviceArray nnzValues, long dimRows, long dimCols) {
         this.dimRows = dimRows;
         this.dimCols = dimCols;
-        this.cumulativeNnz = rowIdx;
+        this.cumulativeNnz = cumulativeNnz;
         this.colIndices = colIdx;
         this.values = nnzValues;
     }
@@ -122,7 +122,7 @@ public class SparseMatrixCSR implements TruffleObject {
 
     @ExportMessage
     final long getArraySize() throws UnsupportedMessageException {
-        throw new GrCUDAException("Matrix has no Array Size");
+        return values.getArraySize() + cumulativeNnz.getArraySize() + colIndices.getArraySize();
     }
 
     @Override
