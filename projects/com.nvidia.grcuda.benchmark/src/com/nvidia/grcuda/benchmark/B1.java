@@ -51,7 +51,7 @@ public class B1 extends Benchmark {
     private Value x, x1, y, y1, res;
 
     @Override
-    public void init() {
+    public void initializeTest(int iteration) {
         // Context initialization
         Value buildKernel = this.getContext().eval("grcuda", "buildkernel");
 
@@ -71,7 +71,7 @@ public class B1 extends Benchmark {
     }
 
     @Override
-    public void resetIteration() {
+    public void resetIteration(int iteration) {
         assert (!config.randomInit);
         for (int i = 0; i < getTestSize(); i++) {
             x.setArrayElement(i, 1.0f / (i + 1));

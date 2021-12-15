@@ -60,7 +60,7 @@ public class B2 extends Benchmark {
 
 
     @Override
-    public void init() {
+    public void initializeTest(int iteration) {
         Value buildKernel = this.getContext().eval("grcuda", "buildkernel");
         // Kernel build
         squareKernelFunction = buildKernel.execute(SQUARE_KERNEL, "square", "pointer, sint32");
@@ -80,7 +80,7 @@ public class B2 extends Benchmark {
     }
 
     @Override
-    public void resetIteration() {
+    public void resetIteration(int iteration) {
         assert (!config.randomInit);
         for (int i = 0; i < getTestSize(); i++) {
             x.setArrayElement(i, 1.0f / (i + 1));

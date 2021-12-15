@@ -7,28 +7,46 @@ import com.nvidia.grcuda.benchmark.config.Options;
 import org.graalvm.polyglot.Context;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.theories.Theories;
-import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
-@RunWith(Theories.class)
 abstract class Benchmark {
 
     private final Context context;
 
     protected BenchmarkConfig config;
     private final List<Long> executionTimes = new ArrayList<>();
+    private final BenchmarkResults benchmarkResults = new BenchmarkResults();
 
     private final static String DEFAULT_CONFIG_PATH = "$HOME/grcuda/grcuda-data/config.json";
     // The following variables should be read from a config file
     // For simplicity, I'm initializing them statically now
 
     private boolean shouldSkipTest;
+
+
+    Benchmark() {
+        context = Context
+                .newBuilder()
+                .allowAllAccess(true)
+                .allowExperimentalOptions(true)
+                .option("log.grcuda.com.nvidia.grcuda.level", "WARNING")
+                .option("log.grcuda.com.nvidia.grcuda.GrCUDAContext.level", "SEVERE")
+                .build();
+        // Parse options from a file
+        this.readConfig();
+
+        if (!this.shouldSkipTest) {
+            this.init(0);
+        } else {
+            System.out.println("Skipping " + this.getBenchmarkName());
+        }
+    }
 
 
     public void readConfig() {
@@ -59,24 +77,15 @@ abstract class Benchmark {
 
     }
 
-    Benchmark() {
-        context = Context
-                .newBuilder()
-                .allowAllAccess(true)
-                .allowExperimentalOptions(true)
-                .option("log.grcuda.com.nvidia.grcuda.level", "WARNING")
-                .option("log.grcuda.com.nvidia.grcuda.GrCUDAContext.level", "SEVERE")
-                .build();
-        // Parse options from a file
-        this.readConfig();
-
-        if (!this.shouldSkipTest) {
-            this.init();
-        } else {
-            System.out.println("Skipping " + this.getBenchmarkName());
-        }
+    void time(int iteration, String phaseName, Consumer<Integer> functionToTime){
+        long begin = System.nanoTime();
+        functionToTime.accept(iteration);
+        this.benchmarkResults.addPhase(phaseName, System.nanoTime() - begin);
     }
 
+    public void reset(int iteration){
+        time(iteration, "reset", this::resetIteration);
+    }
 
     @Test
     public void run() {
@@ -84,15 +93,10 @@ abstract class Benchmark {
         if (this.shouldSkipTest) return;
 
         for (int i = 0; i < getIterationsCount(); ++i) {
-
-            if (config.reInit) this.init();
-            this.resetIteration();
-
-            long beginTime = System.nanoTime();
-            this.runTest(i);
-            executionTimes.add(System.nanoTime() - beginTime);
+            if (config.reInit && i != 0) this.init(i);
+            this.reset(i);
+            time(i, "execution", this::runTest);
             if (config.cpuValidate) cpuValidation();
-
         }
 
 
@@ -104,8 +108,11 @@ abstract class Benchmark {
     @After
     public void saveResults() {
         if (this.shouldSkipTest) return;
-        double avgExecutionTime = this.executionTimes.stream().mapToDouble(v -> v).average().getAsDouble();
-        System.out.println("Benchmark " + this.getBenchmarkName() + " took " + avgExecutionTime + "ns over " + this.executionTimes.size() + " runs");
+        System.out.println(this.benchmarkResults);
+        System.out.println(this.benchmarkResults.filter("init"));
+        System.out.println(this.benchmarkResults.filter("execution"));
+        System.out.println(this.benchmarkResults.filter("reset"));
+
     }
 
     public Context getContext() {
@@ -117,18 +124,24 @@ abstract class Benchmark {
     }
 
 
+    public void init(int iteration){
+        time(iteration, "init", this::initializeTest);
+    }
+
     /**
      * Here goes the read of the test parameters,
      * the initialization of the necessary arrays
      * and the creation of the kernels (if applicable)
+     * @param iteration
      */
-    public abstract void init();
+    public abstract void initializeTest(int iteration);
 
     /**
      * Reset code, to be run before each test
      * Here you clean up the arrays and other reset stuffs
+     * @param iteration
      */
-    public abstract void resetIteration();
+    public abstract void resetIteration(int iteration);
 
 
     /**
