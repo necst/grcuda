@@ -86,18 +86,6 @@ public class SparseMatrixCSR implements TruffleObject {
      */
     private final DeviceArray values;
 
-    public DeviceArray getCumulativeNnz() {
-        return cumulativeNnz;
-    }
-
-    public DeviceArray getColIndices() {
-        return colIndices;
-    }
-
-    public DeviceArray getValues() {
-        return values;
-    }
-
     protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, ROW_CUMULATIVE, COL_INDICES);
 
     public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray cumulativeNnz, DeviceArray colIdx, DeviceArray nnzValues, long dimRows, long dimCols) {
@@ -135,6 +123,18 @@ public class SparseMatrixCSR implements TruffleObject {
                 ", colIndices=" + colIndices +
                 ", values=" + values +
                 '}';
+    }
+
+    public DeviceArray getCumulativeNnz() {
+        return cumulativeNnz;
+    }
+
+    public DeviceArray getColIndices() {
+        return colIndices;
+    }
+
+    public DeviceArray getValues() {
+        return values;
     }
 
     protected void finalize() throws Throwable {
@@ -205,7 +205,6 @@ public class SparseMatrixCSR implements TruffleObject {
         if (FREE.equals(memberName)) {
             return new SparseMatrixCSRFreeFunction();
         }
-
 
         if (IS_MEMORY_FREED.equals(memberName)) {
             return matrixFreed;

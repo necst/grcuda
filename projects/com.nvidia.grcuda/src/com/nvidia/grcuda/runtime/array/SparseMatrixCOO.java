@@ -86,17 +86,6 @@ public class SparseMatrixCOO implements TruffleObject {
      */
     private final DeviceArray values;
 
-    public DeviceArray getRowIndices() {
-        return rowIndices;
-    }
-
-    public DeviceArray getColIndices() {
-        return colIndices;
-    }
-
-    public DeviceArray getValues() {
-        return values;
-    }
 
     protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, ROW_INDICES, COL_INDICES);
 
@@ -130,6 +119,18 @@ public class SparseMatrixCOO implements TruffleObject {
             this.freeMemory();
         }
         super.finalize();
+    }
+
+    public DeviceArray getRowIndices() {
+        return rowIndices;
+    }
+
+    public DeviceArray getColIndices() {
+        return colIndices;
+    }
+
+    public DeviceArray getValues() {
+        return values;
     }
 
     @Override

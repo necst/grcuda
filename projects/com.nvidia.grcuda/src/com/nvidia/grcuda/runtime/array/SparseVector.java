@@ -328,15 +328,12 @@ public class SparseVector implements TruffleObject {
 
     @ExportLibrary(InteropLibrary.class)
     final class SparseVectorGemviFunction implements TruffleObject {
-
         private static final int NUM_ARGS = 6;
-
         @ExportMessage
         @SuppressWarnings("static-method")
         boolean isExecutable() {
             return true;
         }
-
         @ExportMessage
         Object execute(Object[] arguments) throws ArityException, UnsupportedTypeException {
             checkFreeVector();
@@ -344,14 +341,12 @@ public class SparseVector implements TruffleObject {
                 CompilerDirectives.transferToInterpreter();
                 throw ArityException.create(NUM_ARGS, arguments.length);
             }
-
             int row = expectInt(arguments[0]);
             int col = expectInt(arguments[1]);
             float alpha = expectFloat(arguments[2]);
             DeviceArray matA = (DeviceArray) arguments[3];
             float beta = expectFloat(arguments[4]);
             DeviceArray outVec = (DeviceArray) arguments[5];
-
             executeGemvi(row, col, alpha, matA, beta, outVec);
             return NoneValue.get();
         }
