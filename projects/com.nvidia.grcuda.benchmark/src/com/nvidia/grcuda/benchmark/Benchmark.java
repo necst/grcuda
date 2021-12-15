@@ -1,70 +1,100 @@
 package com.nvidia.grcuda.benchmark;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+import com.nvidia.grcuda.benchmark.config.BenchmarkConfig;
+import com.nvidia.grcuda.benchmark.config.Options;
 import org.graalvm.polyglot.Context;
 import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.theories.DataPoint;
-import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @RunWith(Theories.class)
 abstract class Benchmark {
 
-    private static final int MAX_ITERATIONS = 100;
-    private final boolean reInit = false;
-    private final Context grcudaContext;
+    private final Context context;
+
+    protected BenchmarkConfig config;
+    private final List<Long> executionTimes = new ArrayList<>();
+
+    private final static String DEFAULT_CONFIG_PATH = "$HOME/grcuda/grcuda-data/config.json";
     // The following variables should be read from a config file
     // For simplicity, I'm initializing them statically now
-    protected final int TEST_SIZE = 1000;
-    protected final boolean randomInit = false;
-    protected final int NUM_BLOCKS = 8;
-    protected final int NUM_THREADS = 128;
-    protected final boolean cpuValidate = false;
-    protected long executionTime;
 
-    Benchmark(){
-        // Parse options from a file
-        this.grcudaContext = this.buildBenchmarkContext();
-        this.init();
-    }
+    private boolean shouldSkipTest;
 
-    public static int[] iterations(){
-        int[] iterations = new int[MAX_ITERATIONS];
-        for(int i = 0; i < MAX_ITERATIONS; ++i){
-            iterations[i] = i;
+
+    public void readConfig() {
+        String configPath;
+        Gson gson = new Gson();
+
+        try {
+            configPath = System.getProperty("benchmarkConfigPath");
+        } catch (IllegalArgumentException ignored) {
+            configPath = DEFAULT_CONFIG_PATH;
         }
-        return iterations;
+
+        File configFile = new File(configPath);
+
+        try (JsonReader reader = new JsonReader(new FileReader(configFile))) {
+            Options options = gson.fromJson(reader, Options.class);
+
+            for (BenchmarkConfig config : options.benchmarks) {
+                if (this.getBenchmarkName().equalsIgnoreCase(config.name))
+                    this.config = config;
+            }
+
+            this.shouldSkipTest = this.config == null;
+
+        } catch (IOException e) {
+            throw new RuntimeException("File not found, aborting...");
+        }
+
     }
 
-    /**
-     * Utility function to build the GrCUDA Context
-     */
-    private Context buildBenchmarkContext(){
-        return Context.newBuilder().allowAllAccess(true).allowExperimentalOptions(true)
+    Benchmark() {
+        context = Context
+                .newBuilder()
+                .allowAllAccess(true)
+                .allowExperimentalOptions(true)
                 .option("log.grcuda.com.nvidia.grcuda.level", "WARNING")
                 .option("log.grcuda.com.nvidia.grcuda.GrCUDAContext.level", "SEVERE")
                 .build();
+        // Parse options from a file
+        this.readConfig();
+
+        if (!this.shouldSkipTest) {
+            this.init();
+        } else {
+            System.out.println("Skipping " + this.getBenchmarkName());
+        }
     }
 
 
-    @Before
-    public void reset(){
-        if (this.reInit) this.init();
-        this.resetIteration();
-    }
+    @Test
+    public void run() {
 
+        if (this.shouldSkipTest) return;
 
-    @Theory
-    public void run(int iteration){
-        long beginTime = System.nanoTime();
-        this.runTest(iteration);
-        executionTime = System.nanoTime() - beginTime;
+        for (int i = 0; i < getIterationsCount(); ++i) {
 
-        if(cpuValidate) cpuValidation();
+            if (config.reInit) this.init();
+            this.resetIteration();
+
+            long beginTime = System.nanoTime();
+            this.runTest(i);
+            executionTimes.add(System.nanoTime() - beginTime);
+            if (config.cpuValidate) cpuValidation();
+
+        }
+
 
     }
 
@@ -73,14 +103,18 @@ abstract class Benchmark {
      */
     @After
     public void saveResults() {
-        System.out.println("Benchmark " + this.getBenchmarkName() + " took " + this.executionTime + "ns");
+        if (this.shouldSkipTest) return;
+        double avgExecutionTime = this.executionTimes.stream().mapToDouble(v -> v).average().getAsDouble();
+        System.out.println("Benchmark " + this.getBenchmarkName() + " took " + avgExecutionTime + "ns over " + this.executionTimes.size() + " runs");
     }
 
-    public Context getGrcudaContext() {
-        return grcudaContext;
+    public Context getContext() {
+        return context;
     }
 
-    public abstract String getBenchmarkName();
+    public String getBenchmarkName() {
+        return this.getClass().getSimpleName();
+    }
 
 
     /**
@@ -108,6 +142,16 @@ abstract class Benchmark {
      */
     protected abstract void cpuValidation();
 
+    /**
+     * Override it to reduce or increase the number of repetitions
+     */
+    protected int getIterationsCount() {
+        return config.iterations;
+    }
+
+    protected int getTestSize() {
+        return config.testSize;
+    }
 
 
 }

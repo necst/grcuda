@@ -81,6 +81,10 @@ suite = {
     #
     # --------------------------------------------------------------------------------------------------------------
     "libraries": {
+        "GSON": {
+            "sha1": "8a432c1d6825781e21a02db2e2c33c5fde2833b9",
+            "urls": ["https://repo1.maven.org/maven2/com/google/code/gson/gson/2.8.9/gson-2.8.9.jar"]
+        }
     },
 
     # --------------------------------------------------------------------------------------------------------------
@@ -141,6 +145,7 @@ suite = {
             "sourceDirs": ["src"],
             "dependencies": [
                 "com.nvidia.grcuda",
+		        "GSON",
                 "mx:JUNIT",
                 "truffle:TRUFFLE_TEST",
             ],
@@ -195,13 +200,13 @@ suite = {
         "GRCUDA_BENCHMARK": {
             "description": "GrCUDA benchmarks",
             "dependencies": [
-		"com.nvidia.grcuda.test",
                 "com.nvidia.grcuda.benchmark",
             ],
             "exclude": ["mx:JUNIT"],
             "distDependencies": [
                 "GRCUDA",
-		"GRCUDA_UNIT_TESTS",
+		        "GRCUDA_UNIT_TESTS",
+		        "GSON",
                 "truffle:TRUFFLE_TEST"
             ],
             "sourcesPath": "grcuda.benchmark.src.zip",
