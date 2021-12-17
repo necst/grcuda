@@ -31,9 +31,9 @@
 import polyglot
 from java.lang import System 
 import numpy as np
-from random import random, randint, seed, sample
+from random import randint, seed
 
-from benchmark import Benchmark, time_phase, DEFAULT_BLOCK_SIZE_1D, DEFAULT_BLOCK_SIZE_2D, DEFAULT_NUM_BLOCKS
+from benchmark import Benchmark, time_phase, DEFAULT_BLOCK_SIZE_1D, DEFAULT_BLOCK_SIZE_2D
 from benchmark_result import BenchmarkResult
 
 ##############################
@@ -269,7 +269,7 @@ class Benchmark8(Benchmark):
         self.kernel_unsharpen_variance = 5
         self.unsharpen_amount = 0.5
 
-        self.image_cpu = None
+        # self.image_cpu = None
         self.kernel_small_cpu = None
         self.kernel_large_cpu = None
         self.kernel_unsharpen_cpu = None
@@ -297,7 +297,7 @@ class Benchmark8(Benchmark):
         self.block_size_2d = block_size["block_size_2d"]
 
         # Allocate vectors;
-        self.image = polyglot.eval(language="grcuda", string=f"float[{size}][{size}]")
+        self.image = polyglot.eval(language="grcuda", string=f"float[{size * size}]")
         self.image2 = polyglot.eval(language="grcuda", string=f"float[{size}][{size}]")
         self.image3 = polyglot.eval(language="grcuda", string=f"float[{size}][{size}]")
 
@@ -325,6 +325,7 @@ class Benchmark8(Benchmark):
         self.unsharpen_kernel = build_kernel(UNSHARPEN, "unsharpen", "pointer, pointer, pointer, float, sint32")
         self.combine_mask_kernel = build_kernel(COMBINE, "combine", "const pointer, const pointer, const pointer, pointer, sint32")
         self.reset_kernel = build_kernel(RESET, "reset", "pointer, sint32")
+        self.initialize_rand = polyglot.eval(language="js", string="x => { for (let i = 0; i < x.length; i++) { x[i] = Math.random() }}")
 
     @time_phase("initialization")
     def init(self):
@@ -346,9 +347,11 @@ class Benchmark8(Benchmark):
         seed(self.random_seed)
 
         # Create a random image;
-        self.image_cpu = np.random.rand(self.size, self.size).astype(np.float32)  # Create here the image used for validation;
-        self.image.copyFrom(int(np.int64(self.image_cpu.ctypes.data)), len(self.image))
-        self.gpu_result = np.zeros((self.size, self.size))
+        self.initialize_rand(self.image)
+        self.gpu_result = [[0.0] * self.size for _ in range(self.size)]
+        # self.image_cpu = np.random.rand(self.size, self.size).astype(np.float32)  # Create here the image used for validation;
+        # self.image.copyFrom(int(np.int64(self.image_cpu.ctypes.data)), len(self.image))
+        # self.gpu_result = np.zeros((self.size, self.size))
         self.kernel_small_cpu = gaussian_kernel(self.kernel_small_diameter, self.kernel_small_variance)
         self.kernel_large_cpu = gaussian_kernel(self.kernel_large_diameter, self.kernel_large_variance)
         self.kernel_unsharpen_cpu = gaussian_kernel(self.kernel_unsharpen_diameter, self.kernel_unsharpen_variance)
@@ -367,7 +370,7 @@ class Benchmark8(Benchmark):
         # for i in range(self.size):
         #     for j in range(self.size):
         #         self.image3[i][j] = 0.0
-        self.image3.copyFrom(int(np.int64(self.image_cpu.ctypes.data)), len(self.image3))
+        # self.image3.copyFrom(int(np.int64(self.image_cpu.ctypes.data)), len(self.image3))
         self.maximum[0] = 0.0
         self.minimum[0] = 0.0
 
@@ -443,10 +446,12 @@ class Benchmark8(Benchmark):
         #     for j in range(self.size):
         #         self.gpu_result[i, j] = self.image3[i][j]
 
+        self.gpu_result = sum(self.image3[-1])
+
         self.benchmark.add_to_benchmark("gpu_result", 0)
         if self.benchmark.debug:
             BenchmarkResult.log_message(
-                f"\tgpu result: [" + ", ".join([f"{x:.4f}" for x in self.gpu_result[0, :10]]) + "...]")
+                f"\tgpu result: [" + ", ".join([f"{x:.4f}" for x in self.image3[0][:10]]) + "...]")
 
         return self.gpu_result
 
@@ -514,21 +519,27 @@ class Benchmark8(Benchmark):
         # Recompute the CPU result only if necessary;
         start = System.nanoTime()
         if self.current_iter == 0 or reinit:
+
+            image_cpu = np.zeros((self.size, self.size))
+            for i in range(self.size):
+                for j in range(self.size):
+                    image_cpu[i, j] = self.image[i * self.size + j]
+
             # Part 1: Small blur on medium frequencies;
-            blurred_small = gaussian_blur(self.image_cpu, self.kernel_small_cpu)
+            blurred_small = gaussian_blur(image_cpu, self.kernel_small_cpu)
             edges_small = sobel_filter(blurred_small)
 
             # Part 2: High blur on low frequencies;
-            blurred_large = gaussian_blur(self.image_cpu, self.kernel_large_cpu)
+            blurred_large = gaussian_blur(image_cpu, self.kernel_large_cpu)
             edges_large = sobel_filter(blurred_large)
             # Extend mask to cover a larger area;
             edges_large = normalize(edges_large) * 5
             edges_large[edges_large > 1] = 1
 
             # Part 3: Sharpen image;
-            unsharpen = gaussian_blur(self.image_cpu, self.kernel_unsharpen_cpu)
+            unsharpen = gaussian_blur(image_cpu, self.kernel_unsharpen_cpu)
             amount = 0.5
-            sharpened = truncate(self.image_cpu * (1 + amount) - unsharpen * amount)
+            sharpened = truncate(image_cpu * (1 + amount) - unsharpen * amount)
 
             # Part 4: Merge sharpened image and low frequencies;
             image2 = normalize(sharpened * edges_large + blurred_large * (1 - edges_large))
@@ -539,10 +550,11 @@ class Benchmark8(Benchmark):
         cpu_time = System.nanoTime() - start
 
         # Compare GPU and CPU results;
-        difference = 0
-        for i in range(self.size):
-            for j in range(self.size):
-                difference += np.abs(self.cpu_result[i, j] - gpu_result[i, j])
+        difference = sum(self.cpu_result[-1, :]) - gpu_result
+        # difference = 0
+        # for i in range(self.size):
+        #     for j in range(self.size):
+        #         difference += np.abs(self.cpu_result[i, j] - gpu_result[i, j])
 
         self.benchmark.add_to_benchmark("cpu_time_sec", cpu_time)
         self.benchmark.add_to_benchmark("cpu_gpu_res_difference", str(difference))

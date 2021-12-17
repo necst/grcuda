@@ -108,7 +108,7 @@ public final class GrCUDAContext {
         Boolean inputPrefetch = grCUDAOptionMap.isInputPrefetch();
 
         // Initialize the execution policy;
-        LOGGER.info("using" + executionPolicy.toString() + " execution policy");
+        LOGGER.info("using " + executionPolicy.toString() + " execution policy");
         switch (executionPolicy) {
             case SYNC:
                 this.grCUDAExecutionContext = new SyncGrCUDAExecutionContext(this, env, dependencyPolicy, inputPrefetch ? PrefetcherEnum.SYNC : PrefetcherEnum.NONE);

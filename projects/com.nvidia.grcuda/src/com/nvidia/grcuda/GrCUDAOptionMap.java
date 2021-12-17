@@ -55,8 +55,6 @@ import java.util.Objects;
 @ExportLibrary(InteropLibrary.class)
 public class GrCUDAOptionMap implements TruffleObject {
 
-    private static GrCUDAOptionMap instance = null;
-
     /**
      * Store options using the option name and its value;
      */
@@ -77,7 +75,11 @@ public class GrCUDAOptionMap implements TruffleObject {
     public static final boolean DEFAULT_INPUT_PREFETCH = false;
     public static final boolean DEFAULT_ENABLE_MULTIGPU = false;
     public static final boolean DEFAULT_TENSORRT_ENABLED = false;
-    public static final boolean DEFAULT_TIME_COMPUTATION = false;
+    public static final boolean DEFAULT_ENABLE_COMPUTATION_TIMERS = false;
+    public static final Integer DEFAULT_NUMBER_OF_GPUs = 1;
+    // FIXME: not yet implemented!
+    public static final String DEFAULT_DEVICE_SELECTION_HEURISTIC = "";
+    public static final String DEFAULT_MEM_ADVISE_POLICY = "";
 
     public GrCUDAOptionMap(OptionValues options) {
         optionsMap = new HashMap<>();
@@ -202,7 +204,7 @@ public class GrCUDAOptionMap implements TruffleObject {
         return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.EnableMultiGPU);
     }
 
-    public Boolean isTimeComputation() { return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.TimeComputation); }
+    public Boolean isTimeComputation() { return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.EnableComputationTimers); }
 
     public Boolean isTensorRTEnabled(){
         return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.TensorRTEnabled);
@@ -249,7 +251,7 @@ public class GrCUDAOptionMap implements TruffleObject {
 
     @ExportLibrary(InteropLibrary.class)
     public static final class EntriesIterator implements TruffleObject {
-        private Iterator<Map.Entry<String, Object>> iterator;
+        private final Iterator<Map.Entry<String, Object>> iterator;
 
         private EntriesIterator(Iterator<Map.Entry<String, Object>> iterator) {
             this.iterator = iterator;

@@ -29,11 +29,10 @@
 
 # coding=utf-8
 import polyglot
-import time
 import numpy as np
 from random import random, randint, seed
 
-from benchmark import Benchmark, time_phase, DEFAULT_BLOCK_SIZE_1D, DEFAULT_NUM_BLOCKS
+from benchmark import Benchmark, time_phase, DEFAULT_BLOCK_SIZE_1D
 from benchmark_result import BenchmarkResult
 from java.lang import System
 import math
@@ -115,7 +114,7 @@ class Benchmark5(Benchmark):
         self.cpu_result = 0
         self.block_size = DEFAULT_BLOCK_SIZE_1D
 
-        self.K = 10
+        self.K = 24
         self.x = [[]] * self.K
         self.x_tmp = None
         self.y = [[]] * self.K

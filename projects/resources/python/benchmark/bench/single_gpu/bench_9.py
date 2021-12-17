@@ -372,7 +372,9 @@ class Benchmark9(Benchmark):
         num_blocks_spmv = int(np.ceil(self.size / self.block_size))
         start_comp = System.nanoTime()
         start = 0
-
+        alpha = 0
+        self.t1[0] = 0
+        
         # Initialization phase;
         # r = b - A * x
         self.execute_phase("spmv_init", self.spmv_full_kernel(num_blocks_spmv, self.block_size, 4 * self.block_size),

@@ -99,7 +99,7 @@ public class GrCUDATestUtil {
                 .option("grcuda.RetrieveParentStreamPolicy", options.retrieveParentStreamPolicy.toString())
                 .option("grcuda.DependencyPolicy", options.dependencyPolicy.toString())
                 .option("grcuda.ForceStreamAttach", String.valueOf(options.forceStreamAttach))
-                .option("grcuda.TimeComputation", String.valueOf(options.timeComputation))
+                .option("grcuda.EnableComputationTimers", String.valueOf(options.timeComputation))
                 .build();
     }
 
