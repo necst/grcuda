@@ -43,6 +43,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropLibrary;
+import com.oracle.truffle.api.interop.InvalidArrayIndexException;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnknownIdentifierException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
@@ -234,8 +235,16 @@ public class SparseMatrixCOO implements TruffleObject {
     }
 
     @ExportMessage
-    final Object readArrayElement(@SuppressWarnings("unused") long index) throws GrCUDAException {
-        throw new GrCUDAException(UNSUPPORTED_DIRECT_READ_ON_SPARSE_DS);
+    final Object readArrayElement(@SuppressWarnings("unused") long index) throws GrCUDAException, InvalidArrayIndexException, UnsupportedMessageException {
+        long row = index/dimCols;
+        long col = index%dimCols;
+        for(int i = 0; i < values.getArraySize(); i++){
+            if((row == (long) rowIndices.readArrayElement(i))&&(col == (long) colIndices.readArrayElement(i))){
+//                return values.readArrayElement(i);
+            }
+        }
+        return 0;
+//        throw new GrCUDAException(UNSUPPORTED_DIRECT_READ_ON_SPARSE_DS);
     }
 
     @ExportMessage
