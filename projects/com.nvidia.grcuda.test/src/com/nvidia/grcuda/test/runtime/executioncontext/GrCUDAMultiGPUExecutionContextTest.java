@@ -195,7 +195,6 @@ public class GrCUDAMultiGPUExecutionContextTest {
     public void dependencyKernelsTestA() {
 
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
-
             assumeTrue(checkIfMultiGPU(context));
 
             final int numElements = 1000000;
@@ -235,9 +234,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
      */
     @Test
     public void dependencyPipelineWithArrayCopyTest() {
-
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
-
             assumeTrue(checkIfMultiGPU(context));
 
             final int numElements = 100000;
