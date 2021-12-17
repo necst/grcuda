@@ -47,7 +47,6 @@
 #define DEFAULT_BLOCK_SIZE_2D 8
 #define DEFAULT_NUM_BLOCKS 64
 #define DEFAULT_SKIP 3
-#define DEFAULT_BENCHMARK "b1"
 #define DEFAULT_POLICY "async"
 #define DEFAULT_PREFETCH false
 #define DEFAULT_STREAM_ATTACH false
@@ -145,7 +144,7 @@ struct Options {
     bool stream_attach = DEFAULT_STREAM_ATTACH;
     bool nvprof = DEFAULT_NVPROF;
     int num_partitions = DEFAULT_NUM_PARTITIONS;
-    BenchmarkEnum benchmark_choice = get_benchmark(DEFAULT_BENCHMARK);
+    BenchmarkEnum benchmark_choice = BenchmarkEnum::ERR;
     Policy policy_choice = get_policy(DEFAULT_POLICY);
 
     // Used for printing;

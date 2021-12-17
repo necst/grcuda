@@ -95,9 +95,17 @@ public final class CUDARuntime {
     private final List<GPUPointer> innerCudaContexts = new ArrayList<>();
 
     /**
+     * Total number of GPUs available in the system, even if they are not used. It must be > 0;
+     */
+    private int numberOfAvailableGPUs = GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs;
+    /**
      * How many GPUs are actually used by GrCUDA. It must hold 1 <= numberOfGPUsToUse <= numberOfAvailableGPUs;
      */
     private int numberOfGPUsToUse = GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs;
+
+    public int getNumberOfAvailableGPUs() {
+        return numberOfAvailableGPUs;
+    }
 
     public int getNumberOfGPUsToUse() {
         return numberOfGPUsToUse;
@@ -107,7 +115,7 @@ public final class CUDARuntime {
      * Identifier of the GPU that is currently active;
      */
     private int currentGPU = DEFAULT_DEVICE;
-
+    
     public boolean isMultiGPUEnabled() {
         return this.numberOfGPUsToUse > 1;
     }
@@ -215,8 +223,8 @@ public final class CUDARuntime {
      */
     private void setupSupportForMultiGPU() {
         // Find how many GPUs are available on this system;
-        int numberOfAvailableGPUs = cudaGetDeviceCount();
-        RUNTIME_LOGGER.fine("identified " + numberOfAvailableGPUs + " GPUs available on this machine");
+        this.numberOfAvailableGPUs = cudaGetDeviceCount();
+        RUNTIME_LOGGER.info("identified " + this.numberOfAvailableGPUs + " GPUs available on this machine");
         this.numberOfGPUsToUse = numberOfAvailableGPUs;
         if (numberOfAvailableGPUs <= 0) {
             RUNTIME_LOGGER.severe("GrCUDA initialization failed, no GPU device is available (devices count = " + numberOfAvailableGPUs + ")");
@@ -239,7 +247,7 @@ public final class CUDARuntime {
         for (int i = 0; i < this.numberOfGPUsToUse; i++) {
             this.loadedModules.add(new HashMap<String, CUModule>());
         }
-        RUNTIME_LOGGER.info("initialized GrCUDA to use " + this.numberOfGPUsToUse + "/" + numberOfAvailableGPUs + " GPUs");
+        RUNTIME_LOGGER.info("initialized GrCUDA to use " + this.numberOfGPUsToUse + "/" + this.numberOfAvailableGPUs + " GPUs");
     }
     
     // using this slow/uncached instance since all calls are non-critical
