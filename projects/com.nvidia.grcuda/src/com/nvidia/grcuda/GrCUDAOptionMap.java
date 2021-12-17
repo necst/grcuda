@@ -196,6 +196,14 @@ public class GrCUDAOptionMap implements TruffleObject {
         return (String) getOptionValueFromOptionKey(GrCUDAOptions.CuMLLibrary);
     }
 
+    public Boolean isCuSPARSEEnabled(){
+        return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.CuSPARSEEnabled);
+    }
+
+    public String getCuSPARSELibrary(){
+        return (String) getOptionValueFromOptionKey(GrCUDAOptions.CuSPARSELibrary);
+    }
+
     public ExecutionPolicyEnum getExecutionPolicy(){
         return (ExecutionPolicyEnum) getOptionValueFromOptionKey(GrCUDAOptions.ExecutionPolicy);
     }
@@ -219,7 +227,7 @@ public class GrCUDAOptionMap implements TruffleObject {
     public Boolean isInputPrefetch(){
         return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.InputPrefetch);
     }
-    
+
     public Boolean isTimeComputation() { return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.EnableComputationTimers); }
 
     public Boolean isTensorRTEnabled(){

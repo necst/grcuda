@@ -126,5 +126,3 @@ public class GrCUDATestUtil {
         return false;
     }
 }
-
-
