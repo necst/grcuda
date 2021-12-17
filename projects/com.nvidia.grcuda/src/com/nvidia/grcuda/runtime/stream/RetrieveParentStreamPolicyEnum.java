@@ -32,7 +32,10 @@ package com.nvidia.grcuda.runtime.stream;
 
 public enum RetrieveParentStreamPolicyEnum {
     SAME_AS_PARENT("same-as-parent"),
-    DISJOINT("disjoint");
+    DISJOINT("disjoint"),
+    DATA_AWARE("data-aware"),
+    STREAM_AWARE("stream-aware"),
+    DISJOINT_DATA_AWARE("disjoint-data-aware");
 
     private final String name;
 

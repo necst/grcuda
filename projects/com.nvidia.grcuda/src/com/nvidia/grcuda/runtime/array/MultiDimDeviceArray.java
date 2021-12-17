@@ -80,7 +80,7 @@ public class MultiDimDeviceArray extends AbstractArray implements TruffleObject 
         this.stridePerDimension = computeStride(dimensions, columnMajor);
         // Allocate the GPU memory;
         this.nativeView = allocateMemory();
-        // Register the array in the GrCUDAExecutionContext;
+        // Register the array in the AsyncGrCUDAExecutionContext;
         this.registerArray();
     }
 

@@ -35,7 +35,7 @@ import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyComputation;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
-import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -146,7 +146,7 @@ public abstract class GrCUDAComputationalElement {
     }
 
     /**
-     * Schedule this computation for future execution by the {@link GrCUDAExecutionContext}.
+     * Schedule this computation for future execution by the {@link AsyncGrCUDAExecutionContext}.
      * The scheduling request is separate from the {@link GrCUDAComputationalElement} instantiation
      * as we need to ensure that the the computational element subclass has been completely instantiated;
      */
@@ -157,7 +157,7 @@ public abstract class GrCUDAComputationalElement {
     /**
      * Generic interface to perform the execution of this {@link GrCUDAComputationalElement}.
      * The actual execution implementation must be added by concrete computational elements.
-     * The execution request will be done by the {@link GrCUDAExecutionContext}, after this computation has been scheduled
+     * The execution request will be done by the {@link AsyncGrCUDAExecutionContext}, after this computation has been scheduled
      * using {@link GrCUDAComputationalElement#schedule()}
      */
     public abstract Object execute() throws UnsupportedTypeException;

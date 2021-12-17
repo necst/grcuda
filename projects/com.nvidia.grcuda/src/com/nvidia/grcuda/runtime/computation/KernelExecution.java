@@ -36,7 +36,7 @@ import com.nvidia.grcuda.runtime.ConfiguredKernel;
 import com.nvidia.grcuda.runtime.Kernel;
 import com.nvidia.grcuda.runtime.KernelArguments;
 import com.nvidia.grcuda.runtime.KernelConfig;
-import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
 
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 
 /**
  * Class used to track the single execution of a {@link ConfiguredKernel}.
- * The execution will be provided to the {@link GrCUDAExecutionContext} and scheduled accordingly.
+ * The execution will be provided to the {@link AsyncGrCUDAExecutionContext} and scheduled accordingly.
  */
 public class KernelExecution extends GrCUDAComputationalElement {
 

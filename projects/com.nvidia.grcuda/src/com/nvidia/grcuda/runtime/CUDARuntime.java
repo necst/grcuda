@@ -42,10 +42,12 @@ import static com.nvidia.grcuda.functions.Function.expectLong;
 import static com.nvidia.grcuda.functions.Function.expectPositiveLong;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
 import com.nvidia.grcuda.GrCUDALogger;
+import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.oracle.truffle.api.TruffleLogger;
 import org.graalvm.collections.Pair;
 
@@ -90,7 +92,18 @@ public final class CUDARuntime {
     private final NVRuntimeCompiler nvrtc;
 
     private final List<GPUPointer> innerCudaContexts = new ArrayList<>();
-    private final int numDevices;
+    /**
+     * How many GPUs are available in this system;
+     */
+    private int numberOfAvailableGPUs = GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs;
+    /**
+     * How many GPUs are actually used by GrCUDA. It must hold 1 <= numberOfGPUsToUse <= numberOfAvailableGPUs;
+     */
+    private int numberOfGPUsToUse = GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs;
+    
+    public boolean isMultiGPUEnabled() {
+        return this.numberOfGPUsToUse > 1;
+    }
 
     public static final TruffleLogger RUNTIME_LOGGER = GrCUDALogger.getLogger(GrCUDALogger.RUNTIME_LOGGER);
 
@@ -162,11 +175,8 @@ public final class CUDARuntime {
             this.loadedLibraries.put(CUDA_LIBRARY_NAME, libcuda);
             this.loadedLibraries.put(NVRTC_LIBRARY_NAME, libnvrtc);
 
-            this.numDevices = cudaGetDeviceCount();
-            for (int i = 0; i < this.numDevices; i++) {
-                HashMap<String, CUModule> modules = new HashMap<>();
-                this.loadedModules.add(modules);
-            }
+            // Initialize support for multiple GPUs in GrCUDA;
+            setupSupportForMultiGPU();
         } catch (UnsatisfiedLinkError e) {
             throw new GrCUDAException(e.getMessage());
         }
@@ -181,6 +191,40 @@ public final class CUDARuntime {
         this.streamAttachArchitecturePolicy = (!this.architectureIsPascalOrNewer || context.getOptions().isForceStreamAttach()) ? new PrePascalStreamAttachPolicy() : new PostPascalStreamAttachPolicy();
     }
 
+    /**
+     * Initialize support for multiple GPUs. Validate that the selected number of options is coherent (1 <= numberOfGPUsToUse <= numberOfAvailableGPUs),
+     * then initialize the map that stores CUModules on every device used by GrCUDA;
+     */
+    private void setupSupportForMultiGPU() {
+        // Find how many GPUs are available on this system;
+        this.numberOfAvailableGPUs = cudaGetDeviceCount();
+        RUNTIME_LOGGER.info("identified " + this.numberOfAvailableGPUs + " GPUs available on this machine");
+        this.numberOfGPUsToUse = numberOfAvailableGPUs;
+        if (numberOfAvailableGPUs <= 0) {
+            RUNTIME_LOGGER.severe("GrCUDA initialization failed, no GPU device is available (devices count = " + numberOfAvailableGPUs + ")");
+            throw new GrCUDAException("GrCUDA initialization failed, no GPU device is available");
+        }
+        // Validate and update the number of GPUs used in the context;
+        int numberOfSelectedGPUs = context.getOptions().getNumberOfGPUs();
+        if (numberOfSelectedGPUs <= 0) {
+            RUNTIME_LOGGER.warning("non-positive number of GPUs selected (" + numberOfSelectedGPUs + "), defaulting to 1");
+            numberOfGPUsToUse = 1;
+            context.getOptions().setNumberOfGPUs(numberOfGPUsToUse);  // Update the option value;
+        } else if (numberOfSelectedGPUs > numberOfAvailableGPUs) {
+            RUNTIME_LOGGER.warning("the number of GPUs selected is greater than what's available (selected=" + numberOfSelectedGPUs + ", available=" + numberOfAvailableGPUs + "), using all the available GPUs (" + numberOfAvailableGPUs + ")");
+            numberOfGPUsToUse = numberOfAvailableGPUs;
+            context.getOptions().setNumberOfGPUs(numberOfGPUsToUse);  // Update the option value;
+        } else {
+            // Select how many GPUs to use;
+            numberOfGPUsToUse = numberOfSelectedGPUs;
+        }
+        for (int i = 0; i < this.numberOfGPUsToUse; i++) {
+            HashMap<String, CUModule> modules = new HashMap<>();
+            this.loadedModules.add(modules);
+        }
+        RUNTIME_LOGGER.info("initialized GrCUDA to use " + this.numberOfGPUsToUse + "/" + this.numberOfAvailableGPUs + " GPUs");
+    }
+    
     // using this slow/uncached instance since all calls are non-critical
     private static final InteropLibrary INTEROP = InteropLibrary.getFactory().getUncached();
 
@@ -789,7 +833,7 @@ public final class CUDARuntime {
             public Object call(CUDARuntime cudaRuntime, Object[] args) throws ArityException, UnsupportedTypeException, InteropException {
                 checkArgumentLength(args, 1);
                 int device = expectInt(args[0]);
-                if (cudaRuntime.context.getOptions().isEnableMultiGPU()) {
+                if (cudaRuntime.isMultiGPUEnabled()) {
                     cudaRuntime.setLastDeviceUsed(device);
                 }
                 callSymbol(cudaRuntime, device);
@@ -1144,7 +1188,7 @@ public final class CUDARuntime {
 
     @TruffleBoundary
     public Kernel loadKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Binding binding) {
-        if (this.context.getOptions().isEnableMultiGPU()) {
+        if (isMultiGPUEnabled()) {
             return this.loadKernelMultiGPU(grCUDAExecutionContext, binding.getLibraryFileName(), binding.getName(), binding.getSymbolName(), binding.getNIDLParameterSignature());
         } else {
             return this.loadKernelSingleGPU(grCUDAExecutionContext, binding.getLibraryFileName(), binding.getName(), binding.getSymbolName(), binding.getNIDLParameterSignature());
@@ -1171,7 +1215,7 @@ public final class CUDARuntime {
         ArrayList<CUModule> modules = new ArrayList<>();
         int currentDevice = cudaGetDevice();
 
-        for (int i = 0; i < numDevices; i++) {
+        for (int i = 0; i < numberOfGPUsToUse; i++) {
             CUModule module = loadedModules.get(i).get(cubinFile);
             cudaSetDevice(i);
             if (module == null) {
@@ -1193,7 +1237,7 @@ public final class CUDARuntime {
         RUNTIME_LOGGER.finest("buildKernel device:" + cudaGetDevice());
         String moduleName = "truffle" + context.getNextModuleId();
         PTXKernel ptx = nvrtc.compileKernel(code, kernelName, moduleName, "--std=c++14");
-        if (this.context.getOptions().isEnableMultiGPU()) {
+        if (isMultiGPUEnabled()) {
             return this.buildKernelMultiGPU(grCUDAExecutionContext, kernelName, signature, moduleName, ptx);
         } else {
             return this.buildKernelSingleGPU(grCUDAExecutionContext, kernelName, signature, moduleName, ptx);
@@ -1213,7 +1257,7 @@ public final class CUDARuntime {
         ArrayList<CUModule> modules = new ArrayList<>();
         int currentDevice = cudaGetDevice();
 
-        for (int i = 0; i < numDevices; i++) {
+        for (int i = 0; i < numberOfGPUsToUse; i++) {
             cudaSetDevice(i);
             CUModule module = cuModuleLoadData(ptx.getPtxSource(), moduleName);
             long kernelFunctionHandle = cuModuleGetFunction(module, ptx.getLoweredKernelName());
@@ -1229,7 +1273,7 @@ public final class CUDARuntime {
     @TruffleBoundary
     public CUModule cuModuleLoad(String cubinName) {
         assertCUDAInitialized();
-        int currDevice = this.context.getOptions().isEnableMultiGPU() ? cudaGetDevice() : 0;
+        int currDevice = isMultiGPUEnabled() ? cudaGetDevice() : 0;
         if (this.loadedModules.get(currDevice).containsKey(cubinName)) {
             throw new GrCUDAException("A module for " + cubinName + " was already loaded.");
         }
@@ -1246,7 +1290,7 @@ public final class CUDARuntime {
     @TruffleBoundary
     public CUModule cuModuleLoadData(String ptx, String moduleName) {
         assertCUDAInitialized();
-        int currDevice = this.context.getOptions().isEnableMultiGPU() ? cudaGetDevice() : 0;
+        int currDevice = isMultiGPUEnabled() ? cudaGetDevice() : 0;
         if (this.loadedModules.get(currDevice).containsKey(moduleName)) {
             throw new GrCUDAException("A module for " + moduleName + " was already loaded.");
         }
@@ -1316,7 +1360,7 @@ public final class CUDARuntime {
         // using multiple gpu requires the stream associated to the device to be
         // set manually.
         long kernelFunctionHandle;
-        if (this.context.getOptions().isEnableMultiGPU()) {
+        if (isMultiGPUEnabled()) {
             stream.setDeviceId(this.lastDeviceSet);
             cudaSetDevice(stream.getStreamDeviceId());
             assert stream.getStreamDeviceId() == cudaGetDevice();
@@ -1461,7 +1505,7 @@ public final class CUDARuntime {
     private void assertCUDAInitialized() {
         if (!context.isCUDAInitialized()) {
             int currentDevice = cudaGetDevice();
-            if (this.context.getOptions().isEnableMultiGPU()) {
+            if (isMultiGPUEnabled()) {
                 int numDevices = cudaGetDeviceCount();
                 for (int i = 0; i < numDevices; i++) {
                     cudaSetDevice(i);
@@ -1492,7 +1536,7 @@ public final class CUDARuntime {
         } catch (UnsupportedMessageException e) {
             CompilerDirectives.transferToInterpreter();
             throw new GrCUDAException(
-                            "expected return code as Integer object in " + function + ", got " +
+                            "expected return code as Integer object in " + Arrays.toString(function) + ", got " +
                                             result.getClass().getName());
         }
         if (returnCode != 0) {
@@ -1504,7 +1548,7 @@ public final class CUDARuntime {
 
     private void shutdown() {
         // unload all modules
-        for (int i = 0; i < numDevices; i++) {
+        for (int i = 0; i < numberOfAvailableGPUs; i++) {
             for (CUModule module : loadedModules.get(i).values()) {
                 try {
                     module.close();

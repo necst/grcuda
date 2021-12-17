@@ -40,8 +40,8 @@ public class GrCUDAExecutionContextMockBuilder {
     RetrieveNewStreamPolicyEnum retrieveStreamPolicy = RetrieveNewStreamPolicyEnum.FIFO;
     RetrieveParentStreamPolicyEnum parentStreamPolicyEnum = RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
 
-    public GrCUDAExecutionContextMock build() {
-        return new GrCUDAExecutionContextMock(dependencyPolicy, retrieveStreamPolicy, parentStreamPolicyEnum);
+    public AsyncGrCUDAExecutionContextMock build() {
+        return new AsyncGrCUDAExecutionContextMock(dependencyPolicy, retrieveStreamPolicy, parentStreamPolicyEnum);
     }
 
     public GrCUDAExecutionContextMockBuilder setDependencyPolicy(DependencyPolicyEnum dependencyPolicy) {

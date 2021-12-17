@@ -31,7 +31,7 @@
 package com.nvidia.grcuda.test.runtime;
 
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
-import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
@@ -80,7 +80,7 @@ public class ComplexExecutionDAGMockTest {
 
     @Test
     public void hitsMockTest() throws UnsupportedTypeException {
-        GrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy).setRetrieveParentStreamPolicy(this.retrieveParentStreamPolicy)
                 .setDependencyPolicy(this.dependencyPolicy).build();
 
@@ -126,7 +126,7 @@ public class ComplexExecutionDAGMockTest {
 
     @Test
     public void imageMockTest() throws UnsupportedTypeException {
-        GrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy).setRetrieveParentStreamPolicy(this.retrieveParentStreamPolicy)
                 .setDependencyPolicy(this.dependencyPolicy).build();
 
