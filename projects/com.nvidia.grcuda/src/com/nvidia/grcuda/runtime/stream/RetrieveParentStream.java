@@ -30,6 +30,7 @@
  */
 package com.nvidia.grcuda.runtime.stream;
 
+import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 
 /**
@@ -40,5 +41,5 @@ import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
  * to have multiple children computation run in parallel.
  */
 public abstract class RetrieveParentStream {
-    abstract CUDAStream retrieve(ExecutionDAG.DAGVertex vertex);
+    abstract CUDAStream retrieve(Device device, ExecutionDAG.DAGVertex vertex);
 }

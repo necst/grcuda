@@ -105,8 +105,12 @@ public class GrCUDADevicesManager {
 //        deviceList.getDevice(deviceId).increaseStreamCount();
 //    }
 
-    public int getCurrentGPU(){
+    public int getCurrentGPUId(){
         return this.runtime.getCurrentGPU();
+    }
+
+    public Device getCurrentGPU(){
+        return this.getDevice(this.runtime.getCurrentGPU());
     }
 
     public int getNumberOfGPUsToUse(){
@@ -123,5 +127,12 @@ public class GrCUDADevicesManager {
 
     public Device getDevice(int deviceId) {
         return deviceList.getDevice(deviceId);
+    }
+
+    /**
+     * Cleanup and deallocate the streams managed by this manager;
+     */
+    public void cleanup() {
+        this.deviceList.cleanup();
     }
 }

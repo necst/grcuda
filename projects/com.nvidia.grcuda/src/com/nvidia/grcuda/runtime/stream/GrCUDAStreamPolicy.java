@@ -3,6 +3,7 @@ package com.nvidia.grcuda.runtime.stream;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.runtime.CUDARuntime;
+import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.GrCUDADevicesManager;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.oracle.truffle.api.TruffleLogger;
@@ -19,25 +20,26 @@ public class GrCUDAStreamPolicy {
     /**
      * List of all the {@link CUDAStream} that have been currently allocated;
      */
-    protected List<CUDAStream> streams = new ArrayList<>();
+//    protected List<CUDAStream> streams = new ArrayList<>();
 
     /**
      * Reference to the class that manages the GPU devices in this system;
      */
     private final GrCUDADevicesManager devicesManager;
+    /**
+     * Total number of CUDA streams created so far;
+     */
+    private int totalNumberOfStreams = 0;
 
-    private final CUDARuntime runtime;
     private final RetrieveNewStream retrieveNewStream;
     private final RetrieveParentStream retrieveParentStream;
 //    private final DeviceSelectionPolicy deviceSelectionPolicy;
 
     private static final TruffleLogger STREAM_LOGGER = GrCUDALogger.getLogger(GrCUDALogger.STREAM_LOGGER);
 
-    public GrCUDAStreamPolicy(CUDARuntime runtime,
-                              GrCUDADevicesManager devicesManager,
+    public GrCUDAStreamPolicy(GrCUDADevicesManager devicesManager,
                               RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
                               RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
-        this.runtime = runtime;
         this.devicesManager = devicesManager;
         // Get how streams are retrieved for computations without parents;
         switch (retrieveNewStreamPolicyEnum) {
@@ -77,24 +79,24 @@ public class GrCUDAStreamPolicy {
     public GrCUDAStreamPolicy(CUDARuntime runtime,
                               RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
                               RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
-        this(runtime, new GrCUDADevicesManager(runtime), retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum);
+        this(new GrCUDADevicesManager(runtime), retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum);
     }
 
     /**
-     * Create a new {@link CUDAStream} and add it to this manager, then return it;
+     * Create a new {@link CUDAStream} on the current device;
      */
     public CUDAStream createStream() {
-        CUDAStream newStream = runtime.cudaStreamCreate(streams.size());
-        streams.add(newStream);
+        CUDAStream newStream = this.getDevicesManager().getCurrentGPU().createStream();
+        this.totalNumberOfStreams++;
         return newStream;
     }
     
     CUDAStream retrieveNewStream() {
-        return this.retrieveNewStream.retrieve();
+        return this.retrieveNewStream.retrieve(this.devicesManager.getCurrentGPU());
     }
 
     CUDAStream retrieveParentStream(ExecutionDAG.DAGVertex vertex) {
-        return this.retrieveParentStream.retrieve(vertex);
+        return this.retrieveParentStream.retrieve(this.devicesManager.getCurrentGPU(), vertex);
     }
 
     /**
@@ -102,7 +104,7 @@ public class GrCUDAStreamPolicy {
      * @param stream a stream to update;
      */
     void updateNewStreamRetrieval(CUDAStream stream) {
-        this.retrieveNewStream.update(stream);
+        this.retrieveNewStream.update(this.devicesManager.getCurrentGPU(), stream);
     }
 
     /**
@@ -111,7 +113,7 @@ public class GrCUDAStreamPolicy {
      */
     void updateNewStreamRetrieval() {
         // All streams are free to be reused;
-        this.retrieveNewStream.update(this.streams);
+        this.retrieveNewStream.update(this.devicesManager.getCurrentGPU());
     }
 
     void cleanupNewStreamRetrieval() {
@@ -122,11 +124,7 @@ public class GrCUDAStreamPolicy {
      * Obtain the number of streams created so far;
      */
     public int getNumberOfStreams() {
-        return this.streams.size();
-    }
-
-    public List<CUDAStream> getStreams() {
-        return streams;
+        return this.totalNumberOfStreams;
     }
 
     public GrCUDADevicesManager getDevicesManager() {
@@ -138,8 +136,7 @@ public class GrCUDAStreamPolicy {
      */
     public void cleanup() {
         this.cleanupNewStreamRetrieval();
-        streams.forEach(runtime::cudaStreamDestroy);
-        streams.clear();
+        this.devicesManager.cleanup();
     }
     
     ////////////////////////////////////////////////
@@ -152,7 +149,7 @@ public class GrCUDAStreamPolicy {
     private class AlwaysNewRetrieveStream extends RetrieveNewStream {
 
         @Override
-        public CUDAStream retrieve() {
+        public CUDAStream retrieve(Device currentDevice) {
             return createStream();
         }
     }
@@ -162,31 +159,23 @@ public class GrCUDAStreamPolicy {
      */
     private class FifoRetrieveStream extends RetrieveNewStream {
 
-        /**
-         * Keep a set of the free available streams;
-         */
-        private final Set<CUDAStream> uniqueFreeStreams = new HashSet<>();
-
         @Override
-        void update(CUDAStream stream) {
-            uniqueFreeStreams.add(stream);
+        void update(Device currentDevice, CUDAStream stream) {
+            currentDevice.updateFreeStreams(stream);
         }
 
         @Override
-        void update(Collection<CUDAStream> streams) {
-            uniqueFreeStreams.addAll(streams);
+        void update(Device currentDevice) {
+            currentDevice.updateFreeStreams();
         }
 
         @Override
-        CUDAStream retrieve() {
-            if (uniqueFreeStreams.isEmpty()) {
+        CUDAStream retrieve(Device currentDevice) {
+            if (currentDevice.getNumberOfFreeStreams() == 0) {
                 // Create a new stream if none is available;
                 return createStream();
             } else {
-                // Get the first stream available, and remove it from the list of free streams;
-                CUDAStream stream = uniqueFreeStreams.iterator().next();
-                uniqueFreeStreams.remove(stream);
-                return stream;
+                return currentDevice.getFreeStream();
             }
         }
     }
@@ -197,7 +186,7 @@ public class GrCUDAStreamPolicy {
     private static class SameAsParentRetrieveParentStream extends RetrieveParentStream {
 
         @Override
-        public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+        public CUDAStream retrieve(Device currentDevice, ExecutionDAG.DAGVertex vertex) {
             return vertex.getParentComputations().get(0).getStream();
         }
     }
@@ -221,7 +210,7 @@ public class GrCUDAStreamPolicy {
         }
 
         @Override
-        public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+        public CUDAStream retrieve(Device currentDevice, ExecutionDAG.DAGVertex vertex) {
             // Keep only parent vertices for which we haven't reused the stream yet;
             List<ExecutionDAG.DAGVertex> availableParents = vertex.getParentVertices().stream()
                     .filter(v -> !reusedComputations.contains(v))
@@ -235,7 +224,7 @@ public class GrCUDAStreamPolicy {
             } else {
                 // If no parent stream can be reused, provide a new stream to this computation
                 //   (or possibly a free one, depending on the policy);
-                return retrieveNewStream.retrieve();
+                return retrieveNewStream.retrieve(currentDevice);
             }
         }
     }

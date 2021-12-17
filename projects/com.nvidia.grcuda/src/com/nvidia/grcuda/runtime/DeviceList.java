@@ -35,6 +35,7 @@
  */
 package com.nvidia.grcuda.runtime;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -89,6 +90,13 @@ public class DeviceList implements TruffleObject, Iterable<Device> {
             throw new IndexOutOfBoundsException();
         }
         return devices[deviceOrdinal];
+    }
+
+    /**
+     * Cleanup and deallocate the streams managed by each device;
+     */
+    public void cleanup() {
+        Arrays.stream(this.devices).forEach(Device::cleanup);
     }
 
     @Override

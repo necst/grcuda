@@ -1,5 +1,6 @@
 package com.nvidia.grcuda.test.util.mock;
 
+import com.nvidia.grcuda.runtime.GrCUDADevicesManager;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
@@ -9,7 +10,7 @@ public class GrCUDAStreamPolicyMock extends GrCUDAStreamPolicy {
     private int streamCount;
 
     public GrCUDAStreamPolicyMock(RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum, RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum) {
-        super(null, null, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum);
+        super(new GrCUDADevicesManagerMock(), retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum);
     }
 
     @Override
