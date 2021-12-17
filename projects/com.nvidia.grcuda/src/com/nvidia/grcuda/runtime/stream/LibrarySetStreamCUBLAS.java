@@ -1,32 +1,32 @@
 package com.nvidia.grcuda.runtime.stream;
 
+import static com.nvidia.grcuda.functions.Function.INTEROP;
+
 import com.nvidia.grcuda.functions.Function;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
-import static com.nvidia.grcuda.functions.Function.INTEROP;
-
 /**
- * Class of functions to manage streams in the CUML library
+ * Class of functions to manage streams in the CUBLAS library
  */
 
-public class CUMLSetStreamFunction extends LibrarySetStreamFunction {
+public class LibrarySetStreamCUBLAS extends LibrarySetStream {
 
     private final long handle;
 
-    public CUMLSetStreamFunction(Function setStreamFunctionNFI, long handle) {
+    public LibrarySetStreamCUBLAS(Function setStreamFunctionNFI, long handle) {
         super(setStreamFunctionNFI);
         this.handle = handle;
     }
 
     @Override
     public void setStream(CUDAStream stream) {
-        Object[] cumlSetStreamArgs = {this.handle, stream.getRawPointer()};
+        Object[] cublasSetStreamArgs = {this.handle, stream.getRawPointer()};
         try {
-            INTEROP.execute(this.setStreamFunctionNFI, cumlSetStreamArgs);
+            INTEROP.execute(this.setStreamFunctionNFI, cublasSetStreamArgs);
         } catch (ArityException | UnsupportedTypeException | UnsupportedMessageException e) {
-            System.out.println("failed to set CUML stream");
+            System.out.println("failed to set CUBLAS stream");
             e.printStackTrace();
         }
     }

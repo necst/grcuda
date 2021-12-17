@@ -227,7 +227,7 @@ public class GrCUDAOptionMap implements TruffleObject {
     public Boolean isInputPrefetch(){
         return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.InputPrefetch);
     }
-
+    
     public Boolean isTimeComputation() { return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.EnableComputationTimers); }
 
     public Boolean isTensorRTEnabled(){

@@ -136,9 +136,13 @@ public final class GrCUDAContext {
             }
         }
         if (grCUDAOptionMap.isCuBLASEnabled()) {
+            if (this.getCUDARuntime().isArchitectureIsPascalOrNewer() || executionPolicy.equals(ExecutionPolicyEnum.SYNC)) {
                 Namespace blas = new Namespace(CUBLASRegistry.NAMESPACE);
                 namespace.addNamespace(blas);
                 new CUBLASRegistry(this).registerCUBLASFunctions(blas);
+            } else {
+                LOGGER.warning("cuBLAS with asynchronous scheduler is supported only on GPUs with compute capability >= 6.0 (Pascal and newer). It cannot be enabled.");
+            }
         }
         if (grCUDAOptionMap.isTensorRTEnabled()) {
             Namespace trt = new Namespace(TensorRTRegistry.NAMESPACE);

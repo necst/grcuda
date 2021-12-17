@@ -75,13 +75,14 @@ public class GrCUDATestUtil {
                 {DependencyPolicyEnum.NO_CONST, DependencyPolicyEnum.WITH_CONST},
                 {true, false},  // ForceStreamAttach
                 {true, false},  // With and without timing of kernels
+                {1},            // Number of GPUs
         }));
         List<Object[]> combinations = new ArrayList<>();
         options.forEach(optionArray -> {
             GrCUDATestOptionsStruct newStruct = new GrCUDATestOptionsStruct(
                     (ExecutionPolicyEnum) optionArray[0], (boolean) optionArray[1],
                     (RetrieveNewStreamPolicyEnum) optionArray[2], (RetrieveParentStreamPolicyEnum) optionArray[3],
-                    (DependencyPolicyEnum) optionArray[4], (boolean) optionArray[5], (boolean) optionArray[6]);
+                    (DependencyPolicyEnum) optionArray[4], (boolean) optionArray[5], (boolean) optionArray[6], (int) optionArray[7]);
             if (!isOptionRedundantForSync(newStruct)) {
                 combinations.add(new GrCUDATestOptionsStruct[]{newStruct});
             }
@@ -91,7 +92,7 @@ public class GrCUDATestUtil {
         return combinations;
     }
 
-    public static Context createContextFromOptions(GrCUDATestOptionsStruct options) {
+    public static Context createContextFromOptions(GrCUDATestOptionsStruct options, int numberOfGPUs) {
         return buildTestContext()
                 .option("grcuda.ExecutionPolicy", options.policy.toString())
                 .option("grcuda.InputPrefetch", String.valueOf(options.inputPrefetch))
@@ -100,13 +101,18 @@ public class GrCUDATestUtil {
                 .option("grcuda.DependencyPolicy", options.dependencyPolicy.toString())
                 .option("grcuda.ForceStreamAttach", String.valueOf(options.forceStreamAttach))
                 .option("grcuda.EnableComputationTimers", String.valueOf(options.timeComputation))
+                .option("grcuda.NumberOfGPUs", String.valueOf(numberOfGPUs))
                 .build();
+    }
+
+    public static Context createContextFromOptions(GrCUDATestOptionsStruct options) {
+        return GrCUDATestUtil.createContextFromOptions(options, options.numberOfGPUs);
     }
 
     public static Context.Builder buildTestContext() {
         return Context.newBuilder().allowAllAccess(true).allowExperimentalOptions(true).logHandler(new TestLogHandler())
                 .option("log.grcuda.com.nvidia.grcuda.level", "WARNING")
-//                .option("log.grcuda." + GrCUDALogger.STREAM_LOGGER + ".level", "INFO")  // Uncomment to print kernel log;
+//                .option("log.grcuda." + GrCUDALogger.COMPUTATION_LOGGER + ".level", "FINE")  // Uncomment to print kernel log;
                 ;
     }
 
