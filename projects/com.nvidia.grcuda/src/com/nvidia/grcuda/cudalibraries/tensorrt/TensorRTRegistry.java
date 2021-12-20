@@ -144,10 +144,10 @@ public class TensorRTRegistry {
                 @TruffleBoundary
                 public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
                     checkArgumentLength(arguments, 2);
-                    int param1 = expectInt(arguments[0]);
-                    String param2 = expectString(arguments[1],"wrong parameter");
+                    long blob = expectLong(arguments[0]);
+                    int size = expectInt(arguments[1]);
                     try {
-                        Object result = INTEROP.execute(tensorRTDeserializeCudaEngineNFI, param1, param2);
+                        Object result = INTEROP.execute(tensorRTDeserializeCudaEngineNFI, blob, size);
                         checkTRTReturnCode(result, "deserializeCudaEngine");
                         return result;
                     } catch (InteropException e) {
@@ -348,10 +348,10 @@ public class TensorRTRegistry {
 
     public enum TensorRTFunctionNFI {
         TRT_CREATE_INFER_RUNTIME(
-                        new ExternalFunctionFactory("createInferRuntime", "createInferRuntime", "(): sint32"),
+                        new ExternalFunctionFactory("createInferRuntime", "createInferRuntime", "(): sint64"),
                         true),
         TRT_DESERIALIZE_CUDA_ENGINE(
-                        new ExternalFunctionFactory("deserializeCudaEngine", "deserializeCudaEngine", "(sint32, string): sint32"),
+                        new ExternalFunctionFactory("deserializeCudaEngine", "deserializeCudaEngine", "(sint64, sint32): sint32"),
                         true),
         TRT_DESTROY_INFER_RUNTIME(
                         new ExternalFunctionFactory("destroyInferRuntime", "destroyInferRuntime", "(sint32): sint32"),
@@ -448,15 +448,10 @@ public class TensorRTRegistry {
     class EnqueueFunction extends Function {
         private final ExternalFunctionFactory factory;
         private Function nfiFunction;
-        private TensorRTSetStreamFunction tensorRTSetStreamFunction;
 
         protected EnqueueFunction(ExternalFunctionFactory factory) {
             super(factory.getName());
             this.factory = factory;
-        }
-
-        public void setTensorRTSetStreamFunction (TensorRTSetStreamFunction tensorRTSetStreamFunction){
-            this.tensorRTSetStreamFunction = tensorRTSetStreamFunction;
         }
 
         public Function registerTensorRTEnqueueFunction(){
@@ -493,7 +488,10 @@ public class TensorRTRegistry {
                         }
                         long stream = 0;
                         long eventConsumed = 0;
-                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, tensorRTSetStreamFunction, this.createComputationArgumentWithoutHandle(arguments)).schedule();
+
+                        Object[] computationalArgumentArgs = new Object[]{engineHandle, batchSize, pointerArray.getAddress(), stream, eventConsumed};
+
+                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, tensorRTLibrarySetStreamFunction, this.createComputationArgumentWithoutHandle(computationalArgumentArgs)).schedule();
                         if (!INTEROP.fitsInInt(result)) {
                             CompilerDirectives.transferToInterpreter();
                             throw new RuntimeException("result of 'enqueue' is not an int");

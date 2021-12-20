@@ -74,7 +74,11 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
         // Execution happens on the default stream;
         Object result = null;
         try {
-            this.setStreamFunctionNFI.setStream(this.getStream());
+            if(this.nfiFunction.getName().contains("enqueue"))
+                argsWithHandle[3] = this.getStream().getRawPointer();
+            else
+                this.setStreamFunctionNFI.setStream(this.getStream());
+
             result = INTEROP.execute(this.nfiFunction, this.argsWithHandle);
         } catch (ArityException | UnsupportedMessageException e) {
             GrCUDALogger.getLogger(GrCUDALogger.COMPUTATION_LOGGER).severe("error in execution of the function");

@@ -88,7 +88,7 @@ public abstract class CUDALibraryFunction extends Function {
         ArrayList<ComputationArgumentWithValue> argumentsWithValue = new ArrayList<>();
         // Set the other arguments;
         for (int i = 0; i < args.length; i++) {
-            argumentsWithValue.add(new ComputationArgumentWithValue(this.computationArguments.get(i + 1), args[i]));
+            argumentsWithValue.add(new ComputationArgumentWithValue(this.computationArguments.get(i), args[i]));
         }
         return argumentsWithValue;
     }
