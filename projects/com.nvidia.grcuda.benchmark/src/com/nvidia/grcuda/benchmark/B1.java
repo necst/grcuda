@@ -1,14 +1,10 @@
 package com.nvidia.grcuda.benchmark;
 
 import org.graalvm.polyglot.Value;
-import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.Theories;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(Theories.class)
-public class BenchmarkB1 extends Benchmark {
+public class B1 extends Benchmark {
 
     private static final String SQUARE_KERNEL =
             "extern \"C\" __global__ void square(float* x, float* y, int n) { \n" +
@@ -46,7 +42,7 @@ public class BenchmarkB1 extends Benchmark {
             "}";
 
 
-    protected final String benchmarkName = "B1";
+    private static final String BENCHMARK_NAME = "B1";
 
     private Value squareKernelFunction;
     private Value diffKernelFunction;
@@ -54,37 +50,30 @@ public class BenchmarkB1 extends Benchmark {
 
     private Value x, x1, y, y1, res;
 
-
-
-    @DataPoints
-    public static int[] iterations() {
-        return Benchmark.iterations();
-    }
-
     @Override
-    public void init() {
+    public void initializeTest(int iteration) {
         // Context initialization
-        Value buildkernel = this.getGrcudaContext().eval("grcuda", "buildkernel");
+        Value buildKernel = this.getContext().eval("grcuda", "buildkernel");
 
         // Kernel build
-        squareKernelFunction = buildkernel.execute(SQUARE_KERNEL, "square", "pointer, pointer, sint32");
-        diffKernelFunction = buildkernel.execute(DIFF_KERNEL, "diff", "const pointer, const pointer, pointer, sint32");
-        reduceKernelFunction = buildkernel.execute(REDUCE_KERNEL, "reduce", "pointer, pointer, pointer, sint32");
+        squareKernelFunction = buildKernel.execute(SQUARE_KERNEL, "square", "pointer, pointer, sint32");
+        diffKernelFunction = buildKernel.execute(DIFF_KERNEL, "diff", "const pointer, const pointer, pointer, sint32");
+        reduceKernelFunction = buildKernel.execute(REDUCE_KERNEL, "reduce", "pointer, pointer, pointer, sint32");
 
         // Array initialization
-        Value deviceArray = this.getGrcudaContext().eval("grcuda", "DeviceArray");
-        x = deviceArray.execute("float", TEST_SIZE);
-        x1 = deviceArray.execute("float", TEST_SIZE);
-        y = deviceArray.execute("float", TEST_SIZE);
-        y1 = deviceArray.execute("float", TEST_SIZE);
+        Value deviceArray = this.getContext().eval("grcuda", "DeviceArray");
+        x = deviceArray.execute("float", getTestSize());
+        x1 = deviceArray.execute("float", getTestSize());
+        y = deviceArray.execute("float", getTestSize());
+        y1 = deviceArray.execute("float", getTestSize());
         res = deviceArray.execute("float", 1);
 
     }
 
     @Override
-    public void resetIteration() {
-        assert(!randomInit);
-        for (int i = 0; i < TEST_SIZE; i++) {
+    public void resetIteration(int iteration) {
+        assert (!config.randomInit);
+        for (int i = 0; i < getTestSize(); i++) {
             x.setArrayElement(i, 1.0f / (i + 1));
             y.setArrayElement(i, 2.0f / (i + 1));
         }
@@ -95,35 +84,34 @@ public class BenchmarkB1 extends Benchmark {
     public void runTest(int iteration) {
 
         squareKernelFunction
-                .execute(NUM_BLOCKS, NUM_THREADS) // Set parameters
-                .execute(x, x1, TEST_SIZE); // Execute actual kernel
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(x, x1, getTestSize()); // Execute actual kernel
 
         squareKernelFunction
-                .execute(NUM_BLOCKS, NUM_THREADS) // Set parameters
-                .execute(y, y1, TEST_SIZE); // Execute actual kernel
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(y, y1, getTestSize()); // Execute actual kernel
 
         reduceKernelFunction
-                .execute(NUM_BLOCKS, NUM_THREADS) // Set parameters
-                .execute(x1, y1, res, TEST_SIZE); // Execute actual kernel
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(x1, y1, res, getTestSize()); // Execute actual kernel
 
     }
 
 
-
     @Override
     protected void cpuValidation() {
-        assert(!randomInit);
+        assert (!config.randomInit);
 
-        float[] xHost = new float[TEST_SIZE];
-        float[] yHost = new float[TEST_SIZE];
-        float[] resHostTmp = new float[TEST_SIZE];
-        for (int i = 0; i < TEST_SIZE; i++) {
+        float[] xHost = new float[getTestSize()];
+        float[] yHost = new float[getTestSize()];
+        float[] resHostTmp = new float[getTestSize()];
+        for (int i = 0; i < getTestSize(); i++) {
             xHost[i] = 1.0f / (i + 1);
             yHost[i] = 2.0f / (i + 1);
             resHostTmp[i] = 0.0f;
         }
 
-        for (int i = 0; i < TEST_SIZE; i++) {
+        for (int i = 0; i < getTestSize(); i++) {
             float xHostTmp = xHost[i] * xHost[i];
             float yHostTmp = yHost[i] * yHost[i];
             resHostTmp[i] = xHostTmp - yHostTmp;
@@ -131,17 +119,12 @@ public class BenchmarkB1 extends Benchmark {
 
         float acc = 0.0f;
 
-        for(int i = 0; i < TEST_SIZE; i++){
+        for (int i = 0; i < getTestSize(); i++) {
             acc += resHostTmp[i];
         }
 
         assertEquals(res.getArrayElement(0).asFloat(), acc, 1e-5);
 
-    }
-
-    @Override
-    public String getBenchmarkName() {
-        return benchmarkName;
     }
 
 }
