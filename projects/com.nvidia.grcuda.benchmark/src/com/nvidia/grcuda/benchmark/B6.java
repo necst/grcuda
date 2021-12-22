@@ -132,7 +132,18 @@ public class BenchmarkB6 extends Benchmark{
     private Value softMax;
     private Value argMax;
 
+    private Value xCpu;
+    private Value nbFeatLogProbCpu;
+    private Value ridgeCoeffCpu;
+    private Value nbClassLogPriorCpu;
+    private Value ridgeInterceptCpu;
+    private Value r1Cpu;
+    private Value r2Cpu;
+
     private Value x, z, nbFeatLogProb, nbClassLogPrior, ridgeCoeff, ridgeIntercept, nbAMax, nbL, r1, r2, r;
+
+    private int numClasses;
+    private int numFeatures;
 
     @DataPoints
     public static int[] iterations() {
@@ -141,6 +152,10 @@ public class BenchmarkB6 extends Benchmark{
 
     @Override
     public void init() {
+
+        numClasses = 10;
+        numFeatures = 200;
+
         // Context initialization
         Value buildkernel = this.getGrcudaContext().eval("grcuda", "buildkernel");
 
@@ -159,21 +174,85 @@ public class BenchmarkB6 extends Benchmark{
 
         // Array initialization
         Value deviceArray = this.getGrcudaContext().eval("grcuda", "DeviceArray");
-        x = deviceArray.execute("float", (TEST_SIZE *  ));  //TODO: should be multiplied by number of features of x, understand how to define it
-        z = deviceArray.execute("float", (TEST_SIZE * ));
+        x = deviceArray.execute("float", (TEST_SIZE * numFeatures));
+        z = deviceArray.execute("float", (TEST_SIZE * numFeatures));
 
-        nbFeatLogProb = deviceArray.execute("float", ); //TODO: define number of classes, number of features
-        nbClassLogPrior = deviceArray.execute("float", );
-        ridgeCoeff = deviceArray.execute("float", );
-        ridgeIntercept = deviceArray.execute(;
+        nbFeatLogProb = deviceArray.execute("float", numClasses * numFeatures);
+        nbClassLogPrior = deviceArray.execute("float", numClasses);
+        ridgeCoeff = deviceArray.execute("float", numClasses * numFeatures);
+        ridgeIntercept = deviceArray.execute("float", numClasses);
 
         nbAMax = deviceArray.execute("float",TEST_SIZE);
         nbL = deviceArray.execute("float",TEST_SIZE);
 
-        r1 = deviceArray.execute("float",TEST_SIZE * ); //TODO: define number of classes
-        r2 = deviceArray.execute("float",TEST_SIZE * );
+        r1 = deviceArray.execute("float",TEST_SIZE * numClasses);
+        r2 = deviceArray.execute("float",TEST_SIZE * numClasses);
         r = deviceArray.execute("float",TEST_SIZE);
     }
 
-    
+    @Override
+    public void resetIteration(int iteration) {
+        assert (!config.randomInit);
+        for (int i = 0; i < getTestSize(); i++) {
+            for (int j = 0; j < numClasses; j++) {
+                r1.setArrayElement(i * numClasses + j, nbClassLogPrior[j]); //TODO: how to pick j element of nbClassLogPrior
+                r2.setArrayElement(i * numClasses +j, 0);
+            }
+        }
+    }
+
+    @Override
+    public void runTest(int iteration) {
+
+        //RR - 1
+        rr1
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(x, z, getTestSize(), numFeatures); // Execute actual kernel
+
+        //NB - 1
+        nb1
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(x, nbFeatLogProb, r1, getTestSize(), numFeatures, numClasses); // Execute actual kernel
+
+        //RR - 2
+        rr2
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(r1, ridgeCoeff, r2, getTestSize(), numFeatures, numClasses); // Execute actual kernel
+
+        //NB - 2
+        nb2
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(r1, nbAMax, getTestSize(), numClasses); // Execute actual kernel
+
+        //RR - 3
+        rr3
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(r2, ridgeIntercept, getTestSize(), numClasses); // Execute actual kernel
+
+        //NB - 3
+        nb3
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(r1, nbAMax, nbL, getTestSize(), numClasses); // Execute actual kernel
+
+        //NB - 4
+        nb4
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(r1, nbL, getTestSize(), numClasses); // Execute actual kernel
+
+        //Ensemble results;
+
+        //Softmax normalization;
+        softMax
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(r1, getTestSize(), numClasses); // Execute actual kernel
+        softMax
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(r2, getTestSize(), numClasses); // Execute actual kernel
+
+        //Prediction;
+        argMax
+                .execute(config.blocks, config.threadsPerBlock) // Set parameters
+                .execute(r1, r2, r, getTestSize(), numClasses); // Execute actual kernel
+
+    }
 }
