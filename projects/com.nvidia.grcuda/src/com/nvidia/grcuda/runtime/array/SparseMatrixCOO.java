@@ -156,18 +156,6 @@ public class SparseMatrixCOO implements TruffleObject {
 
     @ExportMessage
     @SuppressWarnings("static-method")
-    boolean isArrayElementModifiable(long index) {
-        return !matrixFreed && index >= 0 && index < values.getArraySize();
-    }
-
-    @ExportMessage
-    @SuppressWarnings("static-method")
-    boolean isArrayElementReadable(long index) {
-        return !matrixFreed && isArrayElementModifiable(index);
-    }
-
-    @ExportMessage
-    @SuppressWarnings("static-method")
     boolean hasMembers() {
         return true;
     }
@@ -178,11 +166,6 @@ public class SparseMatrixCOO implements TruffleObject {
         return MEMBERS;
     }
 
-    @SuppressWarnings("static-method")
-    @ExportMessage
-    boolean isArrayElementInsertable(@SuppressWarnings("unused") long index) {
-        return false;
-    }
 
     @ExportMessage
     final boolean hasArrayElements() {
@@ -229,23 +212,6 @@ public class SparseMatrixCOO implements TruffleObject {
         throw UnknownIdentifierException.create(memberName);
     }
 
-    @ExportMessage
-    final void writeArrayElement(@SuppressWarnings("unused") long index, @SuppressWarnings("unused") Object value) throws GrCUDAException {
-        throw new GrCUDAException(UNSUPPORTED_WRITE_ON_SPARSE_DS);
-    }
-
-    @ExportMessage
-    final Object readArrayElement(@SuppressWarnings("unused") long index) throws GrCUDAException, InvalidArrayIndexException, UnsupportedMessageException {
-        long row = index/dimCols;
-        long col = index%dimCols;
-        for(int i = 0; i < values.getArraySize(); i++){
-            if((row == (long) rowIndices.readArrayElement(i))&&(col == (long) colIndices.readArrayElement(i))){
-//                return values.readArrayElement(i);
-            }
-        }
-        return 0;
-//        throw new GrCUDAException(UNSUPPORTED_DIRECT_READ_ON_SPARSE_DS);
-    }
 
     @ExportMessage
     @SuppressWarnings("static-method")
