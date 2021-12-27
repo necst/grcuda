@@ -31,6 +31,7 @@
 package com.nvidia.grcuda.test.util.mock;
 
 import com.nvidia.grcuda.runtime.CUDARuntime;
+import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
@@ -38,26 +39,48 @@ import com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
+
+    /**
+     * Static number of fake GPU streams, as we don't have access to the CUDA runtime in the mocked class hierarchy;
+     */
+    public static int numUserAllocatedStreams = 0;
+
+    GrCUDAStreamManagerMock(CUDARuntime runtime) {
+        this(runtime, RetrieveNewStreamPolicyEnum.ALWAYS_NEW,  RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, 1);
+    }
 
     GrCUDAStreamManagerMock(CUDARuntime runtime,
                             RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
                             RetrieveParentStreamPolicyEnum parentStreamPolicy) {
-        super(runtime, false, new GrCUDAStreamPolicyMock(retrieveStreamPolicy, parentStreamPolicy));
+        this(runtime, retrieveStreamPolicy, parentStreamPolicy, 1);
     }
 
-    GrCUDAStreamManagerMock(CUDARuntime runtime) {
-        super(runtime, false, new GrCUDAStreamPolicyMock(RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT));
+    GrCUDAStreamManagerMock(CUDARuntime runtime,
+                            RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
+                            RetrieveParentStreamPolicyEnum parentStreamPolicy,
+                            int numberOfAvailableGPUs) {
+        // Use all the available GPUs;
+        this(runtime, retrieveStreamPolicy, parentStreamPolicy, numberOfAvailableGPUs, numberOfAvailableGPUs);
     }
 
-    public List<CUDAStream> getStreams() {
-        return this.streamPolicy.getStreams();
+    GrCUDAStreamManagerMock(CUDARuntime runtime,
+                            RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
+                            RetrieveParentStreamPolicyEnum parentStreamPolicy,
+                            int numberOfAvailableGPUs,
+                            int numberOfGPUsToUse) {
+        // Possibly use a number of GPUs lower than the number of available GPUs;
+        super(runtime, false, new GrCUDAStreamPolicyMock(retrieveStreamPolicy, parentStreamPolicy, numberOfAvailableGPUs, numberOfGPUsToUse));
+        // Reset the number of streams;
+        numUserAllocatedStreams = 0;
     }
 
     @Override
@@ -79,6 +102,16 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
 
     @Override
     protected void syncDevice() { }
+
+    /**
+     * Return all the streams allocated on every device;
+     * @return all the streams that have been created
+     */
+    public List<CUDAStream> getStreams() {
+        List<CUDAStream> allStreams = new ArrayList<>();
+        this.getStreamPolicy().getDevicesManager().getDeviceList().forEach(d -> allStreams.addAll(d.getStreams()));
+        return allStreams;
+    }
 
     public Map<CUDAStream, Set<GrCUDAComputationalElement>> getActiveComputationsMap() {
         Map<CUDAStream, Set<GrCUDAComputationalElement>> activeComputations = new HashMap<>();

@@ -41,22 +41,21 @@ import java.util.Collection;
  * For example, it could create a new stream or provide an existing stream that is currently not used;
  */
 public abstract class RetrieveNewStream {
-    abstract CUDAStream retrieve(Device device);
+    abstract CUDAStream retrieve();
 
     /**
-     * Initialize the class with the provided stream,
-     * for example a new stream that can be provided by {@link RetrieveNewStream#retrieve(Device device)}
-     * @param device the device for which we want to update the stream status
+     * Initialize the class with the provided stream on the currently active GPU,
+     * for example a new stream that can be provided by {@link RetrieveNewStream#retrieve()}
      * @param stream a stream that should be associated to the class
      */
-    void update(Device device, CUDAStream stream) { }
+    void update(CUDAStream stream) { }
 
     /**
-     * Initialize the class with the provided streams,
-     * for example new streams that can be provided by {@link RetrieveNewStream#retrieve(Device device)}
+     * Initialize the class with the provided streams on the currently active GPU,
+     * for example new streams that can be provided by {@link RetrieveNewStream#retrieve()}
      * @param device the device for which we want to update the stream status
      */
-    void update(Device device) { }
+    void update() { }
 
     /**
      * Cleanup the internal state of the class, if required;

@@ -74,11 +74,11 @@ public class Device extends AbstractDevice implements TruffleObject {
     /**
      * List of streams associated to this device;
      */
-    private List<CUDAStream> streams;
+    private final List<CUDAStream> streams;
     /**
      * Keep a set of the free available streams;
      */
-    private final Set<CUDAStream> freeStreams = new HashSet<>();
+    protected final Set<CUDAStream> freeStreams = new HashSet<>();
 
     public Device(int deviceId, CUDARuntime runtime) {
         super(deviceId);
@@ -146,6 +146,13 @@ public class Device extends AbstractDevice implements TruffleObject {
 
     public int getDeviceId() {
         return deviceId;
+    }
+
+    /**
+     * @return the list of streams associated to this device;
+     */
+    public List<CUDAStream> getStreams() {
+        return streams;
     }
 
     /**

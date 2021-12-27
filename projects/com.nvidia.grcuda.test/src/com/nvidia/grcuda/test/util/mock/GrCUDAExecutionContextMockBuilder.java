@@ -40,9 +40,11 @@ public class GrCUDAExecutionContextMockBuilder {
     RetrieveNewStreamPolicyEnum retrieveStreamPolicy = RetrieveNewStreamPolicyEnum.REUSE;
     RetrieveParentStreamPolicyEnum parentStreamPolicyEnum = RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
     boolean isArchitecturePascalOrNewer = true;
+    int numberOfAvailableGPUs = 1;
+    int numberOfGPUsToUse = 1;
 
     public AsyncGrCUDAExecutionContextMock build() {
-        return new AsyncGrCUDAExecutionContextMock(dependencyPolicy, retrieveStreamPolicy, parentStreamPolicyEnum, isArchitecturePascalOrNewer);
+        return new AsyncGrCUDAExecutionContextMock(dependencyPolicy, retrieveStreamPolicy, parentStreamPolicyEnum, isArchitecturePascalOrNewer, numberOfAvailableGPUs, numberOfGPUsToUse);
     }
 
     public GrCUDAExecutionContextMockBuilder setDependencyPolicy(DependencyPolicyEnum dependencyPolicy) {
@@ -62,6 +64,16 @@ public class GrCUDAExecutionContextMockBuilder {
 
     public GrCUDAExecutionContextMockBuilder setArchitecturePascalOrNewer(boolean isArchitecturePascalOrNewer) {
         this.isArchitecturePascalOrNewer = isArchitecturePascalOrNewer;
+        return this;
+    }
+
+    public GrCUDAExecutionContextMockBuilder setNumberOfAvailableGPUs(int numberOfAvailableGPUs) {
+        this.numberOfAvailableGPUs = numberOfAvailableGPUs;
+        return this;
+    }
+
+    public GrCUDAExecutionContextMockBuilder setNumberOfGPUsToUse(int numberOfGPUsToUse) {
+        this.numberOfGPUsToUse = numberOfGPUsToUse;
         return this;
     }
 }

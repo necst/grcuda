@@ -67,10 +67,11 @@ public class GrCUDAStreamManager {
      * Track the active computations each stream has, excluding the default stream;
      */
     protected final Map<CUDAStream, Set<ExecutionDAG.DAGVertex>> activeComputationsPerStream = new HashMap<>();
+
     /**
      * Handle for all the policies to assign streams and devices to a new computation that can run on CUDA stream;
      */
-    protected final GrCUDAStreamPolicy streamPolicy;
+    private final GrCUDAStreamPolicy streamPolicy;
     
     public GrCUDAStreamManager(CUDARuntime runtime, GrCUDAOptionMap options) {
         this(runtime,
@@ -104,14 +105,8 @@ public class GrCUDAStreamManager {
     public void assignStream(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
         if (vertex.getComputation().canUseStream()) {
-            CUDAStream stream;
-            if (vertex.isStart()) {
-                // Else, if the computation doesn't have parents, provide a new stream to it;
-                stream = this.streamPolicy.retrieveNewStream();
-            } else {
-                // Else, compute the streams used by the parent computations.
-                stream = this.streamPolicy.retrieveParentStream(vertex);
-            }
+            // Else, obtain the stream (and the GPU device) for this computation from the stream policy manager;
+            CUDAStream stream = this.streamPolicy.retrieveStream(vertex);
             // Set the stream;
             vertex.getComputation().setStream(stream);
             // Update the computation counter;
@@ -382,6 +377,10 @@ public class GrCUDAStreamManager {
 
     public Device getDevice(int deviceId) {
         return this.streamPolicy.getDevicesManager().getDevice(deviceId);
+    }
+
+    public GrCUDAStreamPolicy getStreamPolicy() {
+        return streamPolicy;
     }
 
     /**

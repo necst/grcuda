@@ -49,11 +49,18 @@ import com.oracle.truffle.api.library.ExportMessage;
 @ExportLibrary(InteropLibrary.class)
 public class DeviceList implements TruffleObject, Iterable<Device> {
 
-    private final Device[] devices;
+    protected final Device[] devices;
 
     public DeviceList(CUDARuntime runtime) {
-        int numDevices = runtime.getNumberOfAvailableGPUs();
+        this(runtime.getNumberOfAvailableGPUs(), runtime);
+    }
+
+    public DeviceList(int numDevices, CUDARuntime runtime) {
         devices = new Device[numDevices];
+        initializeDeviceList(numDevices, runtime);
+    }
+
+    public void initializeDeviceList(int numDevices, CUDARuntime runtime) {
         for (int deviceOrdinal = 0; deviceOrdinal < numDevices; ++deviceOrdinal) {
             devices[deviceOrdinal] = new Device(deviceOrdinal, runtime);
         }
