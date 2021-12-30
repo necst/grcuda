@@ -7,10 +7,7 @@ import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
-import com.nvidia.grcuda.test.util.mock.ArgumentMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
-import com.nvidia.grcuda.test.util.mock.KernelExecutionMock;
-import com.nvidia.grcuda.test.util.mock.SyncExecutionMock;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,7 +15,6 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -52,7 +48,12 @@ public class MultiGPUExecutionDAGMockTest {
         for (int i = 0; i < computations.size(); i++) {
             GrCUDAComputationalElement c = computations.get(i);
             c.schedule();
-            assertEquals(gpuScheduling.get(i).intValue(), c.getStream().getStreamDeviceId());
+            int expected = gpuScheduling.get(i);
+            int actual = c.getStream().getStreamDeviceId();
+            if (expected != actual) {
+                System.out.println("wrong GPU allocation for " + c + "; expected=" + expected + "; actual=" + actual);
+            }
+            assertEquals(expected, actual);
         }
     }
 
@@ -133,10 +134,13 @@ public class MultiGPUExecutionDAGMockTest {
         assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getDevice(0).getStreams().size());
     }
 
+    // Test the STREAM_AWARE policy on 2 and 3 GPUs, on the image pipeline and HITS DAGs.
+    // In each case, validate the mapping of each computation on the right GPUs,
+    // and the total number of streams created;
+
     @Test
     public void lessBusyWithTwoGPUImageTest() throws UnsupportedTypeException {
         int numGPU = 2;
-        // Test that no matter how many GPU we have, the STREAM_AWARE policy with just 1 GPU always selects the number 0;
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
                 .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
@@ -155,7 +159,6 @@ public class MultiGPUExecutionDAGMockTest {
     @Test
     public void lessBusyWithThreeGPUImageTest() throws UnsupportedTypeException {
         int numGPU = 3;
-        // Test that no matter how many GPU we have, the STREAM_AWARE policy with just 1 GPU always selects the number 0;
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
                 .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
@@ -169,5 +172,34 @@ public class MultiGPUExecutionDAGMockTest {
                         2, 0,
                         2, 2, 1, 0, 0));
         assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void lessBusyWithTwoGPUHitsTest() throws UnsupportedTypeException {
+        int numGPU = 2;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.STREAM_AWARE)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        executeMockComputationAndValidate(ComplexExecutionDAGMockTest.hitsMockComputation(context),
+                Arrays.asList(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0));
+        assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void lessBusyWithThreeGPUHitsTest() throws UnsupportedTypeException {
+        int numGPU = 3;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.STREAM_AWARE)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        // Same as 2 GPUs, it never makes sense to use the 3rd GPU;
+        executeMockComputationAndValidate(ComplexExecutionDAGMockTest.hitsMockComputation(context),
+                Arrays.asList(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0));
+        assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
     }
 }

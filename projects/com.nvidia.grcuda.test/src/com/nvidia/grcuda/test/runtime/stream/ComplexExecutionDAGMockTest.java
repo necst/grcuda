@@ -148,9 +148,13 @@ public class ComplexExecutionDAGMockTest {
         }
     }
 
+    // 0: K0(1c, 2) -> 2: K3(2c, 5) -> 4: K5(2c, 5c, 3) -> Repeat -> S(3)
+    //              \--------------\/
+    //              /--------------/\
+    // 1: K1(3c, 4) -> 3: K4(4c, 6) -> 5: K6(4c, 6c, 1) -> Repeat -> S(1)
     public static List<GrCUDAComputationalElement> hitsMockComputation(AsyncGrCUDAExecutionContext context) {
         List<GrCUDAComputationalElement> computations = new ArrayList<>();
-        int numIterations = 10;
+        int numIterations = 2;
         for (int i = 0; i < numIterations; i++) {
             // hub1 -> auth2
             computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(2))));
