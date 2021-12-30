@@ -200,7 +200,7 @@ public class GrCUDAStreamPolicy {
     private class AlwaysNewRetrieveStreamPolicy extends RetrieveNewStreamPolicy {
 
         AlwaysNewRetrieveStreamPolicy(DeviceSelectionPolicy deviceSelectionPolicy) {
-            super(deviceSelectionPolicy);
+            super(deviceSelectionPolicy, GrCUDAStreamPolicy.this.devicesManager);
         }
 
         @Override
@@ -215,19 +215,7 @@ public class GrCUDAStreamPolicy {
     private class ReuseRetrieveStreamPolicy extends RetrieveNewStreamPolicy {
 
         ReuseRetrieveStreamPolicy(DeviceSelectionPolicy deviceSelectionPolicy) {
-            super(deviceSelectionPolicy);
-        }
-
-        @Override
-        void update(CUDAStream stream) {
-            // Free a stream with respect to its device;
-            devicesManager.getDevice(stream.getStreamDeviceId()).updateFreeStreams(stream);
-        }
-
-        @Override
-        void update() {
-            // Free all streams on all devices;
-            devicesManager.getDeviceList().forEach(Device::updateFreeStreams);
+            super(deviceSelectionPolicy, GrCUDAStreamPolicy.this.devicesManager);
         }
 
         @Override

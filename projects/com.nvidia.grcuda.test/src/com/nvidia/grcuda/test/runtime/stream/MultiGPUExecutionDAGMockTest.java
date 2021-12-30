@@ -7,7 +7,9 @@ import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
+import com.nvidia.grcuda.test.util.mock.ArgumentMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
+import com.nvidia.grcuda.test.util.mock.KernelExecutionMock;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,6 +17,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -51,10 +54,40 @@ public class MultiGPUExecutionDAGMockTest {
             int expected = gpuScheduling.get(i);
             int actual = c.getStream().getStreamDeviceId();
             if (expected != actual) {
-                System.out.println("wrong GPU allocation for " + c + "; expected=" + expected + "; actual=" + actual);
+                System.out.println("wrong GPU allocation for kernel " + i + "=" + c + "; expected=" + expected + "; actual=" + actual);
             }
             assertEquals(expected, actual);
         }
+    }
+
+    // K0 -> K4 -> K8 ---> K10
+    // K1 -> K5 /     \--> K11
+    // K2 -> K6 -> K9 -\-> K12
+    // K3 -> K7 /------\-> K13
+    public static List<GrCUDAComputationalElement> manyKernelsMockComputation(AsyncGrCUDAExecutionContext context) {
+        return Arrays.asList(
+            new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))),
+            new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))),
+            new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(3))),
+            new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(4))),
+
+            new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))),
+            new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))),
+            new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(3))),
+            new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(4))),
+
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1), new ArgumentMock(2))),
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(3), new ArgumentMock(4))),
+
+            new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1, true))),
+            // When using stream-aware and 4 GPUs, this is scheduled on device 2 (of 4) as device 1 has synced the computation on it (with K8),
+            // and device 2 is the first device with fewer streams;
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(2))),
+            // When using stream-aware and 4 GPUs, this is scheduled on device 3 (reuse the stream of K9);
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(3))),
+            // When using stream-aware and 4 GPUs, this is scheduled on device 2 (device with fewer streams, device 1 has 2);
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(4)))
+        );
     }
 
     private final static int IMAGE_NUM_STREAMS = 4;
@@ -73,9 +106,8 @@ public class MultiGPUExecutionDAGMockTest {
             ComplexExecutionDAGMockTest.executeMockComputation(ComplexExecutionDAGMockTest.imageMockComputation(context));
             context.getDeviceList().forEach(d -> d.getStreams().forEach(s -> assertEquals(0, s.getStreamDeviceId())));
             assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
-            // If using ALWAYS_NEW, streams are always set to busy and are never free (because they cannot be reused anyway);
-            assertEquals(this.retrieveNewStreamPolicy == RetrieveNewStreamPolicyEnum.REUSE ? IMAGE_NUM_STREAMS : 0, context.getStreamManager().getDevice(0).getNumberOfFreeStreams());
-            assertEquals(this.retrieveNewStreamPolicy == RetrieveNewStreamPolicyEnum.REUSE ? 0 : IMAGE_NUM_STREAMS, context.getStreamManager().getDevice(0).getNumberOfBusyStreams());
+            assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getDevice(0).getNumberOfFreeStreams());
+            assertEquals(0, context.getStreamManager().getDevice(0).getNumberOfBusyStreams());
             assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getDevice(0).getStreams().size());
         }
     }
@@ -92,8 +124,8 @@ public class MultiGPUExecutionDAGMockTest {
         ComplexExecutionDAGMockTest.executeMockComputation(ComplexExecutionDAGMockTest.imageMockComputation(context));
         context.getDeviceList().forEach(d -> d.getStreams().forEach(s -> assertEquals(0, s.getStreamDeviceId())));
         assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
-        assertEquals(this.retrieveNewStreamPolicy == RetrieveNewStreamPolicyEnum.REUSE ? IMAGE_NUM_STREAMS : 0, context.getStreamManager().getDevice(0).getNumberOfFreeStreams());
-        assertEquals(this.retrieveNewStreamPolicy == RetrieveNewStreamPolicyEnum.REUSE ? 0 : IMAGE_NUM_STREAMS, context.getStreamManager().getDevice(0).getNumberOfBusyStreams());
+        assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getDevice(0).getNumberOfFreeStreams());
+        assertEquals(0, context.getStreamManager().getDevice(0).getNumberOfBusyStreams());
         assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getDevice(0).getStreams().size());
     }
 
@@ -110,9 +142,8 @@ public class MultiGPUExecutionDAGMockTest {
             ComplexExecutionDAGMockTest.executeMockComputation(ComplexExecutionDAGMockTest.hitsMockComputation(context));
             context.getDeviceList().forEach(d -> d.getStreams().forEach(s -> assertEquals(0, s.getStreamDeviceId())));
             assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
-            // If using ALWAYS_NEW, streams are always set to busy and are never free (because they cannot be reused anyway);
-            assertEquals(this.retrieveNewStreamPolicy == RetrieveNewStreamPolicyEnum.REUSE ? HITS_NUM_STREAMS : 0, context.getStreamManager().getDevice(0).getNumberOfFreeStreams());
-            assertEquals(this.retrieveNewStreamPolicy == RetrieveNewStreamPolicyEnum.REUSE ? 0 : HITS_NUM_STREAMS, context.getStreamManager().getDevice(0).getNumberOfBusyStreams());
+            assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getDevice(0).getNumberOfFreeStreams());
+            assertEquals(0, context.getStreamManager().getDevice(0).getNumberOfBusyStreams());
             assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getDevice(0).getStreams().size());
         }
     }
@@ -129,8 +160,8 @@ public class MultiGPUExecutionDAGMockTest {
         ComplexExecutionDAGMockTest.executeMockComputation(ComplexExecutionDAGMockTest.hitsMockComputation(context));
         context.getDeviceList().forEach(d -> d.getStreams().forEach(s -> assertEquals(0, s.getStreamDeviceId())));
         assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
-        assertEquals(this.retrieveNewStreamPolicy == RetrieveNewStreamPolicyEnum.REUSE ? HITS_NUM_STREAMS : 0, context.getStreamManager().getDevice(0).getNumberOfFreeStreams());
-        assertEquals(this.retrieveNewStreamPolicy == RetrieveNewStreamPolicyEnum.REUSE ? 0 : HITS_NUM_STREAMS, context.getStreamManager().getDevice(0).getNumberOfBusyStreams());
+        assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getDevice(0).getNumberOfFreeStreams());
+        assertEquals(0, context.getStreamManager().getDevice(0).getNumberOfBusyStreams());
         assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getDevice(0).getStreams().size());
     }
 
@@ -201,5 +232,54 @@ public class MultiGPUExecutionDAGMockTest {
         executeMockComputationAndValidate(ComplexExecutionDAGMockTest.hitsMockComputation(context),
                 Arrays.asList(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0));
         assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void lessBusyManyKernelsWithFourGPUTest() throws UnsupportedTypeException {
+        int numGPU = 4;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.STREAM_AWARE)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        executeMockComputationAndValidate(manyKernelsMockComputation(context),
+                Arrays.asList(0, 1, 2, 3, 0, 1, 2, 3, 0, 2, 0, 0, 2, 1));
+        assertEquals(6, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void lessBusyForkJoinWithTwoGPUTest() throws UnsupportedTypeException {
+        int numGPU = 2;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.STREAM_AWARE)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+
+        GrCUDAComputationalElement k = new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1)));
+        k.schedule();
+        assertEquals(0, k.getStream().getStreamDeviceId());
+        k = new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2)));
+        k.schedule();
+        assertEquals(1, k.getStream().getStreamDeviceId());
+        // Join the two prevous computations;
+        k = new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1), new ArgumentMock(2)));
+        k.schedule();
+        assertEquals(0, k.getStream().getStreamDeviceId());
+        // Reuse the same stream as the parent;
+        k = new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1)));
+        k.schedule();
+        assertEquals(0, k.getStream().getStreamDeviceId());
+        // FIXME: When using stream-aware and 2 GPUs, this should be scheduled on device 2 as device 1 has synced the computation on it,
+        //  and device 2 is the first device with fewer streams active (0, in this case).
+        //  Currently this does not happen, because we cannot know if the computation on device 2 is actually over when we do the scheduling,
+        //  although this does not affect correctness.
+        k = new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2)));
+        k.schedule();
+        assertEquals(0, k.getStream().getStreamDeviceId());
+
+        assertEquals(3, context.getStreamManager().getNumberOfStreams());
     }
 }

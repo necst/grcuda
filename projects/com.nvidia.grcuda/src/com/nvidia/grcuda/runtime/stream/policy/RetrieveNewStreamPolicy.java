@@ -43,9 +43,11 @@ import com.nvidia.grcuda.runtime.stream.CUDAStream;
 public abstract class RetrieveNewStreamPolicy {
 
     protected final DeviceSelectionPolicy deviceSelectionPolicy;
+    protected final GrCUDADevicesManager devicesManager;
 
-    RetrieveNewStreamPolicy(DeviceSelectionPolicy deviceSelectionPolicy) {
+    RetrieveNewStreamPolicy(DeviceSelectionPolicy deviceSelectionPolicy, GrCUDADevicesManager devicesManager) {
         this.deviceSelectionPolicy = deviceSelectionPolicy;
+        this.devicesManager = devicesManager;
     }
 
     /**
@@ -72,13 +74,19 @@ public abstract class RetrieveNewStreamPolicy {
      * for example a new stream that can be provided by {@link RetrieveNewStreamPolicy#retrieve(ExecutionDAG.DAGVertex)} )}
      * @param stream a stream that should be associated to the class
      */
-    void update(CUDAStream stream) { }
+    void update(CUDAStream stream) {
+        // Free a stream with respect to its device;
+        devicesManager.getDevice(stream.getStreamDeviceId()).updateFreeStreams(stream);
+    }
 
     /**
      * Initialize the class with the provided streams on the currently active GPU,
      * for example new streams that can be provided by {@link RetrieveNewStreamPolicy#retrieve(ExecutionDAG.DAGVertex)}
      */
-    void update() { }
+    void update() {
+        // Free all streams on all devices;
+        devicesManager.getDeviceList().forEach(Device::updateFreeStreams);
+    }
 
     /**
      * Cleanup the internal state of the class, if required;

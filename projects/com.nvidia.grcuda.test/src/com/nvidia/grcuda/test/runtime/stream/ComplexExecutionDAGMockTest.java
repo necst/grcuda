@@ -180,25 +180,25 @@ public class ComplexExecutionDAGMockTest {
     //             \-> 6: E2(4c, 8) /
     public static List<GrCUDAComputationalElement> imageMockComputation(AsyncGrCUDAExecutionContext context) {
         return Arrays.asList(
-        // blur
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(2))),
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(3))),
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(4))),
-        // sobel
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(2, true), new ArgumentMock(5))),
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(3, true), new ArgumentMock(6))),
-        // extend
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(7))),
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(8))),
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4), new ArgumentMock(7), new ArgumentMock(8))),
-        // unsharpen
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(4), new ArgumentMock(9))),
-        // combine
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(9, true), new ArgumentMock(3, true),
-                new ArgumentMock(6, true), new ArgumentMock(10))),
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(10, true), new ArgumentMock(2, true),
-                new ArgumentMock(5, true), new ArgumentMock(11))),
-        new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(11)))
+            // blur
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(2))),
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(3))),
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(4))),
+            // sobel
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(2, true), new ArgumentMock(5))),
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(3, true), new ArgumentMock(6))),
+            // extend
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(7))),
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(8))),
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4), new ArgumentMock(7), new ArgumentMock(8))),
+            // unsharpen
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(4), new ArgumentMock(9))),
+            // combine
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(9, true), new ArgumentMock(3, true),
+                    new ArgumentMock(6, true), new ArgumentMock(10))),
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(10, true), new ArgumentMock(2, true),
+                    new ArgumentMock(5, true), new ArgumentMock(11))),
+            new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(11)))
         );
     }
 
