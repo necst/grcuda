@@ -32,8 +32,8 @@ package com.nvidia.grcuda.test.runtime.stream;
 
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
-import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.mock.ArgumentMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
 import com.nvidia.grcuda.test.util.mock.GrCUDAStreamManagerMock;

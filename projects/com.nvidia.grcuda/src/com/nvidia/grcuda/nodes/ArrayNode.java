@@ -63,9 +63,8 @@ public abstract class ArrayNode extends ExpressionNode {
     }
 
     @Specialization
-    AbstractArray doDefault(VirtualFrame frame,
-                            @CachedContext(GrCUDALanguage.class) GrCUDAContext context) {
-        final AbstractGrCUDAExecutionContext grCUDAExecutionContext = context.getGrCUDAExecutionContext();
+    AbstractArray doDefault(VirtualFrame frame) {
+        final AbstractGrCUDAExecutionContext grCUDAExecutionContext = GrCUDAContext.get(this).getGrCUDAExecutionContext();
         long[] elementsPerDim = new long[sizeNodes.length];
         int dim = 0;
         for (ExpressionNode sizeNode : sizeNodes) {

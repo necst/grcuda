@@ -33,9 +33,9 @@ package com.nvidia.grcuda;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.computation.memadvise.MemAdviserEnum;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.DeviceSelectionPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.InvalidArrayIndexException;
@@ -73,7 +73,7 @@ public class GrCUDAOptionMap implements TruffleObject {
     public static final DependencyPolicyEnum DEFAULT_DEPENDENCY_POLICY = DependencyPolicyEnum.NO_CONST;
     public static final RetrieveNewStreamPolicyEnum DEFAULT_RETRIEVE_STREAM_POLICY = RetrieveNewStreamPolicyEnum.REUSE;
     public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
-    public static final DeviceSelectionPolicyEnum DEFAULT_DEVICE_SELECTION_POLICY = DeviceSelectionPolicyEnum.DATA_LOCALITY;
+    public static final DeviceSelectionPolicyEnum DEFAULT_DEVICE_SELECTION_POLICY = DeviceSelectionPolicyEnum.SINGLE_GPU;
     public static final MemAdviserEnum DEFAULT_MEM_ADVISE_POLICY = MemAdviserEnum.NONE;
     public static final boolean DEFAULT_INPUT_PREFETCH = false;  // Value obtained from the input flags;
     public static final boolean DEFAULT_FORCE_STREAM_ATTACH = false;
@@ -151,7 +151,6 @@ public class GrCUDAOptionMap implements TruffleObject {
         if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT.toString())) return RetrieveParentStreamPolicyEnum.DISJOINT;
         else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT.toString())) return RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
         else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.MULTIGPU_DATA_AWARE.toString())) return RetrieveParentStreamPolicyEnum.MULTIGPU_DATA_AWARE;
-        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.MULTIGPU_STREAM_AWARE.toString())) return RetrieveParentStreamPolicyEnum.MULTIGPU_STREAM_AWARE;
         else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT_DATA_AWARE.toString())) return RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT_DATA_AWARE;
         else {
             LOGGER.warning("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + DEFAULT_PARENT_STREAM_POLICY);
@@ -160,7 +159,9 @@ public class GrCUDAOptionMap implements TruffleObject {
     }
 
     private static DeviceSelectionPolicyEnum parseDeviceSelectionPolicy(String policyString) {
-        if (Objects.equals(policyString, DeviceSelectionPolicyEnum.DATA_LOCALITY.toString())) return DeviceSelectionPolicyEnum.DATA_LOCALITY;
+        if (Objects.equals(policyString, DeviceSelectionPolicyEnum.SINGLE_GPU.toString())) return DeviceSelectionPolicyEnum.SINGLE_GPU;
+        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.DATA_LOCALITY.toString())) return DeviceSelectionPolicyEnum.DATA_LOCALITY;
+        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.STREAM_AWARE.toString())) return DeviceSelectionPolicyEnum.STREAM_AWARE;
         else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.DATA_LOCALITY_NEW.toString())) return DeviceSelectionPolicyEnum.DATA_LOCALITY_NEW;
         else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.TRANSFER_TIME_MIN.toString())) return DeviceSelectionPolicyEnum.TRANSFER_TIME_MIN;
         else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.TRANSFER_TIME_MAX.toString())) return DeviceSelectionPolicyEnum.TRANSFER_TIME_MAX;

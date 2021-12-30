@@ -38,6 +38,10 @@ import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.DeviceList;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
+import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.GrCUDAStreamPolicy;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.oracle.truffle.api.TruffleLogger;
 
 import java.util.ArrayDeque;
@@ -77,6 +81,7 @@ public class GrCUDAStreamManager {
         this(runtime,
              options.getRetrieveNewStreamPolicy(),
              options.getRetrieveParentStreamPolicy(),
+             options.getDeviceSelectionPolicy(),
              options.isTimeComputation());
     }
 
@@ -84,8 +89,9 @@ public class GrCUDAStreamManager {
             CUDARuntime runtime,
             RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
             RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
+            DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
             boolean isTimeComputation) {
-        this(runtime, isTimeComputation, new GrCUDAStreamPolicy(runtime, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum));
+        this(runtime, isTimeComputation, new GrCUDAStreamPolicy(runtime, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum));
     }
 
     public GrCUDAStreamManager(
@@ -129,7 +135,7 @@ public class GrCUDAStreamManager {
     public void assignEventStart(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
         if (isTimeComputation && vertex.getComputation().canUseStream()) {
-            // cudaEventRecord is sensitive to the ctx of the device that is currently set, so we call cudaSetDevice
+            // cudaEventRecord is sensitive to the ctx of the device that is currently set, so we call cudaSetDevice;
             runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
             CUDAEvent event = runtime.cudaEventCreate();
             runtime.cudaEventRecord(event, vertex.getComputation().getStream());
@@ -251,7 +257,7 @@ public class GrCUDAStreamManager {
     protected void setComputationFinishedInner(GrCUDAComputationalElement computation) {
         computation.setComputationFinished();
         if (computation.getEventStop().isPresent()) {
-            if(isTimeComputation && computation.getEventStart().isPresent()) {
+            if (isTimeComputation && computation.getEventStart().isPresent()) {
                 // Switch to the device where the computation has been done, otherwise we cannot call the cudaEventElapsedTime API;
                 runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
                 float timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());

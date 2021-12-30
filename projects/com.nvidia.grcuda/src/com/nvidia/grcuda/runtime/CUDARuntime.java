@@ -265,7 +265,7 @@ public final class CUDARuntime {
         return currentGPU;
     }
 
-    void setCurrentGPU(int currentGPU) {
+    private void setCurrentGPU(int currentGPU) {
         this.currentGPU = currentGPU;
     }
 
@@ -424,6 +424,9 @@ public final class CUDARuntime {
     @TruffleBoundary
     public void cudaSetDevice(int device) {
         try {
+            if (device < 0 || device > this.numberOfGPUsToUse) {
+                throw new GrCUDAException("the selected GPU is not valid (" + device + "), it should be 0 <= x < " + this.numberOfGPUsToUse);
+            }
             Object callable = CUDARuntimeFunction.CUDA_SETDEVICE.getSymbol(this);
             Object result = INTEROP.execute(callable, device);
             RUNTIME_LOGGER.finest("selected current GPU = " + device);

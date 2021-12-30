@@ -31,13 +31,13 @@
 package com.nvidia.grcuda.test.util.mock;
 
 import com.nvidia.grcuda.runtime.CUDARuntime;
-import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager;
-import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
 
@@ -55,30 +54,32 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
     public static int numUserAllocatedStreams = 0;
 
     GrCUDAStreamManagerMock(CUDARuntime runtime) {
-        this(runtime, RetrieveNewStreamPolicyEnum.ALWAYS_NEW,  RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, 1);
+        this(runtime, RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, DeviceSelectionPolicyEnum.SINGLE_GPU, 1);
     }
 
     GrCUDAStreamManagerMock(CUDARuntime runtime,
                             RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
                             RetrieveParentStreamPolicyEnum parentStreamPolicy) {
-        this(runtime, retrieveStreamPolicy, parentStreamPolicy, 1);
+        this(runtime, retrieveStreamPolicy, parentStreamPolicy, DeviceSelectionPolicyEnum.SINGLE_GPU,1);
     }
 
     GrCUDAStreamManagerMock(CUDARuntime runtime,
                             RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
                             RetrieveParentStreamPolicyEnum parentStreamPolicy,
+                            DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
                             int numberOfAvailableGPUs) {
         // Use all the available GPUs;
-        this(runtime, retrieveStreamPolicy, parentStreamPolicy, numberOfAvailableGPUs, numberOfAvailableGPUs);
+        this(runtime, retrieveStreamPolicy, parentStreamPolicy, deviceSelectionPolicyEnum, numberOfAvailableGPUs, numberOfAvailableGPUs);
     }
 
     GrCUDAStreamManagerMock(CUDARuntime runtime,
                             RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
                             RetrieveParentStreamPolicyEnum parentStreamPolicy,
+                            DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
                             int numberOfAvailableGPUs,
                             int numberOfGPUsToUse) {
         // Possibly use a number of GPUs lower than the number of available GPUs;
-        super(runtime, false, new GrCUDAStreamPolicyMock(retrieveStreamPolicy, parentStreamPolicy, numberOfAvailableGPUs, numberOfGPUsToUse));
+        super(runtime, false, new GrCUDAStreamPolicyMock(retrieveStreamPolicy, parentStreamPolicy, deviceSelectionPolicyEnum, numberOfAvailableGPUs, numberOfGPUsToUse));
         // Reset the number of streams;
         numUserAllocatedStreams = 0;
     }

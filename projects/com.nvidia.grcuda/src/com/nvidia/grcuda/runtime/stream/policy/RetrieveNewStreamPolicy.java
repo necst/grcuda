@@ -28,32 +28,55 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.nvidia.grcuda.runtime.stream;
+package com.nvidia.grcuda.runtime.stream.policy;
 
 import com.nvidia.grcuda.runtime.Device;
-
-import java.util.Collection;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
+import com.nvidia.grcuda.runtime.stream.CUDAStream;
 
 /**
- * This abstract class defines how a {@link GrCUDAStreamManager}
+ * This abstract class defines how a {@link GrCUDAStreamPolicy}
  * will assign a {@link CUDAStream} to a {@link com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement}
  * that has no dependency on active computations.
  * For example, it could create a new stream or provide an existing stream that is currently not used;
  */
-public abstract class RetrieveNewStream {
-    abstract CUDAStream retrieve();
+public abstract class RetrieveNewStreamPolicy {
+
+    protected final DeviceSelectionPolicy deviceSelectionPolicy;
+
+    RetrieveNewStreamPolicy(DeviceSelectionPolicy deviceSelectionPolicy) {
+        this.deviceSelectionPolicy = deviceSelectionPolicy;
+    }
+
+    /**
+     * Inner implementation of how, given a specified device, a stream is created or retrieved on this device.
+     * For example, create a new stream, or reuse an existing unused stream;
+     * @param device the device on which we retrieve a stream
+     * @return the stream where the input computation is executed
+     */
+    abstract CUDAStream retrieveStreamFromDevice(Device device);
+
+    /**
+     * Obtain a new stream, associated to a unique device, where the input computation is executed.
+     * First, select the device where the computation is executed. Then, create or retrieve a stream on this device;
+     * @param vertex a computation for which we need to find a stream for execution
+     * @return the stream where the computation is executed
+     */
+    final CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+        Device device = this.deviceSelectionPolicy.retrieve(vertex);
+        return this.retrieveStreamFromDevice(device);
+    }
 
     /**
      * Initialize the class with the provided stream on the currently active GPU,
-     * for example a new stream that can be provided by {@link RetrieveNewStream#retrieve()}
+     * for example a new stream that can be provided by {@link RetrieveNewStreamPolicy#retrieve(ExecutionDAG.DAGVertex)} )}
      * @param stream a stream that should be associated to the class
      */
     void update(CUDAStream stream) { }
 
     /**
      * Initialize the class with the provided streams on the currently active GPU,
-     * for example new streams that can be provided by {@link RetrieveNewStream#retrieve()}
-     * @param device the device for which we want to update the stream status
+     * for example new streams that can be provided by {@link RetrieveNewStreamPolicy#retrieve(ExecutionDAG.DAGVertex)}
      */
     void update() { }
 

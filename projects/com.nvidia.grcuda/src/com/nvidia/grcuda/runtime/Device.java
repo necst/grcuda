@@ -109,11 +109,15 @@ public class Device extends AbstractDevice implements TruffleObject {
      * Create a new {@link CUDAStream} and add it to the list of streams associated to this device;
      */
     public CUDAStream createStream() {
+        // To create a stream, we need to guarantee that this device is currently active;
+        if (this.runtime.getCurrentGPU() != this.deviceId) {
+            this.runtime.cudaSetDevice(this.deviceId);
+        }
         // The stream is not added to the list of free streams:
         // a new stream is created only when it is required for a computation,
         // so it will be immediately "busy" anyway;
-        CUDAStream newStream = runtime.cudaStreamCreate(streams.size());
-        streams.add(newStream);
+        CUDAStream newStream = this.runtime.cudaStreamCreate(this.streams.size());
+        this.streams.add(newStream);
         return newStream;
     }
 

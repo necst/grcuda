@@ -35,9 +35,6 @@
  */
 package com.nvidia.grcuda.functions;
 
-import com.nvidia.grcuda.runtime.CUDARuntime;
-import com.nvidia.grcuda.runtime.DeviceList;
-import com.nvidia.grcuda.runtime.GrCUDADevicesManager;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ArityException;

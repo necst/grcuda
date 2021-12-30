@@ -1,7 +1,7 @@
 package com.nvidia.grcuda.test.util.mock;
 
 import com.nvidia.grcuda.runtime.Device;
-import com.nvidia.grcuda.runtime.GrCUDADevicesManager;
+import com.nvidia.grcuda.runtime.stream.policy.GrCUDADevicesManager;
 
 public class GrCUDADevicesManagerMock extends GrCUDADevicesManager {
 
@@ -28,7 +28,6 @@ public class GrCUDADevicesManagerMock extends GrCUDADevicesManager {
         return numberOfGPUsToUse;
     }
 
-    @Override
     public void setCurrentGPU(int deviceId) {
         currentGPU = deviceId;
     }

@@ -1,6 +1,10 @@
-package com.nvidia.grcuda.runtime;
+package com.nvidia.grcuda.runtime.stream.policy;
 
 import java.util.Collection;
+
+import com.nvidia.grcuda.runtime.CUDARuntime;
+import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.DeviceList;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 
 public class GrCUDADevicesManager {
@@ -77,21 +81,24 @@ public class GrCUDADevicesManager {
 //
 //    }
 //
-//    /**
-//     * Find the device with the lowest number of Stream on it and returns it
-//     * @return deviceId
-//     */
-//    public int deviceWithLessActiveStream(){
-//        int min = deviceList.getDevice(0).numActiveStream();
-//        int deviceId = 0;
-//        for(int i = 0; i<numberOfGPUs; i++){
-//            if(deviceList.getDevice(i).numActiveStream() < min){
-//                min = deviceList.getDevice(i).numActiveStream();
-//                deviceId = i;
-//            }
-//        }
-//        return deviceId;
-//    }
+    /**
+     * Find the device with the lowest number of busy stream on it and returns it.
+     * A stream is busy if there's any computation assigned to it that has not been flagged as "finished".
+     * If multiple devices have the same number of free streams, return the first;
+     * @return the device with fewer busy streams
+     */
+    public Device findDeviceWithFewerBusyStreams(){
+        int min = deviceList.getDevice(0).getNumberOfFreeStreams();
+        int deviceId = 0;
+        for (int i = 0; i < this.getNumberOfGPUsToUse(); i++) {
+            int numBusyStreams = deviceList.getDevice(i).getNumberOfBusyStreams();
+            if (numBusyStreams < min) {
+                min = numBusyStreams;
+                deviceId = i;
+            }
+        }
+        return deviceList.getDevice(deviceId);
+    }
 //
 //    public int[] devicesActiveStreams(){
 //        int[] activeStream = new int[deviceList.size()];
@@ -117,9 +124,9 @@ public class GrCUDADevicesManager {
         return this.runtime.getNumberOfGPUsToUse();
     }
 
-    public void setCurrentGPU(int deviceId) {
-        this.runtime.setCurrentGPU(deviceId);
-    }
+//    public void setCurrentGPU(int deviceId) {
+//        this.runtime.setCurrentGPU(deviceId);
+//    }
 
     public DeviceList getDeviceList() {
         return deviceList;

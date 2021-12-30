@@ -31,20 +31,22 @@
 package com.nvidia.grcuda.test.util.mock;
 
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 
 public class GrCUDAExecutionContextMockBuilder {
 
     DependencyPolicyEnum dependencyPolicy = DependencyPolicyEnum.NO_CONST;
     RetrieveNewStreamPolicyEnum retrieveStreamPolicy = RetrieveNewStreamPolicyEnum.REUSE;
     RetrieveParentStreamPolicyEnum parentStreamPolicyEnum = RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
+    DeviceSelectionPolicyEnum deviceSelectionPolicyEnum = DeviceSelectionPolicyEnum.SINGLE_GPU;
     boolean isArchitecturePascalOrNewer = true;
     int numberOfAvailableGPUs = 1;
     int numberOfGPUsToUse = 1;
 
     public AsyncGrCUDAExecutionContextMock build() {
-        return new AsyncGrCUDAExecutionContextMock(dependencyPolicy, retrieveStreamPolicy, parentStreamPolicyEnum, isArchitecturePascalOrNewer, numberOfAvailableGPUs, numberOfGPUsToUse);
+        return new AsyncGrCUDAExecutionContextMock(dependencyPolicy, retrieveStreamPolicy, parentStreamPolicyEnum, deviceSelectionPolicyEnum, isArchitecturePascalOrNewer, numberOfAvailableGPUs, numberOfGPUsToUse);
     }
 
     public GrCUDAExecutionContextMockBuilder setDependencyPolicy(DependencyPolicyEnum dependencyPolicy) {
