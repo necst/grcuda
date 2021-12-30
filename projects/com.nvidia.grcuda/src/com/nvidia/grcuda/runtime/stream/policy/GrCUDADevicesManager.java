@@ -88,7 +88,7 @@ public class GrCUDADevicesManager {
      * @return the device with fewer busy streams
      */
     public Device findDeviceWithFewerBusyStreams(){
-        int min = deviceList.getDevice(0).getNumberOfFreeStreams();
+        int min = deviceList.getDevice(0).getNumberOfBusyStreams();
         int deviceId = 0;
         for (int i = 0; i < this.getNumberOfGPUsToUse(); i++) {
             int numBusyStreams = deviceList.getDevice(i).getNumberOfBusyStreams();

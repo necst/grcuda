@@ -30,6 +30,7 @@
  */
 package com.nvidia.grcuda.test.runtime.stream;
 
+import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
@@ -47,9 +48,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -130,7 +133,7 @@ public class ComplexExecutionDAGMockTest {
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy).setRetrieveParentStreamPolicy(this.retrieveParentStreamPolicy)
                 .setDependencyPolicy(this.dependencyPolicy).build();
-        imageMockComputation(context);
+        executeMockComputation(imageMockComputation(context));
 
         int numStreams = 3;
         if (retrieveParentStreamPolicy.equals(RetrieveParentStreamPolicyEnum.DISJOINT) && dependencyPolicy.equals(DependencyPolicyEnum.WITH_CONST)) {
@@ -145,57 +148,62 @@ public class ComplexExecutionDAGMockTest {
         }
     }
 
-    public static void hitsMockComputation(AsyncGrCUDAExecutionContext context) throws UnsupportedTypeException {
+    public static List<GrCUDAComputationalElement> hitsMockComputation(AsyncGrCUDAExecutionContext context) {
+        List<GrCUDAComputationalElement> computations = new ArrayList<>();
         int numIterations = 10;
-        KernelExecutionMock c1;
-        KernelExecutionMock c2;
         for (int i = 0; i < numIterations; i++) {
             // hub1 -> auth2
-            c1 = new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(2)));
-            c1.schedule();
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(2))));
             // auth1 -> hub2
-            c2 = new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(3, true), new ArgumentMock(4)));
-            c2.schedule();
-
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(3, true), new ArgumentMock(4))));
             // auth2 -> auth_norm
-            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(2, true), new ArgumentMock(5))).schedule();
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(2, true), new ArgumentMock(5))));
             // hub2 -> hub_norm
-            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(6))).schedule();
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(6))));
             // auth2, auth_norm -> auth1
-            c1 = new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(2, true), new ArgumentMock(5, true), new ArgumentMock(3)));
-            c1.schedule();
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(2, true), new ArgumentMock(5, true), new ArgumentMock(3))));
             // hub2, hub_norm -> hub1
-            c2 = new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(6, true), new ArgumentMock(1)));
-            c2.schedule();
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(6, true), new ArgumentMock(1))));
         }
-        new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(3))).schedule();
-        new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
+        computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(3))));
+        computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(1))));
+        return computations;
     }
 
-    // B1(1c, 2) -> S1(2c, 5) ----------------------------------------------------> C(10c, 2c, 5c, 11) -> X
-    // B2(1c, 3) -> S2(3c, 6) -------------------------------> C(9c, 3c, 6c, 10) /
-    // B3(1c, 4) -> E1(4c, 7) -> E3(4, 7, 8) -> U(1c, 4, 9) /
-    //          \-> E2(4c, 8) /
-    public static void imageMockComputation(AsyncGrCUDAExecutionContext context) throws UnsupportedTypeException {
+    // 0: B1(1c, 2) -> 3: S1(2c, 5) -------------------------------------------------------------> 10: C(10c, 2c, 5c, 11) -> X
+    // 1: B2(1c, 3) -> 4: S2(3c, 6) -------------------------------------> 9: C(9c, 3c, 6c, 10) /
+    // 2: B3(1c, 4) -> 5: E1(4c, 7) -> 7: E3(4, 7, 8) -> 8: U(1c, 4, 9) /
+    //             \-> 6: E2(4c, 8) /
+    public static List<GrCUDAComputationalElement> imageMockComputation(AsyncGrCUDAExecutionContext context) {
+        return Arrays.asList(
         // blur
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(2))).schedule();
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(3))).schedule();
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(4))).schedule();
+        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(2))),
+        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(3))),
+        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(4))),
         // sobel
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(2, true), new ArgumentMock(5))).schedule();
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(3, true), new ArgumentMock(6))).schedule();
+        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(2, true), new ArgumentMock(5))),
+        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(3, true), new ArgumentMock(6))),
         // extend
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(7))).schedule();
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(8))).schedule();
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4), new ArgumentMock(7), new ArgumentMock(8))).schedule();
+        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(7))),
+        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(8))),
+        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4), new ArgumentMock(7), new ArgumentMock(8))),
         // unsharpen
-        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(4), new ArgumentMock(9))).schedule();
+        new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(4), new ArgumentMock(9))),
         // combine
         new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(9, true), new ArgumentMock(3, true),
-                new ArgumentMock(6, true), new ArgumentMock(10))).schedule();
+                new ArgumentMock(6, true), new ArgumentMock(10))),
         new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(10, true), new ArgumentMock(2, true),
-                new ArgumentMock(5, true), new ArgumentMock(11))).schedule();
+                new ArgumentMock(5, true), new ArgumentMock(11))),
+        new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(11)))
+        );
+    }
 
-        new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(11))).schedule();
+    /**
+     * Schedule for execution a sequence of mock GrCUDAComputationalElement;
+     */
+    public static void executeMockComputation(List<GrCUDAComputationalElement> computations) throws UnsupportedTypeException {
+        for (GrCUDAComputationalElement c : computations) {
+            c.schedule();
+        }
     }
 }

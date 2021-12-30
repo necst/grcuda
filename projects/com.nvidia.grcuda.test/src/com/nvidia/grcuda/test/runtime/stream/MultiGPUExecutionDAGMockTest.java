@@ -1,12 +1,16 @@
 package com.nvidia.grcuda.test.runtime.stream;
 
+import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
+import com.nvidia.grcuda.test.util.mock.ArgumentMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
+import com.nvidia.grcuda.test.util.mock.KernelExecutionMock;
+import com.nvidia.grcuda.test.util.mock.SyncExecutionMock;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,6 +18,8 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -34,6 +40,22 @@ public class MultiGPUExecutionDAGMockTest {
         this.retrieveNewStreamPolicy = retrieveNewStreamPolicy;
     }
 
+    /**
+     * Schedule for execution a sequence of mock GrCUDAComputationalElement,
+     * and validate that the GPU scheduling of the computation is the one expected.
+     * @param computations a sequence of computations to be scheduled
+     * @param gpuScheduling a list of gpu identifiers. Each identifier "i" represents the GPU scheduling for the i-th computation;
+     * @throws UnsupportedTypeException
+     */
+    public static void executeMockComputationAndValidate(List<GrCUDAComputationalElement> computations, List<Integer> gpuScheduling) throws UnsupportedTypeException {
+        assertEquals(computations.size(), gpuScheduling.size());
+        for (int i = 0; i < computations.size(); i++) {
+            GrCUDAComputationalElement c = computations.get(i);
+            c.schedule();
+            assertEquals(gpuScheduling.get(i).intValue(), c.getStream().getStreamDeviceId());
+        }
+    }
+
     private final static int IMAGE_NUM_STREAMS = 4;
     private final static int HITS_NUM_STREAMS = 2;
 
@@ -47,7 +69,7 @@ public class MultiGPUExecutionDAGMockTest {
                     .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.SINGLE_GPU)
                     .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                     .setNumberOfGPUsToUse(i).setNumberOfAvailableGPUs(i).build();
-            ComplexExecutionDAGMockTest.imageMockComputation(context);
+            ComplexExecutionDAGMockTest.executeMockComputation(ComplexExecutionDAGMockTest.imageMockComputation(context));
             context.getDeviceList().forEach(d -> d.getStreams().forEach(s -> assertEquals(0, s.getStreamDeviceId())));
             assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
             // If using ALWAYS_NEW, streams are always set to busy and are never free (because they cannot be reused anyway);
@@ -66,7 +88,7 @@ public class MultiGPUExecutionDAGMockTest {
                 .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.STREAM_AWARE)
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setNumberOfGPUsToUse(1).setNumberOfAvailableGPUs(1).build();
-        ComplexExecutionDAGMockTest.imageMockComputation(context);
+        ComplexExecutionDAGMockTest.executeMockComputation(ComplexExecutionDAGMockTest.imageMockComputation(context));
         context.getDeviceList().forEach(d -> d.getStreams().forEach(s -> assertEquals(0, s.getStreamDeviceId())));
         assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
         assertEquals(this.retrieveNewStreamPolicy == RetrieveNewStreamPolicyEnum.REUSE ? IMAGE_NUM_STREAMS : 0, context.getStreamManager().getDevice(0).getNumberOfFreeStreams());
@@ -84,7 +106,7 @@ public class MultiGPUExecutionDAGMockTest {
                     .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.SINGLE_GPU)
                     .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                     .setNumberOfGPUsToUse(i).setNumberOfAvailableGPUs(i).build();
-            ComplexExecutionDAGMockTest.hitsMockComputation(context);
+            ComplexExecutionDAGMockTest.executeMockComputation(ComplexExecutionDAGMockTest.hitsMockComputation(context));
             context.getDeviceList().forEach(d -> d.getStreams().forEach(s -> assertEquals(0, s.getStreamDeviceId())));
             assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
             // If using ALWAYS_NEW, streams are always set to busy and are never free (because they cannot be reused anyway);
@@ -103,11 +125,49 @@ public class MultiGPUExecutionDAGMockTest {
                 .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.STREAM_AWARE)
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setNumberOfGPUsToUse(1).setNumberOfAvailableGPUs(1).build();
-        ComplexExecutionDAGMockTest.hitsMockComputation(context);
+        ComplexExecutionDAGMockTest.executeMockComputation(ComplexExecutionDAGMockTest.hitsMockComputation(context));
         context.getDeviceList().forEach(d -> d.getStreams().forEach(s -> assertEquals(0, s.getStreamDeviceId())));
         assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
         assertEquals(this.retrieveNewStreamPolicy == RetrieveNewStreamPolicyEnum.REUSE ? HITS_NUM_STREAMS : 0, context.getStreamManager().getDevice(0).getNumberOfFreeStreams());
         assertEquals(this.retrieveNewStreamPolicy == RetrieveNewStreamPolicyEnum.REUSE ? 0 : HITS_NUM_STREAMS, context.getStreamManager().getDevice(0).getNumberOfBusyStreams());
         assertEquals(HITS_NUM_STREAMS, context.getStreamManager().getDevice(0).getStreams().size());
+    }
+
+    @Test
+    public void lessBusyWithTwoGPUImageTest() throws UnsupportedTypeException {
+        int numGPU = 2;
+        // Test that no matter how many GPU we have, the STREAM_AWARE policy with just 1 GPU always selects the number 0;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.STREAM_AWARE)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        executeMockComputationAndValidate(ComplexExecutionDAGMockTest.imageMockComputation(context),
+                Arrays.asList(
+                        0, 1, 0,
+                        0, 1,
+                        0, 1,
+                        0, 0, 1, 0, 0));
+        assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void lessBusyWithThreeGPUImageTest() throws UnsupportedTypeException {
+        int numGPU = 3;
+        // Test that no matter how many GPU we have, the STREAM_AWARE policy with just 1 GPU always selects the number 0;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.STREAM_AWARE)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        executeMockComputationAndValidate(ComplexExecutionDAGMockTest.imageMockComputation(context),
+                Arrays.asList(
+                        0, 1, 2,
+                        0, 1,
+                        2, 0,
+                        2, 2, 1, 0, 0));
+        assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
     }
 }
