@@ -59,6 +59,11 @@ public class GrCUDAExecutionContextMockBuilder {
         return this;
     }
 
+    public GrCUDAExecutionContextMockBuilder setDeviceSelectionPolicy(DeviceSelectionPolicyEnum deviceSelectionPolicyEnum) {
+        this.deviceSelectionPolicyEnum = deviceSelectionPolicyEnum;
+        return this;
+    }
+
     public GrCUDAExecutionContextMockBuilder setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum retrieveStreamPolicy) {
         this.parentStreamPolicyEnum = retrieveStreamPolicy;
         return this;

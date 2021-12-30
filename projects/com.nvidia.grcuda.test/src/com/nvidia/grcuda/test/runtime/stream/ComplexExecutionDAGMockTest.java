@@ -28,9 +28,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.nvidia.grcuda.test.runtime;
+package com.nvidia.grcuda.test.runtime.stream;
 
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
+import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
@@ -129,7 +130,53 @@ public class ComplexExecutionDAGMockTest {
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy).setRetrieveParentStreamPolicy(this.retrieveParentStreamPolicy)
                 .setDependencyPolicy(this.dependencyPolicy).build();
+        imageMockComputation(context);
 
+        int numStreams = 3;
+        if (retrieveParentStreamPolicy.equals(RetrieveParentStreamPolicyEnum.DISJOINT) && dependencyPolicy.equals(DependencyPolicyEnum.WITH_CONST)) {
+            numStreams = 4;
+        }
+        else if (retrieveParentStreamPolicy.equals(RetrieveParentStreamPolicyEnum.SAME_AS_PARENT) && dependencyPolicy.equals(DependencyPolicyEnum.NO_CONST)) {
+            numStreams = 1;
+        }
+        assertEquals(numStreams, context.getStreamManager().getNumberOfStreams());
+        for (CUDAStream stream : ((GrCUDAStreamManagerMock) context.getStreamManager()).getStreams()) {
+            assertTrue(context.getStreamManager().isStreamFree(stream));
+        }
+    }
+
+    public static void hitsMockComputation(AsyncGrCUDAExecutionContext context) throws UnsupportedTypeException {
+        int numIterations = 10;
+        KernelExecutionMock c1;
+        KernelExecutionMock c2;
+        for (int i = 0; i < numIterations; i++) {
+            // hub1 -> auth2
+            c1 = new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(2)));
+            c1.schedule();
+            // auth1 -> hub2
+            c2 = new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(3, true), new ArgumentMock(4)));
+            c2.schedule();
+
+            // auth2 -> auth_norm
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(2, true), new ArgumentMock(5))).schedule();
+            // hub2 -> hub_norm
+            new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(6))).schedule();
+            // auth2, auth_norm -> auth1
+            c1 = new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(2, true), new ArgumentMock(5, true), new ArgumentMock(3)));
+            c1.schedule();
+            // hub2, hub_norm -> hub1
+            c2 = new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(4, true), new ArgumentMock(6, true), new ArgumentMock(1)));
+            c2.schedule();
+        }
+        new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(3))).schedule();
+        new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
+    }
+
+    // B1(1c, 2) -> S1(2c, 5) ----------------------------------------------------> C(10c, 2c, 5c, 11) -> X
+    // B2(1c, 3) -> S2(3c, 6) -------------------------------> C(9c, 3c, 6c, 10) /
+    // B3(1c, 4) -> E1(4c, 7) -> E3(4, 7, 8) -> U(1c, 4, 9) /
+    //          \-> E2(4c, 8) /
+    public static void imageMockComputation(AsyncGrCUDAExecutionContext context) throws UnsupportedTypeException {
         // blur
         new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(2))).schedule();
         new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(1, true), new ArgumentMock(3))).schedule();
@@ -150,16 +197,5 @@ public class ComplexExecutionDAGMockTest {
                 new ArgumentMock(5, true), new ArgumentMock(11))).schedule();
 
         new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(11))).schedule();
-        int numStreams = 3;
-        if (retrieveParentStreamPolicy.equals(RetrieveParentStreamPolicyEnum.DISJOINT) && dependencyPolicy.equals(DependencyPolicyEnum.WITH_CONST)) {
-            numStreams = 4;
-        }
-        else if (retrieveParentStreamPolicy.equals(RetrieveParentStreamPolicyEnum.SAME_AS_PARENT) && dependencyPolicy.equals(DependencyPolicyEnum.NO_CONST)) {
-            numStreams = 1;
-        }
-        assertEquals(numStreams, context.getStreamManager().getNumberOfStreams());
-        for (CUDAStream stream : ((GrCUDAStreamManagerMock) context.getStreamManager()).getStreams()) {
-            assertTrue(context.getStreamManager().isStreamFree(stream));
-        }
     }
 }

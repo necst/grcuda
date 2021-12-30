@@ -447,31 +447,4 @@ public class GrCUDAStreamManagerMockTest {
             assertEquals(0, dag.getVertices().get(0).getComputation().getStream().getStreamNumber());
         }
     }
-
-    // FIXME: finish test when policies are available
-//    @Test
-//    public void moveLessArgumentSimple() throws UnsupportedTypeException{
-//        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
-//                .setRetrieveNewStreamPolicy(RetrieveNewStreamPolicyEnum.FIFO)
-//                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DATA_AWARE)
-//                .build();
-//
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
-//        new KernelExecutionMock(context,
-//                Arrays.asList(new ArgumentMock(1),
-//                        new ArgumentMock(2),
-//                        new ArgumentMock(3))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(3))).schedule();
-//
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(5))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
-//        ExecutionDAG dag = context.getDag();
-//    }
 }
