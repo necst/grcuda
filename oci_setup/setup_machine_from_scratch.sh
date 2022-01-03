@@ -54,7 +54,7 @@ sudo apt install -y curl
 #   At the bottom of this guide, it is explained how to install EE;
 git clone https://github.com/oracle/graal.git
 git clone https://github.com/graalvm/mx.git
-git clone https://github.com/AlbertoParravicini/grcuda.git
+git clone https://github.com/necst/grcuda.git
 
 # checkout commit of GraalVM corresponding to the release (21.3);
 cd graal
