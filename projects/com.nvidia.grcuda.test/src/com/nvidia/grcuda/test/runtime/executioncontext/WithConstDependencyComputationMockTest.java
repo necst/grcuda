@@ -52,7 +52,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class WithConstDependencyComputationTest {
+public class WithConstDependencyComputationMockTest {
 
     @Test
     public void addVertexToDAGTest() throws UnsupportedTypeException {
