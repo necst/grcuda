@@ -290,7 +290,13 @@ public abstract class GrCUDAComputationalElement {
      * This implementation is meant for GPU computations that use streams, e.g. kernels and GPU libraries.
      * CPU computations (e.g. array accesses) should re-implement this function to track the CPU.
      * GPU computations don't use custom streams only if the are synchronized (e.g. when using the sync scheduler),
-     * and there's no benefit in tracking their location;
+     * and there's no benefit in tracking their location.
+     * Locations are updated BEFORE the start of the actual computation: if another computation is scheduled after
+     * the current one, it will be scheduled assuming that the data transfer for this computation has already taken place.
+     * This assumption can avoid duplicate data movements, e.g. with
+     * (Xr) -> ...
+     * (Xr) -> ...
+     * we can avoid transferring X twice, and schedule the second kernel on the GPU where X will be already present;
      */
     public void updateLocationOfArrays() {
         for (ComputationArgumentWithValue o : this.argumentsThatCanCreateDependencies) {
