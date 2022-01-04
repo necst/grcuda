@@ -420,7 +420,8 @@ public class GrCUDAStreamPolicy {
      * to transfer the data, given a heterogeneous multi-GPU system.
      * Given the complexity of CUDA's unified memory heuristics, we allow different heuristics to be used to estimate
      * the actual transfer speed, e.g. take the min or max possible values;
-     * The speed of each GPU-GPU and CPU-GPU link is assumed to be stored in a file located in "$GRCUDA_HOME/connection_graph.csv";
+     * The speed of each GPU-GPU and CPU-GPU link is assumed to be stored in a file located in "$GRCUDA_HOME/grcuda_data/datasets/connection_graph/connection_graph.csv".
+     * This file is generated as "cd $GRCUDA_HOME/projects/resources/cuda", "make connection_graph", "bin/connection_graph";
      */
     private abstract class TransferTimeDeviceSelectionPolicy extends DeviceSelectionPolicy {
 
@@ -443,7 +444,12 @@ public class GrCUDAStreamPolicy {
 
             List<List<String>> records = new ArrayList<>();
             // Read each line in the CSV and store each line into a string array, splitting strings on ",";
-            try (BufferedReader br = new BufferedReader(new FileReader(System.getenv("GRCUDA_HOME") + File.separatorChar + "connection_graph.csv"))) {
+            try (BufferedReader br = new BufferedReader(new FileReader(
+                    System.getenv("GRCUDA_HOME") + File.separatorChar
+                    + "grcuda-data" + File.separatorChar
+                    + "datasets" + File.separatorChar
+                    + "connection_graph" + File.separatorChar
+                    + "connection_graph.csv"))) {
                 String line;
                 while ((line = br.readLine()) != null) {
                     String[] values = line.split(",");

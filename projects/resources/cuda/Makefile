@@ -42,11 +42,16 @@ FILES=main.cu mmio.cpp benchmark.cu
 SINGLE_GPU_FILES=single_gpu/b1.cu single_gpu/b5.cu single_gpu/b6.cu single_gpu/b7.cu single_gpu/b8.cu single_gpu/b10.cu
 MULTI_GPU_FILES=multi_gpu/b1.cu multi_gpu/b5.cu multi_gpu/b6.cu multi_gpu/b9.cu multi_gpu/b11.cu multi_gpu/b12.cu multi_gpu/b13.cu
 B12_FILES=multi_gpu/b12.cu
-.PHONY: all clean
+CONNECTION_GRAPH_FILES=connection_graph.cu
+.PHONY: all connection_graph clean
 
 all:
 	mkdir -p $(BIN_FOLDER);
 	$(CXX) $(FILES) $(SINGLE_GPU_FILES) $(MULTI_GPU_FILES) $(FLAGS) -o $(BIN_FOLDER)/b;
+	$(CXX) $(CONNECTION_GRAPH_FILES) $(FLAGS) -o $(BIN_FOLDER)/connection_graph;
+
+connection_graph:
+	$(CXX) $(CONNECTION_GRAPH_FILES) $(FLAGS) -o $(BIN_FOLDER)/connection_graph;
 
 clean:
 	rm $(BIN_FOLDER)/*;
