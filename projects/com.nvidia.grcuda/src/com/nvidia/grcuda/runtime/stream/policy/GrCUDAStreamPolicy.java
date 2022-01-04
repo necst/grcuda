@@ -463,10 +463,12 @@ public class GrCUDAStreamPolicy {
             // Each line is "start_id", "end_id", "bandwidth";
             for (int il = 1; il < records.size(); il++) {
                 if (Integer.parseInt(records.get(il).get(0)) != -1) {
+                    // GPU-GPU interconnection;
                     this.linkBandwidth[Integer.parseInt(records.get(il).get(0))][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
                 } else {
-                    this.linkBandwidth[2][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
-                    this.linkBandwidth[Integer.parseInt(records.get(il).get(1))][2] = Double.parseDouble(records.get(il).get(2));
+                    // -1 identifies CPU-GPU interconnection, store it in the last spot;
+                    this.linkBandwidth[devicesManager.getNumberOfGPUsToUse()][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
+                    this.linkBandwidth[Integer.parseInt(records.get(il).get(1))][devicesManager.getNumberOfGPUsToUse()] = Double.parseDouble(records.get(il).get(2));
                 }
             }
         }
@@ -500,7 +502,10 @@ public class GrCUDAStreamPolicy {
                         // Otherwise we consider the bandwidth to move array a to device i,
                         // from each possible location containing the array a;
                         for (int location : upToDateLocations) {
-                            bandwidth = reduction.apply(linkBandwidth[location][i], bandwidth);
+                            // The CPU bandwidth is stored in the last column;
+                            int fromDevice = location != CPUDevice.CPU_DEVICE_ID ? i : linkBandwidth.length - 1;
+                            // The matrix is symmetric, loading [i][fromDevice] is faster than [fromDevice][i];
+                            bandwidth = reduction.apply(linkBandwidth[i][fromDevice], bandwidth);
                         }
                     }
                     // Add estimated transfer time;
