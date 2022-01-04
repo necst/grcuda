@@ -39,7 +39,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
-import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.MultiDimDeviceArray;
 import com.nvidia.grcuda.runtime.array.MultiDimDeviceArrayView;
@@ -48,7 +47,6 @@ import com.nvidia.grcuda.runtime.computation.arraycomputation.ArrayCopyFunctionE
 import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import com.nvidia.grcuda.test.util.TestLogHandler;
-import com.nvidia.grcuda.test.util.mock.AsyncGrCUDAExecutionContextMock;
 import com.nvidia.grcuda.test.util.mock.DeviceArrayMock;
 import com.nvidia.grcuda.test.util.mock.MultiDimDeviceArrayMock;
 import org.graalvm.polyglot.Context;
@@ -789,7 +787,7 @@ public class DeviceArrayCopyFunctionTest {
     public static class DeviceArrayCopyFunctionParametrized {
         @Parameterized.Parameters
         public static Collection<Object[]> data() {
-            return GrCUDATestUtil.getAllOptionCombinations();
+            return GrCUDATestUtil.getAllOptionCombinationsSingleGPU();
         }
 
         private final GrCUDATestOptionsStruct options;

@@ -34,7 +34,6 @@ import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -54,7 +53,7 @@ public class GrCUDAExecutionContextWithConstDependencyTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return GrCUDATestUtil.getAllOptionCombinations();
+        return GrCUDATestUtil.getAllOptionCombinationsSingleGPU();
     }
 
     private final GrCUDATestOptionsStruct options;

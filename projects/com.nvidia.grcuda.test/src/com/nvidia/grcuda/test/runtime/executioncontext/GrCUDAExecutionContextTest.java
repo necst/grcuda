@@ -54,7 +54,7 @@ public class GrCUDAExecutionContextTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return GrCUDATestUtil.getAllOptionCombinations();
+        return GrCUDATestUtil.getAllOptionCombinationsSingleGPU();
     }
 
     private final GrCUDATestOptionsStruct options;

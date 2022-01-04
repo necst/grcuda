@@ -4,6 +4,7 @@ import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,7 +28,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return GrCUDATestUtil.getAllOptionCombinations();
+        return GrCUDATestUtil.getAllOptionCombinationsMultiGPU();
     }
 
     private final GrCUDATestOptionsStruct options;
@@ -56,13 +57,19 @@ public class GrCUDAMultiGPUExecutionContextTest {
         assumeTrue(multipleGPUs);
     }
 
-    private boolean checkIfMultiGPU(Context context) {
+    private boolean checkIfEnoughGPUsAreAvailable(Context context) {
         Value deviceCount = context.eval("grcuda", "cudaGetDeviceCount()");
         if (deviceCount.asInt() < 2) {
+            // The system does not have multiple GPUs, skip all further multi-GPU tests;
             multipleGPUs = false;
             System.out.println("warning: only 1 GPU available, skipping further multi-GPU tests");
+            return false;
+        } else if (this.options.numberOfGPUs > deviceCount.asInt()) {
+            // If the test asks for more GPUs than available, skip it;
+            return false;
         }
-        return multipleGPUs;
+        // We have enough GPUs for this test;
+        return true;
     }
 
     ////////////////////////////////////////////////////////
@@ -77,7 +84,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
         int numOfGPUs = 2;
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, numOfGPUs)) {
 
-            assumeTrue(checkIfMultiGPU(context));
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
 
             Value setDevice = context.eval("grcuda", "cudaSetDevice");
 
@@ -121,10 +128,9 @@ public class GrCUDAMultiGPUExecutionContextTest {
      */
     @Test
     public void dependency2KernelsSimpleTest() {
-        int numOfGPUs = 2;
-        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, numOfGPUs)) {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
 
-            assumeTrue(checkIfMultiGPU(context));
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
 
             final int numElements = 10;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -165,9 +171,9 @@ public class GrCUDAMultiGPUExecutionContextTest {
     @Test
     public void dependencyKernelsTestA() {
 
-        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
 
-            assumeTrue(checkIfMultiGPU(context));
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
 
             final int numElements = 1000000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -210,9 +216,53 @@ public class GrCUDAMultiGPUExecutionContextTest {
      */
     @Test
     public void dependencyPipelineWithArrayCopyTest() {
-        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
-            assumeTrue(checkIfMultiGPU(context));
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
             GrCUDAComputationsWithGPU.arrayCopyWithJoin(context);
+        }
+    }
+
+    @Test
+    public void parallelKernelsWithReadOnlyArgsTest() {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+            GrCUDAComputationsWithGPU.parallelKernelsWithReadOnlyArgs(context);
+        }
+    }
+
+    @Test
+    public void simpleForkReadInputTest() {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+            GrCUDAComputationsWithGPU.simpleForkReadInput(context);
+        }
+    }
+
+    @Test
+    public void forkWithReadOnlyTest() {
+        // Test a computation of form A(1) --> B(1r, 2)
+        //                                 \-> C(1r, 3)
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+            GrCUDAComputationsWithGPU.forkWithReadOnly(context);
+        }
+    }
+
+    @Test
+    public void dependencyPipelineDiamondTest() {
+        // Test a computation of form A(1) --> B(1r, 2) -> D(1)
+        //                                 \-> C(1r, 3) -/
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+            GrCUDAComputationsWithGPU.dependencyPipelineDiamond(context);
+        }
+    }
+
+    @Test
+    public void joinWithExtraKernelTest() {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+            GrCUDAComputationsWithGPU.joinWithExtraKernel(context);
         }
     }
 }
