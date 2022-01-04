@@ -32,6 +32,7 @@ package com.nvidia.grcuda.test.util;
 
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicy;
 import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
@@ -106,7 +107,8 @@ public class GrCUDATestUtil {
                 {RetrieveNewStreamPolicyEnum.REUSE, RetrieveNewStreamPolicyEnum.ALWAYS_NEW}, // Simplify number of tests, don't use all options;
                 {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT, RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT},
                 {DependencyPolicyEnum.WITH_CONST, DependencyPolicyEnum.NO_CONST},   // Simplify number of tests, don't use all options;
-                {DeviceSelectionPolicyEnum.SINGLE_GPU, DeviceSelectionPolicyEnum.STREAM_AWARE}, // FIXME: ADD OTHER POLICIES
+                {DeviceSelectionPolicyEnum.SINGLE_GPU, DeviceSelectionPolicyEnum.STREAM_AWARE, DeviceSelectionPolicyEnum.ROUND_ROBIN,
+                        DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE, DeviceSelectionPolicyEnum.MINMIN_TRANSFER_TIME, DeviceSelectionPolicyEnum.MINMAX_TRANSFER_TIME},
                 {false, true},  // ForceStreamAttach, simplify number of tests, don't use all options;
                 {true, false},  // With and without timing of kernels
                 {2, 4, 8},  // Number of GPUs
@@ -121,7 +123,7 @@ public class GrCUDATestUtil {
             combinations.add(new GrCUDATestOptionsStruct[]{newStruct});
         });
         // Check that the number of options is correct;
-        assert(combinations.size() == (2 * 2 * 3 * 2 * 2 * 2 * 2 * 3));
+        assert(combinations.size() == (2 * 2 * 3 * 2 * 6 * 2 * 2 * 3));
         return combinations;
     }
 

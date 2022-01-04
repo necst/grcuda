@@ -10,6 +10,12 @@ import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.oracle.truffle.api.TruffleLogger;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -48,6 +54,12 @@ public class GrCUDAStreamPolicy {
                 break;
             case MIN_TRANSFER_SIZE:
                 deviceSelectionPolicy = new MinimizeTransferSizeDeviceSelectionPolicy();
+                break;
+            case MINMIN_TRANSFER_TIME:
+                deviceSelectionPolicy = new MinMinTransferTimeDeviceSelectionPolicy();
+                break;
+            case MINMAX_TRANSFER_TIME:
+                deviceSelectionPolicy = new MinMaxTransferTimeDeviceSelectionPolicy();
                 break;
             default:
                 STREAM_LOGGER.finer("Disabled device selection policy, it is not necessary to use one as retrieveParentStreamPolicyEnum=" + retrieveParentStreamPolicyEnum);
@@ -398,6 +410,131 @@ public class GrCUDAStreamPolicy {
                 // No data is present on any GPU: select the device with round-robin;
                 return roundRobin.retrieve(vertex);
             }
+        }
+    }
+
+    /**
+     * Given a computation, select the device that requires the least time to transfer data to it.
+     * Compared to {@link MinimizeTransferSizeDeviceSelectionPolicy} this policy does not simply select the
+     * device that requires the least data to be transferred to it, but also estimate the time that it takes
+     * to transfer the data, given a heterogeneous multi-GPU system.
+     * Given the complexity of CUDA's unified memory heuristics, we allow different heuristics to be used to estimate
+     * the actual transfer speed, e.g. take the min or max possible values;
+     * The speed of each GPU-GPU and CPU-GPU link is assumed to be stored in a file located in "$GRCUDA_HOME/connection_graph.csv";
+     */
+    private abstract class TransferTimeDeviceSelectionPolicy extends DeviceSelectionPolicy {
+
+        /**
+         * Fallback policy in case no GPU has any up-tp-date data. We assume that for any GPU, transferring all the data
+         * from the CPU would have the same cost, so we use this policy as tie-breaker;
+         */
+        private final RoundRobinDeviceSelectionPolicy roundRobin;
+        /**
+         * This functional tells how the transfer bandwidth for some array and device is computed.
+         * It should be max, min, mean, etc.;
+         */
+        private final java.util.function.BiFunction<Double, Double, Double> reduction;
+
+        private final double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUsToUse() + 1][devicesManager.getNumberOfGPUsToUse() + 1];
+
+        public TransferTimeDeviceSelectionPolicy(java.util.function.BiFunction<Double, Double, Double> reduction) {
+            this.roundRobin = new RoundRobinDeviceSelectionPolicy();
+            this.reduction = reduction;
+
+            List<List<String>> records = new ArrayList<>();
+            // Read each line in the CSV and store each line into a string array, splitting strings on ",";
+            try (BufferedReader br = new BufferedReader(new FileReader(System.getenv("GRCUDA_HOME") + File.separatorChar + "connection_graph.csv"))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] values = line.split(",");
+                    records.add(Arrays.asList(values));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            // Read each line, and reconstruct the bandwidth matrix.
+            // Given N GPUs and 1 CPU, we have a [GPU + 1][GPU+ 1] symmetric matrix.
+            // Each line is "start_id", "end_id", "bandwidth";
+            for (int il = 1; il < records.size(); il++) {
+                if (Integer.parseInt(records.get(il).get(0)) != -1) {
+                    this.linkBandwidth[Integer.parseInt(records.get(il).get(0))][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
+                } else {
+                    this.linkBandwidth[2][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
+                    this.linkBandwidth[Integer.parseInt(records.get(il).get(1))][2] = Double.parseDouble(records.get(il).get(2));
+                }
+            }
+        }
+
+        @Override
+        public Device retrieve(ExecutionDAG.DAGVertex vertex) {
+            // Estimated transfer time if the computation is scheduled on device i-th;
+            double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUsToUse()];
+            List<AbstractArray> arguments = vertex.getComputation().getArrayArguments();
+
+            // True if there's at least a GPU with some data already available;
+            boolean isAnyDataPresentOnGPUs = false;
+
+            // For each input array, consider how much time it takes to transfer it from every other device;
+            for (AbstractArray a : arguments) {
+                Set<Integer> upToDateLocations = a.getArrayUpToDateLocations();
+                if (upToDateLocations.size() > 1 || (upToDateLocations.size() == 1 && !upToDateLocations.contains(CPUDevice.CPU_DEVICE_ID))) {
+                    isAnyDataPresentOnGPUs = true;
+                }
+                // Check all available GPUs and compute the tentative transfer time for each of them.
+                // to find the device where transfer time is minimum;
+                for (int i = 0; i < argumentTransferTime.length; i++) {
+                    // Hypotheses: we consider the max bandwidth towards the device i.
+                    // Initialization: min possible value, bandwidth = 0 GB/sec;
+                    double bandwidth = 0.0;
+                    // If array a already present in device i, the transfer bandwidth to it is infinity.
+                    // We don't need to transfer it, so its transfer time will be 0;
+                    if (upToDateLocations.contains(i)) {
+                        bandwidth = Double.POSITIVE_INFINITY;
+                    } else {
+                        // Otherwise we consider the bandwidth to move array a to device i,
+                        // from each possible location containing the array a;
+                        for (int location : upToDateLocations) {
+                            bandwidth = reduction.apply(linkBandwidth[location][i], bandwidth);
+                        }
+                    }
+                    // Add estimated transfer time;
+                    argumentTransferTime[i] += a.getSizeBytes() / bandwidth;
+                }
+            }
+            if (isAnyDataPresentOnGPUs) {
+                // The best device is the one with minimum transfer time;
+                int deviceWithMinimumTransferTime = 0;
+                for (int i = 0; i < argumentTransferTime.length; i++) {
+                    deviceWithMinimumTransferTime = argumentTransferTime[i] < argumentTransferTime[deviceWithMinimumTransferTime] ? i : deviceWithMinimumTransferTime;
+                }
+                return devicesManager.getDevice(deviceWithMinimumTransferTime);
+            } else {
+                // FIXME: using least-busy should be better, but it is currently unreliable;
+                // No data is present on any GPU: select the device with round-robin;
+                return roundRobin.retrieve(vertex);
+            }
+        }
+    }
+
+    /**
+     * Assume that data are transferred from the device that gives the best possible bandwidth.
+     * In other words, find the minimum transfer time among all devices considering the minimum transfer time for each device;
+     */
+    private class MinMinTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
+        public MinMinTransferTimeDeviceSelectionPolicy() {
+            // Use max, we pick the maximum bandwidth between two devices;
+            super(Math::max);
+        }
+    }
+
+    /**
+     * Assume that data are transferred from the device that gives the worst possible bandwidth.
+     * In other words, find the minimum transfer time among all devices considering the maximum transfer time for each device;
+     */
+    private class MinMaxTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
+        public MinMaxTransferTimeDeviceSelectionPolicy() {
+            // Use min, we pick the minimum bandwidth between two devices;
+            super(Math::min);
         }
     }
 }

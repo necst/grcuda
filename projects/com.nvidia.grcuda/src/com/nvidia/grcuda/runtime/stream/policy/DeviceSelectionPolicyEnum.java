@@ -5,8 +5,8 @@ public enum DeviceSelectionPolicyEnum {
     ROUND_ROBIN("round-robin"),
     STREAM_AWARE("stream-aware"),
     MIN_TRANSFER_SIZE("min-transfer-size"),
-    TRANSFER_TIME_MIN("best-transfer-time-min"),
-    TRANSFER_TIME_MAX("best-transfer-time-max");
+    MINMIN_TRANSFER_TIME("minmin-transfer-time"),
+    MINMAX_TRANSFER_TIME("minmax-transfer-time");
 
     private final String name;
 
