@@ -65,12 +65,9 @@ public class GrCUDAStreamPolicy {
             case SAME_AS_PARENT:
                 this.retrieveParentStreamPolicy = new SameAsParentRetrieveParentStreamPolicy();
                 break;
-//            case MULTIGPU_DATA_AWARE:
-//                this.retrieveParentStreamPolicy = new MultiGPUDataAwareRetrieveParentStreamPolicym(this.retrieveNewStreamPolicy);
-//                break;
-//            case MULTIGPU_DISJOINT_DATA_AWARE:
-//                this.retrieveParentStreamPolicy = new MultiGPUDisjointDataAwareRetrieveParentStreamPolicy(this.retrieveNewStreamPolicy);
-//                break;
+            case MULTIGPU_DISJOINT:
+                this.retrieveParentStreamPolicy = new MultiGPUEarlySelectionDisjointRetrieveParentStreamPolicy(this.retrieveNewStreamPolicy, deviceSelectionPolicy);
+                break;
             default:
                 STREAM_LOGGER.severe("Cannot select a RetrieveParentStreamPolicy. The selected execution policy is not valid: " + retrieveParentStreamPolicyEnum);
                 throw new GrCUDAException("selected RetrieveParentStreamPolicy is not valid: " + retrieveParentStreamPolicyEnum);
@@ -134,10 +131,13 @@ public class GrCUDAStreamPolicy {
      */
     public CUDAStream retrieveStream(ExecutionDAG.DAGVertex vertex) {
         if (vertex.isStart()) {
-            // If the computation doesn't have parents, provide a new stream to it;
+            // If the computation doesn't have parents, provide a new stream to it.
+            // When using multiple GPUs, also select the device;
             return retrieveNewStream(vertex);
         } else {
             // Else, compute the streams used by the parent computations.
+            // When using multiple GPUs, we might want to select the device as well,
+            // if multiple suitable parent streams are available;
             return retrieveParentStream(vertex);
         }
     }
@@ -253,10 +253,10 @@ public class GrCUDAStreamPolicy {
      * and computes other streams using the current {@link RetrieveNewStreamPolicy};
      */
     private static class DisjointRetrieveParentStreamPolicy extends RetrieveParentStreamPolicy {
-        private final RetrieveNewStreamPolicy retrieveNewStreamPolicy;
+        protected final RetrieveNewStreamPolicy retrieveNewStreamPolicy;
 
         // Keep track of computations for which we have already re-used the stream;
-        private final Set<ExecutionDAG.DAGVertex> reusedComputations = new HashSet<>();
+        protected final Set<ExecutionDAG.DAGVertex> reusedComputations = new HashSet<>();
 
         public DisjointRetrieveParentStreamPolicy(RetrieveNewStreamPolicy retrieveNewStreamPolicy) {
             this.retrieveNewStreamPolicy = retrieveNewStreamPolicy;
@@ -268,7 +268,8 @@ public class GrCUDAStreamPolicy {
             List<ExecutionDAG.DAGVertex> availableParents = vertex.getParentVertices().stream()
                     .filter(v -> !reusedComputations.contains(v))
                     .collect(Collectors.toList());
-            // If there is at least one stream that can be re-used, take it;
+            // If there is at least one stream that can be re-used, take it.
+            // When using multiple devices, we just take the first parent stream without considering the device of the parent;
             if (!availableParents.isEmpty()) {
                 // The computation cannot be considered again;
                 reusedComputations.add(availableParents.get(0));
@@ -279,6 +280,48 @@ public class GrCUDAStreamPolicy {
                 //   (or possibly a free one, depending on the policy);
                 return retrieveNewStreamPolicy.retrieve(vertex);
             }
+        }
+    }
+
+    /**
+     * This policy extends DisjointRetrieveParentStreamPolicy with multi-GPU support for reused streams,
+     * not only for newly created streams.
+     * In this policy, we first select the ideal GPU for the input computation.
+     * Then, we find if any of the reusable streams is allocated on that device.
+     * If not, we create a new stream on the ideal GPU;
+     */
+    private static class MultiGPUEarlySelectionDisjointRetrieveParentStreamPolicy extends DisjointRetrieveParentStreamPolicy {
+
+        private final DeviceSelectionPolicy deviceSelectionPolicy;
+
+        public MultiGPUEarlySelectionDisjointRetrieveParentStreamPolicy(RetrieveNewStreamPolicy retrieveNewStreamPolicy, DeviceSelectionPolicy deviceSelectionPolicy) {
+            super(retrieveNewStreamPolicy);
+            this.deviceSelectionPolicy = deviceSelectionPolicy;
+        }
+
+        @Override
+        public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+            // Keep only parent vertices for which we haven't reused the stream yet;
+            List<ExecutionDAG.DAGVertex> availableParents = vertex.getParentVertices().stream()
+                    .filter(v -> !reusedComputations.contains(v))
+                    .collect(Collectors.toList());
+            // First, select the ideal device to execute this computation;
+            Device selectedDevice = deviceSelectionPolicy.retrieve(vertex);
+
+            // If at least one of the parents' streams is on the selected device, use that stream.
+            // Otherwise, create a new stream on the selected device;
+            if (!availableParents.isEmpty()) {
+                for (ExecutionDAG.DAGVertex v : availableParents) {
+                    if (v.getComputation().getStream().getStreamDeviceId() == selectedDevice.getDeviceId()) {
+                        // We found a parent whose stream is on the selected device;
+                        reusedComputations.add(v);
+                        return v.getComputation().getStream();
+                    }
+                }
+            }
+            // If no parent stream can be reused, provide a new stream to this computation
+            //   (or possibly a free one, depending on the policy);
+            return retrieveNewStreamPolicy.retrieveStreamFromDevice(selectedDevice);
         }
     }
 
