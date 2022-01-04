@@ -2,8 +2,10 @@ package com.nvidia.grcuda.runtime.stream.policy;
 
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDALogger;
+import com.nvidia.grcuda.runtime.CPUDevice;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.oracle.truffle.api.TruffleLogger;
@@ -38,8 +40,14 @@ public class GrCUDAStreamPolicy {
         // we also need a policy to choose the device where the computation is executed;
         DeviceSelectionPolicy deviceSelectionPolicy;
         switch (deviceSelectionPolicyEnum) {
+            case ROUND_ROBIN:
+                deviceSelectionPolicy = new RoundRobinDeviceSelectionPolicy();
+                break;
             case STREAM_AWARE:
                 deviceSelectionPolicy = new StreamAwareDeviceSelectionPolicy();
+                break;
+            case MIN_TRANSFER_SIZE:
+                deviceSelectionPolicy = new MinimizeTransferSizeDeviceSelectionPolicy();
                 break;
             default:
                 STREAM_LOGGER.finer("Disabled device selection policy, it is not necessary to use one as retrieveParentStreamPolicyEnum=" + retrieveParentStreamPolicyEnum);
@@ -72,27 +80,6 @@ public class GrCUDAStreamPolicy {
                 STREAM_LOGGER.severe("Cannot select a RetrieveParentStreamPolicy. The selected execution policy is not valid: " + retrieveParentStreamPolicyEnum);
                 throw new GrCUDAException("selected RetrieveParentStreamPolicy is not valid: " + retrieveParentStreamPolicyEnum);
         }
-
-//        if (retrieveParentStreamPolicyEnum == RetrieveParentStreamPolicyEnum.MULTIGPU_DATA_AWARE ||
-//                retrieveParentStreamPolicyEnum == RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT_DATA_AWARE) {
-//            switch (deviceSelectionPolicyEnum) {
-//                case DATA_LOCALITY_NEW:
-//                    this.deviceSelectionPolicy = new MoveFewerArgumentsNewDeviceSelectionPolicy();
-//                    break;
-//                case TRANSFER_TIME_MIN:
-//                    this.deviceSelectionPolicy = new FastestDataTransferMinDeviceSelectionPolicy();
-//                    break;
-//                case TRANSFER_TIME_MAX:
-//                    this.deviceSelectionPolicy = new FastestDataTransferMaxDeviceSelectionPolicy();
-//                    break;
-//                case DATA_LOCALITY:
-//                    this.deviceSelectionPolicy = new MoveFewerArgumentsDeviceSelectionPolicy();
-//                    break;
-//                default:
-//                    STREAM_LOGGER.severe("Cannot select a DeviceSelectionPolicy. The selected device selection policy is not valid: " + deviceSelectionPolicyEnum);
-//                    throw new GrCUDAException("selected DeviceSelectionPolicy is not valid: " + deviceSelectionPolicyEnum);
-//            }
-//        } else {
     }
 
     public GrCUDAStreamPolicy(CUDARuntime runtime,
@@ -341,15 +328,76 @@ public class GrCUDAStreamPolicy {
     }
 
     /**
-     * Basic class for multi-GPU scheduling. We simply assign computations to the device with fewer active streams.
+     * Basic class for multi-GPU scheduling. Simply rotate between all the available device.
+     * Not recommended for real utilization, but it can be useful for debugging
+     * or as fallback for more complex policies.
+     */
+    private class RoundRobinDeviceSelectionPolicy extends DeviceSelectionPolicy {
+        private int nextDevice = 0;
+
+        @Override
+        Device retrieve(ExecutionDAG.DAGVertex vertex) {
+            Device device = devicesManager.getDevice(nextDevice);
+            nextDevice = (nextDevice + 1) % devicesManager.getNumberOfGPUsToUse();
+            return device;
+        }
+    }
+
+    /**
+     * We assign computations to the device with fewer active streams.
      * A stream is active if there's any computation assigned to it that has not been flagged as "finished".
      * The idea is to keep all devices equally busy, and avoid having devices that are used less than others;
      */
     private class StreamAwareDeviceSelectionPolicy extends DeviceSelectionPolicy {
-
         @Override
         Device retrieve(ExecutionDAG.DAGVertex vertex) {
             return devicesManager.findDeviceWithFewerBusyStreams();
+        }
+    }
+
+    /**
+     * Given a computation, select the device that needs the least amount of data transfer.
+     * In other words, select the device that already has the maximum amount of bytes available,
+     * considering the size of the input arrays.
+     * For each input array, we look at the devices where the array is up to date, and give a "score"
+     * to that device that is equal to the array size. Then, we pick the device with maximum score.
+     * In case of ties, pick the device with lower ID.
+     * We do not consider the CPU as a meaningful location, because computations cannot be scheduled on the CPU.
+     * If the computation does not have any data already present on any device,
+     * choose the device with round-robin selection (using {@link RoundRobinDeviceSelectionPolicy};
+     */
+    private class MinimizeTransferSizeDeviceSelectionPolicy extends DeviceSelectionPolicy {
+
+        RoundRobinDeviceSelectionPolicy roundRobin = new RoundRobinDeviceSelectionPolicy();
+
+        @Override
+        Device retrieve(ExecutionDAG.DAGVertex vertex) {
+            // Array that tracks the size, in bytes, of data that is already present on each device;
+            long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse() + 1];
+            List<AbstractArray> arguments = vertex.getComputation().getArrayArguments();
+            // For each input array, compute if the array is available on other devices and does not need to be
+            // transferred. We track the total size, in bytes, that is already present on each device;
+            boolean isAnyDataPresentOnGPUs = false;  // True if there's at least a GPU with some data already available;
+            for (AbstractArray a : arguments) {
+                for (int location : a.getArrayUpToDateLocations()) {
+                    if (location != CPUDevice.CPU_DEVICE_ID) {
+                        alreadyPresentDataSize[location] += a.getSizeBytes();
+                        isAnyDataPresentOnGPUs = true;
+                    }
+                }
+            }
+            if (isAnyDataPresentOnGPUs) {
+                // Find device with maximum available data;
+                int deviceWithMaximumAvailableData = 0;
+                for (int i = 0; i < alreadyPresentDataSize.length; i++) {
+                    deviceWithMaximumAvailableData = alreadyPresentDataSize[i] > alreadyPresentDataSize[deviceWithMaximumAvailableData] ? i : deviceWithMaximumAvailableData;
+                }
+                return devicesManager.getDevice(deviceWithMaximumAvailableData);
+            } else {
+                // FIXME: using least-busy should be better, but it is currently unreliable;
+                // No data is present on any GPU: select the device with round-robin;
+                return roundRobin.retrieve(vertex);
+            }
         }
     }
 }

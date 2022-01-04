@@ -159,9 +159,9 @@ public class GrCUDAOptionMap implements TruffleObject {
 
     private static DeviceSelectionPolicyEnum parseDeviceSelectionPolicy(String policyString) {
         if (Objects.equals(policyString, DeviceSelectionPolicyEnum.SINGLE_GPU.toString())) return DeviceSelectionPolicyEnum.SINGLE_GPU;
-        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.DATA_LOCALITY.toString())) return DeviceSelectionPolicyEnum.DATA_LOCALITY;
+        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.ROUND_ROBIN.toString())) return DeviceSelectionPolicyEnum.ROUND_ROBIN;
         else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.STREAM_AWARE.toString())) return DeviceSelectionPolicyEnum.STREAM_AWARE;
-        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.DATA_LOCALITY_NEW.toString())) return DeviceSelectionPolicyEnum.DATA_LOCALITY_NEW;
+        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE.toString())) return DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE;
         else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.TRANSFER_TIME_MIN.toString())) return DeviceSelectionPolicyEnum.TRANSFER_TIME_MIN;
         else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.TRANSFER_TIME_MAX.toString())) return DeviceSelectionPolicyEnum.TRANSFER_TIME_MAX;
         else {

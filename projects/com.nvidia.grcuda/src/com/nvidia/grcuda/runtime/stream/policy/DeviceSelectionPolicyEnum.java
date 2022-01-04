@@ -2,9 +2,9 @@ package com.nvidia.grcuda.runtime.stream.policy;
 
 public enum DeviceSelectionPolicyEnum {
     SINGLE_GPU("single-gpu"),
+    ROUND_ROBIN("round-robin"),
     STREAM_AWARE("stream-aware"),
-    DATA_LOCALITY("data-locality"),
-    DATA_LOCALITY_NEW("data-locality-new"),
+    MIN_TRANSFER_SIZE("min-transfer-size"),
     TRANSFER_TIME_MIN("best-transfer-time-min"),
     TRANSFER_TIME_MAX("best-transfer-time-max");
 

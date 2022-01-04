@@ -43,9 +43,11 @@ import com.nvidia.grcuda.runtime.stream.DefaultStream;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.nvidia.grcuda.GrCUDALogger.COMPUTATION_LOGGER;
 
@@ -304,6 +306,23 @@ public abstract class GrCUDAComputationalElement {
                 }
             }
         }
+    }
+
+    /**
+     * Obtain the list of input arguments for this computation that are arrays;
+     * @return a list of arrays that are inputs for this computation
+     */
+    public List<AbstractArray> getArrayArguments(){
+        // Note: "argumentsThatCanCreateDependencies" is a filter applied to the original inputs,
+        // so we have no guarantees that it contains all the input arrays.
+        // In practice, "argumentsThatCanCreateDependencies" is already a selection of the input arrays,
+        // making the filter below unnecessary.
+        // If for whatever reason we have a argumentsThatCanCreateDependencies that does not contain all the input arrays,
+        // we need to store the original input list in this class as well, and apply the filter below to that list.
+        return this.argumentsThatCanCreateDependencies.stream()
+                .filter(ComputationArgument::isArray)
+                .map(a -> (AbstractArray) a.getArgumentValue())
+                .collect(Collectors.toList());
     }
 
     /**

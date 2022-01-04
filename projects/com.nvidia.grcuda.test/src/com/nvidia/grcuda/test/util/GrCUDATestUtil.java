@@ -104,7 +104,7 @@ public class GrCUDATestUtil {
                 {ExecutionPolicyEnum.ASYNC},
                 {true, false},  // InputPrefetch
                 {RetrieveNewStreamPolicyEnum.REUSE, RetrieveNewStreamPolicyEnum.ALWAYS_NEW}, // Simplify number of tests, don't use all options;
-                {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT}, // FIXME: ADD DATA AWARE
+                {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT, RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT},
                 {DependencyPolicyEnum.WITH_CONST, DependencyPolicyEnum.NO_CONST},   // Simplify number of tests, don't use all options;
                 {DeviceSelectionPolicyEnum.SINGLE_GPU, DeviceSelectionPolicyEnum.STREAM_AWARE}, // FIXME: ADD OTHER POLICIES
                 {false, true},  // ForceStreamAttach, simplify number of tests, don't use all options;
@@ -121,7 +121,7 @@ public class GrCUDATestUtil {
             combinations.add(new GrCUDATestOptionsStruct[]{newStruct});
         });
         // Check that the number of options is correct;
-        assert(combinations.size() == (2 * 2 * 2 * 2 * 2 * 2 * 2 * 3));
+        assert(combinations.size() == (2 * 2 * 3 * 2 * 2 * 2 * 2 * 3));
         return combinations;
     }
 
