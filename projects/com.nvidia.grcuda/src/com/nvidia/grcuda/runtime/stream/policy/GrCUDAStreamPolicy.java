@@ -9,6 +9,7 @@ import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.oracle.truffle.api.TruffleLogger;
+import org.antlr.v4.runtime.misc.NotNull;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -440,12 +441,17 @@ public class GrCUDAStreamPolicy {
          * It should be max, min, mean, etc.;
          */
         private final java.util.function.BiFunction<Double, Double, Double> reduction;
+        /**
+         * Starting value of the reduction. E.g. it can be 0 if using max or mean, +inf if using min, etc.
+         */
+        private final double startValue;
 
         private final double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUsToUse() + 1][devicesManager.getNumberOfGPUsToUse() + 1];
 
-        public TransferTimeDeviceSelectionPolicy(String bandwidthMatrixPath, java.util.function.BiFunction<Double, Double, Double> reduction) {
+        public TransferTimeDeviceSelectionPolicy(String bandwidthMatrixPath, java.util.function.BiFunction<Double, Double, Double> reduction, double startValue) {
             this.roundRobin = new RoundRobinDeviceSelectionPolicy();
             this.reduction = reduction;
+            this.startValue = startValue;
 
             List<List<String>> records = new ArrayList<>();
             // Read each line in the CSV and store each line into a string array, splitting strings on ",";
@@ -483,6 +489,38 @@ public class GrCUDAStreamPolicy {
             }
         }
 
+        /**
+         * Estimate the bandwidth to transfer data to a "targetDevice" GPU, assuming
+         * that data can be transferred from devices with index in "upToDateLocations".
+         * @param targetDevice where we want to transfer data
+         * @param upToDateLocations from where we can transfer data
+         * @return an estimate of the transfer bandwidth
+         */
+        public double computeBandwidth(int targetDevice, Set<Integer> upToDateLocations) {
+            // Hypotheses: we consider the max bandwidth towards the device targetDevice.
+            // Initialization: min possible value, bandwidth = 0 GB/sec;
+            double bandwidth = startValue;
+            // Check that data is updated at least in some location. This is a precondition that must hold;
+            if (upToDateLocations == null || upToDateLocations.isEmpty()) {
+                throw new IllegalStateException("data is not updated in any location, when estimating bandwidth for device=" + targetDevice);
+            }
+            // If array a already present in device targetDevice, the transfer bandwidth to it is infinity.
+            // We don't need to transfer it, so its transfer time will be 0;
+            if (upToDateLocations.contains(targetDevice)) {
+                bandwidth = Double.POSITIVE_INFINITY;
+            } else {
+                // Otherwise we consider the bandwidth to move array a to device targetDevice,
+                // from each possible location containing the array a;
+                for (int location : upToDateLocations) {
+                    // The CPU bandwidth is stored in the last column;
+                    int fromDevice = location != CPUDevice.CPU_DEVICE_ID ? location : linkBandwidth.length - 1;
+                    // The matrix is symmetric, loading [targetDevice][fromDevice] is faster than [fromDevice][targetDevice];
+                    bandwidth = reduction.apply(linkBandwidth[targetDevice][fromDevice], bandwidth);
+                }
+            }
+            return bandwidth;
+        }
+
         @Override
         public Device retrieve(ExecutionDAG.DAGVertex vertex) {
             // Estimated transfer time if the computation is scheduled on device i-th;
@@ -501,25 +539,8 @@ public class GrCUDAStreamPolicy {
                 // Check all available GPUs and compute the tentative transfer time for each of them.
                 // to find the device where transfer time is minimum;
                 for (int i = 0; i < argumentTransferTime.length; i++) {
-                    // Hypotheses: we consider the max bandwidth towards the device i.
-                    // Initialization: min possible value, bandwidth = 0 GB/sec;
-                    double bandwidth = 0.0;
-                    // If array a already present in device i, the transfer bandwidth to it is infinity.
-                    // We don't need to transfer it, so its transfer time will be 0;
-                    if (upToDateLocations.contains(i)) {
-                        bandwidth = Double.POSITIVE_INFINITY;
-                    } else {
-                        // Otherwise we consider the bandwidth to move array a to device i,
-                        // from each possible location containing the array a;
-                        for (int location : upToDateLocations) {
-                            // The CPU bandwidth is stored in the last column;
-                            int fromDevice = location != CPUDevice.CPU_DEVICE_ID ? i : linkBandwidth.length - 1;
-                            // The matrix is symmetric, loading [i][fromDevice] is faster than [fromDevice][i];
-                            bandwidth = reduction.apply(linkBandwidth[i][fromDevice], bandwidth);
-                        }
-                    }
                     // Add estimated transfer time;
-                    argumentTransferTime[i] += a.getSizeBytes() / bandwidth;
+                    argumentTransferTime[i] += a.getSizeBytes() / computeBandwidth(i, upToDateLocations);
                 }
             }
             if (isAnyDataPresentOnGPUs) {
@@ -548,7 +569,7 @@ public class GrCUDAStreamPolicy {
     private class MinMinTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
         public MinMinTransferTimeDeviceSelectionPolicy() {
             // Use max, we pick the maximum bandwidth between two devices;
-            super(bandwidthMatrixPath, Math::max);
+            super(bandwidthMatrixPath, Math::max, 0);
         }
     }
 
@@ -559,7 +580,7 @@ public class GrCUDAStreamPolicy {
     private class MinMaxTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
         public MinMaxTransferTimeDeviceSelectionPolicy() {
             // Use min, we pick the minimum bandwidth between two devices;
-            super(bandwidthMatrixPath, Math::min);
+            super(bandwidthMatrixPath, Math::min, Double.POSITIVE_INFINITY);
         }
     }
 }
