@@ -43,6 +43,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropLibrary;
+import com.oracle.truffle.api.interop.InvalidArrayIndexException;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnknownIdentifierException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
@@ -169,6 +170,12 @@ public class SparseMatrixCSR implements TruffleObject {
     final boolean hasArrayElements() {
         return true;
     }
+
+    @ExportMessage
+    final Object readArrayElement(long index) throws UnsupportedMessageException, InvalidArrayIndexException { return null; }
+
+    @ExportMessage
+    final boolean isArrayElementReadable(long index) { return false; }
 
     @ExportMessage
     @SuppressWarnings("static-method")

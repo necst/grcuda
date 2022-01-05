@@ -134,6 +134,13 @@ public class SparseMatrixCOO implements TruffleObject {
         return values;
     }
 
+    @ExportMessage
+    final Object readArrayElement(long index) throws UnsupportedMessageException, InvalidArrayIndexException { return null; }
+
+    @ExportMessage
+    final boolean isArrayElementReadable(long index) { return false; }
+
+
     @Override
     public String toString() {
         return "SparseMatrixCOO{" +
@@ -180,6 +187,10 @@ public class SparseMatrixCOO implements TruffleObject {
         return FREE.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || ROW_INDICES.equals(name) || COL_INDICES.equals(name);
     }
 
+    public boolean isMatrixFreed() {
+        return matrixFreed;
+    }
+
     @ExportMessage
     Object readMember(String memberName,
                       @Cached.Shared("memberName") @Cached("createIdentityProfile()") ValueProfile memberProfile) throws UnknownIdentifierException {
@@ -193,7 +204,7 @@ public class SparseMatrixCOO implements TruffleObject {
 
 
         if (IS_MEMORY_FREED.equals(memberName)) {
-            return matrixFreed;
+            return isMatrixFreed();
         }
 
         if(VALUES.equals(memberName)){

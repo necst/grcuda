@@ -1,20 +1,18 @@
 package com.nvidia.grcuda.test.runtime.array;
 
-import com.nvidia.grcuda.GrCUDAContext;
-import com.nvidia.grcuda.GrCUDAException;
-import com.nvidia.grcuda.test.util.GrCUDATestUtil;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.Arrays;
-import java.util.Collection;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 
 @RunWith(Parameterized.class)
 public class SparseVectorTest {
@@ -43,7 +41,7 @@ public class SparseVectorTest {
     private Value[] createSpVector(Context context) {
         Value deviceArrayCtor = context.eval("grcuda", "DeviceArray");
         Value sparseVectorCtor = context.eval("grcuda", "SparseVector");
-        Value idx = deviceArrayCtor.execute(this.indexType, this.numNnz);
+        Value idx = deviceArrayCtor.execute(this.indexType, this.numNnz); // TODO non dovrebbe essere viceversa?
         Value val = deviceArrayCtor.execute(this.valueType, this.numNnz);
         Value spVector = sparseVectorCtor.execute(idx, val, this.numNnz);
         return new Value[]{spVector, idx, val};
@@ -60,12 +58,9 @@ public class SparseVectorTest {
             assertFalse(spVector.getMember("isMemoryFreed").asBoolean());
             assertFalse(idx.getMember("isMemoryFreed").asBoolean());
             assertFalse(val.getMember("isMemoryFreed").asBoolean());
-
             // First free, should succeed
             spVector.getMember("free").execute();
             assertTrue(spVector.getMember("isMemoryFreed").asBoolean());
-
-
             // Second free, should fail
             spVector.getMember("free").execute();
 
