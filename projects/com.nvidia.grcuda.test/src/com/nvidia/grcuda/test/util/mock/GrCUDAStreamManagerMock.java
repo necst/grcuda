@@ -53,33 +53,15 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
      */
     public static int numUserAllocatedStreams = 0;
 
-    GrCUDAStreamManagerMock(CUDARuntime runtime) {
-        this(runtime, RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, DeviceSelectionPolicyEnum.SINGLE_GPU, 1);
-    }
-
-    GrCUDAStreamManagerMock(CUDARuntime runtime,
-                            RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
-                            RetrieveParentStreamPolicyEnum parentStreamPolicy) {
-        this(runtime, retrieveStreamPolicy, parentStreamPolicy, DeviceSelectionPolicyEnum.SINGLE_GPU,1);
-    }
-
     GrCUDAStreamManagerMock(CUDARuntime runtime,
                             RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
                             RetrieveParentStreamPolicyEnum parentStreamPolicy,
                             DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
-                            int numberOfAvailableGPUs) {
-        // Use all the available GPUs;
-        this(runtime, retrieveStreamPolicy, parentStreamPolicy, deviceSelectionPolicyEnum, numberOfAvailableGPUs, numberOfAvailableGPUs);
-    }
-
-    GrCUDAStreamManagerMock(CUDARuntime runtime,
-                            RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
-                            RetrieveParentStreamPolicyEnum parentStreamPolicy,
-                            DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
+                            String bandwidthMatrixPath,
                             int numberOfAvailableGPUs,
                             int numberOfGPUsToUse) {
         // Possibly use a number of GPUs lower than the number of available GPUs;
-        super(runtime, false, new GrCUDAStreamPolicyMock(retrieveStreamPolicy, parentStreamPolicy, deviceSelectionPolicyEnum, numberOfAvailableGPUs, numberOfGPUsToUse));
+        super(runtime, false, new GrCUDAStreamPolicyMock(retrieveStreamPolicy, parentStreamPolicy, deviceSelectionPolicyEnum, bandwidthMatrixPath, numberOfAvailableGPUs, numberOfGPUsToUse));
         // Reset the number of streams;
         numUserAllocatedStreams = 0;
     }

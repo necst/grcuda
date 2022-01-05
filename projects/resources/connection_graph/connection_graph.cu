@@ -88,7 +88,7 @@ int main() {
 	std::ofstream out_file;
 	// This is not safe, I guess;
     std::string grcuda_home = getenv("GRCUDA_HOME");
-	out_file.open(grcuda_home + "/grcuda-data/datasets/connection_graph/connection_graph.csv");
+	out_file.open(grcuda_home + "/projects/resources/connection_graph/datasets/connection_graph.csv");
 	out_file << "From,To,Bandwidth\n";
 
 	for (int i = 0; i < gpu_number; i++) {

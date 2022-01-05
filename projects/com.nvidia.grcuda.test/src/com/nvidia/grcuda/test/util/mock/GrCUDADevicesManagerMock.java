@@ -14,11 +14,6 @@ public class GrCUDADevicesManagerMock extends GrCUDADevicesManager {
     }
 
     @Override
-    public int getCurrentGPUId(){
-        return currentGPU;
-    }
-
-    @Override
     public Device getCurrentGPU(){
         return this.getDevice(this.currentGPU);
     }

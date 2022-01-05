@@ -88,7 +88,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
 
             Value setDevice = context.eval("grcuda", "cudaSetDevice");
 
-            final int numElements = 100000;
+            final int numElements = 10000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
             Value deviceArrayConstructor = context.eval("grcuda", "DeviceArray");
             Value x = deviceArrayConstructor.execute("float", numElements);
@@ -166,7 +166,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
 
     /**
      * Test with 3 kernels: kernel0 does not have dependencies.
-     * kernel1 is the parent of kernek2;
+     * kernel1 is the parent of kernel2;
      */
     @Test
     public void dependencyKernelsTestA() {
@@ -175,7 +175,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
 
             assumeTrue(checkIfEnoughGPUsAreAvailable(context));
 
-            final int numElements = 1000000;
+            final int numElements = 10000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
             Value deviceArrayConstructor = context.eval("grcuda", "DeviceArray");
             Value x = deviceArrayConstructor.execute("float", numElements);

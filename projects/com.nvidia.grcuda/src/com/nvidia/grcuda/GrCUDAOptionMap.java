@@ -48,6 +48,7 @@ import com.oracle.truffle.api.library.ExportMessage;
 import org.graalvm.options.OptionKey;
 import org.graalvm.options.OptionValues;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -80,6 +81,9 @@ public class GrCUDAOptionMap implements TruffleObject {
     public static final boolean DEFAULT_TENSORRT_ENABLED = false;
     public static final boolean DEFAULT_ENABLE_COMPUTATION_TIMERS = false;
     public static final Integer DEFAULT_NUMBER_OF_GPUs = 1;
+    public static final String DEFAULT_BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME") + File.separatorChar +
+            "projects" + File.separatorChar + "resources" + File.separatorChar +
+            "connection_graph" + File.separatorChar + "datasets" + File.separatorChar + "connection_graph.csv";
 
     public GrCUDAOptionMap(OptionValues options) {
         optionsMap = new HashMap<>();
@@ -233,6 +237,8 @@ public class GrCUDAOptionMap implements TruffleObject {
     public Integer getNumberOfGPUs() {
         return (Integer) getOptionValueFromOptionKey(GrCUDAOptions.NumberOfGPUs);
     }
+
+    public String getBandwidthMatrix() { return (String) getOptionValueFromOptionKey(GrCUDAOptions.BandwidthMatrix); }
 
     public MemAdviserEnum getMemAdvisePolicy() {
         return (MemAdviserEnum) getOptionValueFromOptionKey(GrCUDAOptions.MemAdvisePolicy);

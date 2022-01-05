@@ -12,6 +12,7 @@ import com.oracle.truffle.api.TruffleLogger;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,44 +35,47 @@ public class GrCUDAStreamPolicy {
 
     private final RetrieveNewStreamPolicy retrieveNewStreamPolicy;
     private final RetrieveParentStreamPolicy retrieveParentStreamPolicy;
+    protected final DeviceSelectionPolicy deviceSelectionPolicy;
+    private final String bandwidthMatrixPath;
 
     private static final TruffleLogger STREAM_LOGGER = GrCUDALogger.getLogger(GrCUDALogger.STREAM_LOGGER);
 
     public GrCUDAStreamPolicy(GrCUDADevicesManager devicesManager,
                               RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
                               RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
-                              DeviceSelectionPolicyEnum deviceSelectionPolicyEnum) {
+                              DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
+                              String bandwidthMatrixPath) {
         this.devicesManager = devicesManager;
+        this.bandwidthMatrixPath = bandwidthMatrixPath;
         // When using a stream selection policy that supports multiple GPUs,
         // we also need a policy to choose the device where the computation is executed;
-        DeviceSelectionPolicy deviceSelectionPolicy;
         switch (deviceSelectionPolicyEnum) {
             case ROUND_ROBIN:
-                deviceSelectionPolicy = new RoundRobinDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new RoundRobinDeviceSelectionPolicy();
                 break;
             case STREAM_AWARE:
-                deviceSelectionPolicy = new StreamAwareDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new StreamAwareDeviceSelectionPolicy();
                 break;
             case MIN_TRANSFER_SIZE:
-                deviceSelectionPolicy = new MinimizeTransferSizeDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new MinimizeTransferSizeDeviceSelectionPolicy();
                 break;
             case MINMIN_TRANSFER_TIME:
-                deviceSelectionPolicy = new MinMinTransferTimeDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new MinMinTransferTimeDeviceSelectionPolicy();
                 break;
             case MINMAX_TRANSFER_TIME:
-                deviceSelectionPolicy = new MinMaxTransferTimeDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new MinMaxTransferTimeDeviceSelectionPolicy();
                 break;
             default:
                 STREAM_LOGGER.finer("Disabled device selection policy, it is not necessary to use one as retrieveParentStreamPolicyEnum=" + retrieveParentStreamPolicyEnum);
-                deviceSelectionPolicy = new SingleDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new SingleDeviceSelectionPolicy();
         }
         // Get how streams are retrieved for computations without parents;
         switch (retrieveNewStreamPolicyEnum) {
             case REUSE:
-                this.retrieveNewStreamPolicy = new ReuseRetrieveStreamPolicy(deviceSelectionPolicy);
+                this.retrieveNewStreamPolicy = new ReuseRetrieveStreamPolicy(this.deviceSelectionPolicy);
                 break;
             case ALWAYS_NEW:
-                this.retrieveNewStreamPolicy = new AlwaysNewRetrieveStreamPolicy(deviceSelectionPolicy);
+                this.retrieveNewStreamPolicy = new AlwaysNewRetrieveStreamPolicy(this.deviceSelectionPolicy);
                 break;
             default:
                 STREAM_LOGGER.severe("Cannot select a RetrieveNewStreamPolicy. The selected execution policy is not valid: " + retrieveNewStreamPolicyEnum);
@@ -86,7 +90,7 @@ public class GrCUDAStreamPolicy {
                 this.retrieveParentStreamPolicy = new SameAsParentRetrieveParentStreamPolicy();
                 break;
             case MULTIGPU_DISJOINT:
-                this.retrieveParentStreamPolicy = new MultiGPUEarlySelectionDisjointRetrieveParentStreamPolicy(this.retrieveNewStreamPolicy, deviceSelectionPolicy);
+                this.retrieveParentStreamPolicy = new MultiGPUEarlySelectionDisjointRetrieveParentStreamPolicy(this.retrieveNewStreamPolicy, this.deviceSelectionPolicy);
                 break;
             default:
                 STREAM_LOGGER.severe("Cannot select a RetrieveParentStreamPolicy. The selected execution policy is not valid: " + retrieveParentStreamPolicyEnum);
@@ -97,8 +101,9 @@ public class GrCUDAStreamPolicy {
     public GrCUDAStreamPolicy(CUDARuntime runtime,
                               RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
                               RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
-                              DeviceSelectionPolicyEnum deviceSelectionPolicyEnum) {
-        this(new GrCUDADevicesManager(runtime), retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum);
+                              DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
+                              String bandwidthMatrixPath) {
+        this(new GrCUDADevicesManager(runtime), retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum, bandwidthMatrixPath);
     }
 
     /**
@@ -423,7 +428,7 @@ public class GrCUDAStreamPolicy {
      * The speed of each GPU-GPU and CPU-GPU link is assumed to be stored in a file located in "$GRCUDA_HOME/grcuda_data/datasets/connection_graph/connection_graph.csv".
      * This file is generated as "cd $GRCUDA_HOME/projects/resources/cuda", "make connection_graph", "bin/connection_graph";
      */
-    private abstract class TransferTimeDeviceSelectionPolicy extends DeviceSelectionPolicy {
+    public abstract class TransferTimeDeviceSelectionPolicy extends DeviceSelectionPolicy {
 
         /**
          * Fallback policy in case no GPU has any up-tp-date data. We assume that for any GPU, transferring all the data
@@ -438,18 +443,13 @@ public class GrCUDAStreamPolicy {
 
         private final double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUsToUse() + 1][devicesManager.getNumberOfGPUsToUse() + 1];
 
-        public TransferTimeDeviceSelectionPolicy(java.util.function.BiFunction<Double, Double, Double> reduction) {
+        public TransferTimeDeviceSelectionPolicy(String bandwidthMatrixPath, java.util.function.BiFunction<Double, Double, Double> reduction) {
             this.roundRobin = new RoundRobinDeviceSelectionPolicy();
             this.reduction = reduction;
 
             List<List<String>> records = new ArrayList<>();
             // Read each line in the CSV and store each line into a string array, splitting strings on ",";
-            try (BufferedReader br = new BufferedReader(new FileReader(
-                    System.getenv("GRCUDA_HOME") + File.separatorChar
-                    + "grcuda-data" + File.separatorChar
-                    + "datasets" + File.separatorChar
-                    + "connection_graph" + File.separatorChar
-                    + "connection_graph.csv"))) {
+            try (BufferedReader br = new BufferedReader(new FileReader(bandwidthMatrixPath))) {
                 String line;
                 while ((line = br.readLine()) != null) {
                     String[] values = line.split(",");
@@ -469,6 +469,16 @@ public class GrCUDAStreamPolicy {
                     // -1 identifies CPU-GPU interconnection, store it in the last spot;
                     this.linkBandwidth[devicesManager.getNumberOfGPUsToUse()][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
                     this.linkBandwidth[Integer.parseInt(records.get(il).get(1))][devicesManager.getNumberOfGPUsToUse()] = Double.parseDouble(records.get(il).get(2));
+                }
+            }
+            // Interconnections are supposedly symmetric. Enforce this behavior by averaging results.
+            // In other words, B[i][j] = B[j][j] <- (B[i][j] + B[j][i]) / 2.
+            // Ignore the diagonal, and the last column and row (it represents the CPU and is already symmetric by construction);
+            for (int i = 0; i < this.linkBandwidth.length - 1; i++) {
+                for (int j = i; j < this.linkBandwidth.length - 1; j++) {
+                    double averageBandwidth = (this.linkBandwidth[i][j] + this.linkBandwidth[j][i]) / 2;
+                    this.linkBandwidth[i][j] = averageBandwidth;
+                    this.linkBandwidth[j][i] = averageBandwidth;
                 }
             }
         }
@@ -525,6 +535,10 @@ public class GrCUDAStreamPolicy {
                 return roundRobin.retrieve(vertex);
             }
         }
+
+        public double[][] getLinkBandwidth() {
+            return linkBandwidth;
+        }
     }
 
     /**
@@ -534,7 +548,7 @@ public class GrCUDAStreamPolicy {
     private class MinMinTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
         public MinMinTransferTimeDeviceSelectionPolicy() {
             // Use max, we pick the maximum bandwidth between two devices;
-            super(Math::max);
+            super(bandwidthMatrixPath, Math::max);
         }
     }
 
@@ -545,7 +559,7 @@ public class GrCUDAStreamPolicy {
     private class MinMaxTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
         public MinMaxTransferTimeDeviceSelectionPolicy() {
             // Use min, we pick the minimum bandwidth between two devices;
-            super(Math::min);
+            super(bandwidthMatrixPath, Math::min);
         }
     }
 }
