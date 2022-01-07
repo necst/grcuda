@@ -132,11 +132,11 @@ public class BenchmarkB6 extends Benchmark{
     private Value softMax;
     private Value argMax;
 
-    private Value xCpu;
-    private Value nbFeatLogProbCpu;
-    private Value ridgeCoeffCpu;
-    private Value nbClassLogPriorCpu;
-    private Value ridgeInterceptCpu;
+    private int xCpu;
+    private float[][] nbFeatLogProbCpu;
+    private float[][] ridgeCoeffCpu;
+    private float[] nbClassLogPriorCpu;
+    private float[] ridgeInterceptCpu;
     private Value r1Cpu;
     private Value r2Cpu;
 
@@ -155,6 +155,10 @@ public class BenchmarkB6 extends Benchmark{
 
         numClasses = 10;
         numFeatures = 200;
+        nbClassLogPriorCpu = new float[numClasses];
+        nbFeatLogProbCpu = new float[numClasses][numFeatures];
+        ridgeCoeffCpu = new float[numClasses][numFeatures];
+        ridgeInterceptCpu = new float[numClasses];
 
         // Context initialization
         Value buildkernel = this.getGrcudaContext().eval("grcuda", "buildkernel");
@@ -172,22 +176,55 @@ public class BenchmarkB6 extends Benchmark{
         softMax = buildkernel.execute(ENSEMBLE_KERNEL, "softmax", "pointer, sint32, sint32");
         argMax = buildkernel.execute(ENSEMBLE_KERNEL, "argmax", "pointer, pointer, pointer, sint32, sint32");
 
+        // Create a random input
+        int maxOccurrenceOfNgram = 10;
+        int minOccurrenceOfNgram = 0;
+        double min = 0.0;
+        double max = 1.0;
+
+        xCpu = (int)(Math.random()*(maxOccurrenceOfNgram-minOccurrenceOfNgram+1)+minOccurrenceOfNgram);
+
+        for (int i = 0;i < numClasses; i++)
+            for (int j = 0;j < numFeatures; j++){
+                nbFeatLogProbCpu[i][j] = (float) Math.random();
+            }
+        for (int i = 0;i < numClasses; i++)
+            for (int j = 0;j < numFeatures; j++){
+                ridgeCoeffCpu[i][j] = (float) Math.random();
+            }
+
+        for (int i = 0; i < numClasses; i++) {
+            nbClassLogPriorCpu[i] = (float) Math.random();
+        }
+
+        for (int i = 0; i < numClasses; i++) {
+            ridgeInterceptCpu[i] = (float) Math.random();
+        }
+
+        float[][] r1Cpu = new float[getTestSize()][numClasses];
+        for (int i = 0; i < getTestSize(); i++)
+            for (int j = 0; j < numClasses; j++) {
+                r1Cpu[i][j] = nbClassLogPriorCpu[j];
+            }
+
+        int[][] r2Cpu = new int[getTestSize()][numClasses];
+
         // Array initialization
         Value deviceArray = this.getGrcudaContext().eval("grcuda", "DeviceArray");
-        x = deviceArray.execute("float", (TEST_SIZE * numFeatures));
-        z = deviceArray.execute("float", (TEST_SIZE * numFeatures));
+        x = deviceArray.execute("float", (getTestSize() * numFeatures));
+        z = deviceArray.execute("float", (getTestSize() * numFeatures));
 
         nbFeatLogProb = deviceArray.execute("float", numClasses * numFeatures);
         nbClassLogPrior = deviceArray.execute("float", numClasses);
         ridgeCoeff = deviceArray.execute("float", numClasses * numFeatures);
         ridgeIntercept = deviceArray.execute("float", numClasses);
 
-        nbAMax = deviceArray.execute("float",TEST_SIZE);
-        nbL = deviceArray.execute("float",TEST_SIZE);
+        nbAMax = deviceArray.execute("float",getTestSize());
+        nbL = deviceArray.execute("float",getTestSize());
 
-        r1 = deviceArray.execute("float",TEST_SIZE * numClasses);
-        r2 = deviceArray.execute("float",TEST_SIZE * numClasses);
-        r = deviceArray.execute("float",TEST_SIZE);
+        r1 = deviceArray.execute("float",getTestSize() * numClasses);
+        r2 = deviceArray.execute("float",getTestSize() * numClasses);
+        r = deviceArray.execute("float",getTestSize());
     }
 
     @Override
@@ -195,8 +232,7 @@ public class BenchmarkB6 extends Benchmark{
         assert (!config.randomInit);
         for (int i = 0; i < getTestSize(); i++) {
             for (int j = 0; j < numClasses; j++) {
-                r1.setArrayElement(i * numClasses + j, nbClassLogPrior[j]); //TODO: how to pick j element of nbClassLogPrior
-                r2.setArrayElement(i * numClasses +j, 0);
+                r1.setArrayElement(i * numClasses + j, nbClassLogPrior.getArrayElement(j).asFloat());                r2.setArrayElement(i * numClasses +j, 0);
             }
         }
     }
