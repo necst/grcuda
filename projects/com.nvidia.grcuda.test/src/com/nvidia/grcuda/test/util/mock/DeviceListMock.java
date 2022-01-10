@@ -11,7 +11,7 @@ public class DeviceListMock extends DeviceList {
     @Override
     public void initializeDeviceList(int numDevices, CUDARuntime runtime) {
         for (int deviceOrdinal = 0; deviceOrdinal < numDevices; ++deviceOrdinal) {
-            devices[deviceOrdinal] = new DeviceMock(deviceOrdinal, null);
+            devices.set(deviceOrdinal, new DeviceMock(deviceOrdinal, null));
         }
     }
 }

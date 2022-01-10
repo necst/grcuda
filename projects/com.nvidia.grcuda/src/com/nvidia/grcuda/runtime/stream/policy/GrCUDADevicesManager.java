@@ -1,6 +1,7 @@
 package com.nvidia.grcuda.runtime.stream.policy;
 
 import java.util.Collection;
+import java.util.List;
 
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Device;
@@ -59,6 +60,10 @@ public class GrCUDADevicesManager {
 
     public DeviceList getDeviceList() {
         return deviceList;
+    }
+
+    public List<Device> getUsableDevices() {
+        return deviceList.getDevices().subList(0, this.getNumberOfGPUsToUse());
     }
 
     public Device getDevice(int deviceId) {

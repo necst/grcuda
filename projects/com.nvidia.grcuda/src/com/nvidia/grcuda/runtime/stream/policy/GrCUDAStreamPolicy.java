@@ -18,6 +18,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -52,23 +53,23 @@ public class GrCUDAStreamPolicy {
         // we also need a policy to choose the device where the computation is executed;
         switch (deviceSelectionPolicyEnum) {
             case ROUND_ROBIN:
-                this.deviceSelectionPolicy = new RoundRobinDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new RoundRobinDeviceSelectionPolicy(devicesManager);
                 break;
             case STREAM_AWARE:
-                this.deviceSelectionPolicy = new StreamAwareDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new StreamAwareDeviceSelectionPolicy(devicesManager);
                 break;
             case MIN_TRANSFER_SIZE:
-                this.deviceSelectionPolicy = new MinimizeTransferSizeDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new MinimizeTransferSizeDeviceSelectionPolicy(devicesManager);
                 break;
             case MINMIN_TRANSFER_TIME:
-                this.deviceSelectionPolicy = new MinMinTransferTimeDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new MinMinTransferTimeDeviceSelectionPolicy(devicesManager);
                 break;
             case MINMAX_TRANSFER_TIME:
-                this.deviceSelectionPolicy = new MinMaxTransferTimeDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new MinMaxTransferTimeDeviceSelectionPolicy(devicesManager);
                 break;
             default:
                 STREAM_LOGGER.finer("Disabled device selection policy, it is not necessary to use one as retrieveParentStreamPolicyEnum=" + retrieveParentStreamPolicyEnum);
-                this.deviceSelectionPolicy = new SingleDeviceSelectionPolicy();
+                this.deviceSelectionPolicy = new SingleDeviceSelectionPolicy(devicesManager);
         }
         // Get how streams are retrieved for computations without parents;
         switch (retrieveNewStreamPolicyEnum) {
@@ -338,10 +339,20 @@ public class GrCUDAStreamPolicy {
      * With some policies (e.g. the ones that don't support multiple GPUs), we never have to perform device selection.
      * Simply return the currently active device;
      */
-    private class SingleDeviceSelectionPolicy extends DeviceSelectionPolicy {
+    public class SingleDeviceSelectionPolicy extends DeviceSelectionPolicy {
+        public SingleDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
+            super(devicesManager);
+        }
+
         @Override
         Device retrieve(ExecutionDAG.DAGVertex vertex) {
             return devicesManager.getCurrentGPU();
+        }
+
+        @Override
+        Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
+            // There's only one device available, anyway;
+            return this.retrieve(vertex);
         }
     }
 
@@ -350,14 +361,49 @@ public class GrCUDAStreamPolicy {
      * Not recommended for real utilization, but it can be useful for debugging
      * or as fallback for more complex policies.
      */
-    private class RoundRobinDeviceSelectionPolicy extends DeviceSelectionPolicy {
+    public class RoundRobinDeviceSelectionPolicy extends DeviceSelectionPolicy {
         private int nextDevice = 0;
+
+        public RoundRobinDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
+            super(devicesManager);
+        }
+
+        private void increaseNextDevice(int startDevice) {
+            this.nextDevice = (startDevice + 1) % devicesManager.getNumberOfGPUsToUse();
+        }
 
         @Override
         Device retrieve(ExecutionDAG.DAGVertex vertex) {
             Device device = devicesManager.getDevice(nextDevice);
-            nextDevice = (nextDevice + 1) % devicesManager.getNumberOfGPUsToUse();
+            increaseNextDevice(nextDevice);
             return device;
+        }
+
+        @Override
+        Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
+            if (devices.size() == 1) {
+                Device device = devices.get(0);
+                // The next device to use is the one after the only device in the list;
+                increaseNextDevice(device.getDeviceId());
+                return device;
+            } else {
+                // Sort the devices by ID;
+                List<Device> sortedDevices = devices.stream().sorted(Comparator.comparingInt(Device::getDeviceId)).collect(Collectors.toList());
+                // Go through the devices until we find the first device with ID bigger or equal than nextDevice;
+                for (Device d : sortedDevices) {
+                    if (nextDevice < d.getDeviceId()) {
+                        // The next device is the one after the current one;
+                        increaseNextDevice(d.getDeviceId());
+                        return d;
+                    }
+                }
+                // If we haven't found any device, return the last device in the list;
+                Device device = sortedDevices.get(sortedDevices.size() - 1);
+                // Start counting from the current device;
+                increaseNextDevice(device.getDeviceId());
+                return device;
+            }
+
         }
     }
 
@@ -366,10 +412,19 @@ public class GrCUDAStreamPolicy {
      * A stream is active if there's any computation assigned to it that has not been flagged as "finished".
      * The idea is to keep all devices equally busy, and avoid having devices that are used less than others;
      */
-    private class StreamAwareDeviceSelectionPolicy extends DeviceSelectionPolicy {
+    public class StreamAwareDeviceSelectionPolicy extends DeviceSelectionPolicy {
+        public StreamAwareDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
+            super(devicesManager);
+        }
+
         @Override
         Device retrieve(ExecutionDAG.DAGVertex vertex) {
             return devicesManager.findDeviceWithFewerBusyStreams();
+        }
+
+        @Override
+        Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
+            return this.retrieve(vertex);
         }
     }
 
@@ -384,9 +439,13 @@ public class GrCUDAStreamPolicy {
      * If the computation does not have any data already present on any device,
      * choose the device with round-robin selection (using {@link RoundRobinDeviceSelectionPolicy};
      */
-    private class MinimizeTransferSizeDeviceSelectionPolicy extends DeviceSelectionPolicy {
+    public class MinimizeTransferSizeDeviceSelectionPolicy extends DeviceSelectionPolicy {
 
-        RoundRobinDeviceSelectionPolicy roundRobin = new RoundRobinDeviceSelectionPolicy();
+        RoundRobinDeviceSelectionPolicy roundRobin = new RoundRobinDeviceSelectionPolicy(devicesManager);
+
+        public MinimizeTransferSizeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
+            super(devicesManager);
+        }
 
         @Override
         Device retrieve(ExecutionDAG.DAGVertex vertex) {
@@ -416,6 +475,11 @@ public class GrCUDAStreamPolicy {
                 // No data is present on any GPU: select the device with round-robin;
                 return roundRobin.retrieve(vertex);
             }
+        }
+
+        @Override
+        Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
+            return this.retrieve(vertex);
         }
     }
 
@@ -448,8 +512,9 @@ public class GrCUDAStreamPolicy {
 
         private final double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUsToUse() + 1][devicesManager.getNumberOfGPUsToUse() + 1];
 
-        public TransferTimeDeviceSelectionPolicy(String bandwidthMatrixPath, java.util.function.BiFunction<Double, Double, Double> reduction, double startValue) {
-            this.roundRobin = new RoundRobinDeviceSelectionPolicy();
+        public TransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, String bandwidthMatrixPath, java.util.function.BiFunction<Double, Double, Double> reduction, double startValue) {
+            super(devicesManager);
+            this.roundRobin = new RoundRobinDeviceSelectionPolicy(devicesManager);
             this.reduction = reduction;
             this.startValue = startValue;
 
@@ -557,6 +622,11 @@ public class GrCUDAStreamPolicy {
             }
         }
 
+        @Override
+        Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
+            return this.retrieve(vertex);
+        }
+
         public double[][] getLinkBandwidth() {
             return linkBandwidth;
         }
@@ -566,10 +636,10 @@ public class GrCUDAStreamPolicy {
      * Assume that data are transferred from the device that gives the best possible bandwidth.
      * In other words, find the minimum transfer time among all devices considering the minimum transfer time for each device;
      */
-    private class MinMinTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
-        public MinMinTransferTimeDeviceSelectionPolicy() {
+    public class MinMinTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
+        public MinMinTransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
             // Use max, we pick the maximum bandwidth between two devices;
-            super(bandwidthMatrixPath, Math::max, 0);
+            super(devicesManager, bandwidthMatrixPath, Math::max, 0);
         }
     }
 
@@ -577,10 +647,10 @@ public class GrCUDAStreamPolicy {
      * Assume that data are transferred from the device that gives the worst possible bandwidth.
      * In other words, find the minimum transfer time among all devices considering the maximum transfer time for each device;
      */
-    private class MinMaxTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
-        public MinMaxTransferTimeDeviceSelectionPolicy() {
+    public class MinMaxTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
+        public MinMaxTransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
             // Use min, we pick the minimum bandwidth between two devices;
-            super(bandwidthMatrixPath, Math::min, Double.POSITIVE_INFINITY);
+            super(devicesManager, bandwidthMatrixPath, Math::min, Double.POSITIVE_INFINITY);
         }
     }
 }
