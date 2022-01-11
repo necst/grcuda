@@ -33,6 +33,7 @@ package com.nvidia.grcuda.runtime.stream.policy;
 public enum RetrieveParentStreamPolicyEnum {
     SAME_AS_PARENT("same-as-parent"),
     DISJOINT("disjoint"),
+    MULTIGPU_EARLY_DISJOINT("multigpu-early-disjoint"),
     MULTIGPU_DISJOINT("multigpu-disjoint");
 
     private final String name;

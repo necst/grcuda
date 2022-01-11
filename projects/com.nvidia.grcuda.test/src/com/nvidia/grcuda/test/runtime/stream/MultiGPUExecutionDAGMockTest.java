@@ -497,7 +497,7 @@ public class MultiGPUExecutionDAGMockTest {
         for (int numGPU : gpus) {
             AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                     .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
-                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT)
                     .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
                     .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                     .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
@@ -513,11 +513,11 @@ public class MultiGPUExecutionDAGMockTest {
         for (int numGPU : gpus) {
             AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                     .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
-                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT)
                     .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
                     .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                     .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
-            // Computation 5/7 is scheduled on 0 because that's the ideal device chosen by MULTIGPU_DISJOINT
+            // Computation 5/7 is scheduled on 0 because that's the ideal device chosen by MULTIGPU_EARLY_DISJOINT
             // (device 0 and 1 have the same amount of data), even though device 1 would have a suitable parent.
             // This also creates a new stream.
             // Computation 7/7 is scheduled on 0 because 0 has A,B while device 1,2,3 have only one array each;
@@ -533,7 +533,7 @@ public class MultiGPUExecutionDAGMockTest {
         for (int numGPU : gpus) {
             AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                     .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
-                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT)
                     .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
                     .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                     .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
@@ -550,7 +550,7 @@ public class MultiGPUExecutionDAGMockTest {
         for (int numGPU : gpus) {
             AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                     .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
-                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT)
                     .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
                     .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                     .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
@@ -567,7 +567,7 @@ public class MultiGPUExecutionDAGMockTest {
         int numGPU = 3;
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
-                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT)
                 .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
@@ -585,7 +585,7 @@ public class MultiGPUExecutionDAGMockTest {
         int numGPU = 4;
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
-                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT)
                 .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
@@ -601,7 +601,7 @@ public class MultiGPUExecutionDAGMockTest {
         int numGPU = 4;
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
-                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT)
                 .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
@@ -616,7 +616,7 @@ public class MultiGPUExecutionDAGMockTest {
         int numGPU = 2;
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
-                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT)
                 .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();

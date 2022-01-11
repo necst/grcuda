@@ -16,9 +16,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class GrCUDAStreamPolicy {
@@ -88,8 +91,11 @@ public class GrCUDAStreamPolicy {
             case SAME_AS_PARENT:
                 this.retrieveParentStreamPolicy = new SameAsParentRetrieveParentStreamPolicy();
                 break;
-            case MULTIGPU_DISJOINT:
+            case MULTIGPU_EARLY_DISJOINT:
                 this.retrieveParentStreamPolicy = new MultiGPUEarlySelectionDisjointRetrieveParentStreamPolicy(this.retrieveNewStreamPolicy, this.deviceSelectionPolicy);
+                break;
+            case MULTIGPU_DISJOINT:
+                this.retrieveParentStreamPolicy = new MultiGPUDisjointRetrieveParentStreamPolicy(this.devicesManager, this.retrieveNewStreamPolicy, this.deviceSelectionPolicy);
                 break;
             default:
                 STREAM_LOGGER.severe("Cannot select a RetrieveParentStreamPolicy. The selected execution policy is not valid: " + retrieveParentStreamPolicyEnum);
@@ -269,15 +275,15 @@ public class GrCUDAStreamPolicy {
         public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
             // Keep only parent vertices for which we haven't reused the stream yet;
             List<ExecutionDAG.DAGVertex> availableParents = vertex.getParentVertices().stream()
-                    .filter(v -> !reusedComputations.contains(v))
-                    .collect(Collectors.toList());
+                    .filter(v -> !reusedComputations.contains(v)).collect(Collectors.toList());
             // If there is at least one stream that can be re-used, take it.
-            // When using multiple devices, we just take the first parent stream without considering the device of the parent;
+            // When using multiple devices, we just take a parent stream without considering the device of the parent;
+            // FIXME: we might take a random parent. Or use round-robin;
             if (!availableParents.isEmpty()) {
                 // The computation cannot be considered again;
-                reusedComputations.add(availableParents.get(0));
+                reusedComputations.add(availableParents.iterator().next());
                 // Return the stream associated to this computation;
-                return availableParents.get(0).getComputation().getStream();
+                return availableParents.iterator().next().getComputation().getStream();
             } else {
                 // If no parent stream can be reused, provide a new stream to this computation
                 //   (or possibly a free one, depending on the policy);
@@ -325,6 +331,55 @@ public class GrCUDAStreamPolicy {
             // If no parent stream can be reused, provide a new stream to this computation
             //   (or possibly a free one, depending on the policy);
             return retrieveNewStreamPolicy.retrieveStreamFromDevice(selectedDevice);
+        }
+    }
+
+    /**
+     * This policy extends DisjointRetrieveParentStreamPolicy with multi-GPU support for reused streams,
+     * not only for newly created streams.
+     * In this policy, we select the streams that can be reused from the computation's parents.
+     * Then, we find which of the parent's devices is the best for the input computation.
+     * If no stream can be reused, we select a new device and create a stream on it;
+     */
+    private static class MultiGPUDisjointRetrieveParentStreamPolicy extends DisjointRetrieveParentStreamPolicy {
+
+        private final DeviceSelectionPolicy deviceSelectionPolicy;
+        private final GrCUDADevicesManager devicesManager;
+
+        public MultiGPUDisjointRetrieveParentStreamPolicy(GrCUDADevicesManager devicesManager, RetrieveNewStreamPolicy retrieveNewStreamPolicy, DeviceSelectionPolicy deviceSelectionPolicy) {
+            super(retrieveNewStreamPolicy);
+            this.devicesManager = devicesManager;
+            this.deviceSelectionPolicy = deviceSelectionPolicy;
+        }
+
+        @Override
+        public CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+            // Keep only parent vertices for which we haven't reused the stream yet;
+            List<ExecutionDAG.DAGVertex> availableParents = vertex.getParentVertices().stream()
+                    .filter(v -> !reusedComputations.contains(v))
+                    .collect(Collectors.toList());
+            // Map each parent's device to the respective parent;
+            Map<Device, ExecutionDAG.DAGVertex> deviceParentMap = availableParents
+                    .stream().collect(Collectors.toMap(
+                            v -> devicesManager.getDevice(v.getComputation().getStream().getStreamDeviceId()),
+                            Function.identity(),
+                            (x, y) -> x, // If two parents have the same device, use the first parent;
+                            HashMap::new // Use hashmap;
+                            ));
+            // If there's at least one free stream on the parents' devices,
+            // select the best device among the available parent devices.
+            // If no stream is available, create a new stream on the best possible device;
+            if (!availableParents.isEmpty()) {
+                // First, select the best device among the ones available;
+                Device selectedDevice = deviceSelectionPolicy.retrieve(vertex, new ArrayList<>(deviceParentMap.keySet()));
+                ExecutionDAG.DAGVertex selectedParent = deviceParentMap.get(selectedDevice);
+                // We found a parent whose stream is on the selected device;
+                reusedComputations.add(selectedParent);
+                return selectedParent.getComputation().getStream();
+            }
+            // If no parent stream can be reused, provide a new stream to this computation
+            //   (or possibly a free one, depending on the policy);
+            return retrieveNewStreamPolicy.retrieve(vertex);
         }
     }
 

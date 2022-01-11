@@ -154,6 +154,7 @@ public class GrCUDAOptionMap implements TruffleObject {
     private static RetrieveParentStreamPolicyEnum parseParentStreamPolicy(String policyString) {
         if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.DISJOINT.toString())) return RetrieveParentStreamPolicyEnum.DISJOINT;
         else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.SAME_AS_PARENT.toString())) return RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
+        else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT.toString())) return RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT;
         else if (Objects.equals(policyString, RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT.toString())) return RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT;
         else {
             LOGGER.warning("Warning: unknown parent stream retrieval policy=" + policyString + "; using default=" + DEFAULT_PARENT_STREAM_POLICY);

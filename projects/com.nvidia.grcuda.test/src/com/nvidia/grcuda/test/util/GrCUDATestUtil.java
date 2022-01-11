@@ -105,7 +105,7 @@ public class GrCUDATestUtil {
                 {ExecutionPolicyEnum.ASYNC},
                 {true, false},  // InputPrefetch
                 {RetrieveNewStreamPolicyEnum.REUSE, RetrieveNewStreamPolicyEnum.ALWAYS_NEW}, // Simplify number of tests, don't use all options;
-                {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT, RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT},
+                {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT, RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT, RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT},
                 {DependencyPolicyEnum.WITH_CONST, DependencyPolicyEnum.NO_CONST},   // Simplify number of tests, don't use all options;
                 {DeviceSelectionPolicyEnum.SINGLE_GPU, DeviceSelectionPolicyEnum.STREAM_AWARE, DeviceSelectionPolicyEnum.ROUND_ROBIN,
                         DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE, DeviceSelectionPolicyEnum.MINMIN_TRANSFER_TIME, DeviceSelectionPolicyEnum.MINMAX_TRANSFER_TIME},
