@@ -2,6 +2,7 @@ package com.nvidia.grcuda.runtime.stream.policy;
 
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 
 import java.util.List;
@@ -48,6 +49,25 @@ public abstract class DeviceSelectionPolicy {
         } else {
             return this.retrieveImpl(vertex, devices);
         }
+    }
+
+    /**
+     * Find if any of the array inputs of the computation is present on the selected devices.
+     * Used to understand if no device has any data already present, and the device selection policy
+     * should fallback to a simpler device selection policy.
+     * @param vertex the computation for which we want to select the device
+     * @param devices the list of devices where the computation could be executed
+     * @return if any of the computation's array inputs is already present on the specified devices
+     */
+    protected boolean isDataPresentOnGPUs(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
+        for (Device d : devices) {
+            for (AbstractArray a : vertex.getComputation().getArrayArguments()) {
+                if (a.getArrayUpToDateLocations().contains(d.getDeviceId())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

@@ -34,20 +34,32 @@ public class GrCUDADevicesManager {
     /**
      * Find the device with the lowest number of busy stream on it and returns it.
      * A stream is busy if there's any computation assigned to it that has not been flagged as "finished".
-     * If multiple devices have the same number of free streams, return the first;
+     * If multiple devices have the same number of free streams, return the first.
+     * In this implementation, consider all usable devices;
      * @return the device with fewer busy streams
      */
     public Device findDeviceWithFewerBusyStreams(){
-        int min = deviceList.getDevice(0).getNumberOfBusyStreams();
-        int deviceId = 0;
-        for (int i = 0; i < this.getNumberOfGPUsToUse(); i++) {
-            int numBusyStreams = deviceList.getDevice(i).getNumberOfBusyStreams();
+        return findDeviceWithFewerBusyStreams(getUsableDevices());
+    }
+
+    /**
+     * Find the device with the lowest number of busy stream on it and returns it.
+     * A stream is busy if there's any computation assigned to it that has not been flagged as "finished".
+     * If multiple devices have the same number of free streams, return the first;
+     * @param devices the list of devices to inspect
+     * @return the device with fewer busy streams
+     */
+    public Device findDeviceWithFewerBusyStreams(List<Device> devices){
+        Device device = devices.get(0);
+        int min = device.getNumberOfBusyStreams();
+        for (Device d : devices) {
+            int numBusyStreams = d.getNumberOfBusyStreams();
             if (numBusyStreams < min) {
                 min = numBusyStreams;
-                deviceId = i;
+                device = d;
             }
         }
-        return deviceList.getDevice(deviceId);
+        return device;
     }
 
     public Device getCurrentGPU(){

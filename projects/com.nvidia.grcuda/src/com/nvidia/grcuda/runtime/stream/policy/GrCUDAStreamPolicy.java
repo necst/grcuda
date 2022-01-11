@@ -9,11 +9,8 @@ import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.oracle.truffle.api.TruffleLogger;
-import org.antlr.v4.runtime.misc.NotNull;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -419,13 +416,8 @@ public class GrCUDAStreamPolicy {
         }
 
         @Override
-        public Device retrieve(ExecutionDAG.DAGVertex vertex) {
-            return devicesManager.findDeviceWithFewerBusyStreams();
-        }
-
-        @Override
         Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
-            return this.retrieve(vertex);
+            return devicesManager.findDeviceWithFewerBusyStreams(devices);
         }
     }
 
@@ -448,13 +440,16 @@ public class GrCUDAStreamPolicy {
             super(devicesManager);
         }
 
-        @Override
-        public Device retrieve(ExecutionDAG.DAGVertex vertex) {
-            // Array that tracks the size, in bytes, of data that is already present on each device;
-            long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse() + 1];
+        /**
+         * For each input array of the computation, compute if the array is available on other devices and does not need to be
+         * transferred. We track the total size, in bytes, that is already present on each device;
+         * @param vertex the input computation
+         * @param alreadyPresentDataSize the array where we store the size, in bytes, of data that is already present on each device.
+         *                               The array must be zero-initialized and have size equal to the number of usable GPUs
+         * @return if any data is present on any GPU. If false, we can use a fallback policy instead
+         */
+        private boolean computeDataSizeOnDevices(ExecutionDAG.DAGVertex vertex, long[] alreadyPresentDataSize) {
             List<AbstractArray> arguments = vertex.getComputation().getArrayArguments();
-            // For each input array, compute if the array is available on other devices and does not need to be
-            // transferred. We track the total size, in bytes, that is already present on each device;
             boolean isAnyDataPresentOnGPUs = false;  // True if there's at least a GPU with some data already available;
             for (AbstractArray a : arguments) {
                 for (int location : a.getArrayUpToDateLocations()) {
@@ -464,13 +459,37 @@ public class GrCUDAStreamPolicy {
                     }
                 }
             }
+            return isAnyDataPresentOnGPUs;
+        }
+
+        /**
+         * Find the device with the most bytes in it. It's just an argmax on "alreadyPresentDataSize",
+         * returning the device whose ID correspond to the maximum's index
+         * @param devices the list of devices to consider for the argmax
+         * @param alreadyPresentDataSize the array where we store the size, in bytes, of data that is already present on each device.
+         *                               the array must be zero-initialized and have size equal to the number of usable GPUs
+         * @return the device with the most data
+         */
+        private Device selectDeviceWithMostData(List<Device> devices, long[] alreadyPresentDataSize) {
+            // Find device with maximum available data;
+            Device deviceWithMaximumAvailableData = devices.get(0);
+            for (Device d : devices) {
+                if (alreadyPresentDataSize[d.getDeviceId()] > alreadyPresentDataSize[deviceWithMaximumAvailableData.getDeviceId()]) {
+                    deviceWithMaximumAvailableData = d;
+                }
+            }
+            return deviceWithMaximumAvailableData;
+        }
+
+        @Override
+        public Device retrieve(ExecutionDAG.DAGVertex vertex) {
+            // Array that tracks the size, in bytes, of data that is already present on each device;
+            long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse()];
+            // Compute the amount of data on each device, and if any device has any data at all;
+            boolean isAnyDataPresentOnGPUs = computeDataSizeOnDevices(vertex, alreadyPresentDataSize);
             if (isAnyDataPresentOnGPUs) {
                 // Find device with maximum available data;
-                int deviceWithMaximumAvailableData = 0;
-                for (int i = 0; i < alreadyPresentDataSize.length; i++) {
-                    deviceWithMaximumAvailableData = alreadyPresentDataSize[i] > alreadyPresentDataSize[deviceWithMaximumAvailableData] ? i : deviceWithMaximumAvailableData;
-                }
-                return devicesManager.getDevice(deviceWithMaximumAvailableData);
+                return selectDeviceWithMostData(devicesManager.getUsableDevices(), alreadyPresentDataSize);
             } else {
                 // FIXME: using least-busy should be better, but it is currently unreliable;
                 // No data is present on any GPU: select the device with round-robin;
@@ -480,7 +499,19 @@ public class GrCUDAStreamPolicy {
 
         @Override
         Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
-            return this.retrieve(vertex);
+            // Array that tracks the size, in bytes, of data that is already present on each device;
+            long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse()];
+            // Compute the amount of data on each device, and if any device has any data at all;
+            computeDataSizeOnDevices(vertex, alreadyPresentDataSize);
+            // Find if any data is present only on the selected GPUs;
+            if (isDataPresentOnGPUs(vertex, devices)) {
+                // Find device with maximum available data;
+                return selectDeviceWithMostData(devices, alreadyPresentDataSize);
+            } else {
+                // FIXME: using least-busy should be better, but it is currently unreliable;
+                // No data is present on any GPU: select the device with round-robin;
+                return roundRobin.retrieve(vertex, devices);
+            }
         }
     }
 
@@ -587,10 +618,15 @@ public class GrCUDAStreamPolicy {
             return bandwidth;
         }
 
-        @Override
-        public Device retrieve(ExecutionDAG.DAGVertex vertex) {
-            // Estimated transfer time if the computation is scheduled on device i-th;
-            double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUsToUse()];
+        /**
+         * For each device, measure how long it takes to transfer the data that is required
+         * to run the computation in vertex
+         * @param vertex the computation that we want to run
+         * @param argumentTransferTime the array where we store the time, in seconds, to transfer the required data on each device
+         *                             The array must be zero-initialized and have size equal to the number of usable GPUs
+         * @return if any data is present on any GPU. If false, we can use a fallback policy instead
+         */
+        private boolean computeTransferTimes(ExecutionDAG.DAGVertex vertex, double[] argumentTransferTime) {
             List<AbstractArray> arguments = vertex.getComputation().getArrayArguments();
 
             // True if there's at least a GPU with some data already available;
@@ -609,13 +645,37 @@ public class GrCUDAStreamPolicy {
                     argumentTransferTime[i] += a.getSizeBytes() / computeBandwidth(i, upToDateLocations);
                 }
             }
+            return isAnyDataPresentOnGPUs;
+        }
+
+        /**
+         * Find the device with the lower synchronization time. It's just an argmin on "argumentTransferTime",
+         * returning the device whose ID correspond to the minimum's index
+         * @param devices the list of devices to consider for the argmin
+         * @param argumentTransferTime the array where we store the time, in seconds, to transfer the required data on each device
+         *                             The array must be zero-initialized and have size equal to the number of usable GPUs
+         * @return the device with the most data
+         */
+        private Device findDeviceWithLowestTransferTime(List<Device> devices, double[] argumentTransferTime) {
+            // The best device is the one with minimum transfer time;
+            Device deviceWithMinimumTransferTime = devices.get(0);
+            for (Device d : devices) {
+                if (argumentTransferTime[d.getDeviceId()] < argumentTransferTime[deviceWithMinimumTransferTime.getDeviceId()]) {
+                    deviceWithMinimumTransferTime = d;
+                }
+            }
+            return deviceWithMinimumTransferTime;
+        }
+
+        @Override
+        public Device retrieve(ExecutionDAG.DAGVertex vertex) {
+            // Estimated transfer time if the computation is scheduled on device i-th;
+            double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUsToUse()];
+            // Compute the synchronization time on each device, and if any device has any data at all;
+            boolean isAnyDataPresentOnGPUs = computeTransferTimes(vertex, argumentTransferTime);
             if (isAnyDataPresentOnGPUs) {
                 // The best device is the one with minimum transfer time;
-                int deviceWithMinimumTransferTime = 0;
-                for (int i = 0; i < argumentTransferTime.length; i++) {
-                    deviceWithMinimumTransferTime = argumentTransferTime[i] < argumentTransferTime[deviceWithMinimumTransferTime] ? i : deviceWithMinimumTransferTime;
-                }
-                return devicesManager.getDevice(deviceWithMinimumTransferTime);
+                return findDeviceWithLowestTransferTime(devicesManager.getUsableDevices(), argumentTransferTime);
             } else {
                 // FIXME: using least-busy should be better, but it is currently unreliable;
                 // No data is present on any GPU: select the device with round-robin;
@@ -625,7 +685,19 @@ public class GrCUDAStreamPolicy {
 
         @Override
         Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
-            return this.retrieve(vertex);
+            // Estimated transfer time if the computation is scheduled on device i-th;
+            double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUsToUse()];
+            // Compute the synchronization time on each device, and if any device has any data at all;
+            computeTransferTimes(vertex, argumentTransferTime);
+            // Find if any data is present only on the selected GPUs;
+            if (isDataPresentOnGPUs(vertex, devices)) {
+                // The best device is the one with minimum transfer time;
+                return findDeviceWithLowestTransferTime(devices, argumentTransferTime);
+            } else {
+                // FIXME: using least-busy should be better, but it is currently unreliable;
+                // No data is present on any GPU: select the device with round-robin;
+                return roundRobin.retrieve(vertex, devices);
+            }
         }
 
         public double[][] getLinkBandwidth() {
