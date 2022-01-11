@@ -339,13 +339,13 @@ public class GrCUDAStreamPolicy {
      * With some policies (e.g. the ones that don't support multiple GPUs), we never have to perform device selection.
      * Simply return the currently active device;
      */
-    public class SingleDeviceSelectionPolicy extends DeviceSelectionPolicy {
+    public static class SingleDeviceSelectionPolicy extends DeviceSelectionPolicy {
         public SingleDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
             super(devicesManager);
         }
 
         @Override
-        Device retrieve(ExecutionDAG.DAGVertex vertex) {
+        public Device retrieve(ExecutionDAG.DAGVertex vertex) {
             return devicesManager.getCurrentGPU();
         }
 
@@ -361,7 +361,7 @@ public class GrCUDAStreamPolicy {
      * Not recommended for real utilization, but it can be useful for debugging
      * or as fallback for more complex policies.
      */
-    public class RoundRobinDeviceSelectionPolicy extends DeviceSelectionPolicy {
+    public static class RoundRobinDeviceSelectionPolicy extends DeviceSelectionPolicy {
         private int nextDevice = 0;
 
         public RoundRobinDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
@@ -369,12 +369,12 @@ public class GrCUDAStreamPolicy {
         }
 
         private void increaseNextDevice(int startDevice) {
-            this.nextDevice = (startDevice + 1) % devicesManager.getNumberOfGPUsToUse();
+            this.nextDevice = (startDevice + 1) % this.devicesManager.getNumberOfGPUsToUse();
         }
 
         @Override
-        Device retrieve(ExecutionDAG.DAGVertex vertex) {
-            Device device = devicesManager.getDevice(nextDevice);
+        public Device retrieve(ExecutionDAG.DAGVertex vertex) {
+            Device device = this.devicesManager.getDevice(nextDevice);
             increaseNextDevice(nextDevice);
             return device;
         }
@@ -391,14 +391,15 @@ public class GrCUDAStreamPolicy {
                 List<Device> sortedDevices = devices.stream().sorted(Comparator.comparingInt(Device::getDeviceId)).collect(Collectors.toList());
                 // Go through the devices until we find the first device with ID bigger or equal than nextDevice;
                 for (Device d : sortedDevices) {
-                    if (nextDevice < d.getDeviceId()) {
+                    if (nextDevice <= d.getDeviceId()) {
                         // The next device is the one after the current one;
                         increaseNextDevice(d.getDeviceId());
                         return d;
                     }
                 }
-                // If we haven't found any device, return the last device in the list;
-                Device device = sortedDevices.get(sortedDevices.size() - 1);
+                // If we haven't found any device, return the first device in the list
+                // (i.e. reset nextDevice to 0 and start counting);
+                Device device = sortedDevices.get(0);
                 // Start counting from the current device;
                 increaseNextDevice(device.getDeviceId());
                 return device;
@@ -412,13 +413,13 @@ public class GrCUDAStreamPolicy {
      * A stream is active if there's any computation assigned to it that has not been flagged as "finished".
      * The idea is to keep all devices equally busy, and avoid having devices that are used less than others;
      */
-    public class StreamAwareDeviceSelectionPolicy extends DeviceSelectionPolicy {
+    public static class StreamAwareDeviceSelectionPolicy extends DeviceSelectionPolicy {
         public StreamAwareDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
             super(devicesManager);
         }
 
         @Override
-        Device retrieve(ExecutionDAG.DAGVertex vertex) {
+        public Device retrieve(ExecutionDAG.DAGVertex vertex) {
             return devicesManager.findDeviceWithFewerBusyStreams();
         }
 
@@ -439,7 +440,7 @@ public class GrCUDAStreamPolicy {
      * If the computation does not have any data already present on any device,
      * choose the device with round-robin selection (using {@link RoundRobinDeviceSelectionPolicy};
      */
-    public class MinimizeTransferSizeDeviceSelectionPolicy extends DeviceSelectionPolicy {
+    public static class MinimizeTransferSizeDeviceSelectionPolicy extends DeviceSelectionPolicy {
 
         RoundRobinDeviceSelectionPolicy roundRobin = new RoundRobinDeviceSelectionPolicy(devicesManager);
 
@@ -448,7 +449,7 @@ public class GrCUDAStreamPolicy {
         }
 
         @Override
-        Device retrieve(ExecutionDAG.DAGVertex vertex) {
+        public Device retrieve(ExecutionDAG.DAGVertex vertex) {
             // Array that tracks the size, in bytes, of data that is already present on each device;
             long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse() + 1];
             List<AbstractArray> arguments = vertex.getComputation().getArrayArguments();
@@ -493,7 +494,7 @@ public class GrCUDAStreamPolicy {
      * The speed of each GPU-GPU and CPU-GPU link is assumed to be stored in a file located in "$GRCUDA_HOME/grcuda_data/datasets/connection_graph/connection_graph.csv".
      * This file is generated as "cd $GRCUDA_HOME/projects/resources/cuda", "make connection_graph", "bin/connection_graph";
      */
-    public abstract class TransferTimeDeviceSelectionPolicy extends DeviceSelectionPolicy {
+    public abstract static class TransferTimeDeviceSelectionPolicy extends DeviceSelectionPolicy {
 
         /**
          * Fallback policy in case no GPU has any up-tp-date data. We assume that for any GPU, transferring all the data

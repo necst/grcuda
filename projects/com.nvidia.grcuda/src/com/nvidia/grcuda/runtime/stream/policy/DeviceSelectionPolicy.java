@@ -17,7 +17,7 @@ import java.util.List;
  */
 public abstract class DeviceSelectionPolicy {
 
-    private final GrCUDADevicesManager devicesManager;
+    protected final GrCUDADevicesManager devicesManager;
 
     public DeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
         this.devicesManager = devicesManager;
@@ -30,7 +30,7 @@ public abstract class DeviceSelectionPolicy {
      * @param vertex the computation for which we want to select the device
      * @return the chosen device for the computation
      */
-    Device retrieve(ExecutionDAG.DAGVertex vertex) {
+    public Device retrieve(ExecutionDAG.DAGVertex vertex) {
         return retrieveImpl(vertex, devicesManager.getUsableDevices());
     }
 
@@ -40,7 +40,7 @@ public abstract class DeviceSelectionPolicy {
      * @param devices the list of devices where the computation could be executed
      * @return the chosen device for the computation
      */
-    Device retrieve(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
+    public Device retrieve(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
         if (devices == null) {
             throw new NullPointerException("the list of devices where the computation can be executed is null");
         } else if (devices.size() == 0) {

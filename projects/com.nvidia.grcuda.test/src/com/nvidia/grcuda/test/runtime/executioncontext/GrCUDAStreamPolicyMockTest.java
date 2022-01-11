@@ -3,18 +3,23 @@ package com.nvidia.grcuda.test.runtime.executioncontext;
 import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.runtime.CPUDevice;
+import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.GrCUDAStreamPolicy;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.mock.AsyncGrCUDAExecutionContextMock;
+import com.nvidia.grcuda.test.util.mock.DeviceListMock;
+import com.nvidia.grcuda.test.util.mock.GrCUDADevicesManagerMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAStreamPolicyMock;
+import com.nvidia.grcuda.test.util.mock.KernelExecutionMock;
 import com.nvidia.grcuda.test.util.mock.OptionValuesMockBuilder;
-import org.graalvm.compiler.hotspot.stubs.OutOfBoundsExceptionStub;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,6 +41,40 @@ public class GrCUDAStreamPolicyMockTest {
                                 "projects" + File.separatorChar + "resources" + File.separatorChar +
                                 "connection_graph" + File.separatorChar + "datasets" + File.separatorChar + "connection_graph_test.csv").build())
         );
+    }
+
+    private GrCUDAStreamPolicy.RoundRobinDeviceSelectionPolicy getRoundRobinPolicy(int numGPUs) {
+        GrCUDADevicesManagerMock devicesManager = new GrCUDADevicesManagerMock(new DeviceListMock(numGPUs), numGPUs);
+        return new GrCUDAStreamPolicy.RoundRobinDeviceSelectionPolicy(devicesManager);
+    }
+
+    @Test
+    public void roundRobinTest() {
+        GrCUDAStreamPolicy.RoundRobinDeviceSelectionPolicy policy = getRoundRobinPolicy(4);
+        Device d = policy.retrieve(null);
+        assertEquals(0, d.getDeviceId());
+        d = policy.retrieve(null);
+        assertEquals(1, d.getDeviceId());
+        d = policy.retrieve(null);
+        assertEquals(2, d.getDeviceId());
+        d = policy.retrieve(null);
+        assertEquals(3, d.getDeviceId());
+        d = policy.retrieve(null);
+        assertEquals(0, d.getDeviceId());
+        d = policy.retrieve(null, Collections.singletonList(new Device(0, null)));
+        assertEquals(0, d.getDeviceId());
+        d = policy.retrieve(null);
+        assertEquals(1, d.getDeviceId());
+        d = policy.retrieve(null, Collections.singletonList(new Device(3, null)));
+        assertEquals(3, d.getDeviceId());
+        d = policy.retrieve(null);
+        assertEquals(0, d.getDeviceId());
+        d = policy.retrieve(null, Arrays.asList(new Device(3, null), new Device(1, null)));
+        assertEquals(1, d.getDeviceId());
+        d = policy.retrieve(null, Arrays.asList(new Device(2, null), new Device(1, null)));
+        assertEquals(2, d.getDeviceId());
+        d = policy.retrieve(null, Arrays.asList(new Device(0, null), new Device(1, null)));
+        assertEquals(0, d.getDeviceId());
     }
 
     @Test

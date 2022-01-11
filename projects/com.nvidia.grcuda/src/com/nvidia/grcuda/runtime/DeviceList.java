@@ -58,12 +58,12 @@ public class DeviceList implements TruffleObject, Iterable<Device> {
     }
 
     public DeviceList(int numDevices, CUDARuntime runtime) {
-        devices = new ArrayList<Device>(numDevices);
+        devices = Arrays.asList(new Device[numDevices]);
         this.initializeDeviceList(numDevices, runtime);
     }
 
     public void initializeDeviceList(int numDevices, CUDARuntime runtime) {
-        for (int deviceOrdinal = 0; deviceOrdinal < numDevices; ++deviceOrdinal) {
+        for (int deviceOrdinal = 0; deviceOrdinal < numDevices; deviceOrdinal++) {
             devices.set(deviceOrdinal, new Device(deviceOrdinal, runtime));
         }
     }
