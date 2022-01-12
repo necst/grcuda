@@ -131,10 +131,10 @@ public class MultiGPUExecutionDAGMockTest {
         );
     }
 
-    // (A) --> (Ar, B) --> (A, B, C)
-    // (B) -/           /
-    // (C) --> (C, D) -/
-    // (D) -/
+    // (Ar) --> (Ar, B) --> (A, B, C)
+    // (Br) -/           /
+    // (Cr) --> (C, D) -/
+    // (Dr) -/
     public static List<GrCUDAComputationalElement> joinPipeline2MockComputation(AsyncGrCUDAExecutionContext context) {
         DeviceArrayMock a = new DeviceArrayMock(10);
         DeviceArrayMock b = new DeviceArrayMock(10);
@@ -151,17 +151,17 @@ public class MultiGPUExecutionDAGMockTest {
         );
     }
 
-    // (A) --> (Ar, B) --> (B, C)
-    // (B) -/           /
-    // (C) --> (C, D) -/
-    // (D) -/
+    // (Ar) --> (Ar, B) --> (B, C)
+    // (Br) -/           /
+    // (Cr) --> (C, D) -/
+    // (Dr) -/
     public static List<GrCUDAComputationalElement> joinPipeline3MockComputation(AsyncGrCUDAExecutionContext context) {
         DeviceArrayMock a = new DeviceArrayMock(10);
         DeviceArrayMock b = new DeviceArrayMock(10);
         DeviceArrayMock c = new DeviceArrayMock(10);
         DeviceArrayMock d = new DeviceArrayMock(100);
         return Arrays.asList(
-                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(a, true))),
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(a, false))),
                 new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(b, true))),
                 new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(c, true))),
                 new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(d, true))),
@@ -171,10 +171,10 @@ public class MultiGPUExecutionDAGMockTest {
         );
     }
 
-    // (A) --> (Ar, B) -> (A, C, D) -> (A, C)
-    // (B) -/          /
-    // (C) -----------/
-    // (D) ----------/
+    // (Ar) --> (Ar, B) -> (A, C, D) -> (A, C)
+    // (Br) -/          /
+    // (Cr) -----------/
+    // (Dr) ----------/
     public static List<GrCUDAComputationalElement> joinPipeline4MockComputation(AsyncGrCUDAExecutionContext context) {
         DeviceArrayMock a = new DeviceArrayMock(10);
         DeviceArrayMock b = new DeviceArrayMock(10);
@@ -617,6 +617,139 @@ public class MultiGPUExecutionDAGMockTest {
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
                 .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        executeMockComputationAndValidate(forkJoinMockComputation(context),
+                Arrays.asList(0, 1, 0, 0, 0));
+        assertEquals(3, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void minTransferDisjointWithDepMultiGPUTest() throws UnsupportedTypeException {
+        int[] gpus = {4, 8};
+        for (int numGPU : gpus) {
+            AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                    .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                    .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
+                    .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                    .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+            executeMockComputationAndValidate(joinPipelineMockComputation(context),
+                    Arrays.asList(0, 1, 2, 3, 0, 0, 3));
+            assertEquals(4, context.getStreamManager().getNumberOfStreams());
+        }
+    }
+
+    @Test
+    public void minTransferDisjointWithDep2MultiGPUTest() throws UnsupportedTypeException {
+        int[] gpus = {4, 8};
+        for (int numGPU : gpus) {
+            AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                    .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                    .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
+                    .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                    .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+            // Computation 5/7 is scheduled on 1 because 0 is not considered a parent:
+            //   "A" is read-only in both cases, and no edge is added to the graph.
+            // Same for computation 6/7;
+            // Computation 7/7 is scheduled on 1 because 1 has A,B while device 3 only has C;
+            executeMockComputationAndValidate(joinPipeline2MockComputation(context),
+                    Arrays.asList(0, 1, 2, 3, 1, 3, 1));
+            assertEquals(4, context.getStreamManager().getNumberOfStreams());
+        }
+    }
+
+    @Test
+    public void minTransferDisjointWithDep3MultiGPUTest() throws UnsupportedTypeException {
+        int[] gpus = {4, 8};
+        for (int numGPU : gpus) {
+            AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                    .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                    .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
+                    .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                    .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+            // Computation 5/7 has GPU0 and GPU1 as parents. Both have the same data, but 0 comes first;
+            executeMockComputationAndValidate(joinPipeline3MockComputation(context),
+                    Arrays.asList(0, 1, 2, 3, 0, 3, 0));
+            assertEquals(4, context.getStreamManager().getNumberOfStreams());
+        }
+    }
+
+    @Test
+    public void minTransferDisjointWithDep4MultiGPUTest() throws UnsupportedTypeException {
+        int[] gpus = {4, 8};
+        for (int numGPU : gpus) {
+            AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                    .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                    .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                    .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
+                    .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                    .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+            // Computation 5/7 is scheduled on 1 because GPU0 is not considered a parent,
+            //   A is read-only in both Comp1 and Comp5;
+            executeMockComputationAndValidate(joinPipeline4MockComputation(context),
+                    Arrays.asList(0, 1, 2, 3, 1, 3, 3));
+            assertEquals(4, context.getStreamManager().getNumberOfStreams());
+        }
+    }
+
+
+    @Test
+    public void minTransferDisjointWithThreeGPUImageTest() throws UnsupportedTypeException {
+        int numGPU = 3;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        executeMockComputationAndValidate(ComplexExecutionDAGMockTest.imageMockComputation(context),
+                Arrays.asList(
+                        0, 0, 0,
+                        0, 0,
+                        0, 0,
+                        0, 0, 0, 0, 0));
+        assertEquals(IMAGE_NUM_STREAMS, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void minTransferDisjointWithFourGPUHitsTest() throws UnsupportedTypeException {
+        int numGPU = 4;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        executeMockComputationAndValidate(ComplexExecutionDAGMockTest.hitsMockComputation(context),
+                Arrays.asList(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0));
+        assertEquals(2, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void minTransferDisjointManyKernelsWithFourGPUTest() throws UnsupportedTypeException {
+        int numGPU = 4;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        // The last 4 computations are scheduled on GPU0 as all devices contain just 1 required array and GPU0 is first;
+        executeMockComputationAndValidate(manyKernelsMockComputation(context),
+                Arrays.asList(0, 1, 2, 3, 0, 1, 2, 3, 0, 2, 0, 0, 2, 2));
+        assertEquals(6, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void minTransferDisjointForkJoinWithTwoGPUTest() throws UnsupportedTypeException {
+        int numGPU = 2;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
                 .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE)
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
