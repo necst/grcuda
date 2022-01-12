@@ -123,7 +123,7 @@ public class GrCUDATestUtil {
             combinations.add(new GrCUDATestOptionsStruct[]{newStruct});
         });
         // Check that the number of options is correct;
-        assert(combinations.size() == (2 * 2 * 3 * 2 * 6 * 2 * 2 * 3));
+        assert(combinations.size() == (2 * 2 * 4 * 2 * 6 * 2 * 2 * 3));
         return combinations;
     }
 

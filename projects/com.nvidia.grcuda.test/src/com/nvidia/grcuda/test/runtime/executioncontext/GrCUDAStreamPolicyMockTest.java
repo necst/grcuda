@@ -12,6 +12,7 @@ import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.mock.AsyncGrCUDAExecutionContextMock;
 import com.nvidia.grcuda.test.util.mock.DeviceListMock;
+import com.nvidia.grcuda.test.util.mock.DeviceMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDADevicesManagerMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAStreamPolicyMock;
 import com.nvidia.grcuda.test.util.mock.KernelExecutionMock;
@@ -74,6 +75,37 @@ public class GrCUDAStreamPolicyMockTest {
         d = policy.retrieve(null, Arrays.asList(new Device(2, null), new Device(1, null)));
         assertEquals(2, d.getDeviceId());
         d = policy.retrieve(null, Arrays.asList(new Device(0, null), new Device(1, null)));
+        assertEquals(0, d.getDeviceId());
+    }
+
+    @Test
+    public void testStreamAwareRetrieve() {
+        AsyncGrCUDAExecutionContextMock context = createContext(4, DeviceSelectionPolicyEnum.STREAM_AWARE);
+        GrCUDAStreamPolicyMock streamPolicy = (GrCUDAStreamPolicyMock) context.getStreamManager().getStreamPolicy();
+        DeviceMock d = (DeviceMock) streamPolicy.getDeviceSelectionPolicy().retrieve(null);
+        assertEquals(0, d.getDeviceId());
+        assertEquals(0, d.getNumberOfBusyStreams());
+        // Add 1 busy stream on device 0;
+        d.createStream();
+        DeviceMock d1 = (DeviceMock) streamPolicy.getDeviceSelectionPolicy().retrieve(null);
+        // Add 2 busy streams on device 1;
+        d1.createStream();
+        d1.createStream();
+        assertEquals(2, d1.getNumberOfBusyStreams());
+        DeviceMock d2 = (DeviceMock) streamPolicy.getDeviceSelectionPolicy().retrieve(null);
+        assertEquals(2, d2.getDeviceId());
+        // Add 1 busy stream on device 2;
+        d2.createStream();
+        assertEquals(1, d2.getNumberOfBusyStreams());
+        DeviceMock d3 = (DeviceMock) streamPolicy.getDeviceSelectionPolicy().retrieve(null);
+        assertEquals(3, d3.getDeviceId());
+        assertEquals(0, d3.getNumberOfBusyStreams());
+        // Add 1 busy stream on device 3;
+        d3.createStream();
+        // Test retrieval on a subset of devices;
+        d2 = (DeviceMock) streamPolicy.getDeviceSelectionPolicy().retrieve(null, Arrays.asList(d2, d3));
+        assertEquals(2, d2.getDeviceId());
+        d = (DeviceMock) streamPolicy.getDeviceSelectionPolicy().retrieve(null, Arrays.asList(d, d1));
         assertEquals(0, d.getDeviceId());
     }
 
