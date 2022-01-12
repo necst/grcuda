@@ -620,13 +620,20 @@ public class GrCUDAStreamPolicy {
             // Given N GPUs and 1 CPU, we have a [GPU + 1][GPU+ 1] symmetric matrix.
             // Each line is "start_id", "end_id", "bandwidth";
             for (int il = 1; il < records.size(); il++) {
-                if (Integer.parseInt(records.get(il).get(0)) != -1) {
-                    // GPU-GPU interconnection;
-                    this.linkBandwidth[Integer.parseInt(records.get(il).get(0))][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
-                } else {
-                    // -1 identifies CPU-GPU interconnection, store it in the last spot;
-                    this.linkBandwidth[devicesManager.getNumberOfGPUsToUse()][Integer.parseInt(records.get(il).get(1))] = Double.parseDouble(records.get(il).get(2));
-                    this.linkBandwidth[Integer.parseInt(records.get(il).get(1))][devicesManager.getNumberOfGPUsToUse()] = Double.parseDouble(records.get(il).get(2));
+                int startDevice = Integer.parseInt(records.get(il).get(0));
+                int endDevice = Integer.parseInt(records.get(il).get(0));
+                // Skip invalid entries, and ignore GPUs with ID larger than the number of GPUs to use;
+                if (startDevice >= -1 && startDevice < devicesManager.getNumberOfGPUsToUse()
+                        && endDevice >= -1 && endDevice < devicesManager.getNumberOfGPUsToUse()) {
+                    double bandwidth = Double.parseDouble(records.get(il).get(2));
+                    if (startDevice != -1) {
+                        // GPU-GPU interconnection;
+                        this.linkBandwidth[startDevice][endDevice] = bandwidth;
+                    } else {
+                        // -1 identifies CPU-GPU interconnection, store it in the last spot;
+                        this.linkBandwidth[devicesManager.getNumberOfGPUsToUse()][endDevice] = bandwidth;
+                        this.linkBandwidth[endDevice][devicesManager.getNumberOfGPUsToUse()] = bandwidth;
+                    }
                 }
             }
             // Interconnections are supposedly symmetric. Enforce this behavior by averaging results.

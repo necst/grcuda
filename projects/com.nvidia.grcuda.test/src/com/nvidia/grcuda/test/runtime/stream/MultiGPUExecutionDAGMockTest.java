@@ -540,7 +540,7 @@ public class MultiGPUExecutionDAGMockTest {
             // Computation 7/7 is scheduled on 0 because all devices have 1 array each, but GPU0 comes first
             executeMockComputationAndValidate(joinPipeline3MockComputation(context),
                     Arrays.asList(0, 1, 2, 3, 0, 3, 0));
-            assertEquals(5, context.getStreamManager().getNumberOfStreams());
+            assertEquals(4, context.getStreamManager().getNumberOfStreams());
         }
     }
 
@@ -560,7 +560,6 @@ public class MultiGPUExecutionDAGMockTest {
             assertEquals(5, context.getStreamManager().getNumberOfStreams());
         }
     }
-
 
     @Test
     public void minTransferWithThreeGPUImageTest() throws UnsupportedTypeException {
