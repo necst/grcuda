@@ -621,7 +621,7 @@ public class GrCUDAStreamPolicy {
             // Each line is "start_id", "end_id", "bandwidth";
             for (int il = 1; il < records.size(); il++) {
                 int startDevice = Integer.parseInt(records.get(il).get(0));
-                int endDevice = Integer.parseInt(records.get(il).get(0));
+                int endDevice = Integer.parseInt(records.get(il).get(1));
                 // Skip invalid entries, and ignore GPUs with ID larger than the number of GPUs to use;
                 if (startDevice >= -1 && startDevice < devicesManager.getNumberOfGPUsToUse()
                         && endDevice >= -1 && endDevice < devicesManager.getNumberOfGPUsToUse()) {
