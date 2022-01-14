@@ -330,7 +330,7 @@ public class GrCUDAComputationsMock {
             computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(x1[i], true), new ArgumentMock(y1[i], true), new ArgumentMock(res[i])), "SUM-" + i));
         }
         for (int i = 0; i < P; i++) {
-            new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(res[i])));
+            computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(res[i]))));
         }
         return computations;
     }

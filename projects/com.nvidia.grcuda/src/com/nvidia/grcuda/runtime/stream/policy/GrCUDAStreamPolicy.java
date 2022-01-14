@@ -625,7 +625,8 @@ public class GrCUDAStreamPolicy {
                 // Skip invalid entries, and ignore GPUs with ID larger than the number of GPUs to use;
                 if (startDevice >= -1 && startDevice < devicesManager.getNumberOfGPUsToUse()
                         && endDevice >= -1 && endDevice < devicesManager.getNumberOfGPUsToUse()) {
-                    double bandwidth = Double.parseDouble(records.get(il).get(2));
+                    // Approximate to the floor, to smooth random bandwidth fluctuations in data transfer;
+                    double bandwidth = Math.floor(Double.parseDouble(records.get(il).get(2)));
                     if (startDevice != -1) {
                         // GPU-GPU interconnection;
                         this.linkBandwidth[startDevice][endDevice] = bandwidth;
