@@ -32,6 +32,9 @@ package com.nvidia.grcuda.test.util.mock;
 
 import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.GrCUDAOptions;
+import com.nvidia.grcuda.runtime.CPUDevice;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
+import com.nvidia.grcuda.runtime.computation.streamattach.PostPascalStreamAttachPolicy;
 import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
 import com.nvidia.grcuda.runtime.computation.streamattach.PrePascalStreamAttachPolicy;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
@@ -45,12 +48,27 @@ import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
  */
 public class AsyncGrCUDAExecutionContextMock extends AsyncGrCUDAExecutionContext {
 
+    // FIXME: handling current GPU etc. should be done with a mocked device manager;
+
+    // Store it here to avoid using a mocked runtime;
+    private final boolean architectureIsPascalOrNewer;
+    public int currentGPU = 0;
+
+    public void setCurrentGPU(int gpu) {
+        currentGPU = gpu;
+    }
+
+    public int getCurrentGPU() {
+        return currentGPU;
+    }
+
     public AsyncGrCUDAExecutionContextMock() {
         super(null,
                 new GrCUDAOptionMap(new OptionValuesMockBuilder()
                         .add(GrCUDAOptions.DependencyPolicy, DependencyPolicyEnum.NO_CONST.toString())
                         .add(GrCUDAOptions.InputPrefetch, false).build()),
                 new GrCUDAStreamManagerMock(null));
+        this.architectureIsPascalOrNewer = true;
     }
 
     public AsyncGrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy) {
@@ -59,19 +77,33 @@ public class AsyncGrCUDAExecutionContextMock extends AsyncGrCUDAExecutionContext
                         .add(GrCUDAOptions.DependencyPolicy, dependencyPolicy.toString())
                         .add(GrCUDAOptions.InputPrefetch, false).build()),
                 new GrCUDAStreamManagerMock(null));
+        this.architectureIsPascalOrNewer = true;
     }
 
     public AsyncGrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy,
                                            RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
                                            RetrieveParentStreamPolicyEnum parentStreamPolicyEnum) {
+        this(dependencyPolicy, retrieveStreamPolicy, parentStreamPolicyEnum,true);
+    }
+
+    public AsyncGrCUDAExecutionContextMock(DependencyPolicyEnum dependencyPolicy,
+                                           RetrieveNewStreamPolicyEnum retrieveStreamPolicy,
+                                           RetrieveParentStreamPolicyEnum parentStreamPolicyEnum,
+                                           boolean architectureIsPascalOrNewer) {
         super(null,
                 new GrCUDAOptionMap(new OptionValuesMockBuilder()
                         .add(GrCUDAOptions.DependencyPolicy, dependencyPolicy.toString())
                         .add(GrCUDAOptions.InputPrefetch, false).build()),
                 new GrCUDAStreamManagerMock(null, retrieveStreamPolicy, parentStreamPolicyEnum));
+        this.architectureIsPascalOrNewer = architectureIsPascalOrNewer;
     }
 
     public StreamAttachArchitecturePolicy getArrayStreamArchitecturePolicy() {
-        return new PrePascalStreamAttachPolicy();
+        return architectureIsPascalOrNewer ? new PrePascalStreamAttachPolicy() : new PostPascalStreamAttachPolicy();
+    }
+
+    @Override
+    public boolean isArchitecturePascalOrNewer() {
+        return architectureIsPascalOrNewer;
     }
 }

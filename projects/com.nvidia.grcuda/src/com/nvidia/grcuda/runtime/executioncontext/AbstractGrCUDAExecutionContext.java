@@ -34,6 +34,7 @@ import com.nvidia.grcuda.Binding;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.GrCUDAOptionMap;
+import com.nvidia.grcuda.runtime.CPUDevice;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Kernel;
@@ -89,14 +90,21 @@ public abstract class AbstractGrCUDAExecutionContext {
      */
     protected AbstractArrayPrefetcher arrayPrefetcher;
 
+    /**
+     * True if we consider that an argument can be "const" in the scheduling;
+     */
+    private final boolean isConstAware;
+
     public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {
         this.cudaRuntime = cudaRuntime;
         // Compute the dependency policy to use;
         switch (options.getDependencyPolicy()) {
             case WITH_CONST:
+                this.isConstAware = true;
                 this.dependencyBuilder = new WithConstDependencyComputationBuilder();
                 break;
             case NO_CONST:
+                this.isConstAware = false;
                 this.dependencyBuilder = new DefaultDependencyComputationBuilder();
                 break;
             default:
@@ -136,6 +144,10 @@ public abstract class AbstractGrCUDAExecutionContext {
         return dependencyBuilder;
     }
 
+    public boolean isConstAware() {
+        return isConstAware;
+    }
+
     // Functions used to interface directly with the CUDA runtime;
 
     public Kernel loadKernel(Binding binding) {
@@ -148,6 +160,14 @@ public abstract class AbstractGrCUDAExecutionContext {
 
     public StreamAttachArchitecturePolicy getArrayStreamArchitecturePolicy() {
         return cudaRuntime.getArrayStreamArchitecturePolicy();
+    }
+
+    public boolean isArchitecturePascalOrNewer() {
+        return this.cudaRuntime.isArchitectureIsPascalOrNewer();
+    }
+
+    public int getCurrentGPU() {
+        return this.cudaRuntime.getCurrentGPU();
     }
 
     /**

@@ -31,6 +31,7 @@
 package com.nvidia.grcuda.test.runtime.executioncontext;
 
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.graalvm.polyglot.Context;
@@ -109,6 +110,46 @@ public class GrCUDAExecutionContextTest {
                     "        atomicAdd(res, cache[0]);\n" +
                     "    }\n" +
                     "}";
+
+//    private static final String TEST_KERNEL =
+//            "extern \"C\" __global__ void test(const int* x, int n) {\n" +
+//                    "   int sum = 0;\n" +
+//                    "   for (int i = 0; i < n * n; i++) {\n" +
+//                    "       sum += x[i / n];\n" +
+//                    "   }\n" +
+//                    "   printf(\"gpu res: %d\\n\", &sum);\n" +
+//                    "}";
+
+//    @Test
+//    public void test() {
+//        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+//            if (options.policy.equals(ExecutionPolicyEnum.ASYNC)) {
+//                System.out.println(options);
+//                final int numElements = 10000;
+//                final int numBlocks = 1;
+//                Value deviceArrayConstructor = context.eval("grcuda", "DeviceArray");
+//                Value x = deviceArrayConstructor.execute("float", numElements);
+//                Value buildkernel = context.eval("grcuda", "buildkernel");
+//                Value testKernel = buildkernel.execute(TEST_KERNEL, "test", "const pointer, sint32");
+//
+//                assertNotNull(testKernel);
+//
+//                for (int i = 0; i < numElements; ++i) {
+//                    x.setArrayElement(i, 1);
+//                }
+//
+//                Value configuredKernel = testKernel.execute(numBlocks, 1);
+//
+//                // Perform the computation;
+//                configuredKernel.execute(x, numElements);
+//                System.out.println(x.getArrayElement(0));
+//                System.out.println(x.getArrayElement(1));
+//
+//                // Verify the output;
+//                assertEquals(1, x.getArrayElement(1).asInt());
+//            }
+//        }
+//    }
 
     @Test
     public void dependencyKernelSimpleTest() {

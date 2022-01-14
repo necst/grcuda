@@ -57,9 +57,9 @@ public abstract class ArrayCopyFunctionExecution extends GrCUDAComputationalElem
      */
     protected final long numElements;
 
-    protected boolean isComputationArrayAccess = true;
+    public static final boolean COMPUTATION_IS_ARRAY_ACCESS = true;
 
-    //FIXME: create constructor with executioninitiaizer as argument, then in the function that craete this class, use the constructor with iitializer if we have a second device array, else use default initializer
+    protected boolean isComputationArrayAccess = COMPUTATION_IS_ARRAY_ACCESS;
 
     public ArrayCopyFunctionExecution(AbstractArray array, DeviceArrayCopyFunction.CopyDirection direction, long numElements, ArrayCopyFunctionExecutionInitializer dependencyInitializer) {
         super(array.getGrCUDAExecutionContext(), dependencyInitializer);
@@ -85,8 +85,8 @@ public abstract class ArrayCopyFunctionExecution extends GrCUDAComputationalElem
     abstract void executeInner();
 
     @Override
-    public void updateIsComputationArrayAccess() {
-        this.array.setLastComputationArrayAccess(isComputationArrayAccess);
+    public void updateIsComputationCPUAccess() {
+        this.array.setLastComputationCPUAccess(COMPUTATION_IS_ARRAY_ACCESS);
     }
 
     @Override

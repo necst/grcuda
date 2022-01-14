@@ -68,7 +68,9 @@ public class SyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
 
         // Book-keeping;
         computation.setComputationStarted();
-        computation.updateIsComputationArrayAccess();
+
+        // For all input arrays, update whether this computation is an array access done by the CPU;
+        computation.updateIsComputationCPUAccess();
 
         // Start the computation immediately;
         Object result = computation.execute();

@@ -281,10 +281,12 @@ public abstract class GrCUDAComputationalElement {
     /**
      * Set for all the {@link com.nvidia.grcuda.runtime.array.AbstractArray} in the computation if this computation is an array access;
      */
-    public void updateIsComputationArrayAccess() {
+    public void updateIsComputationCPUAccess() {
         for (ComputationArgumentWithValue o : this.argumentList) {
             if (o.getArgumentValue() instanceof AbstractArray) {
-                ((AbstractArray) o.getArgumentValue()).setLastComputationArrayAccess(isComputationArrayAccess);
+                if (!(grCUDAExecutionContext.isConstAware() && o.isConst())) {
+                    ((AbstractArray) o.getArgumentValue()).setLastComputationCPUAccess(isComputationArrayAccess);
+                }
             }
         }
     }

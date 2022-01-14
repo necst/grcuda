@@ -35,6 +35,7 @@
  */
 package com.nvidia.grcuda.runtime;
 
+import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.MemberSet;
 import com.nvidia.grcuda.NoneValue;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -51,23 +52,23 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
-// TODO: we assume that all devices are GPUs. It might make sense to have an "abstract device" from which we inherit CPUDevice and GPUDevice (this class),
-//  and have "deviceId" as parameter of the class;
 
 @ExportLibrary(InteropLibrary.class)
-public final class Device implements TruffleObject {
+public final class Device extends AbstractDevice implements TruffleObject {
 
     private static final String ID = "id";
     private static final String PROPERTIES = "properties";
     private static final String IS_CURRENT = "isCurrent";
     private static final String SET_CURRENT = "setCurrent";
     private static final MemberSet PUBLIC_MEMBERS = new MemberSet(ID, PROPERTIES, IS_CURRENT, SET_CURRENT);
-    private final int deviceId;
     private final GPUDeviceProperties properties;
     private final CUDARuntime runtime;
 
     public Device(int deviceId, CUDARuntime runtime) {
-        this.deviceId = deviceId;
+        super(deviceId);
+        if (deviceId < 0) {
+            throw new GrCUDAException("GPU device must have id > 0, instead it is " + deviceId);
+        }
         this.runtime = runtime;
         this.properties = new GPUDeviceProperties(deviceId, runtime);
     }
@@ -82,7 +83,7 @@ public final class Device implements TruffleObject {
 
     @Override
     public String toString() {
-        return "Device(id=" + deviceId + ")";
+        return "GPU(id=" + deviceId + ")";
     }
 
     @Override
