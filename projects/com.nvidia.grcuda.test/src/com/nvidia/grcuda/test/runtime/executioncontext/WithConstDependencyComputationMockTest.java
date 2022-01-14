@@ -33,8 +33,8 @@ package com.nvidia.grcuda.test.runtime.executioncontext;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
-import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.mock.ArgumentMock;
 import com.nvidia.grcuda.test.util.mock.AsyncGrCUDAExecutionContextMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
@@ -52,7 +52,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class WithConstDependencyComputationTest {
+public class WithConstDependencyComputationMockTest {
 
     @Test
     public void addVertexToDAGTest() throws UnsupportedTypeException {
@@ -360,7 +360,7 @@ public class WithConstDependencyComputationTest {
     @Test
     public void complexFrontierWithSyncMockTest() throws UnsupportedTypeException {
         AsyncGrCUDAExecutionContext context = new AsyncGrCUDAExecutionContextMock(DependencyPolicyEnum.WITH_CONST,
-                RetrieveNewStreamPolicyEnum.FIFO, RetrieveParentStreamPolicyEnum.DISJOINT);
+                RetrieveNewStreamPolicyEnum.REUSE, RetrieveParentStreamPolicyEnum.DISJOINT);
 
         // A(1R,2) -> B(1) ---> D(1R,3)
         //        \-> C(2R) \-> E(1R,4) -> F(4)
@@ -419,7 +419,7 @@ public class WithConstDependencyComputationTest {
     @Test
     public void complexFrontier2WithSyncMockTest() throws UnsupportedTypeException {
         AsyncGrCUDAExecutionContext context = new AsyncGrCUDAExecutionContextMock(DependencyPolicyEnum.WITH_CONST,
-                RetrieveNewStreamPolicyEnum.FIFO, RetrieveParentStreamPolicyEnum.DISJOINT);
+                RetrieveNewStreamPolicyEnum.REUSE, RetrieveParentStreamPolicyEnum.DISJOINT);
 
         // A(1R,2) -> B(1) -> D(1R,3) ---------> G(1, 3, 4)
         //        \-> C(2R) \-> E(1R,4) -> F(4) -/

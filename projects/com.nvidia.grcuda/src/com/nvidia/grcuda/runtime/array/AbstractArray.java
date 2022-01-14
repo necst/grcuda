@@ -150,6 +150,10 @@ public abstract class AbstractArray implements TruffleObject {
         this.skipScheduleWrite = otherArray.skipScheduleWrite;
         // Initialize the location of an abstract array, copying the ones specified in the input;
         this.arrayUpToDateLocations.addAll(otherArray.getArrayUpToDateLocations());
+        this.arrayFreed = otherArray.arrayFreed;
+        this.streamMapping = otherArray.streamMapping;
+        // Registration must be done afterwards;
+        this.registeredInContext = false;
     }
 
     /**
@@ -183,7 +187,7 @@ public abstract class AbstractArray implements TruffleObject {
      * for array reads that are immediately following the last one, as they are performed synchronously and there is no
      * reason to explicitly model them in the {@link ExecutionDAG};
      */
-    // FIXME: Possible error: Array A is up-to-date on CPU and GPU0. There's an ongoing kernel on GPU0 that uses A read-only.
+    // FIXME (check if fixed already): Possible error: Array A is up-to-date on CPU and GPU0. There's an ongoing kernel on GPU0 that uses A read-only.
     //  If we write A on the CPU, is the scheduling skipped? That's an error.
     //  In the case of a read, no problem (a kernel that modifies the data would take exclusive ownership),
     //  while in the case of a write we need to check that arrayUpToDateLocations == CPU

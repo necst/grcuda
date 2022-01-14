@@ -43,9 +43,11 @@ import com.nvidia.grcuda.runtime.stream.DefaultStream;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.nvidia.grcuda.GrCUDALogger.COMPUTATION_LOGGER;
 
@@ -288,7 +290,13 @@ public abstract class GrCUDAComputationalElement {
      * This implementation is meant for GPU computations that use streams, e.g. kernels and GPU libraries.
      * CPU computations (e.g. array accesses) should re-implement this function to track the CPU.
      * GPU computations don't use custom streams only if the are synchronized (e.g. when using the sync scheduler),
-     * and there's no benefit in tracking their location;
+     * and there's no benefit in tracking their location.
+     * Locations are updated BEFORE the start of the actual computation: if another computation is scheduled after
+     * the current one, it will be scheduled assuming that the data transfer for this computation has already taken place.
+     * This assumption can avoid duplicate data movements, e.g. with
+     * (Xr) -> ...
+     * (Xr) -> ...
+     * we can avoid transferring X twice, and schedule the second kernel on the GPU where X will be already present;
      */
     public void updateLocationOfArrays() {
         for (ComputationArgumentWithValue o : this.argumentsThatCanCreateDependencies) {
@@ -304,6 +312,23 @@ public abstract class GrCUDAComputationalElement {
                 }
             }
         }
+    }
+
+    /**
+     * Obtain the list of input arguments for this computation that are arrays;
+     * @return a list of arrays that are inputs for this computation
+     */
+    public List<AbstractArray> getArrayArguments(){
+        // Note: "argumentsThatCanCreateDependencies" is a filter applied to the original inputs,
+        // so we have no guarantees that it contains all the input arrays.
+        // In practice, "argumentsThatCanCreateDependencies" is already a selection of the input arrays,
+        // making the filter below unnecessary.
+        // If for whatever reason we have a argumentsThatCanCreateDependencies that does not contain all the input arrays,
+        // we need to store the original input list in this class as well, and apply the filter below to that list.
+        return this.argumentsThatCanCreateDependencies.stream()
+                .filter(ComputationArgument::isArray)
+                .map(a -> (AbstractArray) a.getArgumentValue())
+                .collect(Collectors.toList());
     }
 
     /**

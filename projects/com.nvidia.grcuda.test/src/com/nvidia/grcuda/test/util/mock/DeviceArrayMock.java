@@ -14,7 +14,15 @@ import com.oracle.truffle.api.profiles.ValueProfile;
 
 public class DeviceArrayMock extends DeviceArray {
     public DeviceArrayMock() {
-        super(new AsyncGrCUDAExecutionContextMock(), 0, Type.SINT32);
+        this(0, Type.SINT32);
+    }
+
+    public DeviceArrayMock(int numElements) {
+        this(numElements, Type.SINT32);
+    }
+
+    public DeviceArrayMock(int numElements, Type type) {
+        super(new AsyncGrCUDAExecutionContextMock(), numElements, type);
     }
 
     public DeviceArrayMock(AbstractGrCUDAExecutionContext context) {

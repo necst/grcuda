@@ -28,20 +28,18 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.nvidia.grcuda.runtime.stream;
+package com.nvidia.grcuda.runtime.stream.policy;
 
-public enum RetrieveNewStreamPolicyEnum {
-    FIFO("fifo"),
-    ALWAYS_NEW("always-new");
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
+import com.nvidia.grcuda.runtime.stream.CUDAStream;
 
-    private final String name;
-
-    RetrieveNewStreamPolicyEnum(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
+/**
+ * This abstract class defines how a {@link GrCUDAStreamPolicy}
+ * will assign a {@link CUDAStream} to a {@link com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement}
+ * that has at least one parent active computation, possibly on a different GPU.
+ * For example, it can use the same stream of the parent, or use a different stream
+ * to have multiple children computation run in parallel.
+ */
+public abstract class RetrieveParentStreamPolicy {
+    abstract CUDAStream retrieve(ExecutionDAG.DAGVertex vertex);
 }

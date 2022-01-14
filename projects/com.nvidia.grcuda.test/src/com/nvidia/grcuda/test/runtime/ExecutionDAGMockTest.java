@@ -31,15 +31,14 @@
 package com.nvidia.grcuda.test.runtime;
 
 import com.nvidia.grcuda.Type;
-import com.nvidia.grcuda.runtime.Kernel;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.computation.ComputationArgument;
 import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
-import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.mock.ArgumentMock;
 import com.nvidia.grcuda.test.util.mock.AsyncGrCUDAExecutionContextMock;
 import com.nvidia.grcuda.test.util.mock.DeviceArrayMock;
@@ -186,7 +185,7 @@ public class ExecutionDAGMockTest {
     @Test
     public void complexFrontierWithSyncMockTest() throws UnsupportedTypeException {
         AsyncGrCUDAExecutionContext context = new AsyncGrCUDAExecutionContextMock(DependencyPolicyEnum.NO_CONST,
-                RetrieveNewStreamPolicyEnum.FIFO, RetrieveParentStreamPolicyEnum.DISJOINT);
+                RetrieveNewStreamPolicyEnum.REUSE, RetrieveParentStreamPolicyEnum.DISJOINT);
 
         // This time, simulate the synchronization process between kernels;
         // A(1,2) -> B(1) -> D(1,3) -> E(1,4) -> F(4)
@@ -281,7 +280,7 @@ public class ExecutionDAGMockTest {
     public void writeIsNotSkippedMockTest() throws UnsupportedTypeException, InvalidArrayIndexException {
         AsyncGrCUDAExecutionContextMock context = new GrCUDAExecutionContextMockBuilder()
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
-                .setRetrieveNewStreamPolicy(RetrieveNewStreamPolicyEnum.FIFO)
+                .setRetrieveNewStreamPolicy(RetrieveNewStreamPolicyEnum.REUSE)
                 .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
                 .setArchitecturePascalOrNewer(true).build();
 

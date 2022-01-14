@@ -101,5 +101,8 @@ public final class GrCUDAOptions {
 
     @Option(category = OptionCategory.USER, help = "Select a managed memory memAdvise flag, if multiple GPUs are available.", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> MemAdvisePolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_MEM_ADVISE_POLICY.toString());
+
+    @Option(category = OptionCategory.USER, help = "Set the location of the CSV file that contains the estimated bandwidth between each CPU and GPU in the system.", stability = OptionStability.EXPERIMENTAL) //
+    public static final OptionKey<String> BandwidthMatrix = new OptionKey<>(GrCUDAOptionMap.DEFAULT_BANDWIDTH_MATRIX);
 }
 

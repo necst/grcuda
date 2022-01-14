@@ -4,6 +4,7 @@ import com.nvidia.grcuda.test.util.GrCUDATestOptionsStruct;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,7 +28,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        return GrCUDATestUtil.getAllOptionCombinations();
+        return GrCUDATestUtil.getAllOptionCombinationsMultiGPU();
     }
 
     private final GrCUDATestOptionsStruct options;
@@ -51,66 +52,85 @@ public class GrCUDAMultiGPUExecutionContextTest {
                     "    }" +
                     "}\n";
 
-    private static final String SQUARE_2_KERNEL =
-            "extern \"C\" __global__ void square(const float* x, float *y, int n) {\n" +
-                    "    int idx = blockIdx.x * blockDim.x + threadIdx.x;\n" +
-                    "    if (idx < n) {\n" +
-                    "       y[idx] = x[idx] * x[idx];\n" +
-                    "    }" +
-                    "}\n";
-
-    private static final String DIFF_KERNEL =
-            "extern \"C\" __global__ void diff(float* x, float* y, float* z, int n) {\n" +
-                    "   int idx = blockIdx.x * blockDim.x + threadIdx.x;\n" +
-                    "   if (idx < n) {\n" +
-                    "      z[idx] = x[idx] - y[idx];\n" +
-                    "   }\n" +
-                    "}";
-
-    private static final String REDUCE_KERNEL =
-            "extern \"C\" __global__ void reduce(float *x, float *res, int n) {\n" +
-                    "    __shared__ float cache[" + NUM_THREADS_PER_BLOCK + "];\n" +
-                    "    int i = blockIdx.x * blockDim.x + threadIdx.x;\n" +
-                    "    if (i < n) {\n" +
-                    "       cache[threadIdx.x] = x[i];\n" +
-                    "    }\n" +
-                    "    __syncthreads();\n" +
-                    "    i = " + NUM_THREADS_PER_BLOCK + " / 2;\n" +
-                    "    while (i > 0) {\n" +
-                    "       if (threadIdx.x < i) {\n" +
-                    "            cache[threadIdx.x] += cache[threadIdx.x + i];\n" +
-                    "        }\n" +
-                    "        __syncthreads();\n" +
-                    "        i /= 2;\n" +
-                    "    }\n" +
-                    "    if (threadIdx.x == 0) {\n" +
-                    "        atomicAdd(res, cache[0]);\n" +
-                    "    }\n" +
-                    "}";
-
     @Before
     public void skipIfSingleGPU() {
         assumeTrue(multipleGPUs);
     }
 
-    private boolean checkIfMultiGPU(Context context) {
+    private boolean checkIfEnoughGPUsAreAvailable(Context context) {
         Value deviceCount = context.eval("grcuda", "cudaGetDeviceCount()");
         if (deviceCount.asInt() < 2) {
+            // The system does not have multiple GPUs, skip all further multi-GPU tests;
             multipleGPUs = false;
             System.out.println("warning: only 1 GPU available, skipping further multi-GPU tests");
+            return false;
+        } else if (this.options.numberOfGPUs > deviceCount.asInt()) {
+            // If the test asks for more GPUs than available, skip it;
+            return false;
         }
-        return multipleGPUs;
+        // We have enough GPUs for this test;
+        return true;
     }
+
+    ////////////////////////////////////////////////////////
+    // Basic multi-GPU testing, with manual GPU selection //
+    ////////////////////////////////////////////////////////
+
+    /**
+     * Execute 2 independent kernels, 2 times in a row, manually specifying the GPU for them;
+     */
+    @Test
+    public void dependency2KernelsManualGPUChoiceTest() {
+        int numOfGPUs = 2;
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, numOfGPUs)) {
+
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+
+            Value setDevice = context.eval("grcuda", "cudaSetDevice");
+
+            final int numElements = 10000;
+            final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
+            Value deviceArrayConstructor = context.eval("grcuda", "DeviceArray");
+            Value x = deviceArrayConstructor.execute("float", numElements);
+            Value y = deviceArrayConstructor.execute("float", numElements);
+            Value[] inputs = {x, y};
+
+            Value buildkernel = context.eval("grcuda", "buildkernel");
+            Value squareKernel = buildkernel.execute(SQUARE_KERNEL, "square", "pointer, sint32");
+            assertNotNull(squareKernel);
+
+            // init arrays with values
+            for (int i = 0; i < numElements; ++i) {
+                x.setArrayElement(i, 2.0);
+                y.setArrayElement(i, 4.0);
+            }
+            Value configuredSquareKernel = squareKernel.execute(numBlocks, NUM_THREADS_PER_BLOCK);
+
+            for (int i = 0; i < numOfGPUs; i++) {
+                setDevice.execute(i);
+                // Perform the computation, twice;
+                configuredSquareKernel.execute(inputs[i], numElements);
+                configuredSquareKernel.execute(inputs[i], numElements);
+            }
+
+            // Verify the output;
+            assertEquals(16.0, x.getArrayElement(0).asFloat(), 0.1);
+            assertEquals(256.0, y.getArrayElement(0).asFloat(), 0.1);
+        }
+    }
+
+    ///////////////////////////////////////////////////////////
+    // Basic multi-GPU testing, with automatic GPU selection //
+    ///////////////////////////////////////////////////////////
 
     /**
      * Execute 2 independent kernels, 2 times in a row;
      */
     @Test
     public void dependency2KernelsSimpleTest() {
-        int numOfGPUs = 2;
-        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, numOfGPUs)) {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
 
-            assumeTrue(checkIfMultiGPU(context));
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
 
             final int numElements = 10;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
@@ -145,59 +165,15 @@ public class GrCUDAMultiGPUExecutionContextTest {
     }
 
     /**
-     * Execute 2 independent kernels, 2 times in a row, manually specifying the GPU for them;
-     */
-    @Test
-    public void dependency2KernelsManualGPUChoiceTest() {
-        int numOfGPUs = 2;
-        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, numOfGPUs)) {
-
-            assumeTrue(checkIfMultiGPU(context));
-
-            Value setDevice = context.eval("grcuda", "cudaSetDevice");
-
-            final int numElements = 100000;
-            final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
-            Value deviceArrayConstructor = context.eval("grcuda", "DeviceArray");
-            Value x = deviceArrayConstructor.execute("float", numElements);
-            Value y = deviceArrayConstructor.execute("float", numElements);
-            Value[] inputs = {x, y};
-
-            Value buildkernel = context.eval("grcuda", "buildkernel");
-            Value squareKernel = buildkernel.execute(SQUARE_KERNEL, "square", "pointer, sint32");
-            assertNotNull(squareKernel);
-
-            // init arrays with values
-            for (int i = 0; i < numElements; ++i) {
-                x.setArrayElement(i, 2.0);
-                y.setArrayElement(i, 4.0);
-            }
-            Value configuredSquareKernel = squareKernel.execute(numBlocks, NUM_THREADS_PER_BLOCK);
-
-            for (int i = 0; i < numOfGPUs; i++) {
-                setDevice.execute(i);
-                // Perform the computation, twice;
-                configuredSquareKernel.execute(inputs[i], numElements);
-                configuredSquareKernel.execute(inputs[i], numElements);
-            }
-
-            // Verify the output;
-            assertEquals(16.0, x.getArrayElement(0).asFloat(), 0.1);
-            assertEquals(256.0, y.getArrayElement(0).asFloat(), 0.1);
-        }
-    }
-
-    /**
      * Test with 3 kernels: kernel0 does not have dependencies.
-     * kernel1 is the parent of kernek2;
+     * kernel1 is the parent of kernel2;
      */
     @Test
     public void dependencyKernelsTestA() {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
 
-        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
-            assumeTrue(checkIfMultiGPU(context));
-
-            final int numElements = 1000000;
+            final int numElements = 10000;
             final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
             Value deviceArrayConstructor = context.eval("grcuda", "DeviceArray");
             Value x = deviceArrayConstructor.execute("float", numElements);
@@ -229,57 +205,62 @@ public class GrCUDAMultiGPUExecutionContextTest {
         }
     }
 
+    //////////////////////////////////////////
+    // Call existing tests, using multi-GPU //
+    //////////////////////////////////////////
+
     /**
      * Test a join pattern (x) & (y) -> (z), with data in x and y being copied from other arrays;
      */
     @Test
     public void dependencyPipelineWithArrayCopyTest() {
-        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, 2)) {
-            assumeTrue(checkIfMultiGPU(context));
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+            GrCUDAComputationsWithGPU.arrayCopyWithJoin(context);
+        }
+    }
 
-            final int numElements = 100000;
-            final int numBlocks = (numElements + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
-            Value deviceArrayConstructor = context.eval("grcuda", "DeviceArray");
-            Value x = deviceArrayConstructor.execute("float", numElements);
-            Value y = deviceArrayConstructor.execute("float", numElements);
-            Value z = deviceArrayConstructor.execute("float", numElements);
-            Value x2 = deviceArrayConstructor.execute("float", numElements);
-            Value y2 = deviceArrayConstructor.execute("float", numElements);
-            Value res = deviceArrayConstructor.execute("float", 1);
-            Value res2 = deviceArrayConstructor.execute("float", 1);
+    @Test
+    public void parallelKernelsWithReadOnlyArgsTest() {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+            GrCUDAComputationsWithGPU.parallelKernelsWithReadOnlyArgs(context);
+        }
+    }
 
-            for (int i = 0; i < numElements; ++i) {
-                x.setArrayElement(i, 1.0 / (i + 1));
-                y.setArrayElement(i, 2.0 / (i + 1));
-            }
-            res.setArrayElement(0, 0.0);
+    @Test
+    public void simpleForkReadInputTest() {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+            GrCUDAComputationsWithGPU.simpleForkReadInput(context);
+        }
+    }
 
-            x2.invokeMember("copyFrom", x, numElements);
-            y2.invokeMember("copyFrom", y, numElements);
+    @Test
+    public void forkWithReadOnlyTest() {
+        // Test a computation of form A(1) --> B(1r, 2)
+        //                                 \-> C(1r, 3)
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+            GrCUDAComputationsWithGPU.forkWithReadOnly(context);
+        }
+    }
 
-            Value buildkernel = context.eval("grcuda", "buildkernel");
-            Value squareKernel = buildkernel.execute(SQUARE_KERNEL, "square", "pointer, sint32");
-            Value diffKernel = buildkernel.execute(DIFF_KERNEL, "diff", "const pointer, const pointer, pointer, sint32");
-            Value reduceKernel = buildkernel.execute(REDUCE_KERNEL, "reduce", "const pointer, pointer, sint32");
-            assertNotNull(squareKernel);
-            assertNotNull(diffKernel);
-            assertNotNull(reduceKernel);
+    @Test
+    public void dependencyPipelineDiamondTest() {
+        // Test a computation of form A(1) --> B(1r, 2) -> D(1)
+        //                                 \-> C(1r, 3) -/
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+            GrCUDAComputationsWithGPU.dependencyPipelineDiamond(context);
+        }
+    }
 
-            Value configuredSquareKernel = squareKernel.execute(numBlocks, NUM_THREADS_PER_BLOCK);
-            Value configuredDiffKernel = diffKernel.execute(numBlocks, NUM_THREADS_PER_BLOCK);
-            Value configuredReduceKernel = reduceKernel.execute(numBlocks, NUM_THREADS_PER_BLOCK);
-
-            // Perform the computation;
-            configuredSquareKernel.execute(x2, numElements);
-            configuredSquareKernel.execute(y2, numElements);
-            configuredDiffKernel.execute(x2, y2, z, numElements);
-            configuredReduceKernel.execute(z, res, numElements);
-
-            res.invokeMember("copyTo", res2, 1);
-
-            // Verify the output;
-            float resScalar = res2.getArrayElement(0).asFloat();
-            assertEquals(-4.93, resScalar, 0.01);
+    @Test
+    public void joinWithExtraKernelTest() {
+        try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
+            assumeTrue(checkIfEnoughGPUsAreAvailable(context));
+            GrCUDAComputationsWithGPU.joinWithExtraKernel(context);
         }
     }
 }

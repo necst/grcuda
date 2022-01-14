@@ -32,7 +32,7 @@ public class DeviceArrayLocationMockTest {
         assertEquals(1, array1.getArrayUpToDateLocations().size());
         assertEquals(1, array2.getArrayUpToDateLocations().size());
         assertEquals(array1.getArrayUpToDateLocations(), array2.getArrayUpToDateLocations());
-        assertTrue(array1.getArrayUpToDateLocations().contains(AsyncGrCUDAExecutionContextMock.currentGPU));
+        assertTrue(array1.getArrayUpToDateLocations().contains(context.getCurrentGPU()));
     }
 
     @Test
@@ -48,7 +48,10 @@ public class DeviceArrayLocationMockTest {
 
     @Test
     public void testIfLocationAdded() {
-        AsyncGrCUDAExecutionContextMock context = new GrCUDAExecutionContextMockBuilder().setArchitecturePascalOrNewer(true).build();
+        AsyncGrCUDAExecutionContextMock context = new GrCUDAExecutionContextMockBuilder()
+                .setArchitecturePascalOrNewer(true)
+                .setNumberOfAvailableGPUs(1)
+                .setNumberOfGPUsToUse(1).build();
         DeviceArray array1 = new DeviceArrayMock(context);
         array1.addArrayUpToDateLocations(2);
         assertEquals(2, array1.getArrayUpToDateLocations().size());
@@ -57,16 +60,23 @@ public class DeviceArrayLocationMockTest {
 
     @Test
     public void testIfLocationReset() {
-        AsyncGrCUDAExecutionContextMock context = new GrCUDAExecutionContextMockBuilder().setArchitecturePascalOrNewer(true).build();
+        AsyncGrCUDAExecutionContextMock context = new GrCUDAExecutionContextMockBuilder().setArchitecturePascalOrNewer(true)
+                .setNumberOfAvailableGPUs(1)
+                .setNumberOfGPUsToUse(1).build();
         DeviceArray array1 = new DeviceArrayMock(context);
         array1.resetArrayUpToDateLocations(2);
         assertEquals(1, array1.getArrayUpToDateLocations().size());
         assertTrue(array1.isArrayUpdatedInLocation(2));
     }
 
+    /**
+     * Test that, when using multi-dimensional arrays, the array views' locations are propagated correctly;
+     */
     @Test
     public void testMultiDimLocation() {
-        AsyncGrCUDAExecutionContextMock context = new GrCUDAExecutionContextMockBuilder().setArchitecturePascalOrNewer(true).build();
+        AsyncGrCUDAExecutionContextMock context = new GrCUDAExecutionContextMockBuilder().setArchitecturePascalOrNewer(true)
+                .setNumberOfAvailableGPUs(2)
+                .setNumberOfGPUsToUse(2).build();
 
         long[] dimensions = {2, 2};
         MultiDimDeviceArray array1 = new MultiDimDeviceArrayMock(context, dimensions, false);
@@ -98,11 +108,16 @@ public class DeviceArrayLocationMockTest {
         assertEquals(array1.getArrayUpToDateLocations(), view.getArrayUpToDateLocations());
     }
 
+    /**
+     * Test that the location of arrays in a complex DAG is propagated correctly, also when using 2 GPUs;
+     */
     @Test
     public void complexFrontierWithSyncMockTest() throws UnsupportedTypeException {
         AsyncGrCUDAExecutionContextMock context = new GrCUDAExecutionContextMockBuilder()
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
-                .setArchitecturePascalOrNewer(true).build();
+                .setArchitecturePascalOrNewer(true)
+                .setNumberOfAvailableGPUs(2)
+                .setNumberOfGPUsToUse(2).build();
 
         DeviceArray array1 = new DeviceArrayMock(context);
         DeviceArray array2 = new DeviceArrayMock(context);

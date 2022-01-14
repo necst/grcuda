@@ -55,8 +55,10 @@ import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.SyncGrCUDAExecutionContext;
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.TruffleLanguage.Env;
 import com.oracle.truffle.api.TruffleLogger;
+import com.oracle.truffle.api.nodes.Node;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,6 +69,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * resources.
  */
 public final class GrCUDAContext {
+
+    private static final TruffleLanguage.ContextReference<GrCUDAContext> REFERENCE = TruffleLanguage.ContextReference.create(GrCUDALanguage.class);
 
     private static final String ROOT_NAMESPACE = "CU";
 
@@ -122,8 +126,8 @@ public final class GrCUDAContext {
         namespace.addFunction(new ShredFunction());
         namespace.addFunction(new BindKernelFunction(this.grCUDAExecutionContext));
         namespace.addFunction(new BuildKernelFunction(this.grCUDAExecutionContext));
-        namespace.addFunction(new GetDevicesFunction(this.grCUDAExecutionContext.getCudaRuntime()));
-        namespace.addFunction(new GetDeviceFunction(this.grCUDAExecutionContext.getCudaRuntime()));
+        namespace.addFunction(new GetDevicesFunction(this.grCUDAExecutionContext));
+        namespace.addFunction(new GetDeviceFunction(this.grCUDAExecutionContext));
         namespace.addFunction(new GetOptionsFunction(grCUDAOptionMap));
         this.grCUDAExecutionContext.getCudaRuntime().registerCUDAFunctions(namespace);
         if (grCUDAOptionMap.isCuMLEnabled()) {
@@ -155,6 +159,10 @@ public final class GrCUDAContext {
             new CUSPARSERegistry(this).registerCUSPARSEFunctions(sparse);
         }
         this.rootNamespace = namespace;
+    }
+
+    public static GrCUDAContext get(Node node) {
+        return REFERENCE.get(node);
     }
 
     public Env getEnv() {

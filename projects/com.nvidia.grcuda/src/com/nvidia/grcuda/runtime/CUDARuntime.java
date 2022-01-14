@@ -103,6 +103,10 @@ public final class CUDARuntime {
      */
     private int numberOfGPUsToUse = GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs;
 
+    public int getNumberOfAvailableGPUs() {
+        return numberOfAvailableGPUs;
+    }
+
     public int getNumberOfGPUsToUse() {
         return numberOfGPUsToUse;
     }
@@ -220,7 +224,7 @@ public final class CUDARuntime {
     private void setupSupportForMultiGPU() {
         // Find how many GPUs are available on this system;
         this.numberOfAvailableGPUs = cudaGetDeviceCount();
-        RUNTIME_LOGGER.info("identified " + this.numberOfAvailableGPUs + " GPUs available on this machine");
+        RUNTIME_LOGGER.fine("identified " + numberOfAvailableGPUs + " GPUs available on this machine");
         this.numberOfGPUsToUse = numberOfAvailableGPUs;
         if (numberOfAvailableGPUs <= 0) {
             RUNTIME_LOGGER.severe("GrCUDA initialization failed, no GPU device is available (devices count = " + numberOfAvailableGPUs + ")");
@@ -261,7 +265,7 @@ public final class CUDARuntime {
         return currentGPU;
     }
 
-    void setCurrentGPU(int currentGPU) {
+    private void setCurrentGPU(int currentGPU) {
         this.currentGPU = currentGPU;
     }
 
@@ -420,6 +424,9 @@ public final class CUDARuntime {
     @TruffleBoundary
     public void cudaSetDevice(int device) {
         try {
+            if (device < 0 || device > this.numberOfGPUsToUse) {
+                throw new GrCUDAException("the selected GPU is not valid (" + device + "), it should be 0 <= x < " + this.numberOfGPUsToUse);
+            }
             Object callable = CUDARuntimeFunction.CUDA_SETDEVICE.getSymbol(this);
             Object result = INTEROP.execute(callable, device);
             RUNTIME_LOGGER.finest("selected current GPU = " + device);

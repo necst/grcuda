@@ -28,17 +28,21 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.nvidia.grcuda.runtime.stream;
+package com.nvidia.grcuda.runtime.stream.policy;
 
-import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
+public enum RetrieveParentStreamPolicyEnum {
+    SAME_AS_PARENT("same-as-parent"),
+    DISJOINT("disjoint"),
+    MULTIGPU_DISJOINT("multigpu-disjoint");
 
-/**
- * This abstract class defines how a {@link GrCUDAStreamManager}
- * will assign a {@link CUDAStream} to a {@link com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement}
- * that has at least one parent active computation.
- * For example, it use the same stream of the parent, or understand that a different stream can be used,
- * to have multiple children computation run in parallel.
- */
-public abstract class RetrieveParentStream {
-    abstract CUDAStream retrieve(ExecutionDAG.DAGVertex vertex);
+    private final String name;
+
+    RetrieveParentStreamPolicyEnum(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

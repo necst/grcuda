@@ -32,8 +32,8 @@ package com.nvidia.grcuda.test.runtime.stream;
 
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
-import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.mock.ArgumentMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
 import com.nvidia.grcuda.test.util.mock.GrCUDAStreamManagerMock;
@@ -62,7 +62,7 @@ public class GrCUDAStreamManagerMockTest {
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {RetrieveNewStreamPolicyEnum.ALWAYS_NEW},
-                {RetrieveNewStreamPolicyEnum.FIFO},
+                {RetrieveNewStreamPolicyEnum.REUSE},
         });
     }
 
@@ -282,9 +282,9 @@ public class GrCUDAStreamManagerMockTest {
 
         ExecutionDAG dag = context.getDag();
         // Check that kernels have been given the right stream;
-        int numStreams = this.policy == RetrieveNewStreamPolicyEnum.FIFO ? 2 : numLoops * 2;
-        int streamCheck1 = this.policy == RetrieveNewStreamPolicyEnum.FIFO ? 0 : numLoops * 2 - 2;
-        int streamCheck2 = this.policy == RetrieveNewStreamPolicyEnum.FIFO ? 1 : numLoops * 2 - 1;
+        int numStreams = this.policy == RetrieveNewStreamPolicyEnum.REUSE ? 2 : numLoops * 2;
+        int streamCheck1 = this.policy == RetrieveNewStreamPolicyEnum.REUSE ? 0 : numLoops * 2 - 2;
+        int streamCheck2 = this.policy == RetrieveNewStreamPolicyEnum.REUSE ? 1 : numLoops * 2 - 1;
 
         assertEquals(numStreams, context.getStreamManager().getNumberOfStreams());
         assertEquals(streamCheck1, dag.getVertices().get(numLoops * 3 - 3).getComputation().getStream().getStreamNumber());
@@ -447,31 +447,4 @@ public class GrCUDAStreamManagerMockTest {
             assertEquals(0, dag.getVertices().get(0).getComputation().getStream().getStreamNumber());
         }
     }
-
-    // FIXME: finish test when policies are available
-//    @Test
-//    public void moveLessArgumentSimple() throws UnsupportedTypeException{
-//        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
-//                .setRetrieveNewStreamPolicy(RetrieveNewStreamPolicyEnum.FIFO)
-//                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DATA_AWARE)
-//                .build();
-//
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
-//        new KernelExecutionMock(context,
-//                Arrays.asList(new ArgumentMock(1),
-//                        new ArgumentMock(2),
-//                        new ArgumentMock(3))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(3))).schedule();
-//
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(5))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(1))).schedule();
-//        new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(2))).schedule();
-//        ExecutionDAG dag = context.getDag();
-//    }
 }

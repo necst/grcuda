@@ -35,6 +35,7 @@
  */
 package com.nvidia.grcuda.runtime;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -46,12 +47,20 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 
 @ExportLibrary(InteropLibrary.class)
-public final class DeviceList implements TruffleObject, Iterable<Device> {
+public class DeviceList implements TruffleObject, Iterable<Device> {
 
-    private final Device[] devices;
+    protected final Device[] devices;
+
+    public DeviceList(CUDARuntime runtime) {
+        this(runtime.getNumberOfAvailableGPUs(), runtime);
+    }
 
     public DeviceList(int numDevices, CUDARuntime runtime) {
         devices = new Device[numDevices];
+        this.initializeDeviceList(numDevices, runtime);
+    }
+
+    public void initializeDeviceList(int numDevices, CUDARuntime runtime) {
         for (int deviceOrdinal = 0; deviceOrdinal < numDevices; ++deviceOrdinal) {
             devices[deviceOrdinal] = new Device(deviceOrdinal, runtime);
         }
@@ -88,6 +97,13 @@ public final class DeviceList implements TruffleObject, Iterable<Device> {
             throw new IndexOutOfBoundsException();
         }
         return devices[deviceOrdinal];
+    }
+
+    /**
+     * Cleanup and deallocate the streams managed by each device;
+     */
+    public void cleanup() {
+        Arrays.stream(this.devices).forEach(Device::cleanup);
     }
 
     @Override
