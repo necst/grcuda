@@ -79,7 +79,7 @@ public class KernelExecutionMock extends GrCUDAComputationalElement {
     @Override
     public String toString() {
         return "kernel mock" + "; args=[" +
-                this.argumentList.stream().map(Object::toString).collect(Collectors.joining(", ")) +
+                this.argumentsThatCanCreateDependencies.stream().map(Object::toString).collect(Collectors.joining(", ")) +
                 "]" + "; stream=" + this.getStream().getStreamNumber();
     }
 }

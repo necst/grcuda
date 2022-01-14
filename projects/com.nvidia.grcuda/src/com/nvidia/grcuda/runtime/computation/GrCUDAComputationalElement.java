@@ -60,7 +60,7 @@ public abstract class GrCUDAComputationalElement {
     /**
      * This list contains the original set of input arguments that are used to compute dependencies;
      */
-    protected final List<ComputationArgumentWithValue> argumentList;
+    protected final List<ComputationArgumentWithValue> argumentsThatCanCreateDependencies;
     /**
      * Reference to the execution context where this computation is executed;
      */
@@ -93,10 +93,11 @@ public abstract class GrCUDAComputationalElement {
      */
     private boolean computationStarted = false;
     /**
-     * Specify if this computational element represents an array access (read or write) on an {@link com.nvidia.grcuda.runtime.array.AbstractArray}
-     * performed synchronously by the CPU. By default it returns false;
+     * Specify if this computational element represents a computation executed on the CPU,
+     * such as an array access (read or write) on an {@link com.nvidia.grcuda.runtime.array.AbstractArray}.
+     * CPU computations are assumed synchronous. By default it returns false;
      */
-    protected boolean isComputationArrayAccess = false;
+    protected boolean isComputationDoneByCPU = false;
 
     private final DependencyComputation dependencyComputation;
 
@@ -118,10 +119,10 @@ public abstract class GrCUDAComputationalElement {
      * @param initializer the initializer used to build the internal set of arguments considered in the dependency computation
      */
     public GrCUDAComputationalElement(AbstractGrCUDAExecutionContext grCUDAExecutionContext, InitializeDependencyList initializer) {
-        this.argumentList = initializer.initialize();
+        this.argumentsThatCanCreateDependencies = initializer.initialize();
         // Initialize by making a copy of the original set;
         this.grCUDAExecutionContext = grCUDAExecutionContext;
-        this.dependencyComputation = grCUDAExecutionContext.getDependencyBuilder().initialize(this.argumentList);
+        this.dependencyComputation = grCUDAExecutionContext.getDependencyBuilder().initialize(this.argumentsThatCanCreateDependencies);
     }
 
     /**
@@ -133,8 +134,8 @@ public abstract class GrCUDAComputationalElement {
         this(grCUDAExecutionContext, new DefaultExecutionInitializer(args));
     }
 
-    public List<ComputationArgumentWithValue> getArgumentList() {
-        return argumentList;
+    public List<ComputationArgumentWithValue> getArgumentsThatCanCreateDependencies() {
+        return argumentsThatCanCreateDependencies;
     }
 
     /**
@@ -183,7 +184,7 @@ public abstract class GrCUDAComputationalElement {
     public abstract Object execute() throws UnsupportedTypeException;
 
     public CUDAStream getStream() {
-        return stream;
+        return this.stream;
     }
 
     public void setStream(CUDAStream stream) {
@@ -235,7 +236,9 @@ public abstract class GrCUDAComputationalElement {
      * If not, the stream will be provided internally using the specified execution policy. By default, return false;
      * @return if the computation is done on a custom CUDA stream;
      */
-    public boolean useManuallySpecifiedStream() { return false; }
+    public boolean useManuallySpecifiedStream() {
+        return false;
+    }
 
     /**
      * Some computational elements, like kernels, can be executed on different {@link CUDAStream} to provide
@@ -243,7 +246,9 @@ public abstract class GrCUDAComputationalElement {
      * executed on streams different from the {@link DefaultStream};
      * @return if this computation can be executed on a customized stream
      */
-    public boolean canUseStream() { return false; }
+    public boolean canUseStream() {
+        return false;
+    }
 
     // TODO: currently not supported. It is not clear what the synchronization semantic for the default stream is.
     //  It is better to just always execute computations on the default stream synchronously.
@@ -279,13 +284,23 @@ public abstract class GrCUDAComputationalElement {
     public DependencyComputation getDependencyComputation() { return dependencyComputation; }
 
     /**
-     * Set for all the {@link com.nvidia.grcuda.runtime.array.AbstractArray} in the computation if this computation is an array access;
+     * Set for all the {@link com.nvidia.grcuda.runtime.array.AbstractArray} in the computation if this computation is an array access.
+     * This implementation is meant for GPU computations that use streams, e.g. kernels and GPU libraries.
+     * CPU computations (e.g. array accesses) should re-implement this function to track the CPU.
+     * GPU computations don't use custom streams only if the are synchronized (e.g. when using the sync scheduler),
+     * and there's no benefit in tracking their location;
      */
-    public void updateIsComputationCPUAccess() {
-        for (ComputationArgumentWithValue o : this.argumentList) {
-            if (o.getArgumentValue() instanceof AbstractArray) {
-                if (!(grCUDAExecutionContext.isConstAware() && o.isConst())) {
-                    ((AbstractArray) o.getArgumentValue()).setLastComputationCPUAccess(isComputationArrayAccess);
+    public void updateLocationOfArrays() {
+        for (ComputationArgumentWithValue o : this.argumentsThatCanCreateDependencies) {
+            // Ignore non-array arguments. Also, don't update locations if the ComputationalElement does not use streams;
+            if (o.getArgumentValue() instanceof AbstractArray && this.canUseStream()) {
+                AbstractArray a = (AbstractArray) o.getArgumentValue();
+                // If the argument is read-only, add the location of this ComputationalElement to the array;
+                if (grCUDAExecutionContext.isConstAware() && o.isConst()) {
+                    a.addArrayUpToDateLocations(this.stream.getStreamDeviceId());
+                } else {
+                    // Clear the list of up-to-date locations: only the current device has the updated array;
+                    a.resetArrayUpToDateLocations(this.stream.getStreamDeviceId());
                 }
             }
         }
