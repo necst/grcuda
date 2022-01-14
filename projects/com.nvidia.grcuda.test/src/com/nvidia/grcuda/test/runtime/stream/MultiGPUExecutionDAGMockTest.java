@@ -1,16 +1,12 @@
 package com.nvidia.grcuda.test.runtime.stream;
 
-import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
-import com.nvidia.grcuda.test.util.mock.ArgumentMock;
-import com.nvidia.grcuda.test.util.mock.DeviceArrayMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
-import com.nvidia.grcuda.test.util.mock.KernelExecutionMock;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,8 +14,6 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.executeMockComputation;
 import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.executeMockComputationAndValidate;
@@ -39,7 +33,6 @@ public class MultiGPUExecutionDAGMockTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
                 {RetrieveNewStreamPolicyEnum.ALWAYS_NEW, RetrieveNewStreamPolicyEnum.REUSE}
         }));

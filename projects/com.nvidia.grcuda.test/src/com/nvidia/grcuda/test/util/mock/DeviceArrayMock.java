@@ -4,17 +4,13 @@ import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.runtime.CPUDevice;
 import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;
-import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
-import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayWriteExecution;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.InvalidArrayIndexException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import com.oracle.truffle.api.library.CachedLibrary;
-import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
 public class DeviceArrayMock extends DeviceArray {
@@ -53,6 +49,11 @@ public class DeviceArrayMock extends DeviceArray {
     @Override
     protected LittleEndianNativeArrayView allocateMemory() {
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return this.getElementType() + "[" + this.getArraySize() + "]";
     }
 }
 

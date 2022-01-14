@@ -17,9 +17,14 @@ public class GrCUDAComputationsMock {
      * Schedule for execution a sequence of mock GrCUDAComputationalElement;
      */
     public static void executeMockComputation(List<GrCUDAComputationalElement> computations) throws UnsupportedTypeException {
-        for (GrCUDAComputationalElement c : computations) {
-            c.schedule();
-        }
+        executeMockComputationAndValidateInner(computations, new ArrayList<>(), false, false);
+    }
+
+    /**
+     * Schedule for execution a sequence of mock GrCUDAComputationalElement;
+     */
+    public static void executeMockComputation(List<GrCUDAComputationalElement> computations, boolean debug) throws UnsupportedTypeException {
+        executeMockComputationAndValidateInner(computations, new ArrayList<>(), false, debug);
     }
 
     /**
@@ -30,16 +35,43 @@ public class GrCUDAComputationsMock {
      * @throws UnsupportedTypeException
      */
     public static void executeMockComputationAndValidate(List<GrCUDAComputationalElement> computations, List<Integer> gpuScheduling) throws UnsupportedTypeException {
-        assertEquals(computations.size(), gpuScheduling.size());
+        executeMockComputationAndValidate(computations, gpuScheduling, false);
+    }
+
+    /**
+     * Schedule for execution a sequence of mock GrCUDAComputationalElement,
+     * and validate that the GPU scheduling of the computation is the one expected.
+     * @param computations a sequence of computations to be scheduled
+     * @param gpuScheduling a list of gpu identifiers. Each identifier "i" represents the GPU scheduling for the i-th computation;
+     * @param debug if true, print debug information about the scheduling
+     * @throws UnsupportedTypeException
+     */
+    public static void executeMockComputationAndValidate(List<GrCUDAComputationalElement> computations, List<Integer> gpuScheduling, boolean debug) throws UnsupportedTypeException {
+        executeMockComputationAndValidateInner(computations, gpuScheduling, true, debug);
+    }
+
+    private static void executeMockComputationAndValidateInner(
+            List<GrCUDAComputationalElement> computations,
+            List<Integer> gpuScheduling,
+            boolean validate,
+            boolean debug) throws UnsupportedTypeException {
+        if (validate) {
+            assertEquals(computations.size(), gpuScheduling.size());
+        }
         for (int i = 0; i < computations.size(); i++) {
             GrCUDAComputationalElement c = computations.get(i);
             c.schedule();
-            int expected = gpuScheduling.get(i);
             int actual = c.getStream().getStreamDeviceId();
-            if (expected != actual) {
-                System.out.println("wrong GPU allocation for kernel " + i + "=" + c + "; expected=" + expected + "; actual=" + actual);
+            if (debug) {
+                System.out.println(c);
             }
-            assertEquals(expected, actual);
+            if (validate) {
+                int expected = gpuScheduling.get(i);
+                if (expected != actual) {
+                    System.out.println("wrong GPU allocation for kernel " + i + "=" + c + "; expected=" + expected + "; actual=" + actual);
+                }
+                assertEquals(expected, actual);
+            }
         }
     }
 
@@ -266,5 +298,40 @@ public class GrCUDAComputationsMock {
                         new ArgumentMock(a5, true), new ArgumentMock(a11))),
                 new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(a11)))
         );
+    }
+
+    public static final int partitionsVec = 16;
+
+    // K1(Xr, X1) --> K3(X1r, Y1r, R)
+    // K2(Yr, Y1) -/
+    // A simple join pattern, with X, Y, X1, Y1, R being split into P partitions, to parallelize the computation
+    // on multiple GPUs;
+    public static List<GrCUDAComputationalElement> vecMultiGPUMockComputation(AsyncGrCUDAExecutionContext context) {
+        // Arrays have P partitions;
+        int P = partitionsVec;
+        int N = 1000;
+        DeviceArrayMock[] x = new DeviceArrayMock[P];
+        DeviceArrayMock[] y = new DeviceArrayMock[P];
+        DeviceArrayMock[] x1 = new DeviceArrayMock[P];
+        DeviceArrayMock[] y1 = new DeviceArrayMock[P];
+        DeviceArrayMock[] res = new DeviceArrayMock[P];
+        for (int i = 0; i < P; i++) {
+            x[i] = new DeviceArrayMock(N);
+            y[i] = new DeviceArrayMock(N);
+            x1[i] = new DeviceArrayMock(N);
+            y1[i] = new DeviceArrayMock(N);
+            res[i] = new DeviceArrayMock(1);
+        }
+        List<GrCUDAComputationalElement> computations = new ArrayList<>();
+        // Schedule the computations;
+        for (int i = 0; i < P; i++) {
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(x[i], true), new ArgumentMock(x1[i])), "SQ1-" + i));
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(y[i], true), new ArgumentMock(y1[i])), "SQ2-" + i));
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(x1[i], true), new ArgumentMock(y1[i], true), new ArgumentMock(res[i])), "SUM-" + i));
+        }
+        for (int i = 0; i < P; i++) {
+            new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(res[i])));
+        }
+        return computations;
     }
 }
