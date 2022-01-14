@@ -115,7 +115,7 @@ public final class CUDARuntime {
      * Identifier of the GPU that is currently active;
      */
     private int currentGPU = DEFAULT_DEVICE;
-
+    
     public boolean isMultiGPUEnabled() {
         return this.numberOfGPUsToUse > 1;
     }
@@ -247,7 +247,7 @@ public final class CUDARuntime {
         for (int i = 0; i < this.numberOfGPUsToUse; i++) {
             this.loadedModules.add(new HashMap<String, CUModule>());
         }
-        RUNTIME_LOGGER.info("initialized GrCUDA to use " + this.numberOfGPUsToUse + "/" + numberOfAvailableGPUs + " GPUs");
+        RUNTIME_LOGGER.info("initialized GrCUDA to use " + this.numberOfGPUsToUse + "/" + this.numberOfAvailableGPUs + " GPUs");
     }
     
     // using this slow/uncached instance since all calls are non-critical

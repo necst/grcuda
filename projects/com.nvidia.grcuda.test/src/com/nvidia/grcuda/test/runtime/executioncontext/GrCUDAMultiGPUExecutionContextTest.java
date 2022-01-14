@@ -170,9 +170,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
      */
     @Test
     public void dependencyKernelsTestA() {
-
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options)) {
-
             assumeTrue(checkIfEnoughGPUsAreAvailable(context));
 
             final int numElements = 10000;
