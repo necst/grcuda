@@ -62,6 +62,16 @@ public class GrCUDATestUtil {
         return combinations;
     }
 
+    private static final ExecutionPolicyEnum[] executionPoliciesSingleGPU = {ExecutionPolicyEnum.SYNC, ExecutionPolicyEnum.ASYNC};
+    private static final Boolean[] inputPrefetchSingleGPU = {true, false};
+    private static final RetrieveNewStreamPolicyEnum[] retrieveNewStreamSingleGPU = {RetrieveNewStreamPolicyEnum.REUSE, RetrieveNewStreamPolicyEnum.ALWAYS_NEW}; // Simplify number of tests, don't use all options;
+    private static final RetrieveParentStreamPolicyEnum[] retrieveParentStreamSingleGPU = {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT};
+    private static final DependencyPolicyEnum[] dependencyPoliciesSingleGPU = {DependencyPolicyEnum.WITH_CONST, DependencyPolicyEnum.NO_CONST}; // Simplify number of tests, don't use all options;
+    private static final DeviceSelectionPolicyEnum[] deviceSelectionSingleGPU = {DeviceSelectionPolicyEnum.SINGLE_GPU};
+    private static final Boolean[] forceStreamAttachSingleGPU = {true, false}; // Simplify number of tests, don't use all options;
+    private static final Boolean[] kernelTimingSingleGPU = {true, false};
+    private static final Integer[] numberOfGPUsSingleGPU = {1};
+
     /**
      * Return a list of {@link GrCUDATestOptionsStruct}, where each element is a combination of input policy options.
      * Useful to perform tests that cover all cases;
@@ -69,15 +79,8 @@ public class GrCUDATestUtil {
      */
     public static Collection<Object[]> getAllOptionCombinationsSingleGPU() {
         Collection<Object[]> options = GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
-                {ExecutionPolicyEnum.SYNC, ExecutionPolicyEnum.ASYNC},
-                {true, false},  // InputPrefetch
-                {RetrieveNewStreamPolicyEnum.REUSE, RetrieveNewStreamPolicyEnum.ALWAYS_NEW},
-                {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT},
-                {DependencyPolicyEnum.NO_CONST, DependencyPolicyEnum.WITH_CONST},
-                {DeviceSelectionPolicyEnum.SINGLE_GPU},
-                {true, false},  // ForceStreamAttach
-                {true, false},  // With and without timing of kernels
-                {1},            // Number of GPUs
+                executionPoliciesSingleGPU, inputPrefetchSingleGPU, retrieveNewStreamSingleGPU, retrieveParentStreamSingleGPU,
+                dependencyPoliciesSingleGPU, deviceSelectionSingleGPU, forceStreamAttachSingleGPU, kernelTimingSingleGPU, numberOfGPUsSingleGPU
         }));
         List<Object[]> combinations = new ArrayList<>();
         options.forEach(optionArray -> {
@@ -91,9 +94,23 @@ public class GrCUDATestUtil {
             }
         });
         // Check that the number of options is correct <(sync + async) * logging>;
-        assert(combinations.size() == (2 * 2 + 2 * 2 * 2 * 2 * 2) * 2);
+        assert(combinations.size() == (forceStreamAttachSingleGPU.length * inputPrefetchSingleGPU.length +
+                retrieveNewStreamSingleGPU.length * retrieveParentStreamSingleGPU.length * dependencyPoliciesSingleGPU.length
+                        * inputPrefetchSingleGPU.length * forceStreamAttachSingleGPU.length) * kernelTimingSingleGPU.length);
         return combinations;
     }
+
+    // Options to use in the tests;
+    private static final ExecutionPolicyEnum[] executionPoliciesMultiGPU = {ExecutionPolicyEnum.ASYNC};
+    private static final Boolean[] inputPrefetchMultiGPU = {true, false};
+    private static final RetrieveNewStreamPolicyEnum[] retrieveNewStreamMultiGPU = {RetrieveNewStreamPolicyEnum.REUSE, RetrieveNewStreamPolicyEnum.ALWAYS_NEW}; // Simplify number of tests, don't use all options;
+    private static final RetrieveParentStreamPolicyEnum[] retrieveParentStreamMultiGPU = {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT, RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT};
+    private static final DependencyPolicyEnum[] dependencyPoliciesMultiGPU = {DependencyPolicyEnum.WITH_CONST, DependencyPolicyEnum.NO_CONST}; // Simplify number of tests, don't use all options;
+    private static final DeviceSelectionPolicyEnum[] deviceSelectionMultiGPU = {DeviceSelectionPolicyEnum.SINGLE_GPU, DeviceSelectionPolicyEnum.STREAM_AWARE, DeviceSelectionPolicyEnum.ROUND_ROBIN,
+            DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE, DeviceSelectionPolicyEnum.MINMIN_TRANSFER_TIME, DeviceSelectionPolicyEnum.MINMAX_TRANSFER_TIME};
+    private static final Boolean[] forceStreamAttachMultiGPU = {true, false}; // Simplify number of tests, don't use all options;
+    private static final Boolean[] kernelTimingMultiGPU = {true, false};
+    private static final Integer[] numberOfGPUsMultiGPU = {2, 4, 8};
 
     /**
      * Return a list of {@link GrCUDATestOptionsStruct}, where each element is a combination of input policy options.
@@ -102,16 +119,15 @@ public class GrCUDATestUtil {
      */
     public static Collection<Object[]> getAllOptionCombinationsMultiGPU() {
         Collection<Object[]> options = GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
-                {ExecutionPolicyEnum.ASYNC},
-                {true, false},  // InputPrefetch
-                {RetrieveNewStreamPolicyEnum.REUSE, RetrieveNewStreamPolicyEnum.ALWAYS_NEW}, // Simplify number of tests, don't use all options;
-                {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT, RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT},
-                {DependencyPolicyEnum.WITH_CONST, DependencyPolicyEnum.NO_CONST},   // Simplify number of tests, don't use all options;
-                {DeviceSelectionPolicyEnum.SINGLE_GPU, DeviceSelectionPolicyEnum.STREAM_AWARE, DeviceSelectionPolicyEnum.ROUND_ROBIN,
-                        DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE, DeviceSelectionPolicyEnum.MINMIN_TRANSFER_TIME, DeviceSelectionPolicyEnum.MINMAX_TRANSFER_TIME},
-                {false, true},  // ForceStreamAttach, simplify number of tests, don't use all options;
-                {true, false},  // With and without timing of kernels
-                {2, 4, 8},  // Number of GPUs
+                executionPoliciesMultiGPU,
+                inputPrefetchMultiGPU,
+                retrieveNewStreamMultiGPU,
+                retrieveParentStreamMultiGPU,
+                dependencyPoliciesMultiGPU,
+                deviceSelectionMultiGPU,
+                forceStreamAttachMultiGPU,
+                kernelTimingMultiGPU,  // With and without timing of kernels
+                numberOfGPUsMultiGPU,  // Number of GPUs
         }));
         List<Object[]> combinations = new ArrayList<>();
         options.forEach(optionArray -> {
@@ -123,7 +139,9 @@ public class GrCUDATestUtil {
             combinations.add(new GrCUDATestOptionsStruct[]{newStruct});
         });
         // Check that the number of options is correct;
-        assert(combinations.size() == (2 * 2 * 3 * 2 * 6 * 2 * 2 * 3));
+        assert(combinations.size() == (executionPoliciesMultiGPU.length * inputPrefetchMultiGPU.length *
+                retrieveNewStreamMultiGPU.length * retrieveParentStreamMultiGPU.length * dependencyPoliciesMultiGPU.length *
+                deviceSelectionMultiGPU.length * forceStreamAttachMultiGPU.length * kernelTimingMultiGPU.length * numberOfGPUsMultiGPU.length));
         return combinations;
     }
 
