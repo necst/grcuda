@@ -1,55 +1,51 @@
 package com.nvidia.grcuda.benchmark;
 
-import com.sun.jdi.Value;
 import org.graalvm.polyglot.Value;
-import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.Theories;            //TODO: verify that they are actually useful
+import org.junit.experimental.theories.Theories;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-
 @RunWith(Theories.class)
-public class BenchmarkB6 extends Benchmark{
+public class B6 extends Benchmark {
 
     private static final String NB_KERNEL =
 
-                    "extern \"C\" __global__ void nb_1(const int* x, float* y, float* z, int size, int n_feat, int n_classes) {\n" +
-                            "        for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < size; i += blockDim.x * gridDim.x) {\n" +
-                            "            for (int j = 0; j < n_classes; j++) {\n" +
-                            "                for (int q = 0; q < n_feat; q++) {\n" +
-                            "                    z[i * n_classes + j] += x[i * n_feat + q] * y[j * n_feat + q];\n" +
-                            "                } \n" +
-                            "            }\n" +
-                            "        }\n" +
-                            "    }\n" +
-                            "    \n" +
-                            "    extern \"C\" __global__ void nb_2(float* x, float* y, int n_row_x, int n_col_x) {\n" +
-                            "        for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n_row_x; i += blockDim.x * gridDim.x) {\n" +
-                            "            float curr_max = x[i * n_col_x];\n" +
-                            "            for (int j = 0; j < n_col_x; j++) {\n" +
-                            "                curr_max = fmaxf(curr_max, x[i * n_col_x + j]); \n" +
-                            "            }\n" +
-                            "            y[i] = curr_max;\n" +
-                            "        }\n" +
-                            "    }\n" +
-                            "    \n" +
-                            "    extern \"C\" __global__ void nb_3(float* x, float* y, float* z, int n_row_x, int n_col_x) {\n" +
-                            "        for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n_row_x; i += blockDim.x * gridDim.x) {\n" +
-                            "            float sum = 0;\n" +
-                            "            for (int j = 0; j < n_col_x; j++) {\n" +
-                            "                sum += expf(x[i * n_col_x + j] - y[i]);\n" +
-                            "            }\n" +
-                            "            z[i] = logf(sum) + y[i];\n" +
-                            "        }\n" +
-                            "    }\n" +
-                            "    \n" +
-                            "    extern \"C\" __global__ void nb_4(float* x, float* y, int n_row_x, int n_col_x) {\n" +
-                            "        for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n_row_x; i += blockDim.x * gridDim.x) {\n" +
-                            "            for (int j = 0; j < n_col_x; j++) {\n" +
-                            "                x[i * n_col_x + j] = expf(x[i * n_col_x + j] - y[i]);\n" +
-                            "            }\n" +
-                            "        }\n" +
-                            "    }";
+            "extern \"C\" __global__ void nb_1(const int* x, float* y, float* z, int size, int n_feat, int n_classes) {\n" +
+                    "        for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < size; i += blockDim.x * gridDim.x) {\n" +
+                    "            for (int j = 0; j < n_classes; j++) {\n" +
+                    "                for (int q = 0; q < n_feat; q++) {\n" +
+                    "                    z[i * n_classes + j] += x[i * n_feat + q] * y[j * n_feat + q];\n" +
+                    "                } \n" +
+                    "            }\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "    \n" +
+                    "    extern \"C\" __global__ void nb_2(float* x, float* y, int n_row_x, int n_col_x) {\n" +
+                    "        for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n_row_x; i += blockDim.x * gridDim.x) {\n" +
+                    "            float curr_max = x[i * n_col_x];\n" +
+                    "            for (int j = 0; j < n_col_x; j++) {\n" +
+                    "                curr_max = fmaxf(curr_max, x[i * n_col_x + j]); \n" +
+                    "            }\n" +
+                    "            y[i] = curr_max;\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "    \n" +
+                    "    extern \"C\" __global__ void nb_3(float* x, float* y, float* z, int n_row_x, int n_col_x) {\n" +
+                    "        for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n_row_x; i += blockDim.x * gridDim.x) {\n" +
+                    "            float sum = 0;\n" +
+                    "            for (int j = 0; j < n_col_x; j++) {\n" +
+                    "                sum += expf(x[i * n_col_x + j] - y[i]);\n" +
+                    "            }\n" +
+                    "            z[i] = logf(sum) + y[i];\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "    \n" +
+                    "    extern \"C\" __global__ void nb_4(float* x, float* y, int n_row_x, int n_col_x) {\n" +
+                    "        for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n_row_x; i += blockDim.x * gridDim.x) {\n" +
+                    "            for (int j = 0; j < n_col_x; j++) {\n" +
+                    "                x[i * n_col_x + j] = expf(x[i * n_col_x + j] - y[i]);\n" +
+                    "            }\n" +
+                    "        }\n" +
+                    "    }";
 
     private static final String RR_KERNEL =
 
@@ -118,19 +114,18 @@ public class BenchmarkB6 extends Benchmark{
                     "        }\n" +
                     "    }";
 
-    protected final String benchmarkName = "B6";
+    private static final String BENCHMARK_NAME = "B6";
+    private Value nb1Function;
+    private Value nb2Function;
+    private Value nb3Function;
+    private Value nb4Function;
 
-    private Value nb1;
-    private Value nb2;
-    private Value nb3;
-    private Value nb4;
+    private Value rr1Function;
+    private Value rr2Function;
+    private Value rr3Function;
 
-    private Value rr1;
-    private Value rr2;
-    private Value rr3;
-
-    private Value softMax;
-    private Value argMax;
+    private Value softMaxFunction;
+    private Value argMaxFunction;
 
     private int xCpu;
     private float[][] nbFeatLogProbCpu;
@@ -145,13 +140,8 @@ public class BenchmarkB6 extends Benchmark{
     private int numClasses;
     private int numFeatures;
 
-    @DataPoints
-    public static int[] iterations() {
-        return Benchmark.iterations();
-    }
-
     @Override
-    public void init() {
+    public void initializeTest(int iteration) {
 
         numClasses = 10;
         numFeatures = 200;
@@ -161,20 +151,20 @@ public class BenchmarkB6 extends Benchmark{
         ridgeInterceptCpu = new float[numClasses];
 
         // Context initialization
-        Value buildkernel = this.getGrcudaContext().eval("grcuda", "buildkernel");
+        Value buildkernel = this.getContext().eval("grcuda", "buildkernel");
 
         //Kernel build
-        nb1 = buildkernel.execute(NB_KERNEL, "nb1", "const pointer, pointer, pointer, sint32, sint32, sint32");
-        nb2 = buildkernel.execute(NB_KERNEL, "nb2", "pointer, pointer, sint32, sint32");
-        nb3 = buildkernel.execute(NB_KERNEL, "nb3", "pointer, pointer, pointer, sint32, sint32");
-        nb4 = buildkernel.execute(NB_KERNEL, "nb4", "pointer, pointer, sint32, sint32");
+        nb1Function = buildkernel.execute(NB_KERNEL, "nb1", "const pointer, pointer, pointer, sint32, sint32, sint32");
+        nb2Function = buildkernel.execute(NB_KERNEL, "nb2", "pointer, pointer, sint32, sint32");
+        nb3Function = buildkernel.execute(NB_KERNEL, "nb3", "pointer, pointer, pointer, sint32, sint32");
+        nb4Function = buildkernel.execute(NB_KERNEL, "nb4", "pointer, pointer, sint32, sint32");
 
-        rr1 = buildkernel.execute(RR_KERNEL, "rr1", "const pointer, pointer, sint32, sint32");
-        rr2 = buildkernel.execute(RR_KERNEL, "rr2", "pointer, pointer, pointer, sint32, sint32, sint32");
-        rr3 = buildkernel.execute(RR_KERNEL, "rr3", "pointer, pointer, sint32, sint32");
+        rr1Function = buildkernel.execute(RR_KERNEL, "rr1", "const pointer, pointer, sint32, sint32");
+        rr2Function = buildkernel.execute(RR_KERNEL, "rr2", "pointer, pointer, pointer, sint32, sint32, sint32");
+        rr3Function = buildkernel.execute(RR_KERNEL, "rr3", "pointer, pointer, sint32, sint32");
 
-        softMax = buildkernel.execute(ENSEMBLE_KERNEL, "softmax", "pointer, sint32, sint32");
-        argMax = buildkernel.execute(ENSEMBLE_KERNEL, "argmax", "pointer, pointer, pointer, sint32, sint32");
+        softMaxFunction = buildkernel.execute(ENSEMBLE_KERNEL, "softmax", "pointer, sint32, sint32");
+        argMaxFunction = buildkernel.execute(ENSEMBLE_KERNEL, "argmax", "pointer, pointer, pointer, sint32, sint32");
 
         // Create a random input
         int maxOccurrenceOfNgram = 10;
@@ -182,14 +172,14 @@ public class BenchmarkB6 extends Benchmark{
         double min = 0.0;
         double max = 1.0;
 
-        xCpu = (int)(Math.random()*(maxOccurrenceOfNgram-minOccurrenceOfNgram+1)+minOccurrenceOfNgram);
+        xCpu = (int) (Math.random() * (maxOccurrenceOfNgram - minOccurrenceOfNgram + 1) + minOccurrenceOfNgram);
 
-        for (int i = 0;i < numClasses; i++)
-            for (int j = 0;j < numFeatures; j++){
+        for (int i = 0; i < numClasses; i++)
+            for (int j = 0; j < numFeatures; j++) {
                 nbFeatLogProbCpu[i][j] = (float) Math.random();
             }
-        for (int i = 0;i < numClasses; i++)
-            for (int j = 0;j < numFeatures; j++){
+        for (int i = 0; i < numClasses; i++)
+            for (int j = 0; j < numFeatures; j++) {
                 ridgeCoeffCpu[i][j] = (float) Math.random();
             }
 
@@ -210,7 +200,7 @@ public class BenchmarkB6 extends Benchmark{
         int[][] r2Cpu = new int[getTestSize()][numClasses];
 
         // Array initialization
-        Value deviceArray = this.getGrcudaContext().eval("grcuda", "DeviceArray");
+        Value deviceArray = this.getContext().eval("grcuda", "DeviceArray");
         x = deviceArray.execute("float", (getTestSize() * numFeatures));
         z = deviceArray.execute("float", (getTestSize() * numFeatures));
 
@@ -219,12 +209,12 @@ public class BenchmarkB6 extends Benchmark{
         ridgeCoeff = deviceArray.execute("float", numClasses * numFeatures);
         ridgeIntercept = deviceArray.execute("float", numClasses);
 
-        nbAMax = deviceArray.execute("float",getTestSize());
-        nbL = deviceArray.execute("float",getTestSize());
+        nbAMax = deviceArray.execute("float", getTestSize());
+        nbL = deviceArray.execute("float", getTestSize());
 
-        r1 = deviceArray.execute("float",getTestSize() * numClasses);
-        r2 = deviceArray.execute("float",getTestSize() * numClasses);
-        r = deviceArray.execute("float",getTestSize());
+        r1 = deviceArray.execute("float", getTestSize() * numClasses);
+        r2 = deviceArray.execute("float", getTestSize() * numClasses);
+        r = deviceArray.execute("float", getTestSize());
     }
 
     @Override
@@ -232,7 +222,8 @@ public class BenchmarkB6 extends Benchmark{
         assert (!config.randomInit);
         for (int i = 0; i < getTestSize(); i++) {
             for (int j = 0; j < numClasses; j++) {
-                r1.setArrayElement(i * numClasses + j, nbClassLogPrior.getArrayElement(j).asFloat());                r2.setArrayElement(i * numClasses +j, 0);
+                r1.setArrayElement(i * numClasses + j, nbClassLogPrior.getArrayElement(j).asFloat());
+                r2.setArrayElement(i * numClasses + j, 0);
             }
         }
     }
@@ -241,54 +232,59 @@ public class BenchmarkB6 extends Benchmark{
     public void runTest(int iteration) {
 
         //RR - 1
-        rr1
+        rr1Function
                 .execute(config.blocks, config.threadsPerBlock) // Set parameters
                 .execute(x, z, getTestSize(), numFeatures); // Execute actual kernel
 
         //NB - 1
-        nb1
+        nb1Function
                 .execute(config.blocks, config.threadsPerBlock) // Set parameters
                 .execute(x, nbFeatLogProb, r1, getTestSize(), numFeatures, numClasses); // Execute actual kernel
 
         //RR - 2
-        rr2
+        rr2Function
                 .execute(config.blocks, config.threadsPerBlock) // Set parameters
                 .execute(r1, ridgeCoeff, r2, getTestSize(), numFeatures, numClasses); // Execute actual kernel
 
         //NB - 2
-        nb2
+        nb2Function
                 .execute(config.blocks, config.threadsPerBlock) // Set parameters
                 .execute(r1, nbAMax, getTestSize(), numClasses); // Execute actual kernel
 
         //RR - 3
-        rr3
+        rr3Function
                 .execute(config.blocks, config.threadsPerBlock) // Set parameters
                 .execute(r2, ridgeIntercept, getTestSize(), numClasses); // Execute actual kernel
 
         //NB - 3
-        nb3
+        nb3Function
                 .execute(config.blocks, config.threadsPerBlock) // Set parameters
                 .execute(r1, nbAMax, nbL, getTestSize(), numClasses); // Execute actual kernel
 
         //NB - 4
-        nb4
+        nb4Function
                 .execute(config.blocks, config.threadsPerBlock) // Set parameters
                 .execute(r1, nbL, getTestSize(), numClasses); // Execute actual kernel
 
         //Ensemble results;
 
         //Softmax normalization;
-        softMax
+        softMaxFunction
                 .execute(config.blocks, config.threadsPerBlock) // Set parameters
                 .execute(r1, getTestSize(), numClasses); // Execute actual kernel
-        softMax
+        softMaxFunction
                 .execute(config.blocks, config.threadsPerBlock) // Set parameters
                 .execute(r2, getTestSize(), numClasses); // Execute actual kernel
 
         //Prediction;
-        argMax
+        argMaxFunction
                 .execute(config.blocks, config.threadsPerBlock) // Set parameters
                 .execute(r1, r2, r, getTestSize(), numClasses); // Execute actual kernel
+
+    }
+
+    @Override
+    protected void cpuValidation() {
 
     }
 }
