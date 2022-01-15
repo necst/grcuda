@@ -65,7 +65,7 @@ extern "C" __global__ void nb_3_m(const float* x, const float* y, float* z, int 
     }
 }
 
-extern "C" __global__ void nb_4_m(float* x, float* y, int n_row_x, int n_col_x) {
+extern "C" __global__ void nb_4_m(float* x, const float* y, int n_row_x, int n_col_x) {
     for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n_row_x; i += blockDim.x * gridDim.x) {
         for (int j = 0; j < n_col_x; j++) {
             x[i * n_col_x + j] = expf(x[i * n_col_x + j] - y[i]);

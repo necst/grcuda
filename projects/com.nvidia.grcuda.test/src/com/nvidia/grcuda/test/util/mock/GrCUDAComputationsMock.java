@@ -1,5 +1,6 @@
 package com.nvidia.grcuda.test.util.mock;
 
+import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -332,6 +333,138 @@ public class GrCUDAComputationsMock {
         for (int i = 0; i < P; i++) {
             computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(res[i]))));
         }
+        return computations;
+    }
+
+    public static final int partitionsBs = 24;
+
+    // K(X1r, Y1)
+    // K(X2r, Y2)
+    // ...
+    // K(XPr, YP)
+    //
+    // Many independent computations, on different data;
+    public static List<GrCUDAComputationalElement> bsMultiGPUMockComputation(AsyncGrCUDAExecutionContext context) {
+        // Arrays have P partitions;
+        int P = partitionsBs;
+        int N = 1000;
+        DeviceArrayMock[] x = new DeviceArrayMock[P];
+        DeviceArrayMock[] y = new DeviceArrayMock[P];
+
+        for (int i = 0; i < P; i++) {
+            x[i] = new DeviceArrayMock(N);
+            y[i] = new DeviceArrayMock(N);
+        }
+        List<GrCUDAComputationalElement> computations = new ArrayList<>();
+        // Schedule the computations;
+        for (int i = 0; i < P; i++) {
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(x[i], true), new ArgumentMock(y[i])), "BS-" + i));
+        }
+        for (int i = 0; i < P; i++) {
+            computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(y[i]))));
+        }
+        return computations;
+    }
+
+    public static final int partitionsMl = 16;
+
+    public static List<GrCUDAComputationalElement> mlMultiGPUMockComputation(AsyncGrCUDAExecutionContext context) {
+        // Arrays have P partitions;
+        int P = partitionsMl;
+        int N = 100000;
+        int S = N / P;
+        int F = 1024;
+        int C = 16;
+        DeviceArrayMock[] x = new DeviceArrayMock[P];
+        DeviceArrayMock[] z = new DeviceArrayMock[P];
+        DeviceArrayMock[] mean = new DeviceArrayMock[P];
+        DeviceArrayMock[] std = new DeviceArrayMock[P];
+        for (int i = 0; i < P; i++) {
+            x[i] = new DeviceArrayMock(S * F);
+            z[i] = new DeviceArrayMock(S * F);
+            mean[i] = new DeviceArrayMock(F);
+            std[i] = new DeviceArrayMock(F);
+        }
+        DeviceArrayMock nbfeat = new DeviceArrayMock(C * F);
+        DeviceArrayMock ridgecoeff = new DeviceArrayMock(C * F);
+        DeviceArrayMock ridgeint = new DeviceArrayMock(C);
+        DeviceArrayMock nbamax = new DeviceArrayMock(N);
+        DeviceArrayMock nbl = new DeviceArrayMock(N);
+        DeviceArrayMock r1 = new DeviceArrayMock(C * N);
+        DeviceArrayMock r2 = new DeviceArrayMock(C * N);
+        DeviceArrayMock r = new DeviceArrayMock(N);
+
+        List<GrCUDAComputationalElement> computations = new ArrayList<>();
+        // Schedule Ridge Regression;
+        for (int i = 0; i < P; i++) {
+            computations.add(new KernelExecutionMock(context, Arrays.asList(
+                    new ArgumentMock(x[i], true),
+                    new ArgumentMock(mean[i]),
+                    new ArgumentMock(std[i])),
+                    "RR1-" + i));
+        }
+        for (int i = 0; i < P; i++) {
+            computations.add(new KernelExecutionMock(context, Arrays.asList(
+                    new ArgumentMock(mean[0]),
+                    new ArgumentMock(std[0]),
+                    new ArgumentMock(mean[i], true),
+                    new ArgumentMock(std[i], true)),
+                    "RR11-" + i));
+        }
+        for (int i = 0; i < P; i++) {
+            computations.add(new KernelExecutionMock(context, Arrays.asList(
+                    new ArgumentMock(x[i], true),
+                    new ArgumentMock(z[i]),
+                    new ArgumentMock(mean[0], true),
+                    new ArgumentMock(std[0], true)),
+                    "RR12-" + i));
+            computations.add(new KernelExecutionMock(context, Arrays.asList(
+                    new ArgumentMock(z[i], true),
+                    new ArgumentMock(ridgecoeff, true),
+                    new ArgumentMock(r2, true)), // NOT CONST, BUT WE AVOID FAKE DEPENDENCIES;
+                    "RR2-" + i));
+        }
+        computations.add(new KernelExecutionMock(context, Arrays.asList(
+                new ArgumentMock(r2),
+                new ArgumentMock(ridgeint, true)),
+                "RR3"));
+        computations.add(new KernelExecutionMock(context, Collections.singletonList(
+                new ArgumentMock(r2)),
+                "RRSM"));
+
+        // Schedule Naive Bayes;
+        for (int i = 0; i < P; i++) {
+            computations.add(new KernelExecutionMock(context, Arrays.asList(
+                    new ArgumentMock(x[i], true),
+                    new ArgumentMock(nbfeat, true),
+                    new ArgumentMock(r1, true)), // NOT CONST, BUT WE AVOID FAKE DEPENDENCIES;
+                    "NB1-" + i));
+        }
+        computations.add(new KernelExecutionMock(context, Arrays.asList(
+                new ArgumentMock(r1, true),
+                new ArgumentMock(nbamax)),
+                "NB2"));
+        computations.add(new KernelExecutionMock(context, Arrays.asList(
+                new ArgumentMock(r1, true),
+                new ArgumentMock(nbamax, true),
+                new ArgumentMock(nbl)),
+                "NB3"));
+        computations.add(new KernelExecutionMock(context, Arrays.asList(
+                new ArgumentMock(r1),
+                new ArgumentMock(nbl, true)),
+                "NB4"));
+        computations.add(new KernelExecutionMock(context, Collections.singletonList(
+                new ArgumentMock(r1)),
+                "NBSM"));
+
+        // Combine the two computations;
+        computations.add(new KernelExecutionMock(context, Arrays.asList(
+                new ArgumentMock(r1, true),
+                new ArgumentMock(r2, true),
+                new ArgumentMock(r)),
+                "AMAX"));
+        // Synchronize;
+        computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(r))));
         return computations;
     }
 }
