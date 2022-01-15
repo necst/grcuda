@@ -766,6 +766,74 @@ public class GrCUDAStreamPolicy {
         public double[][] getLinkBandwidth() {
             return linkBandwidth;
         }
+//
+//        private Device findDeviceWithLowestTransferTime(List<Device> devices, double[] argumentTransferTime, boolean[] devicesToSkip) {
+//            // The best device is the one with minimum transfer time;
+//            Device deviceWithMinimumTransferTime = devices.get(0);
+//            for (Device d : devices) {
+//                // Update the device with minimum transfer time, only if it has more than 50% of the requested data;
+//                if (argumentTransferTime[d.getDeviceId()] < argumentTransferTime[deviceWithMinimumTransferTime.getDeviceId()] && devicesToSkip[d.getDeviceId()]) {
+//                    deviceWithMinimumTransferTime = d;
+//                }
+//            }
+//            return deviceWithMinimumTransferTime;
+//        }
+//
+//        @Override
+//        public Device retrieve(ExecutionDAG.DAGVertex vertex) {
+//            // Estimated transfer time if the computation is scheduled on device i-th;
+//            double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUsToUse()];
+//            // Compute the synchronization time on each device, and if any device has any data at all;
+//            boolean isAnyDataPresentOnGPUs = computeTransferTimes(vertex, argumentTransferTime);
+//            if (isAnyDataPresentOnGPUs) {
+//                // The best device is the one with minimum transfer time;
+//                return findDeviceWithLowestTransferTime(devicesManager.getUsableDevices(), argumentTransferTime, vertex);
+//            } else {
+//                // FIXME: using least-busy should be better, but it is currently unreliable;
+//                // No data is present on any GPU: select the device with round-robin;
+//                return roundRobin.retrieve(vertex);
+//            }
+//        }
+//
+//        @Override
+//        Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
+//            // Estimated transfer time if the computation is scheduled on device i-th;
+//            double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUsToUse()];
+//            // Compute the synchronization time on each device, and if any device has any data at all;
+//            computeTransferTimes(vertex, argumentTransferTime);
+//
+//            // Compute the amount of bytes that is already present on each device, and the total amount required by the computation;
+//            long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse()];
+//            List<AbstractArray> arguments = vertex.getComputation().getArrayArguments();
+//            long totalSize = vertex.getComputation().getArrayArguments().stream().map(AbstractArray::getSizeBytes).reduce(0L, Long::sum);
+//            for (AbstractArray a : arguments) {
+//                for (int location : a.getArrayUpToDateLocations()) {
+//                    if (location != CPUDevice.CPU_DEVICE_ID) {
+//                        alreadyPresentDataSize[location] += a.getSizeBytes();
+//                    }
+//                }
+//            }
+//            // Discard devices where less than half of the required data is present;
+//            boolean[] devicesToSkip = new boolean[devicesManager.getNumberOfGPUsToUse()];
+//            boolean anyDeviceHasEnoughData = false;
+//            for (Device d : devices) {
+//                if ((float) alreadyPresentDataSize[d.getDeviceId()] / totalSize < 0.5) {
+//                    devicesToSkip[d.getDeviceId()] = true;
+//                    anyDeviceHasEnoughData = true;
+//                }
+//            }
+//
+//
+//            // Find if any data is present only on the selected GPUs;
+//            if (isDataPresentOnGPUs(vertex, devices) && anyDeviceHasEnoughData) {
+//                // The best device is the one with minimum transfer time;
+//                return findDeviceWithLowestTransferTime(devices, argumentTransferTime, devicesToSkip);
+//            } else {
+//                // FIXME: using least-busy should be better, but it is currently unreliable;
+//                // No data is present on any GPU: select the device with round-robin;
+//                return roundRobin.retrieve(vertex, devices);
+//            }
+//        }
     }
 
     /**

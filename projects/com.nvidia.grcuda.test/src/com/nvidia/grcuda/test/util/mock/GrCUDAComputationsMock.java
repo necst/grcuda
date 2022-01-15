@@ -488,6 +488,19 @@ public class GrCUDAComputationsMock {
     public static final int partitionsCg = 16;
     public static final int iterationsCg = 3;
 
+    /**
+     * DAG that represents the B9-CG benchmark;
+     * The "c" before the variable name denotes a const argument;
+     *
+     * F(A1) -> MVMV(cA1, cX, cB, R) ----> CPY(P, cR) -> L2(R, T1) -> (*) MMUL(cA1, cP, Y) ----> DOT(cP, cY, T2) -> SYNC(T1, T2) -> AXPY(X, cX, xP) -> AXPY(R. cR, cY) -> L2(cR, cT1) -> SYNC(T1) -> AXPY(P, cR, cP) -> jump to (*)
+     * ...                             /                           \      ...                /
+     * F(AP) -> MVMV(cAP, cX, cB, R) -/                             \---> MMUL(cAP, cP, Y) -/
+     *
+     * @param context the context where computations are scheduled
+     * @param fixConst if true, manually correct the "const" flag in some computations, to avoid the creation of
+     *                 fake dependencies in data that is shared between devices, but every device modified a distinct part
+     * @return the sequence of computations to schedule
+     */
     public static List<GrCUDAComputationalElement> cgMultiGPUMockComputation(AsyncGrCUDAExecutionContext context, boolean fixConst) {
         // Arrays have P partitions;
         int P = partitionsCg;
@@ -562,6 +575,34 @@ public class GrCUDAComputationsMock {
         }
         // Synchronize;
         computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(x))));
+        return computations;
+    }
+
+    public static final int partitionsMmul = 16;
+
+    // K(X1r, Y, Z)
+    // K(X2r, Y, Z)
+    // ...
+    // K(XPr, Y, Z)
+    //
+    // Partition a matrix-vector multiplication on different devices;
+    public static List<GrCUDAComputationalElement> mmulMultiGPUMockComputation(AsyncGrCUDAExecutionContext context) {
+        // Arrays have P partitions;
+        int P = partitionsMmul;
+        int N = 1000;
+        int S = N / P;
+        DeviceArrayMock[] x = new DeviceArrayMock[P];
+        for (int i = 0; i < P; i++) {
+            x[i] = new DeviceArrayMock(N * S);
+        }
+        DeviceArrayMock y = new DeviceArrayMock(N);
+        DeviceArrayMock z = new DeviceArrayMock(N);
+        List<GrCUDAComputationalElement> computations = new ArrayList<>();
+        // Schedule the computations;
+        for (int i = 0; i < P; i++) {
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(x[i], true), new ArgumentMock(y, true), new ArgumentMock(z)), "MUL-" + i));
+        }
+        computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(z, true))));
         return computations;
     }
 }
