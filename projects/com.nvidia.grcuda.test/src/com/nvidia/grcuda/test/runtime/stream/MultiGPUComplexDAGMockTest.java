@@ -3,14 +3,12 @@ package com.nvidia.grcuda.test.runtime.stream;
 import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
-import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import com.nvidia.grcuda.test.util.mock.AsyncGrCUDAExecutionContextMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock;
-import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
 import com.nvidia.grcuda.test.util.mock.OptionValuesMockBuilder;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import org.junit.Test;
@@ -24,8 +22,10 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.bsMultiGPUMockComputation;
+import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.cgMultiGPUMockComputation;
 import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.executeMockComputation;
 import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.executeMockComputationAndValidate;
+import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.iterationsCg;
 import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.mlMultiGPUMockComputation;
 import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.vecMultiGPUMockComputation;
 import static org.junit.Assert.assertEquals;
@@ -123,6 +123,7 @@ public class MultiGPUComplexDAGMockTest {
     @Test
     public void mlMultiGPUMockTest() throws UnsupportedTypeException {
         AsyncGrCUDAExecutionContextMock context = buildContext(true);
+        // Skip policies that we know are uninteresting or suboptimal;
         assumeTrue(this.retrieveParentStreamPolicy == RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT);
         List<Integer> scheduling = new ArrayList<>();
         // RR1;
@@ -152,7 +153,41 @@ public class MultiGPUComplexDAGMockTest {
         scheduling.add(0);
         scheduling.add(0);
         scheduling.add(0);
-        executeMockComputationAndValidate(mlMultiGPUMockComputation(context), scheduling, true);
-        assertEquals(3 * GrCUDAComputationsMock.partitionsMl, context.getStreamManager().getNumberOfStreams());
+        executeMockComputationAndValidate(mlMultiGPUMockComputation(context, true), scheduling, true);
+        assertEquals(3 * GrCUDAComputationsMock.partitionsMl - 1, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void cgMultiGPUMockTest() throws UnsupportedTypeException {
+        AsyncGrCUDAExecutionContextMock context = buildContext(true);
+        // Skip policies that we know are uninteresting or suboptimal;
+        assumeTrue(this.retrieveParentStreamPolicy != RetrieveParentStreamPolicyEnum.SAME_AS_PARENT);
+        List<Integer> scheduling = new ArrayList<>();
+        // MVMA;
+        for (int i = 0; i < GrCUDAComputationsMock.partitionsCg; i++) {
+            scheduling.add(i % this.numberOfGPUs);
+            scheduling.add(i % this.numberOfGPUs);
+        }
+        // CPY, L2;
+        scheduling.add(0);
+        scheduling.add(0);
+        // Main computation;
+        for (int iter = 0; iter < iterationsCg; iter++) {
+            // MMUL;
+            for (int i = 0; i < GrCUDAComputationsMock.partitionsCg; i++) {
+                scheduling.add(i % this.numberOfGPUs);
+            }
+            // DOT, SYNC, SAXPY1, SAXPY2, L2, SYNC, SAXPY3;
+            scheduling.add(0);
+            scheduling.add(0);
+            scheduling.add(0);
+            scheduling.add(0);
+            scheduling.add(0);
+            scheduling.add(0);
+            scheduling.add(0);
+        }
+        scheduling.add(0);  // Sync computations are associated to device 0, even if they are run by the CPU;
+        executeMockComputationAndValidate(cgMultiGPUMockComputation(context, true), scheduling, true);
+        assertEquals(4 * (GrCUDAComputationsMock.partitionsCg + 1), context.getStreamManager().getNumberOfStreams());
     }
 }

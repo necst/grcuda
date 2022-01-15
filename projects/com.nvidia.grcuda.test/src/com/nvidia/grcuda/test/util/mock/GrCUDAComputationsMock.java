@@ -368,7 +368,24 @@ public class GrCUDAComputationsMock {
 
     public static final int partitionsMl = 16;
 
-    public static List<GrCUDAComputationalElement> mlMultiGPUMockComputation(AsyncGrCUDAExecutionContext context) {
+    /**
+     * DAG that represents the B6-ML benchmark;
+     * The "c" before the variable name denotes a const argument;
+     *
+     * RR1_1(cX1, M1, STD1) ---> RR11_0(M1, STD1, cMi, cSTDi) -> ... -> RR11_P(M1, STD1, Mi, STDi) ---> RR12_1(cX1, Z1, cM1, cSTD1) -> RR2_1(cZ1, cRC, R2) ---> RR3(R2, cRI) -> RRSF(R2) -> AMAX(cR1, cR2, R)
+     * ...                    /                                                                    \    ...                                                  /                           /
+     * RR1_P(cXP, MP, STDP) -/                                                                      \-> RR12_P(cXP, ZP, cM1, cSTD1) -> RR2_P(cZP, cRC, R2) -/                           /
+     *                                                                                                                                                                                 /
+     * NB1_1(cX1, NBF, R1) ---> NB2(cR1, NBAMAX) -> NB3(cR1, cNBAMAX, NBL) -> NB4(cR1, cNBL) -> NBSF(R1) -----------------------------------------------------------------------------/
+     * ...                   /
+     * NB1_P(cXP, NBF, R!) -/
+     *
+     * @param context the context where computations are scheduled
+     * @param fixConst if true, manually correct the "const" flag in some computations, to avoid the creation of
+     *                 fake dependencies in data that is shared between devices, but every device modified a distinct part
+     * @return the sequence of computations to schedule
+     */
+    public static List<GrCUDAComputationalElement> mlMultiGPUMockComputation(AsyncGrCUDAExecutionContext context, boolean fixConst) {
         // Arrays have P partitions;
         int P = partitionsMl;
         int N = 100000;
@@ -421,7 +438,7 @@ public class GrCUDAComputationsMock {
             computations.add(new KernelExecutionMock(context, Arrays.asList(
                     new ArgumentMock(z[i], true),
                     new ArgumentMock(ridgecoeff, true),
-                    new ArgumentMock(r2, true)), // NOT CONST, BUT WE AVOID FAKE DEPENDENCIES;
+                    new ArgumentMock(r2, fixConst)), // NOT CONST, BUT WE AVOID FAKE DEPENDENCIES;
                     "RR2-" + i));
         }
         computations.add(new KernelExecutionMock(context, Arrays.asList(
@@ -437,11 +454,11 @@ public class GrCUDAComputationsMock {
             computations.add(new KernelExecutionMock(context, Arrays.asList(
                     new ArgumentMock(x[i], true),
                     new ArgumentMock(nbfeat, true),
-                    new ArgumentMock(r1, true)), // NOT CONST, BUT WE AVOID FAKE DEPENDENCIES;
+                    new ArgumentMock(r1, fixConst)), // NOT CONST, BUT WE AVOID FAKE DEPENDENCIES;
                     "NB1-" + i));
         }
         computations.add(new KernelExecutionMock(context, Arrays.asList(
-                new ArgumentMock(r1, true),
+                new ArgumentMock(r1, !fixConst), // IT SHOULD BE CONST, BUT IF SO SKIP A DEPENDENCY WITH NB-1;
                 new ArgumentMock(nbamax)),
                 "NB2"));
         computations.add(new KernelExecutionMock(context, Arrays.asList(
@@ -465,6 +482,86 @@ public class GrCUDAComputationsMock {
                 "AMAX"));
         // Synchronize;
         computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(r))));
+        return computations;
+    }
+
+    public static final int partitionsCg = 16;
+    public static final int iterationsCg = 3;
+
+    public static List<GrCUDAComputationalElement> cgMultiGPUMockComputation(AsyncGrCUDAExecutionContext context, boolean fixConst) {
+        // Arrays have P partitions;
+        int P = partitionsCg;
+        int N = 1000;
+        int S = N / P;
+        DeviceArrayMock[] A = new DeviceArrayMock[P];
+        for (int i = 0; i < P; i++) {
+            A[i] = new DeviceArrayMock(S * N);
+        }
+        DeviceArrayMock x = new DeviceArrayMock(N);
+        DeviceArrayMock b = new DeviceArrayMock(N);
+        DeviceArrayMock p = new DeviceArrayMock(N);
+        DeviceArrayMock r = new DeviceArrayMock(N);
+        DeviceArrayMock y = new DeviceArrayMock(N);
+        DeviceArrayMock t1 = new DeviceArrayMock(1);
+        DeviceArrayMock t2 = new DeviceArrayMock(1);
+
+        List<GrCUDAComputationalElement> computations = new ArrayList<>();
+        // Initialization of CG;
+        for (int i = 0; i < P; i++) {
+            computations.add(new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(A[i]))));
+            computations.add(new KernelExecutionMock(context, Arrays.asList(
+                    new ArgumentMock(A[i], true),
+                    new ArgumentMock(x, true),
+                    new ArgumentMock(b, true),
+                    new ArgumentMock(r, fixConst)),
+                    "MVMA-" + i));
+        }
+        computations.add(new KernelExecutionMock(context, Arrays.asList(
+                new ArgumentMock(p),
+                new ArgumentMock(r, !fixConst)),
+                "CPY"));
+        computations.add(new KernelExecutionMock(context, Arrays.asList(
+                new ArgumentMock(r, true),
+                new ArgumentMock(t1)),
+                "L2-1"));
+        // Iterative computation;
+        for (int iter = 0; iter < iterationsCg; iter++) {
+            for (int i = 0; i < P; i++) {
+                computations.add(new KernelExecutionMock(context, Arrays.asList(
+                        new ArgumentMock(A[i], true),
+                        new ArgumentMock(p, true),
+                        new ArgumentMock(y, fixConst)),
+                        "MUL-" + i));
+            }
+            computations.add(new KernelExecutionMock(context, Arrays.asList(
+                    new ArgumentMock(p, true),
+                    new ArgumentMock(y, !fixConst),
+                    new ArgumentMock(t2)),
+                    "DOT"));
+            computations.add(new SyncExecutionMock(context, Arrays.asList(new ArgumentMock(t1), new ArgumentMock(t2))));
+            computations.add(new KernelExecutionMock(context, Arrays.asList(
+                    new ArgumentMock(x),
+                    new ArgumentMock(x, true),
+                    new ArgumentMock(p, true)),
+                    "SAXPY-1"));
+            computations.add(new KernelExecutionMock(context, Arrays.asList(
+                    new ArgumentMock(r),
+                    new ArgumentMock(r, true),
+                    new ArgumentMock(y, true)),
+                    "SAXPY-2"));
+            computations.add(new KernelExecutionMock(context, Arrays.asList(
+                    new ArgumentMock(r, true),
+                    new ArgumentMock(t1)),
+                    "L2-2"));
+            computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(t1, true))));
+            computations.add(new KernelExecutionMock(context, Arrays.asList(
+                    new ArgumentMock(p),
+                    new ArgumentMock(r, true),
+                    new ArgumentMock(p, true)),
+                    "SAXPY-3"));
+        }
+        // Synchronize;
+        computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(x))));
         return computations;
     }
 }
