@@ -26,6 +26,22 @@ extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, 
         z[z_offset + i] = sum;
     }
 }
+
+extern "C" __global__ void matrix_vector_mult_2(const float* x, const float* y, float* z, int n, int m) {
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
+        float sum = 0;
+        for (int j = 0; j < m; j++) {                
+            sum += x[i * m + j] * y[j];
+        }
+        z[i] = sum;
+    }
+}
+
+extern "C" __global__ void copy(const float *x, float *y, int n, int offset) {
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
+        y[i + offset] = x[i];
+    }
+}
 """
 
 '''THIS IS EMPLOYED AS DEFAULT BENCHMARK FOR MULTIGPU TEST'''
@@ -59,7 +75,9 @@ class Benchmark11M(Benchmark):
         # Dense vector;
         self.y = None
         # Result;
-        self.z = None        
+        # self.z = None        
+        self.z = [None for _ in range(self.P)]
+        self.z_out = None
 
         self.cpu_result = None
         self.gpu_result = None
@@ -84,12 +102,16 @@ class Benchmark11M(Benchmark):
         for p in range(self.P):
             self.x[p] = polyglot.eval(language="grcuda", string=f"float[{self.S * self.M}]")
         self.y = polyglot.eval(language="grcuda", string=f"float[{self.M}]")
-        self.z = polyglot.eval(language="grcuda", string=f"float[{self.N}]")
+        # self.z = polyglot.eval(language="grcuda", string=f"float[{self.N}]")
+        for p in range(self.P):
+            self.z[p] = polyglot.eval(language="grcuda", string=f"float[{self.S}]")
+        self.z_out = polyglot.eval(language="grcuda", string=f"float[{self.N}]")
 
         # Build the kernels;
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
-        self.matrix_vector_mult_kernel = build_kernel(MATRIX_VECTOR_MULT_KERNEL, "matrix_vector_mult_1", "const pointer, const pointer, pointer, sint32, sint32, sint32")
-
+        # self.matrix_vector_mult_kernel = build_kernel(MATRIX_VECTOR_MULT_KERNEL, "matrix_vector_mult_2", "const pointer, const pointer, pointer, sint32, sint32, sint32")
+        self.matrix_vector_mult_kernel = build_kernel(MATRIX_VECTOR_MULT_KERNEL, "matrix_vector_mult_2", "const pointer, const pointer, pointer, sint32, sint32")
+        self.copy_kernel = build_kernel(MATRIX_VECTOR_MULT_KERNEL, "copy", "const pointer, pointer, sint32, sint32")
         self.initialize = polyglot.eval(language="js", string="x => { for (let i = 0; i < x.length; i++) { x[i] = i / x.length }}")
 
     @time_phase("initialization")
@@ -119,21 +141,27 @@ class Benchmark11M(Benchmark):
 
         # Compute all partitions;
         for p in range(self.P):
+            # self.execute_phase("mmul_{p}", self.matrix_vector_mult_kernel(self.num_blocks, self.block_size),
+            #                    self.x[p], self.y, self.z, min(self.S, self.N - p * self.S), self.M, p * self.S)
             self.execute_phase("mmul_{p}", self.matrix_vector_mult_kernel(self.num_blocks, self.block_size),
-                               self.x[p], self.y, self.z, min(self.S, self.N - p * self.S), self.M, p * self.S)
+                               self.x[p], self.y, self.z[p], min(self.S, self.N - p * self.S), self.M)
+        # Aggregate results;
+        for p in range(self.P):      
+            self.execute_phase("copy_{p}", self.copy_kernel(self.num_blocks, self.block_size),
+                               self.z[p], self.z_out, min(self.S, self.N - p * self.S), p * self.S)      
 
         # Add a final sync step to measure the real computation time;
         if self.time_phases:
             start = System.nanoTime()
-        tmp = self.z[0]
+        tmp = self.z_out[0]
         end = System.nanoTime()
-        self.gpu_result = sum(self.z[:10])
+        self.gpu_result = sum(self.z_out[:10])
         if self.time_phases:
             self.benchmark.add_phase({"name": "sync", "time_sec": (end - start) / 1_000_000_000})
         self.benchmark.add_computation_time((end - start_comp) / 1_000_000_000)
         self.benchmark.add_to_benchmark("gpu_result", self.gpu_result)
         if self.benchmark.debug:
-            BenchmarkResult.log_message(f"\tgpu result: [" + ", ".join([f"{x:.4f}" for x in self.z[:10]]) + "...]")
+            BenchmarkResult.log_message(f"\tgpu result: [" + ", ".join([f"{x:.4f}" for x in self.z_out[:10]]) + "...]")
 
         return self.gpu_result   
 

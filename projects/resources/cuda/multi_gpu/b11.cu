@@ -32,7 +32,7 @@
 //////////////////////////////
 //////////////////////////////
 
-#if PARTITION_Z
+#if PARTITION_Z_B11
 extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, float* z, int n, int m) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
         float sum = 0;
@@ -45,7 +45,7 @@ extern "C" __global__ void matrix_vector_mult_1(const float* x, const float* y, 
 
 extern "C" __global__ void copy(const float *x, float *y, int n, int offset) {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {
-        y[i + offset] = z[i];
+        y[i + offset] = x[i];
     }
 }
 #else
@@ -120,11 +120,12 @@ void Benchmark11M::alloc() {
         err = cudaMallocManaged(&x[i], sizeof(float) * S * M);
     }
     err = cudaMallocManaged(&y, sizeof(float) * M);
-#if PARTITION_Z
+#if PARTITION_Z_B11
     z = (float **) malloc(sizeof(float*) * P);
     for (int i = 0; i < P; i++) {
         err = cudaMallocManaged(&z[i], sizeof(float) * S);
     }
+    cudaMallocManaged(&z_out, sizeof(float) * N);
 #else
     err = cudaMallocManaged(&z, sizeof(float) * N);
 #endif
@@ -161,7 +162,7 @@ void Benchmark11M::execute_sync(int iter) {
     }
     cudaDeviceSynchronize();
     for (int p = 0; p < P; p++) {
-#if PARTITION_Z
+#if PARTITION_Z_B11
         matrix_vector_mult_1<<<num_blocks, block_size_1d>>>(x[p], y, z[p], std::min(S, N - p * S), M);
 #else
         matrix_vector_mult_1<<<num_blocks, block_size_1d>>>(x[p], y, z, std::min(S, N - p * S), M, p * S);
@@ -169,9 +170,9 @@ void Benchmark11M::execute_sync(int iter) {
         cudaDeviceSynchronize();
     } 
     // Copy data to the output vector;
-#if PARTITION_Z
+#if PARTITION_Z_B11
     for (int p = 0; p < P; p++) {
-        copy<<<num_blocks, block_size_1d>>>(z[p], z, std::min(S, N - p * S), p * S);
+        copy<<<num_blocks, block_size_1d>>>(z[p], z_out, std::min(S, N - p * S), p * S);
     }
 #else
     z_out = z;
@@ -190,7 +191,7 @@ void Benchmark11M::execute_async(int iter) {
         if (pascalGpu && do_prefetch) {
             cudaMemPrefetchAsync(x[p], sizeof(float) * S * M, select_gpu(p, max_devices), s[p]);
         }
-#if PARTITION_Z
+#if PARTITION_Z_B11
         matrix_vector_mult_1<<<num_blocks, block_size_1d, 0, s[p]>>>(x[p], y, z[p], std::min(S, N - p * S), M);
 #else
         matrix_vector_mult_1<<<num_blocks, block_size_1d, 0, s[p]>>>(x[p], y, z, std::min(S, N - p * S), M, p * S);
@@ -198,9 +199,9 @@ void Benchmark11M::execute_async(int iter) {
         // matrix_vector_mult_2<<<grid_size, block_size_2d_dim, 0, s[p]>>>(x[p], y, z, std::min(S, N - p * S), M, p * S);
     }
     // Copy data to the output vector;
-#if PARTITION_Z
+#if PARTITION_Z_B11
     for (int p = 0; p < P; p++) {
-        copy<<<num_blocks, block_size_1d, 0, s[p]>>>(z[p], z, std::min(S, N - p * S), p * S);
+        copy<<<num_blocks, block_size_1d, 0, s[p]>>>(z[p], z_out, std::min(S, N - p * S), p * S);
     }
 #else
     z_out = z;

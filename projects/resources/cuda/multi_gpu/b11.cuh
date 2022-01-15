@@ -30,7 +30,7 @@
 #pragma once
 #include "../benchmark.cuh"
 
-#define PARTITION_Z false
+#define PARTITION_Z_B11 true
 
 class Benchmark11M : public Benchmark {
    public:
@@ -51,7 +51,7 @@ class Benchmark11M : public Benchmark {
 
     float **x;
     float *y;
-#if PARTITION_Z
+#if PARTITION_Z_B11
     float **z;
 #else
     float *z;
