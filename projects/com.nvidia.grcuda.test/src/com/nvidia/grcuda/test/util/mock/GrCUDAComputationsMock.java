@@ -580,29 +580,38 @@ public class GrCUDAComputationsMock {
 
     public static final int partitionsMmul = 16;
 
-    // K(X1r, Y, Z)
-    // K(X2r, Y, Z)
-    // ...
-    // K(XPr, Y, Z)
-    //
-    // Partition a matrix-vector multiplication on different devices;
+    /**
+     * K(X1r, Y, Z1) ----> C(Z, cZ1) -> ... -> C(Z, cZP);
+     * K(X2r, Y, Z2) -/ /
+     * ...             /
+     * K(XPr, Y, ZP) -/
+     *
+     *  Partition a matrix-vector multiplication on different devices;
+     * @param context the context where computations are scheduled
+     * @return the sequence of computations to schedule
+     */
     public static List<GrCUDAComputationalElement> mmulMultiGPUMockComputation(AsyncGrCUDAExecutionContext context) {
         // Arrays have P partitions;
         int P = partitionsMmul;
         int N = 1000;
         int S = N / P;
         DeviceArrayMock[] x = new DeviceArrayMock[P];
+        DeviceArrayMock[] z = new DeviceArrayMock[P];
         for (int i = 0; i < P; i++) {
             x[i] = new DeviceArrayMock(N * S);
+            z[i] = new DeviceArrayMock(S);
         }
         DeviceArrayMock y = new DeviceArrayMock(N);
-        DeviceArrayMock z = new DeviceArrayMock(N);
+        DeviceArrayMock z_out = new DeviceArrayMock(N);
         List<GrCUDAComputationalElement> computations = new ArrayList<>();
         // Schedule the computations;
         for (int i = 0; i < P; i++) {
-            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(x[i], true), new ArgumentMock(y, true), new ArgumentMock(z)), "MUL-" + i));
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(x[i], true), new ArgumentMock(y, true), new ArgumentMock(z[i])), "MUL-" + i));
         }
-        computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(z, true))));
+        for (int i = 0; i < P; i++) {
+            computations.add(new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(z_out), new ArgumentMock(z[i], true)), "CPY-" + i));
+        }
+        computations.add(new SyncExecutionMock(context, Collections.singletonList(new ArgumentMock(z_out, true))));
         return computations;
     }
 }

@@ -35,6 +35,8 @@ import static org.junit.Assume.assumeTrue;
 @RunWith(Parameterized.class)
 public class MultiGPUComplexDAGMockTest {
 
+    private final static boolean DEBUG = false;
+
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
@@ -91,7 +93,7 @@ public class MultiGPUComplexDAGMockTest {
 
     @Test
     public void vecMultiGPUMockTest() throws UnsupportedTypeException {
-        AsyncGrCUDAExecutionContextMock context = buildContext(true);
+        AsyncGrCUDAExecutionContextMock context = buildContext(DEBUG);
         List<Integer> scheduling = new ArrayList<>();
         for (int i = 0; i < 2 * GrCUDAComputationsMock.partitionsVec / this.numberOfGPUs; i++) {
             for (int j = 0; j < this.numberOfGPUs / 2; j++) {
@@ -103,13 +105,13 @@ public class MultiGPUComplexDAGMockTest {
         for (int i = 0; i < GrCUDAComputationsMock.partitionsVec; i++) {
             scheduling.add(0);  // Sync computations are associated to device 0, even if they are run by the CPU;
         }
-        executeMockComputationAndValidate(vecMultiGPUMockComputation(context), scheduling,true);
+        executeMockComputationAndValidate(vecMultiGPUMockComputation(context), scheduling,DEBUG);
         assertEquals(2 * GrCUDAComputationsMock.partitionsVec, context.getStreamManager().getNumberOfStreams());
     }
 
     @Test
     public void bsMultiGPUMockTest() throws UnsupportedTypeException {
-        AsyncGrCUDAExecutionContextMock context = buildContext(true);
+        AsyncGrCUDAExecutionContextMock context = buildContext(DEBUG);
         List<Integer> scheduling = new ArrayList<>();
         for (int i = 0; i < GrCUDAComputationsMock.partitionsBs; i++) {
             scheduling.add(i % this.numberOfGPUs);
@@ -117,13 +119,13 @@ public class MultiGPUComplexDAGMockTest {
         for (int i = 0; i < GrCUDAComputationsMock.partitionsBs; i++) {
             scheduling.add(0);  // Sync computations are associated to device 0, even if they are run by the CPU;
         }
-        executeMockComputationAndValidate(bsMultiGPUMockComputation(context), scheduling,true);
+        executeMockComputationAndValidate(bsMultiGPUMockComputation(context), scheduling,DEBUG);
         assertEquals(GrCUDAComputationsMock.partitionsBs, context.getStreamManager().getNumberOfStreams());
     }
 
     @Test
     public void mlMultiGPUMockTest() throws UnsupportedTypeException {
-        AsyncGrCUDAExecutionContextMock context = buildContext(true);
+        AsyncGrCUDAExecutionContextMock context = buildContext(DEBUG);
         // Skip policies that we know are uninteresting or suboptimal;
         assumeTrue(this.retrieveParentStreamPolicy == RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT);
         List<Integer> scheduling = new ArrayList<>();
@@ -154,13 +156,13 @@ public class MultiGPUComplexDAGMockTest {
         scheduling.add(0);
         scheduling.add(0);
         scheduling.add(0);
-        executeMockComputationAndValidate(mlMultiGPUMockComputation(context, true), scheduling, true);
+        executeMockComputationAndValidate(mlMultiGPUMockComputation(context, true), scheduling, DEBUG);
         assertEquals(3 * GrCUDAComputationsMock.partitionsMl - 1, context.getStreamManager().getNumberOfStreams());
     }
 
     @Test
     public void cgMultiGPUMockTest() throws UnsupportedTypeException {
-        AsyncGrCUDAExecutionContextMock context = buildContext(true);
+        AsyncGrCUDAExecutionContextMock context = buildContext(DEBUG);
         // Skip policies that we know are uninteresting or suboptimal;
         assumeTrue(this.retrieveParentStreamPolicy != RetrieveParentStreamPolicyEnum.SAME_AS_PARENT);
         List<Integer> scheduling = new ArrayList<>();
@@ -188,19 +190,22 @@ public class MultiGPUComplexDAGMockTest {
             scheduling.add(0);
         }
         scheduling.add(0);  // Sync computations are associated to device 0, even if they are run by the CPU;
-        executeMockComputationAndValidate(cgMultiGPUMockComputation(context, true), scheduling, true);
+        executeMockComputationAndValidate(cgMultiGPUMockComputation(context, true), scheduling, DEBUG);
         assertEquals(4 * (GrCUDAComputationsMock.partitionsCg + 1), context.getStreamManager().getNumberOfStreams());
     }
 
     @Test
     public void mmulMultiGPUMockTest() throws UnsupportedTypeException {
-        AsyncGrCUDAExecutionContextMock context = buildContext(true);
+        AsyncGrCUDAExecutionContextMock context = buildContext(DEBUG);
         List<Integer> scheduling = new ArrayList<>();
         for (int i = 0; i < GrCUDAComputationsMock.partitionsMmul; i++) {
             scheduling.add(i % this.numberOfGPUs);
         }
+        for (int i = 0; i < GrCUDAComputationsMock.partitionsMmul; i++) {
+            scheduling.add(0); // Copy all on device 0;
+        }
         scheduling.add(0);  // Sync computations are associated to device 0, even if they are run by the CPU;
-        executeMockComputationAndValidate(mmulMultiGPUMockComputation(context), scheduling,true);
+        executeMockComputationAndValidate(mmulMultiGPUMockComputation(context), scheduling,DEBUG);
         assertEquals(GrCUDAComputationsMock.partitionsMmul, context.getStreamManager().getNumberOfStreams());
     }
 }
