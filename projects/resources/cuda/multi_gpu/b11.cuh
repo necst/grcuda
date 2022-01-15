@@ -30,6 +30,8 @@
 #pragma once
 #include "../benchmark.cuh"
 
+#define PARTITION_Z false
+
 class Benchmark11M : public Benchmark {
    public:
     Benchmark11M(Options &options) : Benchmark(options) {
@@ -48,8 +50,14 @@ class Benchmark11M : public Benchmark {
     int P;
 
     float **x;
-    float *y, *z;
+    float *y;
+#if PARTITION_Z
+    float **z;
+#else
+    float *z;
+#endif
     float *x_cpu;
+    float *z_out;
 
     cudaStream_t *s;
 };
