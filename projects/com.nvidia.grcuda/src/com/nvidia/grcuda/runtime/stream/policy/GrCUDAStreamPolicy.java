@@ -424,6 +424,10 @@ public class GrCUDAStreamPolicy {
             this.nextDevice = (startDevice + 1) % this.devicesManager.getNumberOfGPUsToUse();
         }
 
+        public int getInternalState() {
+            return nextDevice;
+        }
+
         @Override
         public Device retrieve(ExecutionDAG.DAGVertex vertex) {
             Device device = this.devicesManager.getDevice(nextDevice);
@@ -433,30 +437,12 @@ public class GrCUDAStreamPolicy {
 
         @Override
         Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
-            if (devices.size() == 1) {
-                Device device = devices.get(0);
-                // The next device to use is the one after the only device in the list;
-                increaseNextDevice(device.getDeviceId());
-                return device;
-            } else {
-                // Sort the devices by ID;
-                List<Device> sortedDevices = devices.stream().sorted(Comparator.comparingInt(Device::getDeviceId)).collect(Collectors.toList());
-                // Go through the devices until we find the first device with ID bigger or equal than nextDevice;
-                for (Device d : sortedDevices) {
-                    if (nextDevice <= d.getDeviceId()) {
-                        // The next device is the one after the current one;
-                        increaseNextDevice(d.getDeviceId());
-                        return d;
-                    }
-                }
-                // If we haven't found any device, return the first device in the list
-                // (i.e. reset nextDevice to 0 and start counting);
-                Device device = sortedDevices.get(0);
-                // Start counting from the current device;
-                increaseNextDevice(device.getDeviceId());
-                return device;
-            }
-
+            // Sort the devices by ID;
+            List<Device> sortedDevices = devices.stream().sorted(Comparator.comparingInt(Device::getDeviceId)).collect(Collectors.toList());
+            // Keep increasing the internal state, but make sure that the retrieved device is among the ones in the input list;
+            Device device = sortedDevices.get(nextDevice % devices.size());
+            increaseNextDevice(nextDevice);
+            return device;
         }
     }
 
