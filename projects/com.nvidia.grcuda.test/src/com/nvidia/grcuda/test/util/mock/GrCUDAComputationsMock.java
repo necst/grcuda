@@ -521,7 +521,7 @@ public class GrCUDAComputationsMock {
         List<GrCUDAComputationalElement> computations = new ArrayList<>();
         // Initialization of CG;
         for (int i = 0; i < P; i++) {
-            computations.add(new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(A[i]))));
+            computations.add(new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(A[i])), "PRE-" + i));
             computations.add(new KernelExecutionMock(context, Arrays.asList(
                     new ArgumentMock(A[i], true),
                     new ArgumentMock(x, true),

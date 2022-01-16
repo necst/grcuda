@@ -38,7 +38,6 @@ public class GrCUDAStreamPolicy {
     private final RetrieveNewStreamPolicy retrieveNewStreamPolicy;
     private final RetrieveParentStreamPolicy retrieveParentStreamPolicy;
     protected final DeviceSelectionPolicy deviceSelectionPolicy;
-    private final String bandwidthMatrixPath;
 
     private static final TruffleLogger STREAM_LOGGER = GrCUDALogger.getLogger(GrCUDALogger.STREAM_LOGGER);
 
@@ -46,9 +45,9 @@ public class GrCUDAStreamPolicy {
                               RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
                               RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
                               DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
-                              String bandwidthMatrixPath) {
+                              String bandwidthMatrixPath,
+                              double dataThreshold) {
         this.devicesManager = devicesManager;
-        this.bandwidthMatrixPath = bandwidthMatrixPath;
         // When using a stream selection policy that supports multiple GPUs,
         // we also need a policy to choose the device where the computation is executed;
         switch (deviceSelectionPolicyEnum) {
@@ -59,13 +58,13 @@ public class GrCUDAStreamPolicy {
                 this.deviceSelectionPolicy = new StreamAwareDeviceSelectionPolicy(devicesManager);
                 break;
             case MIN_TRANSFER_SIZE:
-                this.deviceSelectionPolicy = new MinimizeTransferSizeDeviceSelectionPolicy(devicesManager);
+                this.deviceSelectionPolicy = new MinimizeTransferSizeDeviceSelectionPolicy(devicesManager, dataThreshold);
                 break;
             case MINMIN_TRANSFER_TIME:
-                this.deviceSelectionPolicy = new MinMinTransferTimeDeviceSelectionPolicy(devicesManager);
+                this.deviceSelectionPolicy = new MinMinTransferTimeDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
                 break;
             case MINMAX_TRANSFER_TIME:
-                this.deviceSelectionPolicy = new MinMaxTransferTimeDeviceSelectionPolicy(devicesManager);
+                this.deviceSelectionPolicy = new MinMaxTransferTimeDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
                 break;
             default:
                 STREAM_LOGGER.finer("Disabled device selection policy, it is not necessary to use one as retrieveParentStreamPolicyEnum=" + retrieveParentStreamPolicyEnum);
@@ -107,8 +106,9 @@ public class GrCUDAStreamPolicy {
                               RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
                               RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
                               DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
-                              String bandwidthMatrixPath) {
-        this(new GrCUDADevicesManager(runtime), retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum, bandwidthMatrixPath);
+                              String bandwidthMatrixPath,
+                              double dataThrehsold) {
+        this(new GrCUDADevicesManager(runtime), retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum, bandwidthMatrixPath, dataThrehsold);
     }
 
     /**
@@ -482,7 +482,7 @@ public class GrCUDAStreamPolicy {
          * while a high threshold favors exploration (distribute the computations on different devices
          * even if some device would have slightly lower synchronization time);
          */
-        protected static final double TRANSFER_THRESHOLD = 0.1;
+        protected final double dataThreshold;
 
         /**
          * Fallback policy in case no GPU has any up-tp-date data. We assume that for any GPU, transferring all the data
@@ -490,8 +490,9 @@ public class GrCUDAStreamPolicy {
          */
         RoundRobinDeviceSelectionPolicy roundRobin = new RoundRobinDeviceSelectionPolicy(devicesManager);
 
-        public MinimizeTransferSizeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
+        public MinimizeTransferSizeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshsold) {
             super(devicesManager);
+            this.dataThreshold = dataThreshsold;
         }
 
         /**
@@ -548,7 +549,7 @@ public class GrCUDAStreamPolicy {
             long totalSize = vertex.getComputation().getArrayArguments().stream().map(AbstractArray::getSizeBytes).reduce(0L, Long::sum);
             // True if at least one device already has at least X% of the data required by the computation;
             for (Device d : devices) {
-                if ((double) alreadyPresentDataSize[d.getDeviceId()] / totalSize > TRANSFER_THRESHOLD) {
+                if ((double) alreadyPresentDataSize[d.getDeviceId()] / totalSize > dataThreshold) {
                     return true;
                 }
             }
@@ -631,8 +632,8 @@ public class GrCUDAStreamPolicy {
 
         private final double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUsToUse() + 1][devicesManager.getNumberOfGPUsToUse() + 1];
 
-        public TransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, String bandwidthMatrixPath, java.util.function.BiFunction<Double, Double, Double> reduction, double startValue) {
-            super(devicesManager);
+        public TransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath, java.util.function.BiFunction<Double, Double, Double> reduction, double startValue) {
+            super(devicesManager, dataThreshold);
             this.reduction = reduction;
             this.startValue = startValue;
 
@@ -757,7 +758,7 @@ public class GrCUDAStreamPolicy {
             long totalSize = vertex.getComputation().getArrayArguments().stream().map(AbstractArray::getSizeBytes).reduce(0L, Long::sum);
             // True if at least one device already has at least X% of the data required by the computation;
             for (Device d : devices) {
-                if ((double) alreadyPresentDataSize[d.getDeviceId()] / totalSize > TRANSFER_THRESHOLD) {
+                if ((double) alreadyPresentDataSize[d.getDeviceId()] / totalSize > dataThreshold) {
                     devicesWithEnoughData.add(d);
                 }
             }
@@ -823,9 +824,9 @@ public class GrCUDAStreamPolicy {
      * In other words, find the minimum transfer time among all devices considering the minimum transfer time for each device;
      */
     public class MinMinTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
-        public MinMinTransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
+        public MinMinTransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
             // Use max, we pick the maximum bandwidth between two devices;
-            super(devicesManager, bandwidthMatrixPath, Math::max, 0);
+            super(devicesManager, dataThreshold, bandwidthMatrixPath, Math::max, 0);
         }
     }
 
@@ -834,9 +835,9 @@ public class GrCUDAStreamPolicy {
      * In other words, find the minimum transfer time among all devices considering the maximum transfer time for each device;
      */
     public class MinMaxTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
-        public MinMaxTransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
+        public MinMaxTransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
             // Use min, we pick the minimum bandwidth between two devices;
-            super(devicesManager, bandwidthMatrixPath, Math::min, Double.POSITIVE_INFINITY);
+            super(devicesManager, dataThreshold, bandwidthMatrixPath, Math::min, Double.POSITIVE_INFINITY);
         }
     }
 }

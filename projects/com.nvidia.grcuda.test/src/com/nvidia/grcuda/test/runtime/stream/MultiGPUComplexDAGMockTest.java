@@ -35,7 +35,7 @@ import static org.junit.Assume.assumeTrue;
 @RunWith(Parameterized.class)
 public class MultiGPUComplexDAGMockTest {
 
-    private final static boolean DEBUG = true;
+    private final static boolean DEBUG = false;
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {

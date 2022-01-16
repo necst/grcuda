@@ -83,7 +83,8 @@ public class GrCUDAStreamManager {
              options.getRetrieveParentStreamPolicy(),
              options.getDeviceSelectionPolicy(),
              options.isTimeComputation(),
-             options.getBandwidthMatrix());
+             options.getBandwidthMatrix(),
+             options.getDataThreshold());
     }
 
     public GrCUDAStreamManager(
@@ -92,8 +93,9 @@ public class GrCUDAStreamManager {
             RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
             DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
             boolean isTimeComputation,
-            String bandwidthMatrixPath) {
-        this(runtime, isTimeComputation, new GrCUDAStreamPolicy(runtime, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum, bandwidthMatrixPath));
+            String bandwidthMatrixPath,
+            double dataThreshold) {
+        this(runtime, isTimeComputation, new GrCUDAStreamPolicy(runtime, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum, bandwidthMatrixPath, dataThreshold));
     }
 
     public GrCUDAStreamManager(
