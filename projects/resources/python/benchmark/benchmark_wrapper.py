@@ -254,7 +254,7 @@ def execute_cuda_benchmark(benchmark, size, block_size, exec_policy, num_iter, d
         BenchmarkResult.log_message("")
         BenchmarkResult.log_message("")
 
-    do_prefetch = prefetch is not None and prefetch and prefetch != "none"
+    do_prefetch = prefetch is not None and prefetch and prefetch != "none" and prefetch != "false"
 
     if not output_date:
         output_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")

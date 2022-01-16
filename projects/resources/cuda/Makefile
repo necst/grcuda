@@ -31,7 +31,7 @@
 # Set the appropriate GPU architecture, check https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/
 CXX=nvcc
 #FLAGS = -G -g -std=c++11 -arch=sm_75
-FLAGS = -O3 -std=c++11 -arch=sm_75
+FLAGS = -O3 -std=c++11 -arch=sm_70
 
 # (Experimental) Use Clang;
 # CXX=$(CLANG_DIR)/clang++
