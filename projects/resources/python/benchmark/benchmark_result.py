@@ -39,10 +39,11 @@ class BenchmarkResult:
     DEFAULT_DEBUG = True
     DEFAULT_CPU_VALIDATION = False
     DEFAULT_REALLOC = False
-    DEFAULT_REINIT = True
+    DEFAULT_REINIT = False
     DEFAULT_RANDOM_INIT = False
     DEFAULT_NUM_GPU = 1
     DEFAULT_MEM_ADVISE = "none"
+    DEFAULT_EXEC_POLICY = "async"
 
     def __init__(self,
                  num_iterations: int = DEFAULT_NUM_ITER,

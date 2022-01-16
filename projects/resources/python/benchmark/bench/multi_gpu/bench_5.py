@@ -110,8 +110,9 @@ class Benchmark5M(Benchmark):
     @time_phase("reset_result")
     def reset_result(self) -> None:
         for i in range(self.K):
+            X = self.x[i]
             for j in range(self.size):
-                self.x[i][j] = self.x_tmp[j]
+                X[j] = self.x_tmp[j]
 
     def execute(self) -> object:
         self.block_size = self._block_size["block_size_1d"]

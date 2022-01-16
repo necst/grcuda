@@ -115,20 +115,24 @@ class Benchmark1M(Benchmark):
     @time_phase("initialization")
     def init(self):
         for i in range(P):
+            X = self.x[i]
+            Y = self.y[i]
             for j in range(self.S):
                 index = i * self.S + j
                 if index < self.size:
-                    self.x[i][j] = 1 / (index + 1)
-                    self.y[i][j] = 2 / (index + 1)
+                    X[j] = 1 / (index + 1)
+                    Y[j] = 2 / (index + 1)
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
         for i in range(P):
+            X = self.x[i]
+            Y = self.y[i]
             for j in range(self.S):
                 index = i * self.S + j
                 if index < self.size:
-                    self.x[i][j] = 1 / (index + 1)
-                    self.y[i][j] = 2 / (index + 1)
+                    X[j] = 1 / (index + 1)
+                    Y[j] = 2 / (index + 1)
             self.res[i][0] = 0.0
         self.res_tot = 0
 
