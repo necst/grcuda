@@ -52,25 +52,6 @@ public abstract class DeviceSelectionPolicy {
     }
 
     /**
-     * Find if any of the array inputs of the computation is present on the selected devices.
-     * Used to understand if no device has any data already present, and the device selection policy
-     * should fallback to a simpler device selection policy.
-     * @param vertex the computation for which we want to select the device
-     * @param devices the list of devices where the computation could be executed
-     * @return if any of the computation's array inputs is already present on the specified devices
-     */
-    protected boolean isDataPresentOnGPUs(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
-        for (Device d : devices) {
-            for (AbstractArray a : vertex.getComputation().getArrayArguments()) {
-                if (a.getArrayUpToDateLocations().contains(d.getDeviceId())) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
      * Internal implementation of {@link DeviceSelectionPolicy#retrieve(ExecutionDAG.DAGVertex, List)},
      * assuming that the list of devices contains at least one device;
      * @param vertex the computation for which we want to select the device
