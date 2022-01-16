@@ -142,7 +142,7 @@ else:
 
 # This path is hard-coded because nvprof is executed as root,
 # and the superuser doesn't have Graalpython in its environment;
-GRAALPYTHON_FOLDER = "/home/users/user/graalpython_venv/bin"
+GRAALPYTHON_FOLDER = "/home/users/ubuntu/graalpython_venv/bin"
 GRCUDA_HOME = f"{os.getenv('GRCUDA_HOME')}"
 
 if POST_TURING:

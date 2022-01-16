@@ -179,9 +179,9 @@ if GPU == V100:
 #     "b11": DEFAULT_NUM_BLOCKS,
 # }
 
-cuda_exec_policies = ["async"],  # ["sync", "async", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
+cuda_exec_policies = ["sync", "async"]  # ["sync", "async", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
 
-exec_policies = ["async"]
+exec_policies = ["sync", "async"]
 
 dependency_policies = ["with-const"]  #, "no-const"]
 
@@ -199,7 +199,7 @@ stream_attach =  [False]
 
 time_computation = [False]
 
-num_gpus = [1]
+num_gpus = [1, 2]
 
 block_sizes1d_dict = {
     "b1": 32,
@@ -407,7 +407,11 @@ if __name__ == "__main__":
         tot = 0
         if use_cuda:
             for b in benchmarks:
-                tot += len(num_elem[b]) * len(cuda_exec_policies) * len(prefetch) * len(num_gpus) * len(stream_attach) 
+                for e in cuda_exec_policies:
+                    if e == "sync":
+                        tot += len(num_elem[b]) * len(prefetch) * len(stream_attach) 
+                    else:
+                        tot += len(num_elem[b]) * len(prefetch) * len(num_gpus) * len(stream_attach) 
         else:
             for b in benchmarks:
                 for e in exec_policies:
@@ -426,14 +430,18 @@ if __name__ == "__main__":
         for n in num_elem[b]:
             if use_cuda:
                 # CUDA Benchmarks;
-                for exec_policy in cuda_exec_policies:
+                for e in cuda_exec_policies:
+                    if e == "sync":
+                        ng = [1]
+                    else:
+                        ng = num_gpus
                     block_sizes = BenchmarkResult.create_block_size_list([block_sizes1d_dict[b]], [block_sizes2d_dict[b]])
                     for block_size in block_sizes:
                         for p in prefetch:
                             for a in stream_attach:
-                                for num_gpu in num_gpus:
+                                for num_gpu in ng:
                                     nb = num_blocks if num_blocks else block_dim_dict[b]
-                                    execute_cuda_benchmark(b, n, block_size, exec_policy, num_iter, debug, num_gpus=num_gpu, num_blocks=nb, prefetch=p, stream_attach=a, mock=mock, output_date=output_date)
+                                    execute_cuda_benchmark(b, n, block_size, e, num_iter, debug, num_gpus=num_gpu, num_blocks=nb, prefetch=p, stream_attach=a, mock=mock, output_date=output_date)
                                     i += 1
             # GrCUDA Benchmarks;
             else:
@@ -444,6 +452,12 @@ if __name__ == "__main__":
                         psp = [parent_stream_policies[0]]
                         cdp = [choose_device_policies[0]]
                         ng = [1]
+                    else:
+                        dp = dependency_policies
+                        nsp = new_stream_policies
+                        psp = parent_stream_policies
+                        cdp = choose_device_policies
+                        ng = num_gpus
                     for m in memory_advise:
                         for p in prefetch:
                             for s in stream_attach:
