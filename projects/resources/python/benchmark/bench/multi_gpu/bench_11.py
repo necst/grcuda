@@ -52,7 +52,7 @@ class Benchmark11M(Benchmark):
     """
 
     def __init__(self, benchmark: BenchmarkResult, nvprof_profile: bool = False):
-        super().__init__("b11", benchmark, nvprof_profile)
+        super().__init__("b11m", benchmark, nvprof_profile)
         self.size = 0
         
         # Square matrix of size x size;

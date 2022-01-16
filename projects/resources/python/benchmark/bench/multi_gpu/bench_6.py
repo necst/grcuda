@@ -179,7 +179,7 @@ class Benchmark6M(Benchmark):
     """
 
     def __init__(self, benchmark: BenchmarkResult, nvprof_profile: bool = False):
-        super().__init__("b6", benchmark, nvprof_profile)
+        super().__init__("b6m", benchmark, nvprof_profile)
         self.size = 0
         self.S = 0
         self.x = [None for _ in range(P)]

@@ -67,7 +67,7 @@ class Benchmark1M(Benchmark):
     """
 
     def __init__(self, benchmark: BenchmarkResult, nvprof_profile: bool = False):
-        super().__init__("b1", benchmark, nvprof_profile)
+        super().__init__("b1m", benchmark, nvprof_profile)
         self.size = 0
         self.S = 0
         self.x = None

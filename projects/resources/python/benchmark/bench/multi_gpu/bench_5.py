@@ -68,7 +68,7 @@ class Benchmark5M(Benchmark):
     """
 
     def __init__(self, benchmark: BenchmarkResult, nvprof_profile: bool = False):
-        super().__init__("b5", benchmark, nvprof_profile)
+        super().__init__("b5m", benchmark, nvprof_profile)
         self.size = 0
 
         # self.num_blocks = DEFAULT_NUM_BLOCKS

@@ -64,9 +64,9 @@ benchmarks = [
     # "b8",
     # "b10",
     # Multi GPU;
-    "b1m",
-    "b5m",
-    "b6m",
+    # "b1m",
+    # "b5m",
+    # "b6m",
     "b9m",
     "b11m",
 ]
@@ -118,6 +118,7 @@ if GPU == V100:
         "b9m": [20000, 30000, 40000, 50000, 60000],
         "b11m": [20000, 30000, 40000, 50000, 60000],
     }
+num_elem = {k: [int(v[0] / 100)] for (k, v) in num_elem.items()}
 
 # 960
 block_dim_dict = {
@@ -180,7 +181,7 @@ if GPU == V100:
 
 cuda_exec_policies = ["async"],  # ["sync", "async", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
 
-exec_policies = ["async"]  #, "sync"]
+exec_policies = ["sync"]
 
 dependency_policies = ["with-const"]  #, "no-const"]
 
@@ -293,7 +294,7 @@ GRAALPYTHON_CMD = "graalpython --vm.XX:MaxHeapSize={}G --jvm --polyglot --experi
                   "--grcuda.DeviceSelectionPolicy={} --grcuda.MemAdvisePolicy={} --grcuda.InputPrefetch={} --grcuda.BandwidthMatrix={} {} {} " \
                   "benchmark_main.py -i {} -n {} -g {} --number_of_gpus {} --reinit false --realloc false " \
                   "-b {} --block_size_1d {} --block_size_2d {} --execution_policy {} --dependency_policy {} --new_stream {} "\
-                  "--parent_stream {} --heuristic {} --memory_advise_policy {} --prefetch {} --no_cpu_validation {} {} {} {} -o {}"
+                  "--parent_stream {} --device_selection {} --memory_advise_policy {} --prefetch {} --no_cpu_validation {} {} {} {} -o {}"
 
 def execute_grcuda_benchmark(benchmark, size, num_gpus, block_sizes, exec_policy, dependency_policy, new_stream_policy,
                       parent_stream_policy, choose_device_policy, memory_advise, prefetch, num_iter, bandwidth_matrix, time_phases, debug, stream_attach=False,
@@ -406,10 +407,14 @@ if __name__ == "__main__":
         tot = 0
         if use_cuda:
             for b in benchmarks:
-                tot += len(num_elem[b]) * len(cuda_exec_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(dependency_policies) * len(prefetch) * len(num_gpus)
+                tot += len(num_elem[b]) * len(cuda_exec_policies) * len(prefetch) * len(num_gpus) * len(stream_attach) 
         else:
             for b in benchmarks:
-                tot += len(num_elem[b]) * len(num_gpus) * len(exec_policies) * len(dependency_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(choose_device_policies) * len(memory_advise) * len(prefetch) * len(stream_attach) * len(time_computation)
+                for e in exec_policies:
+                    if e == "sync":
+                        tot += len(num_elem[b]) * len(memory_advise) * len(prefetch) * len(stream_attach) * len(time_computation)
+                    else:
+                        tot += len(num_elem[b]) * len(num_gpus) * len(dependency_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(choose_device_policies) * len(memory_advise) * len(prefetch) * len(stream_attach) * len(time_computation)
         return tot
 
     output_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
@@ -432,23 +437,29 @@ if __name__ == "__main__":
                                     i += 1
             # GrCUDA Benchmarks;
             else:
-                for num_gpu in num_gpus:
-                    # Select the correct connection graph;
-                    if GPU == V100:
-                        BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph_{num_gpu}_v100.csv"
-                    for exec_policy in exec_policies:
-                        for dependency_policy in dependency_policies:
-                            for new_stream_policy in new_stream_policies:
-                                for parent_stream_policy in parent_stream_policies:
-                                    for choose_device_policy in choose_device_policies:
-                                        for m in memory_advise:
-                                            for p in prefetch:
-                                                for s in stream_attach:
-                                                    for t in time_computation:
+                for exec_policy in exec_policies:
+                    if exec_policy == "sync":
+                        dp = [dependency_policies[0]]
+                        nsp = [new_stream_policies[0]]
+                        psp = [parent_stream_policies[0]]
+                        cdp = [choose_device_policies[0]]
+                        ng = [1]
+                    for m in memory_advise:
+                        for p in prefetch:
+                            for s in stream_attach:
+                                for t in time_computation:
+                                    for num_gpu in ng:
+                                        # Select the correct connection graph;
+                                        if GPU == V100:
+                                            BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph_{num_gpu}_v100.csv"
+                                        for dependency_policy in dp:
+                                            for new_stream_policy in nsp:
+                                                for parent_stream_policy in psp:
+                                                    for choose_device_policy in cdp:
                                                         nb = num_blocks if num_blocks else block_dim_dict[b]
                                                         block_sizes = BenchmarkResult.create_block_size_list([block_sizes1d_dict[b]], [block_sizes2d_dict[b]])
                                                         execute_grcuda_benchmark(b, n, num_gpu, block_sizes,
-                                                              exec_policy, dependency_policy, new_stream_policy, parent_stream_policy, choose_device_policy, 
-                                                              m, p, num_iter, BANDWIDTH_MATRIX, time_phases, debug, s, time_computation, nb, output_date=output_date, mock=mock)
+                                                            exec_policy, dependency_policy, new_stream_policy, parent_stream_policy, choose_device_policy, 
+                                                            m, p, num_iter, BANDWIDTH_MATRIX, time_phases, debug, s, time_computation, nb, output_date=output_date, mock=mock)
                                                         i += 1 
 
