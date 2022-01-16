@@ -64,9 +64,9 @@ benchmarks = [
     # "b8",
     # "b10",
     # Multi GPU;
-    # "b1m",
-    # "b5m",
-    # "b6m",
+    "b1m",
+    "b5m",
+    "b6m",
     "b9m",
     "b11m",
 ]
@@ -118,7 +118,7 @@ if GPU == V100:
         "b9m": [20000, 30000, 40000, 50000, 60000],
         "b11m": [20000, 30000, 40000, 50000, 60000],
     }
-num_elem = {k: [int(v[0] / 100)] for (k, v) in num_elem.items()}
+# num_elem = {k: [int(v[0] / 100)] for (k, v) in num_elem.items()}  # Use this for small sizes, for debugging;
 
 # 960
 block_dim_dict = {
@@ -181,7 +181,7 @@ if GPU == V100:
 
 cuda_exec_policies = ["async"],  # ["sync", "async", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
 
-exec_policies = ["sync"]
+exec_policies = ["async"]
 
 dependency_policies = ["with-const"]  #, "no-const"]
 
