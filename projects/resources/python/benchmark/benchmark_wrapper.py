@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2021, NECSTLab, Politecnico di Milano. All rights reserved.
+# Copyright (c) 2020, 2021, 2022, NECSTLab, Politecnico di Milano. All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -38,24 +38,31 @@ from pathlib import Path
 ##############################
 ##############################
 
-# DEFAULT_NUM_BLOCKS = 32  # GTX 960, 8 SM
+V100 = "V100"
+GPU = V100
+
+BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph.csv"
+
+DEFAULT_NUM_BLOCKS = 32  # GTX 960, 8 SM
 # DEFAULT_NUM_BLOCKS = 176  # GTX 1660 Super, 22 SM
 # DEFAULT_NUM_BLOCKS = 448  # P100, 56 SM
-DEFAULT_NUM_BLOCKS = 640  # V100, 80 SM
+if GPU == V100:
+    DEFAULT_NUM_BLOCKS = 640  # V100, 80 SM
 
-# HEAP_SIZE = 26 
+HEAP_SIZE = 26 
 # HEAP_SIZE = 140 # P100
-HEAP_SIZE = 170 # 2 x V100
+if GPU == V100:
+    HEAP_SIZE = 170 # 2 x V100
 
 # Benchmark settings;
 benchmarks = [
-    # # Single GPU;
-    "b1",
-    "b5",
-    "b6",
-    "b7",
-    "b8",
-    "b10",
+    # Single GPU;
+    # "b1",
+    # "b5",
+    # "b6",
+    # "b7",
+    # "b8",
+    # "b10",
     # Multi GPU;
     "b1m",
     "b5m",
@@ -65,14 +72,14 @@ benchmarks = [
 ]
 
 # GTX 960
-# num_elem = {
-#     "b1": [1000],#[20_000_000, 60_000_000, 80_000_000, 100_000_000, 120_000_000],
-#     "b5": [2000],#[2_000_000, 6_000_000, 8_000_000, 10_000_000, 12_000_000],
-#     "b6": [200],#[200_000, 500_000, 800_000, 1_000_000, 1_200_000],
-#     "b7": [4000],#[4_000_000, 7_000_000, 10_000_000, 15_000_000, 20_000_000], 
-#     "b8": [800],#[1600, 2400, 3200, 4000, 4800],
-#     "b10": [300],#[3000, 4000, 5000, 6000, 7000],
-# }
+num_elem = {
+    "b1": [20_000_000, 60_000_000, 80_000_000, 100_000_000, 120_000_000],
+    "b5": [2_000_000, 6_000_000, 8_000_000, 10_000_000, 12_000_000],
+    "b6": [200_000, 500_000, 800_000, 1_000_000, 1_200_000],
+    "b7": [4_000_000, 7_000_000, 10_000_000, 15_000_000, 20_000_000], 
+    "b8": [1600, 2400, 3200, 4000, 4800],
+    "b10": [3000, 4000, 5000, 6000, 7000],
+}
 
 # GTX 1660 Super
 # num_elem = {
@@ -95,44 +102,103 @@ benchmarks = [
 #}
 
 # V100
-num_elem = {
+if GPU == V100:
+    num_elem = {
+        # Single GPU;
+        "b1": [160_000_000, 250_000_000, 500_000_000, 800_000_000, 950_000_000],
+        "b5": [10_000_000, 16_000_000, 21_000_000, 28_000_000, 35_000_000], # out of core 50_000_000, 80_000_000, 95_000_000],
+        "b6": [1_600_000, 2_500_000, 5_000_000, 6_500_000, 8_000_000],
+        "b7": [25_000_000, 50_000_000, 80_000_000, 130_000_000, 180_000_000], 
+        "b8": [6400, 10000, 13000, 16000, 20000],
+        "b10": [12000, 16000, 18000, 20000, 22000], 
+        # Multi GPU;
+        "b1m": [160_000_000, 250_000_000, 500_000_000, 800_000_000, 950_000_000],
+        "b5m": [10_000_000, 16_000_000, 21_000_000, 28_000_000, 35_000_000],  # out of core 50_000_000, 80_000_000, 95_000_000]
+        "b6m": [1_000_000, 1_200_000, 1_400_000, 1_600_000, 1_800_000],
+        "b9m": [20000, 30000, 40000, 50000, 60000],
+        "b11m": [20000, 30000, 40000, 50000, 60000],
+    }
+
+# 960
+block_dim_dict = {
     # Single GPU;
-    "b1": [160_000_000, 250_000_000, 500_000_000, 800_000_000, 950_000_000],
-    "b5": [10_000_000, 16_000_000, 21_000_000, 28_000_000, 35_000_000], # out of core 50_000_000, 80_000_000, 95_000_000],
-    "b6": [1_600_000, 2_500_000, 5_000_000, 6_500_000, 8_000_000],
-    "b7": [25_000_000, 50_000_000, 80_000_000, 130_000_000, 180_000_000], 
-    "b8": [6400, 10000, 13000, 16000, 20000],
-    "b10": [12000, 16000, 18000, 20000, 22000], 
+    "b1": DEFAULT_NUM_BLOCKS,
+    "b5": DEFAULT_NUM_BLOCKS,
+    "b6": 32,
+    "b7": DEFAULT_NUM_BLOCKS,
+    "b8": 12,
+    "b10": 16,
+    "b11": DEFAULT_NUM_BLOCKS,
     # Multi GPU;
-    "b1m": [160_000_000, 250_000_000, 500_000_000, 800_000_000, 950_000_000],
-    "b5m": [10_000_000, 16_000_000, 21_000_000, 28_000_000, 35_000_000],  # out of core 50_000_000, 80_000_000, 95_000_000]
-    "b6m": [1_000_000, 1_200_000, 1_400_000, 1_600_000, 1_800_000],
-    "b9m": [20000, 30000, 40000, 50000, 60000],
-    "b11m": [20000, 30000, 40000, 50000, 60000],
+    "b1m": 64,
+    "b5m": 64,
+    "b6m": 64,
+    "b9m": 64,
+    "b11m": 64,
 }
-num_elem = {k: [int(v[0] / 100)] for (k, v) in num_elem.items()}
 
-cuda_exec_policies = ["sync", "async"], # "cudagraph", "cudagraphmanual", "cudagraphsingle"]
+# P100
+# block_dim_dict = {
+#     "b1": DEFAULT_NUM_BLOCKS,
+#     "b5": DEFAULT_NUM_BLOCKS,
+#     "b6": 64,
+#     "b7": DEFAULT_NUM_BLOCKS,
+#     "b8": 32,
+#     "b10": DEFAULT_NUM_BLOCKS,
+#     "b11": DEFAULT_NUM_BLOCKS,
+# }
 
-exec_policies = ["async"] #, "sync"]
+# V100
+if GPU == V100:
+    block_dim_dict = {
+        # Single GPU;
+        "b1": DEFAULT_NUM_BLOCKS,
+        "b5": DEFAULT_NUM_BLOCKS,
+        "b6": 64,
+        "b7": DEFAULT_NUM_BLOCKS,
+        "b8": 32,
+        "b10": DEFAULT_NUM_BLOCKS,
+        "b11": DEFAULT_NUM_BLOCKS,
+        # Multi GPU;
+        "b1m": 64,
+        "b5m": 64,
+        "b6m": 64,
+        "b9m": 64,
+        "b11m": 64,
+    }
 
-dependency_policies = ["with-const"] #, "default"]
+# 1660
+# block_dim_dict = {
+#     "b1": DEFAULT_NUM_BLOCKS,
+#     "b5": DEFAULT_NUM_BLOCKS,
+#     "b6": 32,
+#     "b7": DEFAULT_NUM_BLOCKS,
+#     "b8": 16,
+#     "b10": DEFAULT_NUM_BLOCKS,
+#     "b11": DEFAULT_NUM_BLOCKS,
+# }
 
-new_stream_policies = ["always-new"] #, "fifo"]
+cuda_exec_policies = ["async"],  # ["sync", "async", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
 
-parent_stream_policies = ["disjoint"] # "data_aware", "disjoint_data_aware", "stream_aware" to be tested, "default" not to be tested
+exec_policies = ["async"]  #, "sync"]
 
-choose_device_heuristics = ["data_locality"] # "data_locality", "data_locality_new", "best_transfer_time_min", "best_transfer_time_max", to be tested only with data aware policies
+dependency_policies = ["with-const"]  #, "no-const"]
 
-memAdvisers = ["none"] #, "read_mostly", "preferred"] # not to be tested for now
+new_stream_policies = ["always-new"]  #, "reuse"]
 
-prefetches = ["false"] #, "true"]
+parent_stream_policies = ["disjoint", "multigpu-disjoint"]  # ["same-as-parent", "disjoint", "multigpu-early-disjoint", "multigpu-disjoint"]
 
-streamAttachs =  [False] #, True]
+choose_device_policies = ["round-robin", "stream-aware", "minmax-transfer-time"]  # ["single-gpu", "round-robin", "stream-aware", "min-transfer-size", "minmin-transfer-time", "minmax-transfer-time"]
 
-timeComputes = [False] #, True]
+memory_advise = ["none"]
 
-num_gpus = [1] #, 2]
+prefetch = ["false"]
+
+stream_attach =  [False]
+
+time_computation = [False]
+
+num_gpus = [1]
 
 block_sizes1d_dict = {
     "b1": 32,
@@ -150,7 +216,6 @@ block_sizes1d_dict = {
     "b11m": 256,
 }
 
-
 block_sizes2d_dict = {
     "b1": 8,
     "b5": 8,
@@ -166,57 +231,6 @@ block_sizes2d_dict = {
     "b9m": 8,
     "b11m": 8,
 }
-
-# # 960
-# block_dim_dict = {
-#     "b1": DEFAULT_NUM_BLOCKS,
-#     "b5": DEFAULT_NUM_BLOCKS,
-#     "b6": 32,
-#     "b7": DEFAULT_NUM_BLOCKS,
-#     "b8": 12,
-#     "b10": 16,
-#     "b11": DEFAULT_NUM_BLOCKS,
-# }
-
-# P100
-# block_dim_dict = {
-#     "b1": DEFAULT_NUM_BLOCKS,
-#     "b5": DEFAULT_NUM_BLOCKS,
-#     "b6": 64,
-#     "b7": DEFAULT_NUM_BLOCKS,
-#     "b8": 32,
-#     "b10": DEFAULT_NUM_BLOCKS,
-#     "b11": DEFAULT_NUM_BLOCKS,
-# }
-
-# V100
-block_dim_dict = {
-    # Single GPU;
-    "b1": DEFAULT_NUM_BLOCKS,
-    "b5": DEFAULT_NUM_BLOCKS,
-    "b6": 64,
-    "b7": DEFAULT_NUM_BLOCKS,
-    "b8": 32,
-    "b10": DEFAULT_NUM_BLOCKS,
-    "b11": DEFAULT_NUM_BLOCKS,
-    # Multi GPU;
-    "b1m": 64,
-    "b5m": 64,
-    "b6m": 64,
-    "b9m": 64,
-    "b11m": 64,
-}
-
-# 1660
-# block_dim_dict = {
-#     "b1": DEFAULT_NUM_BLOCKS,
-#     "b5": DEFAULT_NUM_BLOCKS,
-#     "b6": 32,
-#     "b7": DEFAULT_NUM_BLOCKS,
-#     "b8": 16,
-#     "b10": DEFAULT_NUM_BLOCKS,
-#     "b11": DEFAULT_NUM_BLOCKS,
-# }
 
 ##############################
 ##############################
@@ -276,68 +290,76 @@ def execute_cuda_benchmark(benchmark, size, block_size, exec_policy, num_iter, d
 GRAALPYTHON_CMD = "graalpython --vm.XX:MaxHeapSize={}G --jvm --polyglot --experimental-options " \
                   "--grcuda.ExecutionPolicy={} --grcuda.DependencyPolicy={} --grcuda.RetrieveNewStreamPolicy={} " \
                   "--grcuda.NumberOfGPUs={} --grcuda.RetrieveParentStreamPolicy={} " \
-                  "--grcuda.DeviceSelectionHeuristic={} --grcuda.MemAdvisePolicy={} --grcuda.InputPrefetch={} {} {} " \
+                  "--grcuda.DeviceSelectionPolicy={} --grcuda.MemAdvisePolicy={} --grcuda.InputPrefetch={} --grcuda.BandwidthMatrix={} {} {} " \
                   "benchmark_main.py -i {} -n {} -g {} --number_of_gpus {} --reinit false --realloc false " \
                   "-b {} --block_size_1d {} --block_size_2d {} --execution_policy {} --dependency_policy {} --new_stream {} "\
                   "--parent_stream {} --heuristic {} --memory_advise_policy {} --prefetch {} --no_cpu_validation {} {} {} {} -o {}"
 
 def execute_grcuda_benchmark(benchmark, size, num_gpus, block_sizes, exec_policy, dependency_policy, new_stream_policy,
-                      parent_stream_policy, choose_device_heuristic, memAdviser, prefetch, num_iter, debug, time_phases, streamAttach=False,
-                      timeCompute=False, num_blocks=DEFAULT_NUM_BLOCKS, output_date=None):
+                      parent_stream_policy, choose_device_policy, memory_advise, prefetch, num_iter, bandwidth_matrix, time_phases, debug, stream_attach=False,
+                      time_computation=False, num_blocks=DEFAULT_NUM_BLOCKS, output_date=None, mock=False):
     if debug:
-        BenchmarkResult.log_message("")
-        BenchmarkResult.log_message("")
         BenchmarkResult.log_message("#" * 30)
         BenchmarkResult.log_message(f"Benchmark {i + 1}/{tot_benchmarks}")
         BenchmarkResult.log_message(f"benchmark={benchmark}, size={n},"
-                                    f"num GPUs={num_gpus}, "
-                                    f"block sizes={block_sizes}, "
-                                    f"num blocks={num_blocks}, "
-                                    f"exec policy={exec_policy}, "
-                                    f"dependency policy={dependency_policy}, "
-                                    f"new stream policy={new_stream_policy}, "
-                                    f"parent stream policy={parent_stream_policy}, "
-                                    f"choose-device heuristic={choose_device_heuristic}, "
-                                    f"mem-advise option={memAdviser}, "
+                                    f"gpus={num_gpus}, "
+                                    f"block-sizes={block_sizes}, "
+                                    f"num-blocks={num_blocks}, "
+                                    f"exec-policy={exec_policy}, "
+                                    f"dependency-policy={dependency_policy}, "
+                                    f"new-stream-policy={new_stream_policy}, "
+                                    f"parent-stream-policy={parent_stream_policy}, "
+                                    f"choose-device-policy={choose_device_policy}, "
+                                    f"mem-advise={memory_advise}, "
                                     f"prefetch={prefetch}, "
-                                    f"stream attachment={streamAttach}, "
-                                    f"time computation={timeCompute}"
-                                    f"time_phases={time_phases}")
-        BenchmarkResult.log_message("#" * 30)
-        BenchmarkResult.log_message("")
+                                    f"stream-attachment={stream_attach}, "
+                                    f"time-computation={time_computation}, "
+                                    f"bandwidth-matrix={bandwidth_matrix}, "
+                                    f"time-phases={time_phases}")
         BenchmarkResult.log_message("")
 
     if not output_date:
         output_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     file_name = f"{output_date}_{benchmark}_{size}_{num_gpus}_{num_blocks}_{exec_policy}_{dependency_policy}_" \
-                f"{new_stream_policy}_{parent_stream_policy}_{choose_device_heuristic}_" \
-                f"{memAdviser}_{prefetch}_{streamAttach}.json"
+                f"{new_stream_policy}_{parent_stream_policy}_{choose_device_policy}_" \
+                f"{memory_advise}_{prefetch}_{stream_attach}.json"
     # Create a folder if it doesn't exist;
     output_folder_path = os.path.join(BenchmarkResult.DEFAULT_RES_FOLDER, output_date + "_grcuda")
     if not os.path.exists(output_folder_path):
         if debug:
             BenchmarkResult.log_message(f"creating result folder: {output_folder_path}")
-        Path(output_folder_path).mkdir(parents=True, exist_ok=True)
+        if not mock:
+            Path(output_folder_path).mkdir(parents=True, exist_ok=True)
     output_path = os.path.join(output_folder_path, file_name)
     b1d_size = " ".join([str(b['block_size_1d']) for b in block_sizes])
     b2d_size = " ".join([str(b['block_size_2d']) for b in block_sizes])
 
     benchmark_cmd = GRAALPYTHON_CMD.format(HEAP_SIZE, exec_policy, dependency_policy, new_stream_policy,
-                                           num_gpus, parent_stream_policy, choose_device_heuristic, memAdviser, prefetch,
-                                           "--grcuda.ForceStreamAttach" if streamAttach else "", "--grcuda.TimeComputation" if timeCompute else "",
+                                           num_gpus, parent_stream_policy, choose_device_policy, memory_advise, prefetch, bandwidth_matrix,
+                                           "--grcuda.ForceStreamAttach" if stream_attach else "", 
+                                           "--grcuda.EnableComputationTimers" if time_computation else "",
                                            num_iter, size, num_blocks, num_gpus, benchmark, b1d_size, b2d_size, exec_policy, dependency_policy,
-                                           new_stream_policy, parent_stream_policy, choose_device_heuristic, memAdviser, prefetch,
-                                           "-d" if debug else "",  "-p" if time_phases else "", "--force_stream_attach" if streamAttach else "", "--timing" if timeCompute else "", output_path)    
-    print(benchmark_cmd)
-    start = time.time()
-    result = subprocess.run(benchmark_cmd,
-                            shell=True,
-                            stdout=None, #subprocess.STDOUT,
-                            cwd=f"{os.getenv('GRCUDA_HOME')}/projects/resources/python/benchmark")
-    result.check_returncode()
-    end = time.time()
+                                           new_stream_policy, parent_stream_policy, choose_device_policy, memory_advise, prefetch,
+                                           "-d" if debug else "",
+                                           "-p" if time_phases else "", 
+                                           "--force_stream_attach" if stream_attach else "", 
+                                           "--timing" if time_computation else "",
+                                           output_path)    
     if debug:
-        BenchmarkResult.log_message(f"Benchmark total execution time: {(end - start):.2f} seconds")
+        BenchmarkResult.log_message(benchmark_cmd)
+        BenchmarkResult.log_message("#" * 30)
+        BenchmarkResult.log_message("")
+        BenchmarkResult.log_message("")
+    if not mock:
+        start = time.time()
+        result = subprocess.run(benchmark_cmd,
+                                shell=True,
+                                stdout=None, #subprocess.STDOUT,
+                                cwd=f"{os.getenv('GRCUDA_HOME')}/projects/resources/python/benchmark")
+        result.check_returncode()
+        end = time.time()
+        if debug:
+            BenchmarkResult.log_message(f"Benchmark total execution time: {(end - start):.2f} seconds")
 
 ##############################
 ##############################
@@ -384,10 +406,10 @@ if __name__ == "__main__":
         tot = 0
         if use_cuda:
             for b in benchmarks:
-                tot += len(num_elem[b]) * len(cuda_exec_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(dependency_policies) * len(prefetches) * len(num_gpus)
+                tot += len(num_elem[b]) * len(cuda_exec_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(dependency_policies) * len(prefetch) * len(num_gpus)
         else:
             for b in benchmarks:
-                tot += len(num_elem[b]) * len(num_gpus) * len(exec_policies) * len(dependency_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(choose_device_heuristics) * len(memAdvisers) * len(prefetches) * len(streamAttachs) * len(timeComputes)
+                tot += len(num_elem[b]) * len(num_gpus) * len(exec_policies) * len(dependency_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(choose_device_policies) * len(memory_advise) * len(prefetch) * len(stream_attach) * len(time_computation)
         return tot
 
     output_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
@@ -402,8 +424,8 @@ if __name__ == "__main__":
                 for exec_policy in cuda_exec_policies:
                     block_sizes = BenchmarkResult.create_block_size_list([block_sizes1d_dict[b]], [block_sizes2d_dict[b]])
                     for block_size in block_sizes:
-                        for p in prefetches:
-                            for a in streamAttachs:
+                        for p in prefetch:
+                            for a in stream_attach:
                                 for num_gpu in num_gpus:
                                     nb = num_blocks if num_blocks else block_dim_dict[b]
                                     execute_cuda_benchmark(b, n, block_size, exec_policy, num_iter, debug, num_gpus=num_gpu, num_blocks=nb, prefetch=p, stream_attach=a, mock=mock, output_date=output_date)
@@ -411,19 +433,22 @@ if __name__ == "__main__":
             # GrCUDA Benchmarks;
             else:
                 for num_gpu in num_gpus:
+                    # Select the correct connection graph;
+                    if GPU == V100:
+                        BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph_{num_gpu}_v100.csv"
                     for exec_policy in exec_policies:
                         for dependency_policy in dependency_policies:
                             for new_stream_policy in new_stream_policies:
                                 for parent_stream_policy in parent_stream_policies:
-                                    for choose_device_heuristic in choose_device_heuristics:
-                                        for memAdviser in memAdvisers:
-                                            for prefetch in prefetches:
-                                                for streamAttach in streamAttachs:
-                                                    for timeCompute in timeComputes:
+                                    for choose_device_policy in choose_device_policies:
+                                        for m in memory_advise:
+                                            for p in prefetch:
+                                                for s in stream_attach:
+                                                    for t in time_computation:
                                                         nb = num_blocks if num_blocks else block_dim_dict[b]
                                                         block_sizes = BenchmarkResult.create_block_size_list([block_sizes1d_dict[b]], [block_sizes2d_dict[b]])
                                                         execute_grcuda_benchmark(b, n, num_gpu, block_sizes,
-                                                              exec_policy, dependency_policy, new_stream_policy, parent_stream_policy, choose_device_heuristic, 
-                                                              memAdviser, prefetch, num_iter, debug, time_phases, streamAttach, timeCompute, nb, output_date=output_date)
+                                                              exec_policy, dependency_policy, new_stream_policy, parent_stream_policy, choose_device_policy, 
+                                                              m, p, num_iter, BANDWIDTH_MATRIX, time_phases, debug, s, time_computation, nb, output_date=output_date, mock=mock)
                                                         i += 1 
 
