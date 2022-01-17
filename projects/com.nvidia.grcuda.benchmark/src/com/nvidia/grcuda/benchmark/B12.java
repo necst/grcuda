@@ -1,6 +1,46 @@
 package com.nvidia.grcuda.benchmark;
 
+import org.graalvm.polyglot.Value;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 public class B12 extends Benchmark {
+
+    private static final int NUM_PARTITIONS = 4;
+    private static final int NUM_EIGEN = 8;
+
+    private float[][] vecIn;
+    private float[][] vecOut;
+    private COOMatrix matrix;
+    private COOMatrix[] partitions;
+    private float alpha = 0.0f;
+    private float beta = 0.0f;
+
+    // Device Vectors
+    private Value[] deviceVecIn = new Value[NUM_PARTITIONS];
+    private Value[] deviceVecOut = new Value[NUM_PARTITIONS];
+    private Value[] deviceIntermediateDotProductValues = new Value[NUM_PARTITIONS];
+    private Value[] alphaIntermediate = new Value[NUM_PARTITIONS];
+    private Value[] betaIntermediate = new Value[NUM_PARTITIONS];
+    private Value[] deviceVecOutSpmv = new Value[NUM_PARTITIONS];
+    private Value[] deviceCooX = new Value[NUM_PARTITIONS];
+    private Value[] deviceCooY = new Value[NUM_PARTITIONS];
+    private Value[] deviceCooVal = new Value[NUM_PARTITIONS];
+    private Value[] deviceVecNext = new Value[NUM_PARTITIONS];
+    private Value[] deviceNormalizedOut = new Value[NUM_PARTITIONS];
+    private Value[] deviceLanczosVectors = new Value[NUM_PARTITIONS];
+
+    // Kernels
+    private Value spmv;
+    private Value axpbXtended;
+    private Value normalize;
+    private Value subtract;
+    private Value copyPartitionToVec;
+
+
+    // TODO: i'm missing DOT_PRODUCT AND L2 NORM
 
     private static final String AXPB_XTENDED = "\n" +
             "extern \"C\" __global__ void axpb_xtended(const float alpha, const float *x, const float *b, const float beta, const float *c, float *out, const int N, const int offset_x, const int offset_c) {\n" +
@@ -10,6 +50,7 @@ public class B12 extends Benchmark {
             "        out[i] = alpha * x[i + offset_x] + b[i] + beta * c[i + offset_c];\n" +
             "    }\n" +
             "}\n";
+
     private static final String NORMALIZE = "\n" +
             "extern \"C\" __global__ void normalize(const float *d_v_in, const double denominator, float *d_v_out, const int N) {\n" +
             "    int init = blockIdx.x * blockDim.x + threadIdx.x;\n" +
@@ -81,7 +122,106 @@ public class B12 extends Benchmark {
 
     @Override
     public void initializeTest(int iteration) {
+        // TODO: read CooMatrix
+        readMatrix();
 
+        // initialize CPU vectors
+        initCPUVectors();
+
+        // Create device buffers
+        createGPUVectors();
+
+        // Transfer from CPU to device
+        transferToGPU();
+
+        // Create Kernels
+        createKernels();
+
+    }
+
+    private void createKernels() {
+        Value buildKernel = this.getContext().eval("grcuda", "buildkernel");
+
+        spmv = buildKernel.execute(SPMV, "spmv", "const pointer, const pointer, const pointer, const pointer, pointer, const sint32");
+        // TODO: dot product and l2-norm
+        axpbXtended = buildKernel.execute(AXPB_XTENDED, "axpb_xtended", "const float, const pointer, const pointer, const float, const pointer, pointer, const sint32, const sint32, const sint32");
+        normalize = buildKernel.execute(NORMALIZE, "normalize", "const pointer, const float, pointer, const sint32");
+        subtract = buildKernel.execute(SUBTRACT, "subtract", "pointer, const pointer, float, const sint32, const sint32");
+        copyPartitionToVec = buildKernel.execute(COPY_PARTITION_TO_VEC, "copy_partition_to_vec", "const pointer, pointer, const sint32, const sint32, const sint32");
+
+    }
+
+    private void transferToGPU() {
+
+        for (int i = 0; i < NUM_PARTITIONS; i++) {
+            COOMatrix partition = partitions[i];
+            deviceVecIn[i].invokeMember("copyFrom", (Object) vecIn[i], matrix.getN());
+            deviceCooX[i].invokeMember("copyFrom", (Object) partition.getX(), partition.getNnz());
+            deviceCooY[i].invokeMember("copyFrom", (Object) partition.getY(), partition.getNnz());
+            deviceCooVal[i].invokeMember("copyFrom", (Object) partition.getVal(), partition.getNnz());
+
+            for (int j = 0; j < config.blocks; j++) {
+                deviceIntermediateDotProductValues[i].getArrayElement(j).setArrayElement(0, 0.0f);
+            }
+        }
+    }
+
+    private void createGPUVectors() {
+        Value deviceArray = this.getContext().eval("grcuda", "DeviceArray");
+
+        for (int i = 0; i < NUM_PARTITIONS; i++) {
+            COOMatrix partition = this.partitions[i];
+            deviceVecIn[i] = deviceArray.execute("float", matrix.getN());
+            deviceIntermediateDotProductValues[i] = deviceArray.execute("float", config.blocks);
+            alphaIntermediate[i] = deviceArray.execute("float", 1);
+            betaIntermediate[i] = deviceArray.execute("float", 1);
+            deviceVecOutSpmv[i] = deviceArray.execute("float", partition.getN());
+            deviceCooX[i] = deviceArray.execute("float", partition.getNnz());
+            deviceCooY[i] = deviceArray.execute("float", partition.getNnz());
+            deviceCooVal[i] = deviceArray.execute("float", partition.getNnz());
+            deviceVecNext[i] = deviceArray.execute("float", partition.getN());
+            deviceNormalizedOut[i] = deviceArray.execute("float", partition.getN());
+            deviceLanczosVectors[i] = deviceArray.execute("float", partition.getN() * NUM_EIGEN);
+        }
+
+    }
+
+    private void initCPUVectors() {
+        vecIn = new float[NUM_PARTITIONS][matrix.getN()];
+
+        // Do this hack since it is not possible to create
+        // matrices with different row length in java
+        int maxN = -1;
+        for (int i = 0; i < NUM_PARTITIONS; i++) {
+            if (maxN < partitions[i].getN())
+                maxN = partitions[i].getN();
+        }
+
+        vecOut = new float[NUM_PARTITIONS][maxN];
+
+        // Generate a random vector
+        float norm = 0.0f;
+        for (int i = 0; i < matrix.getN(); ++i) {
+            vecIn[0][i] = (float) Math.random();
+            norm += vecIn[0][i] * vecIn[0][i];
+        }
+
+        norm = (float) Math.sqrt(norm);
+
+        // l2-normalize it
+        for (int i = 0; i < matrix.getN(); i++) {
+            vecIn[0][i] /= norm;
+        }
+
+        // mirror the created array to the other partitions
+        for (int i = 1; i < NUM_PARTITIONS; i++) {
+            System.arraycopy(vecIn[0], 0, vecIn[i], 0, matrix.getN());
+        }
+
+
+    }
+
+    private void readMatrix() {
     }
 
     @Override
@@ -98,4 +238,56 @@ public class B12 extends Benchmark {
     protected void cpuValidation() {
 
     }
+
+
+    private static class COOMatrix {
+        private int[] x;
+        private int[] y;
+        private float[] val;
+        private int N;
+        private int M;
+        private int nnz;
+
+        private COOMatrix(int[] x, int[] y, float[] val, int N, int M) {
+            this.x = x;
+            this.y = y;
+            this.val = val;
+            this.N = N;
+            this.M = M;
+            this.nnz = x.length;
+        }
+
+        public int[] getX() {
+            return x;
+        }
+
+        public int[] getY() {
+            return y;
+        }
+
+        public float[] getVal() {
+            return val;
+        }
+
+        public int getN() {
+            return N;
+        }
+
+        public int getNnz() {
+            return nnz;
+        }
+
+        static COOMatrix readMatix(String path) {
+            // TODO:
+            return null;
+        }
+
+        public COOMatrix[] asPartitions(int numPartitions) {
+            COOMatrix[] partitions = new COOMatrix[NUM_PARTITIONS];
+            // TODO:
+            return partitions;
+        }
+
+    }
+
 }
