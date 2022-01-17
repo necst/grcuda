@@ -510,10 +510,8 @@ public class B6 extends Benchmark {
     }
 
 
-    private int[][]
-
     @Override
     protected void cpuValidation() {
-        // TODO: do ridge_predict and do this
+        // TODO: do ridge_predict and this
     }
 }
