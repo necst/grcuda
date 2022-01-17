@@ -118,7 +118,7 @@ if GPU == V100:
         "b9m": [20000, 30000, 40000, 50000, 60000],
         "b11m": [20000, 30000, 40000, 50000, 60000],
     }
-num_elem = {k: [int(v[0] / 100)] for (k, v) in num_elem.items()}  # Use this for small sizes, for debugging;
+# num_elem = {k: [int(v[0] / 100)] for (k, v) in num_elem.items()}  # Use this for small sizes, for debugging;
 
 # 960
 block_dim_dict = {
@@ -181,15 +181,15 @@ if GPU == V100:
 
 cuda_exec_policies = ["sync", "async"]  # ["sync", "async", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
 
-exec_policies = ["async"]
+exec_policies = ["sync", "async"]
 
 dependency_policies = ["with-const"]  #, "no-const"]
 
 new_stream_policies = ["always-new"]  #, "reuse"]
 
-parent_stream_policies = ["multigpu-disjoint"] # ["disjoint", "multigpu-disjoint"]  # ["same-as-parent", "disjoint", "multigpu-early-disjoint", "multigpu-disjoint"]
+parent_stream_policies = ["disjoint", "multigpu-disjoint"]  # ["same-as-parent", "disjoint", "multigpu-early-disjoint", "multigpu-disjoint"]
 
-choose_device_policies = ["minmax-transfer-time"] # ["round-robin", "stream-aware", "minmax-transfer-time"]  # ["single-gpu", "round-robin", "stream-aware", "min-transfer-size", "minmin-transfer-time", "minmax-transfer-time"]
+choose_device_policies = ["round-robin", "stream-aware", "minmax-transfer-time"]  # ["single-gpu", "round-robin", "stream-aware", "min-transfer-size", "minmin-transfer-time", "minmax-transfer-time"]
 
 memory_advise = ["none"]
 
@@ -199,7 +199,7 @@ stream_attach =  [False]
 
 time_computation = [False]
 
-num_gpus = [2]
+num_gpus = [1, 2]
 
 block_sizes1d_dict = {
     "b1": 32,
