@@ -69,16 +69,6 @@ public class B12 extends Benchmark {
             "    }\n" +
             "}";
 
-    private static final String SQUARE = "\n" +
-            "extern \"C\" __global__ void square(const float *x, float *y, int N){\n" +
-            "    int init = blockIdx.x * blockDim.x + threadIdx.x;\n" +
-            "    int stride = blockDim.x * gridDim.x;\n" +
-            "    for(int i = init; i < N; i += stride){\n" +
-            "        float value = x[i];\n" +
-            "        y[i] = value * value;\n" +
-            "    }\n" +
-            "}";
-
     private static final String SPMV = "\n" +
             "extern \"C\" __global__ void spmv(const int *x, const int *y, const float *val, const float *v_in, float *v_out, int num_nnz) {\n" +
             "    int init = blockIdx.x * blockDim.x + threadIdx.x;\n" +
