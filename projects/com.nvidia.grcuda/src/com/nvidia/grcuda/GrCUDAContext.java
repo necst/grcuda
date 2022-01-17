@@ -69,7 +69,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class GrCUDAContext {
 
-    private static final TruffleLanguage.ContextReference<GrCUDAContext> REFERENCE = TruffleLanguage.ContextReference.create(GrCUDALanguage.class);
+//    private static final TruffleLanguage.ContextReference<GrCUDAContext> REFERENCE = TruffleLanguage.ContextReference.create(GrCUDALanguage.class);
 
     private static final String ROOT_NAMESPACE = "CU";
 
@@ -155,9 +155,9 @@ public final class GrCUDAContext {
         this.rootNamespace = namespace;
     }
 
-    public static GrCUDAContext get(Node node) {
-        return REFERENCE.get(node);
-    }
+//    public static GrCUDAContext get(Node node) {
+//        return REFERENCE.get(node);
+//    }
 
     public Env getEnv() {
         return env;

@@ -57,7 +57,7 @@ import static com.nvidia.grcuda.GrCUDALogger.COMPUTATION_LOGGER;
  */
 public abstract class GrCUDAComputationalElement {
 
-    private TruffleLogger LOGGER = GrCUDALogger.getLogger(COMPUTATION_LOGGER);
+    private static final TruffleLogger LOGGER = GrCUDALogger.getLogger(COMPUTATION_LOGGER);
 
     /**
      * This list contains the original set of input arguments that are used to compute dependencies;
