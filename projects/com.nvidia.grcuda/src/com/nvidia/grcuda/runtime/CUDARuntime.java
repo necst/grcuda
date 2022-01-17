@@ -224,20 +224,20 @@ public final class CUDARuntime {
     private void setupSupportForMultiGPU() {
         // Find how many GPUs are available on this system;
         this.numberOfAvailableGPUs = cudaGetDeviceCount();
-        RUNTIME_LOGGER.fine("identified " + numberOfAvailableGPUs + " GPUs available on this machine");
+        RUNTIME_LOGGER.fine(() -> "identified " + numberOfAvailableGPUs + " GPUs available on this machine");
         this.numberOfGPUsToUse = numberOfAvailableGPUs;
         if (numberOfAvailableGPUs <= 0) {
-            RUNTIME_LOGGER.severe("GrCUDA initialization failed, no GPU device is available (devices count = " + numberOfAvailableGPUs + ")");
+            RUNTIME_LOGGER.severe(() -> "GrCUDA initialization failed, no GPU device is available (devices count = " + numberOfAvailableGPUs + ")");
             throw new GrCUDAException("GrCUDA initialization failed, no GPU device is available");
         }
         // Validate and update the number of GPUs used in the context;
         int numberOfSelectedGPUs = context.getOptions().getNumberOfGPUs();
         if (numberOfSelectedGPUs <= 0) {
-            RUNTIME_LOGGER.warning("non-positive number of GPUs selected (" + numberOfSelectedGPUs + "), defaulting to 1");
+            RUNTIME_LOGGER.warning(() -> "non-positive number of GPUs selected (" + numberOfSelectedGPUs + "), defaulting to 1");
             numberOfGPUsToUse = 1;
             context.getOptions().setNumberOfGPUs(numberOfGPUsToUse);  // Update the option value;
         } else if (numberOfSelectedGPUs > numberOfAvailableGPUs) {
-            RUNTIME_LOGGER.warning("the number of GPUs selected is greater than what's available (selected=" + numberOfSelectedGPUs + ", available=" + numberOfAvailableGPUs + "), using all the available GPUs (" + numberOfAvailableGPUs + ")");
+            RUNTIME_LOGGER.warning(() -> "the number of GPUs selected is greater than what's available (selected=" + numberOfSelectedGPUs + ", available=" + numberOfAvailableGPUs + "), using all the available GPUs (" + numberOfAvailableGPUs + ")");
             numberOfGPUsToUse = numberOfAvailableGPUs;
             context.getOptions().setNumberOfGPUs(numberOfGPUsToUse);  // Update the option value;
         } else {
@@ -247,7 +247,7 @@ public final class CUDARuntime {
         for (int i = 0; i < this.numberOfGPUsToUse; i++) {
             this.loadedModules.add(new HashMap<String, CUModule>());
         }
-        RUNTIME_LOGGER.info("initialized GrCUDA to use " + this.numberOfGPUsToUse + "/" + numberOfAvailableGPUs + " GPUs");
+        RUNTIME_LOGGER.info(() -> "initialized GrCUDA to use " + this.numberOfGPUsToUse + "/" + numberOfAvailableGPUs + " GPUs");
     }
     
     // using this slow/uncached instance since all calls are non-critical
@@ -429,7 +429,7 @@ public final class CUDARuntime {
             }
             Object callable = CUDARuntimeFunction.CUDA_SETDEVICE.getSymbol(this);
             Object result = INTEROP.execute(callable, device);
-            RUNTIME_LOGGER.finest("selected current GPU = " + device);
+            RUNTIME_LOGGER.finest(() -> "selected current GPU = " + device);
             checkCUDAReturnCode(result, "cudaSetDevice");
             setCurrentGPU(device);
         } catch (InteropException e) {
@@ -525,7 +525,7 @@ public final class CUDARuntime {
         try {
             Object callable = CUDARuntimeFunction.CUDA_STREAMATTACHMEMASYNC.getSymbol(this);
             int flag = stream.isDefaultStream() ? MEM_ATTACH_GLOBAL : MEM_ATTACH_SINGLE;
-            RUNTIME_LOGGER.finest("\t* attach array=" + System.identityHashCode(array) + " to " + stream + "; flag=" + flag);
+            RUNTIME_LOGGER.finest(() -> "\t* attach array=" + System.identityHashCode(array) + " to " + stream + "; flag=" + flag);
 
             // Book-keeping of the stream attachment within the array;
             array.setStreamMapping(stream);
@@ -1508,7 +1508,7 @@ public final class CUDARuntime {
     }
 
     public Kernel buildKernel(AbstractGrCUDAExecutionContext grCUDAExecutionContext, String code, String kernelName, String signature) {
-        RUNTIME_LOGGER.finest("buildKernel device:" + getCurrentGPU());
+        RUNTIME_LOGGER.finest(() -> "buildKernel device:" + getCurrentGPU());
         String moduleName = "truffle" + context.getNextModuleId();
         PTXKernel ptx = nvrtc.compileKernel(code, kernelName, moduleName, "--std=c++14");
         return kernelManagement.buildKernel(grCUDAExecutionContext, kernelName, signature, moduleName, ptx);
@@ -1733,7 +1733,7 @@ public final class CUDARuntime {
                                             result.getClass().getName());
         }
         if (returnCode != 0) {
-            RUNTIME_LOGGER.severe("ERROR CODE=" + returnCode);
+            RUNTIME_LOGGER.severe(() -> "ERROR CODE=" + returnCode);
             throw new GrCUDAException(returnCode, DriverAPIErrorMessages.getString(returnCode), function);
 
         }

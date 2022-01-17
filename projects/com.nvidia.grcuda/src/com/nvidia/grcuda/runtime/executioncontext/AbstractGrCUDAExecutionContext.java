@@ -109,7 +109,7 @@ public abstract class AbstractGrCUDAExecutionContext {
                 this.dependencyBuilder = new DefaultDependencyComputationBuilder();
                 break;
             default:
-                LOGGER.severe("Cannot create a GrCUDAExecutionContext. The selected dependency policy is not valid: " + options.getDependencyPolicy());
+                LOGGER.severe(() -> "Cannot create a GrCUDAExecutionContext. The selected dependency policy is not valid: " + options.getDependencyPolicy());
                 throw new GrCUDAException("selected dependency policy is not valid: " + options.getDependencyPolicy());
         }
         // By default, assume no prefetching;

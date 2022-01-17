@@ -174,7 +174,7 @@ public class GrCUDAStreamManager {
                     CUDAStream stream = additionalStream.get();
                     // If we require synchronization on the default stream, perform it in a specialized way;
                     if (stream.isDefaultStream()) {
-                        STREAM_LOGGER.finest("--\tsync stream " + stream + " by " + vertex.getComputation());
+                        STREAM_LOGGER.finest(() -> "--\tsync stream " + stream + " by " + vertex.getComputation());
                         // Synchronize the device;
                         syncDevice();
                         // All computations are now finished;
@@ -216,11 +216,11 @@ public class GrCUDAStreamManager {
                     CUDAEvent event = parent.getEventStop().get();
                     runtime.cudaStreamWaitEvent(vertex.getComputation().getStream(), event);
 
-                    STREAM_LOGGER.finest("\t* wait event on stream; stream to sync=" + stream.getStreamNumber()
+                    STREAM_LOGGER.finest(() -> "\t* wait event on stream; stream to sync=" + stream.getStreamNumber()
                             + "; stream that waits=" + vertex.getComputation().getStream().getStreamNumber()
                             + "; event=" + event.getEventNumber());
                 } else {
-                    STREAM_LOGGER.warning("\t* missing event to sync child computation=" + vertex.getComputation() +
+                    STREAM_LOGGER.warning(() -> "\t* missing event to sync child computation=" + vertex.getComputation() +
                             " and parent computation=" + parent);
                 }
             }
@@ -240,7 +240,7 @@ public class GrCUDAStreamManager {
         Set<CUDAStream> streamsToSync = getParentStreams(vertex.getParentComputations());
         // Synchronize streams;
         streamsToSync.forEach(s -> {
-            STREAM_LOGGER.finest("--\tsync stream=" + s.getStreamNumber() + " by " + vertex.getComputation());
+            STREAM_LOGGER.finest(() -> "--\tsync stream=" + s.getStreamNumber() + " by " + vertex.getComputation());
             syncStream(s);
         });
 
@@ -273,7 +273,7 @@ public class GrCUDAStreamManager {
             runtime.cudaEventDestroy(computation.getEventStop().get());
 
         } else {
-            STREAM_LOGGER.warning("missing event to destroy for computation=" + computation);
+            STREAM_LOGGER.warning(() -> "missing event to destroy for computation=" + computation);
         }
     }
 
