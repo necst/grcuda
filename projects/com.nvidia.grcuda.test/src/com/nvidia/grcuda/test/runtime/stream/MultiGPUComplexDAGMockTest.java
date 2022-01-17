@@ -74,7 +74,7 @@ public class MultiGPUComplexDAGMockTest {
                         .add(GrCUDAOptions.InputPrefetch, false)
                         .add(GrCUDAOptions.BandwidthMatrix, System.getenv("GRCUDA_HOME") + File.separatorChar +
                                 "projects" + File.separatorChar + "resources" + File.separatorChar +
-                                "connection_graph" + File.separatorChar + "datasets" + File.separatorChar + "connection_graph_test_8_v100.csv").build()));
+                                "connection_graph" + File.separatorChar + "datasets" + File.separatorChar + "connection_graph_8_v100.csv").build()));
         if (MultiGPUComplexDAGMockTest.DEBUG) {
             System.out.println(this);
         }

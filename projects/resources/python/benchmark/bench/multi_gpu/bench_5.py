@@ -39,7 +39,7 @@ __device__ inline double cndGPU(double d) {
     return cnd;
 }
 
-extern "C" __global__ void bs(double *x, double *y, int N, double R, double V, double T, double K) {
+extern "C" __global__ void bs(const double *x, double *y, int N, double R, double V, double T, double K) {
 
     double sqrtT = 1.0 / rsqrt(T);
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {
@@ -96,7 +96,7 @@ class Benchmark5M(Benchmark):
 
         # Build the kernels;
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
-        self.bs_kernel = build_kernel(BS_KERNEL, "bs", "pointer, pointer, sint32, double, double, double, double")
+        self.bs_kernel = build_kernel(BS_KERNEL, "bs", "const pointer, pointer, sint32, double, double, double, double")
 
     @time_phase("initialization")
     def init(self):

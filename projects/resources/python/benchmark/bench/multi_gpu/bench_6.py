@@ -255,15 +255,15 @@ class Benchmark6M(Benchmark):
 
         # Build the kernels;
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
-        self.nb_1 = build_kernel(NB_KERNEL, "nb_1", "const pointer, const pointer, pointer, sint32, sint32, sint32, sint32, sint32")
+        self.nb_1 = build_kernel(NB_KERNEL, "nb_1", "const pointer, const pointer, const pointer, sint32, sint32, sint32, sint32, sint32")
         self.nb_2 = build_kernel(NB_KERNEL, "nb_2", "pointer, pointer, sint32, sint32")
-        self.nb_3 = build_kernel(NB_KERNEL, "nb_3", "pointer, pointer, pointer, sint32, sint32")
-        self.nb_4 = build_kernel(NB_KERNEL, "nb_4", "pointer, pointer, sint32, sint32")
+        self.nb_3 = build_kernel(NB_KERNEL, "nb_3", "const pointer, const pointer, pointer, sint32, sint32")
+        self.nb_4 = build_kernel(NB_KERNEL, "nb_4", "pointer, const pointer, sint32, sint32")
 
         self.rr_1 = build_kernel(RR_KERNEL, "rr_1", "const pointer, pointer, pointer, sint32, sint32, sint32, sint32")
         self.rr_1_1 = build_kernel(RR_KERNEL, "rr_1_1", "pointer, pointer, const pointer, const pointer, sint32, sint32, sint32, sint32")
         self.rr_1_2 = build_kernel(RR_KERNEL, "rr_1_2", "const pointer, pointer, const pointer, const pointer, sint32, sint32, sint32")
-        self.rr_2 = build_kernel(RR_KERNEL, "rr_2", "const pointer, const pointer, pointer, sint32, sint32, sint32, sint32, sint32")
+        self.rr_2 = build_kernel(RR_KERNEL, "rr_2", "const pointer, const pointer, const pointer, sint32, sint32, sint32, sint32, sint32")
         self.rr_3 = build_kernel(RR_KERNEL, "rr_3", "pointer, const pointer, sint32, sint32")
 
         self.softmax = build_kernel(ENSEMBLE_KERNEL, "softmax", "pointer, sint32, sint32")

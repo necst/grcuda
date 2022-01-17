@@ -154,12 +154,12 @@ class Benchmark9M(Benchmark):
         # Build the kernels;
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
         self.precondition_kernel = build_kernel(PRECONDITION_KERNEL, "precondition", "pointer, sint32, sint32, sint32")
-        self.mmul_kernel = build_kernel(MMUL_KERNEL, "matrix_vector_mult", "const pointer, const pointer, pointer, sint32, sint32, sint32")
-        self.mmul_axpy_kernel = build_kernel(MMUL_KERNEL, "matrix_vector_mult_axpy", "const pointer, const pointer, const pointer, float, pointer, sint32, sint32, sint32")
+        self.mmul_kernel = build_kernel(MMUL_KERNEL, "matrix_vector_mult", "const pointer, const pointer, const pointer, sint32, sint32, sint32")
+        self.mmul_axpy_kernel = build_kernel(MMUL_KERNEL, "matrix_vector_mult_axpy", "const pointer, const pointer, const pointer, float, const pointer, sint32, sint32, sint32")
         self.l2_norm_kernel = build_kernel(DP_KERNEL, "l2_norm", "const pointer, pointer, sint32")
-        self.dp_kernel = build_kernel(DP_KERNEL, "dot", "const pointer, const pointer, pointer, sint32")
+        self.dp_kernel = build_kernel(DP_KERNEL, "dot", "const pointer, pointer, pointer, sint32")
         self.saxpy_kernel = build_kernel(SAXPY_KERNEL, "saxpy", "pointer, const pointer, const pointer, float, sint32")
-        self.cpy_kernel = build_kernel(SAXPY_KERNEL, "cpy", "pointer, const pointer, sint32")
+        self.cpy_kernel = build_kernel(SAXPY_KERNEL, "cpy", "pointer, pointer, sint32")
         self.initialize_rand_old = polyglot.eval(language="js", string="(x) => { for (let i = 0; i < x.length; i++) { x[i] =  2 * Math.random() - 1}}")        
         self.initialize_rand = polyglot.eval(language="js", string="""
             (X, N) => { 
