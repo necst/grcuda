@@ -4,6 +4,10 @@ import org.graalvm.polyglot.Value;
 import org.junit.experimental.theories.Theories;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 @RunWith(Theories.class)
 public class B6 extends Benchmark {
 
@@ -127,13 +131,13 @@ public class B6 extends Benchmark {
     private Value softMaxFunction;
     private Value argMaxFunction;
 
-    private int xCpu;
+    private int[][] xCpu;
     private float[][] nbFeatLogProbCpu;
     private float[][] ridgeCoeffCpu;
     private float[] nbClassLogPriorCpu;
     private float[] ridgeInterceptCpu;
-    private Value r1Cpu;
-    private Value r2Cpu;
+    private float[][] r1Cpu;
+    private float[][] r2Cpu;
 
     private Value x, z, nbFeatLogProb, nbClassLogPrior, ridgeCoeff, ridgeIntercept, nbAMax, nbL, r1, r2, r;
 
@@ -142,79 +146,125 @@ public class B6 extends Benchmark {
 
     @Override
     public void initializeTest(int iteration) {
-
         numClasses = 10;
         numFeatures = 200;
+        int maxOccurrenceOfNgram = 10;
+
+        // CPU Arrays
+        createCPUArrays();
+
+        // Kernels
+        createKernels();
+
+        // Fill cpu arrays with random values
+        fillCPUArrays(maxOccurrenceOfNgram);
+
+        // Array initialization
+        createDeviceArrays();
+
+        // Array copy
+        copyToGPU();
+
+
+    }
+
+    private void createCPUArrays() {
         nbClassLogPriorCpu = new float[numClasses];
         nbFeatLogProbCpu = new float[numClasses][numFeatures];
         ridgeCoeffCpu = new float[numClasses][numFeatures];
         ridgeInterceptCpu = new float[numClasses];
+        xCpu = new int[getTestSize()][numFeatures];
+        r1Cpu = new float[getTestSize()][numClasses];
+        r2Cpu = new float[getTestSize()][numClasses];
+    }
 
+    private void createKernels() {
         // Context initialization
         Value buildkernel = this.getContext().eval("grcuda", "buildkernel");
 
         //Kernel build
-        nb1Function = buildkernel.execute(NB_KERNEL, "nb1", "const pointer, pointer, pointer, sint32, sint32, sint32");
-        nb2Function = buildkernel.execute(NB_KERNEL, "nb2", "pointer, pointer, sint32, sint32");
-        nb3Function = buildkernel.execute(NB_KERNEL, "nb3", "pointer, pointer, pointer, sint32, sint32");
-        nb4Function = buildkernel.execute(NB_KERNEL, "nb4", "pointer, pointer, sint32, sint32");
+        nb1Function = buildkernel.execute(NB_KERNEL, "nb_1", "const pointer, pointer, pointer, sint32, sint32, sint32");
+        nb2Function = buildkernel.execute(NB_KERNEL, "nb_2", "pointer, pointer, sint32, sint32");
+        nb3Function = buildkernel.execute(NB_KERNEL, "nb_3", "pointer, pointer, pointer, sint32, sint32");
+        nb4Function = buildkernel.execute(NB_KERNEL, "nb_4", "pointer, pointer, sint32, sint32");
 
-        rr1Function = buildkernel.execute(RR_KERNEL, "rr1", "const pointer, pointer, sint32, sint32");
-        rr2Function = buildkernel.execute(RR_KERNEL, "rr2", "pointer, pointer, pointer, sint32, sint32, sint32");
-        rr3Function = buildkernel.execute(RR_KERNEL, "rr3", "pointer, pointer, sint32, sint32");
+        rr1Function = buildkernel.execute(RR_KERNEL, "rr_1", "const pointer, pointer, sint32, sint32");
+        rr2Function = buildkernel.execute(RR_KERNEL, "rr_2", "pointer, pointer, pointer, sint32, sint32, sint32");
+        rr3Function = buildkernel.execute(RR_KERNEL, "rr_3", "pointer, pointer, sint32, sint32");
 
         softMaxFunction = buildkernel.execute(ENSEMBLE_KERNEL, "softmax", "pointer, sint32, sint32");
         argMaxFunction = buildkernel.execute(ENSEMBLE_KERNEL, "argmax", "pointer, pointer, pointer, sint32, sint32");
+    }
 
-        // Create a random input
-        int maxOccurrenceOfNgram = 10;
-        int minOccurrenceOfNgram = 0;
-        double min = 0.0;
-        double max = 1.0;
+    private void fillCPUArrays(int maxOccurrenceOfNgram) {
+        Random rng = new Random();
 
-        xCpu = (int) (Math.random() * (maxOccurrenceOfNgram - minOccurrenceOfNgram + 1) + minOccurrenceOfNgram);
-
-        for (int i = 0; i < numClasses; i++)
-            for (int j = 0; j < numFeatures; j++) {
-                nbFeatLogProbCpu[i][j] = (float) Math.random();
+        for (int i = 0; i < getTestSize(); ++i) {
+            for (int j = 0; j < numFeatures; ++j) {
+                xCpu[i][j] = rng.nextInt(maxOccurrenceOfNgram);
             }
-        for (int i = 0; i < numClasses; i++)
-            for (int j = 0; j < numFeatures; j++) {
-                ridgeCoeffCpu[i][j] = (float) Math.random();
-            }
-
-        for (int i = 0; i < numClasses; i++) {
-            nbClassLogPriorCpu[i] = (float) Math.random();
         }
 
-        for (int i = 0; i < numClasses; i++) {
-            ridgeInterceptCpu[i] = (float) Math.random();
-        }
-
-        float[][] r1Cpu = new float[getTestSize()][numClasses];
-        for (int i = 0; i < getTestSize(); i++)
+        for (int i = 0; i < getTestSize(); i++) {
             for (int j = 0; j < numClasses; j++) {
                 r1Cpu[i][j] = nbClassLogPriorCpu[j];
             }
+        }
 
-        int[][] r2Cpu = new int[getTestSize()][numClasses];
+        for (int i = 0; i < numClasses; i++)
+            for (int j = 0; j < numFeatures; j++) {
+                nbFeatLogProbCpu[i][j] = rng.nextFloat();
+            }
+        for (int i = 0; i < numClasses; i++)
+            for (int j = 0; j < numFeatures; j++) {
+                ridgeCoeffCpu[i][j] = rng.nextFloat();
+            }
 
-        // Array initialization
+        for (int i = 0; i < numClasses; i++) {
+            nbClassLogPriorCpu[i] = rng.nextFloat();
+            ridgeInterceptCpu[i] = rng.nextFloat();
+        }
+    }
+
+    private void createDeviceArrays() {
         Value deviceArray = this.getContext().eval("grcuda", "DeviceArray");
-        x = deviceArray.execute("float", (getTestSize() * numFeatures));
-        z = deviceArray.execute("float", (getTestSize() * numFeatures));
-
-        nbFeatLogProb = deviceArray.execute("float", numClasses * numFeatures);
+        x = deviceArray.execute("float", getTestSize(), numFeatures);
+        z = deviceArray.execute("float", getTestSize(), numFeatures);
+        nbFeatLogProb = deviceArray.execute("float", numClasses, numFeatures);
         nbClassLogPrior = deviceArray.execute("float", numClasses);
-        ridgeCoeff = deviceArray.execute("float", numClasses * numFeatures);
+        ridgeCoeff = deviceArray.execute("float", numClasses, numFeatures);
         ridgeIntercept = deviceArray.execute("float", numClasses);
-
         nbAMax = deviceArray.execute("float", getTestSize());
         nbL = deviceArray.execute("float", getTestSize());
-
-        r1 = deviceArray.execute("float", getTestSize() * numClasses);
-        r2 = deviceArray.execute("float", getTestSize() * numClasses);
+        r1 = deviceArray.execute("float", getTestSize(), numClasses);
+        r2 = deviceArray.execute("float", getTestSize(), numClasses);
         r = deviceArray.execute("float", getTestSize());
+    }
+
+    private void copyToGPU() {
+        for (int i = 0; i < getTestSize(); ++i) {
+            for (int j = 0; j < numFeatures; ++j) {
+                x.getArrayElement(i).setArrayElement(j, xCpu[i][j]);
+            }
+        }
+
+        for (int i = 0; i < numClasses; i++) {
+            for (int j = 0; j < numFeatures; j++) {
+                nbFeatLogProb.getArrayElement(i).setArrayElement(j, nbFeatLogProbCpu[i][j]);
+                ridgeCoeff.getArrayElement(i).setArrayElement(j, ridgeCoeffCpu[i][j]);
+            }
+        }
+
+
+        for (int i = 0; i < getTestSize(); i++) {
+            for (int j = 0; j < numClasses; ++j) {
+                r1.getArrayElement(i).setArrayElement(j, r1Cpu[i][j]);
+                r2.getArrayElement(i).setArrayElement(j, r2Cpu[i][j]);
+            }
+        }
+
+        nbClassLogPrior.invokeMember("copyFrom", nbClassLogPriorCpu);
+        ridgeIntercept.invokeMember("copyFrom", nbClassLogPriorCpu);
     }
 
     @Override
@@ -222,8 +272,8 @@ public class B6 extends Benchmark {
         assert (!config.randomInit);
         for (int i = 0; i < getTestSize(); i++) {
             for (int j = 0; j < numClasses; j++) {
-                r1.setArrayElement(i * numClasses + j, nbClassLogPrior.getArrayElement(j).asFloat());
-                r2.setArrayElement(i * numClasses + j, 0);
+                r1.getArrayElement(i).setArrayElement(j, nbClassLogPrior.getArrayElement(j).asFloat());
+                r2.getArrayElement(j).setArrayElement(j, 0.0f);
             }
         }
     }
@@ -283,8 +333,187 @@ public class B6 extends Benchmark {
 
     }
 
+    private Float[] exp(Float[] x) {
+        Float[] expX = new Float[x.length];
+        for (int i = 0; i < x.length; ++i) {
+            expX[i] = (float) Math.exp(x[i]);
+
+        }
+        return expX;
+    }
+
+    private float sum(Float[] x) {
+        float acc = 0.0f;
+        for (float el : x)
+            acc += el;
+        return acc;
+    }
+
+    private Float[] softmax(Float[] x) {
+        Float[] expX = exp(x);
+        Float sumExpX = sum(expX);
+
+
+        for (int i = 0; i < x.length; ++i) {
+            expX[i] /= sumExpX;
+        }
+
+        return expX;
+
+    }
+
+
+    private float[] log(float[] x) {
+        float[] logX = new float[x.length];
+        for (int i = 0; i < x.length; ++i) {
+            logX[i] = (float) Math.log(x[i]);
+        }
+        return logX;
+    }
+
+    private float log(float x) {
+        return (float) Math.log(x);
+    }
+
+    private <T, V> float dot(T[] x, V[] y) {
+        float acc = 0.0f;
+        for (int i = 0; i < x.length; ++i)
+            acc += ((float) x[i]) * ((float) y[i]);
+
+        return acc;
+    }
+
+    private <T, V> Float[][] matmul(T[][] x, V[][] y) {
+        Float[][] res = new Float[x.length][y[0].length];
+        for (int i = 0; i < res.length; i++) {
+            for (int j = 0; j < res[i].length; j++) {
+                res[i][j] = dot(x[i], y[j]);
+            }
+        }
+        return res;
+    }
+
+    private <T> Float[][] transpose(T[][] x) {
+        Float[][] transposed = new Float[x.length][x[0].length];
+        for (int i = 0; i < x.length; ++i) {
+            for (int j = 0; j < x[i].length; ++j) {
+                transposed[j][i] = (Float) x[i][j];
+            }
+        }
+        return transposed;
+    }
+
+    private float logSumExp(Float[] x) {
+        return log(sum(exp(x)));
+    }
+
+    private float logSumExp(Float[][] x) {
+        return log(sum(exp(x)));
+    }
+
+    private Float[][] exp(Float[][] x) {
+        Float[][] ret = new Float[x.length][x[0].length];
+        for (int i = 0; i < x.length; ++i) {
+            for (int j = 0; j < x[i].length; ++j) {
+                ret[i][j] = (float) Math.exp(x[i][j]);
+            }
+        }
+        return ret;
+    }
+
+    private float sum(Float[][] x) {
+        float ret = 0.0f;
+        for (int i = 0; i < x.length; ++i) {
+            for (int j = 0; j < x[i].length; ++j) {
+                ret += x[i][j];
+            }
+        }
+        return ret;
+    }
+
+    private Float[] amax(Float[][] x) {
+        Float[] res = new Float[x[0].length];
+        for (int i = 0; i < x[0].length; ++i) {
+            res[i] = -Float.MAX_VALUE;
+        }
+
+        for (int i = 0; i < x.length; ++i) {
+            for (int j = 0; j < x[0].length; ++j) {
+                if (res[j] < x[i][j])
+                    res[j] = x[i][j];
+            }
+        }
+
+        return res;
+    }
+
+    private Float[] naive_bayes_predict(Integer[][] x, Float[][] featureLogProb, Float[] logClassPrior) {
+        Float[] ret = new Float[x[0].length];
+        Float[][] tmp = matmul(x, transpose(featureLogProb));
+        Float[][] jll = new Float[tmp.length][tmp[0].length];
+        for (int i = 0; i < tmp.length; ++i) {
+            for (int j = 0; j < logClassPrior.length; ++j) {
+                jll[i][j] = tmp[i][j] + logClassPrior[j];
+            }
+        }
+        Float[] amax = amax(jll);
+        Float[][] l = new Float[jll.length][jll[0].length];
+        for (int i = 0; i < jll.length; ++i) {
+            for (int j = 0; j < jll[i].length; ++j) {
+                l[i][j] = jll[i][j] - amax[j];
+            }
+        }
+
+        Float tmp2 = logSumExp(l);
+        for (int i = 0; i < ret.length; ++i) {
+            ret[i] = tmp2 + amax[i];
+        }
+
+
+        return ret;
+    }
+
+    private int[][] normalize(int[][] x) {
+        int[][] ret = new int[x.length][x[0].length];
+
+        // compute mean of each column
+        float[] mean = new float[x.length];
+        float squared = 0.0f;
+
+        for (int i = 0; i < x.length; ++i) {
+            for (int j = 0; j < x[i].length; ++j) {
+                mean[i] += x[i][j];
+            }
+        }
+
+        for (int i = 0; i < x.length; ++i) {
+            mean[i] /= mean.length;
+        }
+
+        // subtract the mean from every column
+        for (int i = 0; i < x.length; i++) {
+            for (int j = 0; j < x[i].length; j++) {
+                ret[i][j] = (int) (x[i][j] - mean[i]);
+                squared += ret[i][j] * ret[i][j];
+            }
+        }
+
+        float std = (float) Math.sqrt(squared);
+        for (int i = 0; i < x.length; i++) {
+            for (int j = 0; j < x[i].length; j++) {
+                ret[i][j] = (int)((float) ret[i][j] / std);
+            }
+        }
+
+
+        return ret;
+    }
+
+
+    private int[][]
+
     @Override
     protected void cpuValidation() {
-
+        // TODO: do ridge_predict and do this
     }
 }

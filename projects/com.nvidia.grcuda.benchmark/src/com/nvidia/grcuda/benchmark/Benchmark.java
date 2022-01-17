@@ -77,7 +77,7 @@ abstract class Benchmark {
 
     }
 
-    void time(int iteration, String phaseName, Consumer<Integer> functionToTime){
+    private void time(int iteration, String phaseName, Consumer<Integer> functionToTime){
         long begin = System.nanoTime();
         functionToTime.accept(iteration);
         this.benchmarkResults.addPhase(phaseName, System.nanoTime() - begin);
@@ -93,13 +93,11 @@ abstract class Benchmark {
         if (this.shouldSkipTest) return;
 
         for (int i = 0; i < getIterationsCount(); ++i) {
-            if (config.reInit && i != 0) this.init(i);
+            if (config.reInit || i == 0) this.init(i);
             this.reset(i);
             time(i, "execution", this::runTest);
             if (config.cpuValidate) cpuValidation();
         }
-
-
     }
 
     /**
