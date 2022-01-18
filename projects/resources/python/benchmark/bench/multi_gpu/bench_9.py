@@ -140,7 +140,6 @@ class Benchmark9M(Benchmark):
         seed(self.random_seed)
 
         # Allocate vectors;
-        self.A_CPU = [0.0] * self.size * self.size
         for i in range(P):
             self.A[i] = polyglot.eval(language="grcuda", string=f"float[{self.size * self.S}]")
         self.x = polyglot.eval(language="grcuda", string=f"float[{size}]")
@@ -160,35 +159,23 @@ class Benchmark9M(Benchmark):
         self.dp_kernel = build_kernel(DP_KERNEL, "dot", "const pointer, pointer, pointer, sint32")
         self.saxpy_kernel = build_kernel(SAXPY_KERNEL, "saxpy", "pointer, const pointer, const pointer, float, sint32")
         self.cpy_kernel = build_kernel(SAXPY_KERNEL, "cpy", "pointer, pointer, sint32")
-        self.initialize_rand_old = polyglot.eval(language="js", string="(x) => { for (let i = 0; i < x.length; i++) { x[i] =  2 * Math.random() - 1}}")        
-        self.initialize_rand = polyglot.eval(language="js", string="""
-            (X, N) => { 
-                for (let i = 0; i < N; i++) {
-                    for (let j = i; j < N; j++) {
-                        const val = 2 * Math.random() - 1; 
-                        X[i * N + j] = val;
-                        X[j * N + i] = val;
-                    }
-                    X[i * N + i] += 10e-12;
+        self.initialize_random_symmetric_matrix = polyglot.eval(language="js", string="""(X, S, N) => { 
+            for (let i = 0; i < N; i++) {
+                s = (i / S) >> 0;
+                k = i % S;
+                Xs = X[s];
+                i_N = k * N;
+                for (let j = i; j < N; j++) {
+                    val = 2 * Math.random() - 1; 
+                    Xs[i_N + j] = val;
+                    X[(j / S) >> 0][(j % S) * N + i] = val;
                 }
-            }
-            """)
-        self.partition_data = polyglot.eval(language="js", string="""
-            (X, Y, start) => { 
-                for (let i = 0; i < X.length; i++) {
-                    const index = start + i;
-                    if (index < Y.length) X[i] = Y[index];
-                }
-            }
+            }}
             """)
 
     @time_phase("initialization")
     def init(self):
-        self.initialize_rand(self.A_CPU, self.size)
-        for i in range(P):
-            self.partition_data(self.A[i], self.A_CPU, i * self.S * self.size)
-        for i in range(len(self.b)):
-            self.b[i] = 2 * random() - 1
+        self.initialize_random_symmetric_matrix(self.A, self.S, self.size)
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
