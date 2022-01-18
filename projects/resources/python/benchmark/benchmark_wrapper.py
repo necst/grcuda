@@ -64,9 +64,9 @@ benchmarks = [
     # "b8",
     # "b10",
     # Multi GPU;
-    "b1m",
-    "b5m",
-    "b6m",
+#    "b1m",
+#    "b5m",
+#    "b6m",
     "b9m",
     "b11m",
 ]
@@ -115,7 +115,7 @@ if GPU == V100:
         "b1m": [160_000_000, 250_000_000, 500_000_000, 800_000_000, 950_000_000],
         "b5m": [10_000_000, 16_000_000, 21_000_000, 28_000_000, 35_000_000],  # out of core 50_000_000, 80_000_000, 95_000_000]
         "b6m": [1_000_000, 1_200_000, 1_400_000, 1_600_000, 1_800_000],
-        "b9m": [20000, 30000, 40000, 50000, 60000],
+        "b9m": [20000, 30000, 40000, 50000, 60000][3:],
         "b11m": [20000, 30000, 40000, 50000, 60000],
     }
 # num_elem = {k: [int(v[0] / 100)] for (k, v) in num_elem.items()}  # Use this for small sizes, for debugging;
@@ -179,7 +179,7 @@ if GPU == V100:
 #     "b11": DEFAULT_NUM_BLOCKS,
 # }
 
-cuda_exec_policies = ["sync", "async"]  # ["sync", "async", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
+cuda_exec_policies = ["async"]  # ["sync", "async", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
 
 exec_policies = ["sync", "async"]
 
@@ -199,7 +199,7 @@ stream_attach =  [False]
 
 time_computation = [False]
 
-num_gpus = [1, 2]
+num_gpus = [2]
 
 block_sizes1d_dict = {
     "b1": 32,
@@ -418,7 +418,11 @@ if __name__ == "__main__":
                     if e == "sync":
                         tot += len(num_elem[b]) * len(memory_advise) * len(prefetch) * len(stream_attach) * len(time_computation)
                     else:
-                        tot += len(num_elem[b]) * len(num_gpus) * len(dependency_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(choose_device_policies) * len(memory_advise) * len(prefetch) * len(stream_attach) * len(time_computation)
+                        for n in num_gpus:
+                            if n == 1:
+                                tot += len(num_elem[b]) * len(memory_advise) * len(prefetch) * len(stream_attach) * len(time_computation)
+                            else:
+                                tot += len(num_elem[b]) * len(dependency_policies) * len(new_stream_policies) * len(parent_stream_policies) * len(choose_device_policies) * len(memory_advise) * len(prefetch) * len(stream_attach) * len(time_computation)
         return tot
 
     output_date = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
@@ -458,11 +462,21 @@ if __name__ == "__main__":
                         psp = parent_stream_policies
                         cdp = choose_device_policies
                         ng = num_gpus
-                    for m in memory_advise:
-                        for p in prefetch:
-                            for s in stream_attach:
-                                for t in time_computation:
-                                    for num_gpu in ng:
+                    for num_gpu in ng:
+                        if exec_policy == "async" and num_gpu == 1:
+                            dp = [dependency_policies[0]]
+                            nsp = [new_stream_policies[0]]
+                            psp = [parent_stream_policies[0]]
+                            cdp = [choose_device_policies[0]]
+                        else:
+                            dp = dependency_policies
+                            nsp = new_stream_policies
+                            psp = parent_stream_policies
+                            cdp = choose_device_policies
+                        for m in memory_advise:
+                            for p in prefetch:
+                                for s in stream_attach:
+                                    for t in time_computation:
                                         # Select the correct connection graph;
                                         if GPU == V100:
                                             BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph_{num_gpu}_v100.csv"
