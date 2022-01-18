@@ -64,9 +64,9 @@ benchmarks = [
     # "b8",
     # "b10",
     # Multi GPU;
-#    "b1m",
-#    "b5m",
-#    "b6m",
+    "b1m",
+    "b5m",
+    "b6m",
     "b9m",
     "b11m",
 ]
@@ -115,7 +115,7 @@ if GPU == V100:
         "b1m": [160_000_000, 250_000_000, 500_000_000, 800_000_000, 950_000_000],
         "b5m": [10_000_000, 16_000_000, 21_000_000, 28_000_000, 35_000_000],  # out of core 50_000_000, 80_000_000, 95_000_000]
         "b6m": [1_000_000, 1_200_000, 1_400_000, 1_600_000, 1_800_000],
-        "b9m": [20000, 30000, 40000, 50000, 60000][3:],
+        "b9m": [20000, 30000, 40000, 50000, 60000],
         "b11m": [20000, 30000, 40000, 50000, 60000],
     }
 # num_elem = {k: [int(v[0] / 100)] for (k, v) in num_elem.items()}  # Use this for small sizes, for debugging;
@@ -181,7 +181,7 @@ if GPU == V100:
 
 cuda_exec_policies = ["async"]  # ["sync", "async", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
 
-exec_policies = ["sync", "async"]
+exec_policies = ["async"]
 
 dependency_policies = ["with-const"]  #, "no-const"]
 
