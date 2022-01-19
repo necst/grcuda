@@ -2,6 +2,11 @@ package com.nvidia.grcuda.benchmark;
 
 import org.graalvm.polyglot.Value;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -212,6 +217,10 @@ public class B12 extends Benchmark {
     }
 
     private void readMatrix() {
+        // TODO: for the moment being read it from an environmental variable called $COO_MATRIX
+        String matrixPath = System.getenv().get("COO_MATRIX");
+        this.matrix = COOMatrix.readMatix(matrixPath);
+        this.partitions = this.matrix.asPartitions(NUM_PARTITIONS);
     }
 
     @Override
@@ -268,12 +277,74 @@ public class B12 extends Benchmark {
         }
 
         static COOMatrix readMatix(String path) {
-            // TODO:
+
+            try (BufferedReader reader = new BufferedReader(new FileReader(path));){
+
+                String currentLine = reader.readLine();
+
+                // Skip comments
+                while(currentLine.contains("#"))
+                    currentLine = reader.readLine();
+
+                // Read header
+                int N, M, nnz;
+                String[] headerValues = currentLine.split(" ");
+
+                N = Integer.parseInt(headerValues[0]);
+                M = Integer.parseInt(headerValues[1]);
+                nnz = Integer.parseInt(headerValues[2]);
+
+                currentLine = reader.readLine();
+
+                int curIdx = 0;
+
+                int[] xVec = new int[nnz];
+                int[] yVec = new int[nnz];
+                float[] valVec = new float[nnz];
+
+                while (currentLine != null) {
+                    String[] values = currentLine.split(" ");
+
+                    int x = Integer.parseInt(values[0]);
+                    int y = Integer.parseInt(values[1]);
+                    float val = values.length == 3 ? Float.parseFloat(values[2]) : 1.0f;
+                    xVec[curIdx] = x;
+                    yVec[curIdx] = y;
+                    valVec[curIdx] = val;
+
+                    curIdx++;
+                    currentLine = reader.readLine();
+                }
+
+                return new COOMatrix(xVec, yVec, valVec, N, M);
+
+            } catch (FileNotFoundException e) {
+                System.err.println("Invalid path " + path + ". File not found.");
+                System.exit(-1);
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
+                System.exit(-1);
+            }
+            // TODO: assert never reachable....
             return null;
         }
 
         public COOMatrix[] asPartitions(int numPartitions) {
-            COOMatrix[] partitions = new COOMatrix[NUM_PARTITIONS];
+            COOMatrix[] partitions = new COOMatrix[numPartitions];
+
+            int chunkSize = (int) ((float) (this.nnz + numPartitions - 1))/ numPartitions;
+            int begin = 0;
+            int end = chunkSize;
+
+            for(int i = 0; i < numPartitions - 1; ++i){
+                int[] xChunk = new int[nnz];
+                int[] yChunk = new int[nnz];
+                float[] valChunk = new float[nnz];
+
+
+
+            }
+
             // TODO:
             return partitions;
         }
