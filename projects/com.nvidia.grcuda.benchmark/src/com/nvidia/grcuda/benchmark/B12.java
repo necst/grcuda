@@ -3,13 +3,9 @@ package com.nvidia.grcuda.benchmark;
 import org.graalvm.polyglot.Value;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 
 public class B12 extends Benchmark {
 
@@ -337,15 +333,61 @@ public class B12 extends Benchmark {
             int end = chunkSize;
 
             for(int i = 0; i < numPartitions - 1; ++i){
-                int[] xChunk = new int[nnz];
-                int[] yChunk = new int[nnz];
-                float[] valChunk = new float[nnz];
 
 
+                int curX = x[end];
+                while(curX == x[end])
+                    end++;
+
+                int size = end - begin;
+
+                int[] xChunk = new int[size];
+                int[] yChunk = new int[size];
+                float[] valChunk = new float[size];
+
+                System.arraycopy(x, begin, xChunk, 0, size);
+                System.arraycopy(y, begin, yChunk, 0, size);
+                System.arraycopy(val, begin, valChunk, 0, size);
+
+                int localN = -1;
+                int localM = -1;
+                for(int j = 0; j < size; ++j){
+                    if(localN < xChunk[j])
+                        localN = xChunk[j];
+                    if(localM < yChunk[j])
+                        localM = yChunk[j];
+                }
+
+                partitions[i] = new COOMatrix(xChunk, yChunk, valChunk, localN, localM);
+
+                begin = end;
+                end += chunkSize;
 
             }
 
-            // TODO:
+            // handle last partition separately
+
+            int size = nnz - end;
+
+            int[] xChunk = new int[size];
+            int[] yChunk = new int[size];
+            float[] valChunk = new float[size];
+
+            System.arraycopy(x, begin, xChunk, 0, size);
+            System.arraycopy(y, begin, yChunk, 0, size);
+            System.arraycopy(val, begin, valChunk, 0, size);
+
+            int localN = -1;
+            int localM = -1;
+            for(int j = 0; j < size; ++j){
+                if(localN < xChunk[j])
+                    localN = xChunk[j];
+                if(localM < yChunk[j])
+                    localM = yChunk[j];
+            }
+
+            partitions[partitions.length - 1] = new COOMatrix(xChunk, yChunk, valChunk, localN, localM);
+
             return partitions;
         }
 
