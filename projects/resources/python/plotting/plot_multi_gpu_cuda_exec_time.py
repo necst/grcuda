@@ -12,7 +12,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.gridspec as gridspec
-import matplotlib.ticker as ticker
 from matplotlib.patches import Patch
 from segretini_matplottini.src.plot_utils import *
 from segretini_matplottini.src.plot_utils import add_labels
@@ -22,20 +21,22 @@ from load_data import load_data_cuda_multigpu, PLOT_DIR
 ##############################
 ##############################
 
-OUTPUT_DATE = "2021_10_19"
+OUTPUT_DATE = "2022_01_20"
 
 # V100;
-GPU = "V100"
-RES_FOLDERS = [
-    "2021_10_04_15_13_11_cuda_1gpu_v100",
-    "2021_10_04_15_15_29_cuda_2gpu_v100",
-    "2021_10_04_15_15_49_cuda_4gpu_v100",
+V100 = "V100"
+V100_RES_FOLDERS = [
+    # "2021_10_04_15_13_11_cuda_1gpu_v100",
+    # "2021_10_04_15_15_29_cuda_2gpu_v100",
+    # "2021_10_04_15_15_49_cuda_4gpu_v100",
+    "2022_01_16_18_09_04_cuda_1-2gpu_v100",
+    "2022_01_16_18_17_05_cuda_4gpu_v100",
     "2021_10_04_15_33_23_cuda_8gpu_v100",
     ]
 
 # A100;
-GPU = "A100"
-RES_FOLDERS = [
+A100 = "A100"
+A100_RES_FOLDERS = [
     "2021_10_18_11_50_56_cuda_1gpu_a100",
     "2021_10_18_12_57_50_cuda_2gpu_a100",
     "2021_10_18_13_21_05_cuda_4gpu_a100",
@@ -45,7 +46,7 @@ RES_FOLDERS = [
 ##############################
 ##############################    
 
-def plot_speedup_bars(data_in):
+def plot_speedup_bars(data_in, gpu):
     plt.rcdefaults()
     sns.set_style("white", {"ytick.left": True, "xtick.bottom": False})
     plt.rcParams["font.family"] = ["Latin Modern Roman Demi"]
@@ -69,10 +70,10 @@ def plot_speedup_bars(data_in):
     fontsize = 4
     
     # Remove async with 1 GPU, it is the baseline;
-    data = data_in[~((data_in["num_gpu"] == 1) & (data_in["exec_policy"] == "ASYNC"))]
+    data = data_in[~((data_in["gpus"] == 1) & (data_in["exec_policy"] == "ASYNC"))]
 
     # Compute mean of all benchmarks, grouped by number of GPUs;
-    data_mean = data.groupby("num_gpu").mean().reset_index()
+    data_mean = data.groupby("gpus").mean().reset_index()
     data_mean["benchmark"] = "MEAN"
     new_data = [data_mean]
     new_data += [data]
@@ -83,7 +84,7 @@ def plot_speedup_bars(data_in):
     # # Add line to separate mean;
     # ax.axvline(0.5, color="#2f2f2f", linewidth=0.5, zorder=0.5, linestyle="--", alpha=0.5)
 
-    num_gpus = len(data["num_gpu"].unique())
+    num_gpus = len(data["gpus"].unique())
     palette = PALETTE_G3[:num_gpus]
 
     ##############
@@ -91,7 +92,7 @@ def plot_speedup_bars(data_in):
     ##############
     
     ax = sns.barplot(x="benchmark", y="speedup", order=effective_benchmarks,
-                     hue="num_gpu",
+                     hue="gpus",
                      palette=palette,
                      data=data,
                      ci=95, capsize=.05, errwidth=0.3, linewidth=0.3,
@@ -142,13 +143,13 @@ def plot_speedup_bars(data_in):
     
     # Add speedup labels over bars;
     offsets = []
-    for j, g_tmp in data.groupby(["benchmark", "num_gpu"]):
+    for j, g_tmp in data.groupby(["benchmark", "gpus"]):
         offsets += [get_upper_ci_size(g_tmp["speedup"], ci=0.95)]
     offsets = [o if not np.isnan(o) else 0.05 for o in offsets]
     add_labels(ax, vertical_offsets=offsets, rotation=0, format_str="{:.2f}", fontsize=2.2, skip_zero=False)
     
     # Add label with GPU name;
-    ax.annotate(GPU, xy=(0.9, 0.9), xycoords="axes fraction", ha="left", color="#2f2f2f", fontsize=fontsize, alpha=1)   
+    ax.annotate(gpu, xy=(0.9, 0.9), xycoords="axes fraction", ha="left", color="#2f2f2f", fontsize=fontsize, alpha=1)   
     
     # Create hierarchical x ticks;
     y_min = -0.5
@@ -183,12 +184,12 @@ def plot_speedup_bars(data_in):
     return ax
 
 
-def plot_speedup_line(data_in):
+def plot_speedup_line(data_in, gpu):
     
     # Remove async with 1 GPU, it is the baseline;
-    data = data_in[~((data_in["num_gpu"] == 1) & (data_in["exec_policy"] == "ASYNC"))].copy()
+    data = data_in[~((data_in["gpus"] == 1) & (data_in["exec_policy"] == "ASYNC"))].copy()
     data["size_str"] = data["size"].astype(str)
-    num_gpus = len(data["num_gpu"].unique())
+    num_gpus = len(data["gpus"].unique())
     
     ##############
     # Plot setup #
@@ -226,10 +227,10 @@ def plot_speedup_line(data_in):
         col = b_i % cols
         row = b_i // cols
         ax = fig.add_subplot(gs[row, col])
-        ax = sns.lineplot(x="size_str", y="speedup", hue="num_gpu", data=d, palette=palette, ax=ax, estimator=np.mean,
+        ax = sns.lineplot(x="size_str", y="speedup", hue="gpus", data=d, palette=palette, ax=ax, estimator=np.mean,
                           legend=None, ci=99, zorder=2)
-        data_averaged = d.groupby(["size_str", "num_gpu"]).mean()["speedup"].reset_index()
-        ax = sns.scatterplot(x="size_str", y="speedup", hue="num_gpu", style="num_gpu", data=data_averaged, palette=palette,
+        data_averaged = d.groupby(["size_str", "gpus"]).mean()["speedup"].reset_index()
+        ax = sns.scatterplot(x="size_str", y="speedup", hue="gpus", style="gpus", data=data_averaged, palette=palette,
                              ax=ax, estimator=np.mean, legend=None, markers=markers, edgecolor="#2f2f2f", zorder=3, size=1, linewidth=0.5)
         plt.xlabel(None)
         plt.ylabel(None)
@@ -260,7 +261,7 @@ def plot_speedup_line(data_in):
         # Add baseline times;
         ax.annotate("Baseline CUDA exec. time (ms):", xy=(0, -0.4), fontsize=fontsize - 1, ha="left", xycoords="axes fraction", color="#949494")
         if col == 0:
-            ax.annotate(f"{GPU}:", xy=(-0.4, -0.56), fontsize=fontsize - 1, color="#949494", ha="right", xycoords=("data", "axes fraction"))
+            ax.annotate(f"{gpu}:", xy=(-0.4, -0.56), fontsize=fontsize - 1, color="#949494", ha="right", xycoords=("data", "axes fraction"))
         for l_i, l in enumerate(x_ticks):
             vals = d[(d["size"] == int(l))]["baseline_time"]
             baseline_median = np.median(vals) if len(vals) > 0 else np.nan
@@ -283,13 +284,14 @@ def plot_speedup_line(data_in):
 
 if __name__ == "__main__":
     
-    res_cuda = load_data_cuda_multigpu([os.path.join(GPU, x) for x in RES_FOLDERS], skip_iter=3)
-    res_cuda_grouped = res_cuda.groupby(["benchmark", "exec_policy", "num_gpu"]).mean().dropna().reset_index()
-
-    #%% Plot speedup divided by benchmark and number of GPUs;
-    plot_speedup_bars(res_cuda_grouped)
-    save_plot(PLOT_DIR, f"cuda_bars" + "_{}.{}", date=OUTPUT_DATE, dpi=600)
+    for g, folder in zip([V100, A100], [V100_RES_FOLDERS, A100_RES_FOLDERS]):
+        res_cuda = load_data_cuda_multigpu([os.path.join(g, x) for x in folder], skip_iter=3)
+        res_cuda_grouped = res_cuda.groupby(["benchmark", "exec_policy", "gpus"]).mean().dropna().reset_index()
     
-    #%% Plot speedup divided by size, benchmark and number of GPUs;
-    plot_speedup_line(res_cuda)
-    save_plot(PLOT_DIR, f"cuda_lines" + "_{}.{}", date=OUTPUT_DATE, dpi=600)    
+        #%% Plot speedup divided by benchmark and number of GPUs;
+        plot_speedup_bars(res_cuda_grouped, g)
+        save_plot(PLOT_DIR, f"cuda_bars_{g}" + "_{}.{}", date=OUTPUT_DATE, dpi=600)
+        
+        #%% Plot speedup divided by size, benchmark and number of GPUs;
+        plot_speedup_line(res_cuda, g)
+        save_plot(PLOT_DIR, f"cuda_lines_{g}" + "_{}.{}", date=OUTPUT_DATE, dpi=600)    

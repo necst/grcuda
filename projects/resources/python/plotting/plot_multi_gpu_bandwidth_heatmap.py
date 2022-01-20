@@ -39,7 +39,7 @@ def plot_heatmap(data_dict: dict) -> plt.Figure:
         mask ^= np.eye(NUM_GPU).astype(bool)
 
         # Main heatmap plot;
-        ax_gpu = sns.heatmap(data_gpu, square=True, mask=mask, vmin=0, vmax=max_bandwidth, linewidth=1, 
+        ax_gpu = sns.heatmap(data_gpu, square=True, mask=mask, vmin=0, vmax=max_bandwidth, linewidth=LINEWIDTH, 
                              linecolor=linecolors, cmap=custom_cm, ax=ax_gpu, cbar_ax=ax_cbar, cbar=ax_cbar is not None,
                              cbar_kws={"ticks": [0] + sorted_steps_colorbar})
         # Add hatches to the main diagonal (https://stackoverflow.com/questions/55285013/adding-hatches-to-seaborn-heatmap-plot);
@@ -53,9 +53,10 @@ def plot_heatmap(data_dict: dict) -> plt.Figure:
         # Hide axis labels;
         ax_gpu.set(xlabel=None, ylabel=None)
         # Hide tick labels;
-        ax_gpu.tick_params(labelbottom=False, top=False, labelsize=FONTSIZE, pad=2)    
-        if column > 0:
-            ax_gpu.tick_params(labelleft=False, left=False)    
+        ax_gpu.tick_params(labelbottom=False, top=False, labelsize=FONTSIZE, pad=2)   
+        ax_gpu.set_yticks([i + 0.5 for i in range(NUM_GPU)])
+        ax_gpu.set_yticklabels([f"GPU{i}" for i in range(NUM_GPU)])
+        
         # Dotted lines from left to main diagonal;
         for i in range(1, NUM_GPU):
             ax_gpu.axhline(i + 0.5, xmin=0, xmax=i / NUM_GPU, color="#2f2f2f", linewidth=1, linestyle=":")
@@ -65,7 +66,7 @@ def plot_heatmap(data_dict: dict) -> plt.Figure:
             # Add border around colorbar;
             cbar = ax_gpu.collections[0].colorbar
             for spine in cbar.ax.spines.values():
-                spine.set(visible=True, linewidth=0.8, edgecolor="black")
+                spine.set(visible=True, linewidth=LINEWIDTH, edgecolor="black")
             # Customize labels of colorbar
             cbar.ax.set_yticklabels([f"{x}" for x in [0] + sorted_steps_colorbar]) 
             cbar.ax.tick_params(labelsize=FONTSIZE, pad=1, size=2)
@@ -75,7 +76,7 @@ def plot_heatmap(data_dict: dict) -> plt.Figure:
     def plot_cpu(data: pd.DataFrame, ax: plt.Axes, column: int):
         # Draw the heatmap for the CPU;
         data_cpu = data[data.index == "CPU"]
-        ax_cpu = sns.heatmap(data_cpu, square=True, vmin=0, vmax=max_bandwidth, linewidth=1, 
+        ax_cpu = sns.heatmap(data_cpu, square=True, vmin=0, vmax=max_bandwidth, linewidth=LINEWIDTH, 
                              linecolor=linecolors, cmap=custom_cm, ax=ax, cbar=False)
         # Put x-tick labels on top;
         ax_cpu.xaxis.tick_top()
@@ -83,11 +84,11 @@ def plot_heatmap(data_dict: dict) -> plt.Figure:
         # Hide axis labels;
         ax_cpu.set(xlabel=None, ylabel=None)
         # Show x-tick labels;
+        ax_cpu.set_yticks([0.5])
+        ax_cpu.set_yticklabels(["CPU"])
         ax_cpu.set_xticks([i + 0.5 for i in range(NUM_GPU)])
-        ax_cpu.set_xticklabels([f"GPU{i}" for i in range(NUM_GPU)])
+        ax_cpu.set_xticklabels([f"G{i}" for i in range(NUM_GPU)])
         ax_cpu.tick_params(labeltop=True, top=True, pad=0.1, labelsize=FONTSIZE)    
-        if column > 0:
-            ax_cpu.tick_params(labelleft=False, left=False)    
         
         # Draw lines between CPU heatmap and GPU heatmap;
         for i in range(0, NUM_GPU):
@@ -134,39 +135,39 @@ def plot_heatmap(data_dict: dict) -> plt.Figure:
     ##############
     # Setup plot #
     ##############
-    
+    FONTSIZE = 4
+    LINEWIDTH = 0.5
     plt.rcdefaults()
     sns.set_style("white", {"ytick.left": True, "xtick.top": True})
     plt.rcParams["font.family"] = ["Latin Modern Roman Demi"]
-    plt.rcParams["hatch.linewidth"] = 0.3
-    plt.rcParams["axes.linewidth"] = 1
-    FONTSIZE = 4
+    plt.rcParams["hatch.linewidth"] = 0.2
+    plt.rcParams["axes.linewidth"] = LINEWIDTH
     
     # 2 x 2 as we draw the CPU heatmap in the top row, https://matplotlib.org/stable/gallery/subplots_axes_and_figures/gridspec_and_subplots.html#sphx-glr-gallery-subplots-axes-and-figures-gridspec-and-subplots-py;
-    fig, axes = plt.subplots(2, 3, sharex="col", figsize=(3.34, 2), dpi=200,
-                             gridspec_kw={"width_ratios": [100, 100, 8], "height_ratios": [15, 100]})
+    fig, axes = plt.subplots(2, 3, sharex="col", figsize=(3.34, 1.6), dpi=200,
+                             gridspec_kw={"width_ratios": [100, 100, 8], "height_ratios": [12.5, 100]})
     gs = axes[0, 2].get_gridspec()
     # Remove the existing axes in the right column;
     for ax in axes[0:, -1]:
         ax.remove()
-    plt.subplots_adjust(top=0.85,
-                        bottom=0.04,
-                        left=0.07,
-                        right=0.96,
-                        hspace=0.1,
-                        wspace=0.05)
+    plt.subplots_adjust(top=0.86,
+                        bottom=0.08,
+                        left=0.05,
+                        right=0.95,
+                        hspace=0.2,
+                        wspace=0.0)
     # Create a large axis;
     ax_cbar = fig.add_subplot(gs[0:, 2])
     
     for i, (gpu, data) in enumerate(data_dict.items()):
         ax_gpu = axes[1, i]
         ax_cpu = axes[0, i]
-
         # GPU;
         ax_gpu, ax_cbar = plot_gpu(data, ax_gpu, i, ax_cbar if i == 0 else None)
-        
         # CPU;
         ax_cpu = plot_cpu(data, ax_cpu, i)
+        # GPU Label;
+        ax_gpu.annotate(f"{gpu}", xy=(0.5, -0.1), fontsize=FONTSIZE + 2, ha="center", color="#2f2f2f", clip_on=False, xycoords="axes fraction")
     
     return fig
 
