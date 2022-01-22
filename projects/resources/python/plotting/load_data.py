@@ -280,13 +280,16 @@ def load_data_grcuda_multigpu(input_folders: list, skip_iter=0, remove_inf=True,
     # Clean columns with 0 computation time;
     if remove_time_zero:
         data = data[data["computation_sec"] > 0].reset_index(drop=True)
+        
+    # FIXME: Execution time in CG ASYNC, 1 GPU explodes when using the largest size;
+    data = data.query("~(benchmark == 'b9m' & exec_policy == 'async' & gpus == 1 & num_iter > 11)")
     
     # Compute speedups;
     pu.compute_speedup_df(data, key=["benchmark", "total_iterations", "cpu_validation", "random_init", "size", "dependency_policy",
                                      "mem_advise", "prefetch", "force_stream_attach", "kernel_timing", "realloc", "reinit"],
                           baseline_filter_col=["exec_policy", "new_stream_policy", "parent_stream_policy", "device_selection_policy", "gpus"],
-                          baseline_filter_val=["sync", "always-new", "disjoint", "round-robin", 1],
-                          time_column="computation_sec")
+                          baseline_filter_val=[ASYNC_POLICY_NAME, "always-new", "disjoint", "round-robin", 1],
+                          time_column="computation_sec", aggregation=np.mean)
     
     # Clean columns with infinite speedup;
     if remove_inf:
