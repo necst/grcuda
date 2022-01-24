@@ -11,8 +11,12 @@ import java.util.Random;
 @RunWith(Theories.class)
 public class B6 extends Benchmark {
 
-    private static final String NB_KERNEL =
+    private static String BENCHMARK_NAME = "B6";
+    static {
+        BenchmarkResults.setBenchmark(BENCHMARK_NAME);
+    }
 
+    private static final String NB_KERNEL =
             "extern \"C\" __global__ void nb_1(const int* x, float* y, float* z, int size, int n_feat, int n_classes) {\n" +
                     "        for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < size; i += blockDim.x * gridDim.x) {\n" +
                     "            for (int j = 0; j < n_classes; j++) {\n" +
@@ -52,7 +56,6 @@ public class B6 extends Benchmark {
                     "    }";
 
     private static final String RR_KERNEL =
-
             "extern \"C\" __global__ void rr_1(const int* x, float *y, int n_row_x, int n_col_x) {\n" +
                     "        for(int j = blockIdx.x * blockDim.x + threadIdx.x; j < n_col_x; j += blockDim.x * gridDim.x) {\n" +
                     "            float feature_mean = 0;\n" +
@@ -118,7 +121,6 @@ public class B6 extends Benchmark {
                     "        }\n" +
                     "    }";
 
-    private static final String BENCHMARK_NAME = "B6";
     private Value nb1Function;
     private Value nb2Function;
     private Value nb3Function;

@@ -24,9 +24,6 @@ abstract class Benchmark {
     private final BenchmarkResults benchmarkResults = new BenchmarkResults();
 
     private final static String DEFAULT_CONFIG_PATH = "$HOME/grcuda/grcuda-data/config.json";
-    // The following variables should be read from a config file
-    // For simplicity, I'm initializing them statically now
-
     private boolean shouldSkipTest;
 
 
@@ -71,7 +68,7 @@ abstract class Benchmark {
 
             this.shouldSkipTest = this.config == null;
 
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException ignored) {
             throw new RuntimeException("File not found, aborting...");
         }
 
@@ -107,9 +104,9 @@ abstract class Benchmark {
     public void saveResults() {
         if (this.shouldSkipTest) return;
         System.out.println(this.benchmarkResults);
-        System.out.println(this.benchmarkResults.filter("init"));
-        System.out.println(this.benchmarkResults.filter("execution"));
-        System.out.println(this.benchmarkResults.filter("reset"));
+        //System.out.println(this.benchmarkResults.filter("init"));
+        //System.out.println(this.benchmarkResults.filter("execution"));
+        //System.out.println(this.benchmarkResults.filter("reset"));
 
     }
 
@@ -120,7 +117,6 @@ abstract class Benchmark {
     public String getBenchmarkName() {
         return this.getClass().getSimpleName();
     }
-
 
     public void init(int iteration){
         time(iteration, "init", this::initializeTest);
@@ -137,7 +133,6 @@ abstract class Benchmark {
     /**
      * Reset code, to be run before each test
      * Here you clean up the arrays and other reset stuffs
-     * @param iteration
      */
     public abstract void resetIteration(int iteration);
 

@@ -5,7 +5,10 @@ import org.graalvm.polyglot.Value;
 import static org.junit.Assert.assertEquals;
 
 public class B2 extends Benchmark {
-
+    private static String BENCHMARK_NAME = "B6";
+    static {
+        BenchmarkResults.setBenchmark(BENCHMARK_NAME);
+    }
     private static final String SQUARE_KERNEL = "" +
             "extern \"C\" __global__ void square(float* x, int n) {\n" +
             "        int idx = blockIdx.x * blockDim.x + threadIdx.x;\n" +

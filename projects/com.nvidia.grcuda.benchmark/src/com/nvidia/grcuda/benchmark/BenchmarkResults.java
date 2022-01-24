@@ -10,6 +10,42 @@ import java.util.stream.Collectors;
 
 public class BenchmarkResults {
 
+    private static class BenchmarkRecord {
+
+        private String phaseName;
+        private String benchmarkName;
+        private Long executionTime;
+
+
+        public BenchmarkRecord(String phaseName, String benchmarkName, Long executionTime) {
+            this.phaseName = phaseName;
+            this.benchmarkName = benchmarkName;
+            this.executionTime = executionTime;
+        }
+
+        public String getPhase() {
+            return phaseName;
+        }
+
+        public String getBenchmark() {
+            return benchmarkName;
+        }
+
+        public Long getExecutionTime() {
+            return executionTime;
+        }
+
+        @Override
+        public String toString() {
+            return "BenchmarkRecord{" +
+                    "phaseName='" + phaseName + '\'' +
+                    ", benchmarkName='" + benchmarkName + '\'' +
+                    ", executionTime=" + executionTime +
+                    '}';
+        }
+
+    }
+
     private class Pair<V1,V2> {
         private V1 v1;
         private V2 v2;
@@ -29,28 +65,35 @@ public class BenchmarkResults {
 
     }
 
-    private List<Pair<String, Long>> phases = new LinkedList<>();
+    private List<BenchmarkRecord> phases = new LinkedList<>();
+
+    private static String currentBenchmark;
 
     public void addPhase(String phaseName, Long phaseDuration) {
-        phases.add(new Pair<>(phaseName, phaseDuration));
+        phases.add(new BenchmarkRecord(phaseName, currentBenchmark, phaseDuration));
     }
 
+    public static void setBenchmark(String benchmark) {
+        currentBenchmark = benchmark;
+    }
 
-    public void addPhase(Pair<String, Long> phase) {
-        phases.add(phase);
+    public void addPhase(BenchmarkRecord record) {
+        phases.add(record);
     }
 
     public BenchmarkResults filter(String phaseName){
         BenchmarkResults filtered = new BenchmarkResults();
-        phases.stream().filter(phase -> phase.left().equals(phaseName)).forEach(filtered::addPhase);
+        phases.stream().filter(phase -> phase.getPhase().equals(phaseName)).forEach(filtered::addPhase);
         return filtered;
     }
+
+
 
     @Override
     public String toString() {
         return phases
                 .stream()
-                .map(entry -> entry.left() + " -> " + entry.right())
+                .map(BenchmarkRecord::toString)
                 .collect(Collectors.joining("\n"));
     }
 }

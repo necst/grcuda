@@ -43,6 +43,9 @@ public class B1 extends Benchmark {
 
 
     private static final String BENCHMARK_NAME = "B1";
+    static {
+        BenchmarkResults.setBenchmark(BENCHMARK_NAME);
+    }
 
     private Value squareKernelFunction;
     private Value diffKernelFunction;

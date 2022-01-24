@@ -6,8 +6,15 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
 
 public class B12 extends Benchmark {
+    private static String BENCHMARK_NAME = "B6";
+    static {
+        BenchmarkResults.setBenchmark(BENCHMARK_NAME);
+    }
 
     private static final int NUM_PARTITIONS = 4;
     private static final int NUM_EIGEN = 8;
@@ -16,13 +23,12 @@ public class B12 extends Benchmark {
     private float[][] vecOut;
     private COOMatrix matrix;
     private COOMatrix[] partitions;
-    private float alpha = 0.0f;
-    private float beta = 0.0f;
+    private Float alpha = 0.0f;
+    private Float beta = 0.0f;
 
     // Device Vectors
     private Value[] deviceVecIn = new Value[NUM_PARTITIONS];
     private Value[] deviceVecOut = new Value[NUM_PARTITIONS];
-    private Value[] deviceIntermediateDotProductValues = new Value[NUM_PARTITIONS];
     private Value[] alphaIntermediate = new Value[NUM_PARTITIONS];
     private Value[] betaIntermediate = new Value[NUM_PARTITIONS];
     private Value[] deviceVecOutSpmv = new Value[NUM_PARTITIONS];
@@ -39,9 +45,9 @@ public class B12 extends Benchmark {
     private Value normalize;
     private Value subtract;
     private Value copyPartitionToVec;
+    private Value dotProduct;
+    private Value l2norm;
 
-
-    // TODO: i'm missing DOT_PRODUCT AND L2 NORM
 
     private static final String AXPB_XTENDED = "\n" +
             "extern \"C\" __global__ void axpb_xtended(const float alpha, const float *x, const float *b, const float beta, const float *c, float *out, const int N, const int offset_x, const int offset_c) {\n" +
@@ -88,28 +94,41 @@ public class B12 extends Benchmark {
             "    }\n" +
             "}";
 
-    private static final String DOT_PRODUCT = "\n" +
-            "extern \"C\" __global__ void dot_product_stage_one(const float* v1, const float* v2, float* temporaryOutputValues, int N, int offset) {\n" +
-            "    extern __shared__ float cache[];\n" +
-            "    int threadId = threadIdx.x + blockIdx.x * blockDim.x;\n" +
-            "    int cacheIdx = threadIdx.x;\n" +
-            "    int stride = blockDim.x * gridDim.x;\n" +
-            "    float temp = float(0.0);\n" +
-            "    for(int i = threadId; i < N; i += stride){\n" +
-            "        temp += float(float(v1[i]) * float(v2[i + offset]));\n" +
-            "    }\n" +
-            "    cache[cacheIdx] = temp;\n" +
-            "    __syncthreads();\n" +
-            "    for(int i = blockDim.x >> 1; i != 0; i >>= 1){\n" +
-            "        if(cacheIdx < i){\n" +
-            "            cache[cacheIdx] += cache[cacheIdx + 1];\n" +
-            "        }\n" +
-            "        __syncthreads();\n" +
-            "    }\n" +
-            "    if (cacheIdx == 0){\n" +
-            "        temporaryOutputValues[blockIdx.x] = cache[0];\n" +
-            "    }\n" +
+    private static String WARP_REDUCE = "\n" +
+            "__inline__ __device__ float warp_reduce(float val) {\n" +
+            "    int warp_size = 32;\n" +
+            "    for (int offset = warp_size / 2; offset > 0; offset /= 2)\n" +
+            "        val += __shfl_down_sync(0xFFFFFFFF, val, offset);\n" +
+            "    return val;\n" +
             "}\n";
+
+    private static String DOT_PRODUCT = "\n" +
+            "\n" +
+            WARP_REDUCE +
+            "extern \"C\" __global__ void dot_product(const float *x, const float *y, float *z, const int N, const int offset) {\n" +
+            "    int warp_size = 32;\n" +
+            "    float sum = 0;\n" +
+            "    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {\n" +
+            "        sum += float((x[i]) * (y[i + offset]));\n" +
+            "    }\n" +
+            "    sum = warp_reduce(sum); // Obtain the sum of values in the current warp;\n" +
+            "    if ((threadIdx.x & (warp_size - 1)) == 0) // Same as (threadIdx.x % warp_size) == 0 but faster\n" +
+            "        atomicAdd(z, sum); // The first thread in the warp updates the output;\n" +
+            "}";
+
+    private static String L2_NORM = "\n" +
+            WARP_REDUCE +
+            "extern \"C\" __global__ void l2_norm(const float *x, float *z, const int N, const int offset) {\n" +
+            "    int warp_size = 32;\n" +
+            "    float sum = 0;\n" +
+            "    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {\n" +
+            "        float x_tmp = x[i + offset];\n" +
+            "        sum += x_tmp * x_tmp;\n" +
+            "    }\n" +
+            "    sum = warp_reduce(sum); // Obtain the sum of values in the current warp;\n" +
+            "    if ((threadIdx.x & (warp_size - 1)) == 0) // Same as (threadIdx.x % warp_size) == 0 but faster\n" +
+            "        atomicAdd(z, sum); // The first thread in the warp updates the output;\n" +
+            "}";
 
     @Override
     public void initializeTest(int iteration) {
@@ -132,14 +151,13 @@ public class B12 extends Benchmark {
 
     private void createKernels() {
         Value buildKernel = this.getContext().eval("grcuda", "buildkernel");
-
         spmv = buildKernel.execute(SPMV, "spmv", "const pointer, const pointer, const pointer, const pointer, pointer, const sint32");
-        // TODO: dot product and l2-norm
         axpbXtended = buildKernel.execute(AXPB_XTENDED, "axpb_xtended", "const float, const pointer, const pointer, const float, const pointer, pointer, const sint32, const sint32, const sint32");
         normalize = buildKernel.execute(NORMALIZE, "normalize", "const pointer, const float, pointer, const sint32");
         subtract = buildKernel.execute(SUBTRACT, "subtract", "pointer, const pointer, float, const sint32, const sint32");
         copyPartitionToVec = buildKernel.execute(COPY_PARTITION_TO_VEC, "copy_partition_to_vec", "const pointer, pointer, const sint32, const sint32, const sint32");
-
+        l2norm = buildKernel.execute(L2_NORM, "l2_norm", "const pointer, pointer, const sint32, const sint32");
+        dotProduct = buildKernel.execute(DOT_PRODUCT, "dot_product", "const pointer, const pointer, pointer, const sint32, const sint32");
     }
 
     private void transferToGPU() {
@@ -151,19 +169,27 @@ public class B12 extends Benchmark {
             deviceCooY[i].invokeMember("copyFrom", (Object) partition.getY(), partition.getNnz());
             deviceCooVal[i].invokeMember("copyFrom", (Object) partition.getVal(), partition.getNnz());
 
-            for (int j = 0; j < config.blocks; j++) {
-                deviceIntermediateDotProductValues[i].getArrayElement(j).setArrayElement(0, 0.0f);
-            }
+
         }
     }
 
     private void createGPUVectors() {
         Value deviceArray = this.getContext().eval("grcuda", "DeviceArray");
+        deviceVecIn = new Value[NUM_PARTITIONS];
+        deviceVecOut = new Value[NUM_PARTITIONS];
+        alphaIntermediate = new Value[NUM_PARTITIONS];
+        betaIntermediate = new Value[NUM_PARTITIONS];
+        deviceVecOutSpmv = new Value[NUM_PARTITIONS];
+        deviceCooX = new Value[NUM_PARTITIONS];
+        deviceCooY = new Value[NUM_PARTITIONS];
+        deviceCooVal = new Value[NUM_PARTITIONS];
+        deviceVecNext = new Value[NUM_PARTITIONS];
+        deviceNormalizedOut = new Value[NUM_PARTITIONS];
+        deviceLanczosVectors = new Value[NUM_PARTITIONS];
 
         for (int i = 0; i < NUM_PARTITIONS; i++) {
             COOMatrix partition = this.partitions[i];
             deviceVecIn[i] = deviceArray.execute("float", matrix.getN());
-            deviceIntermediateDotProductValues[i] = deviceArray.execute("float", config.blocks);
             alphaIntermediate[i] = deviceArray.execute("float", 1);
             betaIntermediate[i] = deviceArray.execute("float", 1);
             deviceVecOutSpmv[i] = deviceArray.execute("float", partition.getN());
@@ -221,12 +247,116 @@ public class B12 extends Benchmark {
 
     @Override
     public void resetIteration(int iteration) {
+        initCPUVectors();
+        transferToGPU();
+    }
 
+    private void execKernel(Value kernel, Object[]... args) {
+        for (int i = 0; i < NUM_PARTITIONS; ++i) {
+            Object[] currentArgs = new Object[args.length];
+
+            for (int j = 0; j < currentArgs.length; ++j) {
+                currentArgs[j] = args[j][i];
+            }
+
+            kernel
+                    .execute(config.blocks, config.threadsPerBlock)
+                    .execute(currentArgs);
+        }
     }
 
     @Override
     public void runTest(int iteration) {
 
+        Integer[] nnzs = new Integer[NUM_PARTITIONS];
+        Integer[] Ns = new Integer[NUM_PARTITIONS];
+        Integer[] offsets = new Integer[NUM_PARTITIONS];
+        Float[] zeros = new Float[NUM_PARTITIONS];
+        List<Float> tridiagonalMatrix = new ArrayList<>();
+
+
+        for (int i = 0; i < NUM_PARTITIONS; ++i) {
+            COOMatrix partition = partitions[i];
+            nnzs[i] = partition.getNnz();
+            Ns[i] = partition.getN();
+            zeros[i] = 0.0f;
+            if (i == 0) {
+                offsets[i] = 0;
+            } else {
+                offsets[i] = partition.getN() - offsets[i - 1];
+            }
+        }
+
+        // Initial iteration
+        execKernel(spmv, deviceCooX, deviceCooY, deviceCooVal, deviceVecIn, deviceVecOutSpmv, nnzs);
+
+        execKernel(dotProduct, deviceVecIn, deviceVecOutSpmv, alphaIntermediate, Ns, offsets);
+        for(int i = 0; i < NUM_PARTITIONS; ++i){
+            alpha += alphaIntermediate[i].getArrayElement(0).asFloat();
+        }
+
+        tridiagonalMatrix.add(alpha);
+        execKernel(axpbXtended, asArray(NUM_PARTITIONS, -alpha), deviceVecIn, deviceVecOutSpmv, zeros, deviceLanczosVectors, deviceVecNext, Ns, offsets, zeros);
+
+        for (int i = 1; i < NUM_EIGEN; i++) {
+            alpha = 0.0f;
+            beta = 0.0f;
+            Integer[] indicesForCopy = new Integer[NUM_PARTITIONS];
+
+            execKernel(l2norm, deviceVecNext, betaIntermediate, offsets, zeros);
+            for(int j = 0; j < NUM_PARTITIONS; ++j){
+                beta += betaIntermediate[i].getArrayElement(0).asFloat();
+            }
+            tridiagonalMatrix.add(beta);
+
+            execKernel(normalize, deviceVecNext, asArray(NUM_PARTITIONS, 1.0f / beta), deviceNormalizedOut, Ns);
+
+            for (int j = 0; j < NUM_PARTITIONS; j++) {
+                indicesForCopy[j] = Ns[j] * (i - 1);
+            }
+
+            execKernel(copyPartitionToVec, deviceVecIn, deviceLanczosVectors, Ns, indicesForCopy, offsets);
+            Value[] deviceNormalizedOutTmp = deviceNormalizedOut;
+
+            for(int j = 0; j < NUM_PARTITIONS; ++j){
+                execKernel(copyPartitionToVec, deviceNormalizedOutTmp, deviceVecIn, Ns, offsets, zeros);
+            }
+
+            Value lastVector = deviceVecIn[0];
+            for (int j = 0; j < NUM_PARTITIONS - 1; j++) {
+                deviceVecIn[j] = deviceVecIn[j + 1];
+            }
+            deviceVecIn[NUM_PARTITIONS - 1] = lastVector;
+
+            execKernel(spmv, deviceCooX, deviceCooY, deviceCooVal, deviceVecIn, deviceVecOutSpmv, nnzs);
+            execKernel(dotProduct, deviceVecIn, deviceVecOutSpmv, alphaIntermediate, Ns, offsets);
+
+            for(int j = 0; j < NUM_PARTITIONS; ++j){
+                alpha += alphaIntermediate[j].getArrayElement(0).asFloat();
+            }
+
+            tridiagonalMatrix.add(alpha);
+
+            execKernel(axpbXtended, asArray(NUM_PARTITIONS, -alpha), deviceVecIn, deviceVecOutSpmv, asArray(NUM_PARTITIONS, -beta), deviceLanczosVectors, deviceVecNext, Ns, offsets, indicesForCopy);
+
+        }
+
+    }
+
+    private Float[] asArray(int size, Float value){
+        Float[] ret = new Float[size];
+        for (int i = 0; i < size; i++) {
+            ret[i] = value;
+        }
+        return ret;
+    }
+
+    private Float[] asArray(int size, Supplier<Float> producer){
+        Float[] ret = new Float[size];
+        for (int i = 0; i < size; i++) {
+            ret[i] = producer.get();
+        }
+        return ret;
     }
 
     @Override
@@ -274,12 +404,12 @@ public class B12 extends Benchmark {
 
         static COOMatrix readMatix(String path) {
 
-            try (BufferedReader reader = new BufferedReader(new FileReader(path));){
+            try (BufferedReader reader = new BufferedReader(new FileReader(path));) {
 
                 String currentLine = reader.readLine();
 
                 // Skip comments
-                while(currentLine.contains("#"))
+                while (currentLine.contains("%"))
                     currentLine = reader.readLine();
 
                 // Read header
@@ -316,6 +446,7 @@ public class B12 extends Benchmark {
 
             } catch (FileNotFoundException e) {
                 System.err.println("Invalid path " + path + ". File not found.");
+                System.err.println(e.getMessage());
                 System.exit(-1);
             } catch (IOException e) {
                 System.err.println(e.getMessage());
@@ -328,15 +459,15 @@ public class B12 extends Benchmark {
         public COOMatrix[] asPartitions(int numPartitions) {
             COOMatrix[] partitions = new COOMatrix[numPartitions];
 
-            int chunkSize = (int) ((float) (this.nnz + numPartitions - 1))/ numPartitions;
+            int chunkSize = (int) ((float) (this.nnz + numPartitions - 1)) / numPartitions;
             int begin = 0;
-            int end = chunkSize;
+            int end = 0;
 
-            for(int i = 0; i < numPartitions - 1; ++i){
-
+            for (int i = 0; i < numPartitions - 1; ++i) {
+                end += chunkSize;
 
                 int curX = x[end];
-                while(curX == x[end])
+                while (curX == x[end])
                     end++;
 
                 int size = end - begin;
@@ -351,17 +482,16 @@ public class B12 extends Benchmark {
 
                 int localN = -1;
                 int localM = -1;
-                for(int j = 0; j < size; ++j){
-                    if(localN < xChunk[j])
+                for (int j = 0; j < size; ++j) {
+                    if (localN < xChunk[j])
                         localN = xChunk[j];
-                    if(localM < yChunk[j])
+                    if (localM < yChunk[j])
                         localM = yChunk[j];
                 }
 
                 partitions[i] = new COOMatrix(xChunk, yChunk, valChunk, localN, localM);
 
                 begin = end;
-                end += chunkSize;
 
             }
 
@@ -379,10 +509,10 @@ public class B12 extends Benchmark {
 
             int localN = -1;
             int localM = -1;
-            for(int j = 0; j < size; ++j){
-                if(localN < xChunk[j])
+            for (int j = 0; j < size; ++j) {
+                if (localN < xChunk[j])
                     localN = xChunk[j];
-                if(localM < yChunk[j])
+                if (localM < yChunk[j])
                     localM = yChunk[j];
             }
 
