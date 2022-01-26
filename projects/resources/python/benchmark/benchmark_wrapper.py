@@ -39,7 +39,8 @@ from pathlib import Path
 ##############################
 
 V100 = "V100"
-GPU = V100
+A100 = "A100"
+GPU = A100
 
 BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph.csv"
 
@@ -48,11 +49,15 @@ DEFAULT_NUM_BLOCKS = 32  # GTX 960, 8 SM
 # DEFAULT_NUM_BLOCKS = 448  # P100, 56 SM
 if GPU == V100:
     DEFAULT_NUM_BLOCKS = 640  # V100, 80 SM
+elif GPU == A100:
+    DEFAULT_NUM_BLOCKS = 640
 
 HEAP_SIZE = 26 
 # HEAP_SIZE = 140 # P100
 if GPU == V100:
-    HEAP_SIZE = 170 # 2 x V100
+    HEAP_SIZE = 470 # 2 x V100
+elif GPU == A00:
+    HEAP_SIZE = 470
 
 # Benchmark settings;
 benchmarks = [
@@ -102,7 +107,7 @@ num_elem = {
 #}
 
 # V100
-if GPU == V100:
+if GPU == V100 or GPU == A100:
     num_elem = {
         # Single GPU;
         "b1": [160_000_000, 250_000_000, 500_000_000, 800_000_000, 950_000_000],
@@ -150,7 +155,7 @@ block_dim_dict = {
 # }
 
 # V100
-if GPU == V100:
+if GPU == V100 or GPU == A100:
     block_dim_dict = {
         # Single GPU;
         "b1": DEFAULT_NUM_BLOCKS,
@@ -179,9 +184,9 @@ if GPU == V100:
 #     "b11": DEFAULT_NUM_BLOCKS,
 # }
 
-cuda_exec_policies = ["async"]  # ["sync", "async", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
+cuda_exec_policies = ["sync", "async"]  # ["sync", "async", "cudagraph", "cudagraphmanual", "cudagraphsingle"]
 
-exec_policies = ["async"]
+exec_policies = ["sync", "async"]
 
 dependency_policies = ["with-const"]  #, "no-const"]
 
@@ -199,7 +204,7 @@ stream_attach =  [False]
 
 time_computation = [False]
 
-num_gpus = [2]
+num_gpus = [1, 2, 4, 8]
 
 block_sizes1d_dict = {
     "b1": 32,
@@ -480,6 +485,8 @@ if __name__ == "__main__":
                                         # Select the correct connection graph;
                                         if GPU == V100:
                                             BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph_{num_gpu}_v100.csv"
+                                        elif GPU == A100:
+                                             BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph_8_a100.csv"
                                         for dependency_policy in dp:
                                             for new_stream_policy in nsp:
                                                 for parent_stream_policy in psp:
