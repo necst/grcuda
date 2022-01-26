@@ -39,6 +39,7 @@
 #include <ostream>
 #include <fstream>
 #include <cstring>
+#include <unordered_set>
 #include <sstream>
 
 #include "../benchmark.cuh"
@@ -55,7 +56,7 @@ struct coo_matrix_t {
 
     i32 *x;
     i32 *y;
-    float *val;
+    f32 *val;
     i32 begin;
     i32 end;
     i32 N;
@@ -72,9 +73,8 @@ class Benchmark12M : public Benchmark {
 public:
     Benchmark12M(Options &options) : Benchmark(options) {
         // This test does not run on pascal gpus due to how Managed memory is handled
-
         this->block_size = this->block_size_1d * this->block_size_2d;
-        this->num_partitions = options.max_devices;
+        this->num_partitions = options.num_partitions;
 
 
         cudaGetDeviceCount(&this->num_devices);
@@ -100,14 +100,14 @@ private:
     unsigned num_eigencomponents = 8;
     i32 num_partitions = -1;
     i32 num_devices = -1;
-    std::string matrix_path = "../datasets/333SP.mtx";
+    std::string matrix_path = "./datasets/1138_bus.mtx";
     bool reorthogonalize = false;
     i32 block_size;
     coo_matrix_t matrix;
     std::vector<coo_matrix_t*> coo_partitions;
     f32 *alpha, *beta;
-    std::vector<float*> vec_in, spmv_vec_out, intermediate_dot_product_values,  vec_next, lanczos_vectors, normalized_out;
-    float *alpha_intermediate, *beta_intermediate;
+    std::vector<f32*> vec_in, spmv_vec_out, intermediate_dot_product_values,  vec_next, lanczos_vectors, normalized_out;
+    f32 *alpha_intermediate, *beta_intermediate;
     std::vector<cudaStream_t> streams;
     std::vector<i32> offsets;
 
@@ -119,10 +119,10 @@ private:
     void execute(i32);
     void sync_all();
     void create_streams();
-    coo_matrix_t *assign_partition(unsigned, unsigned, unsigned);
+    coo_matrix_t *assign_partition(u32, u32, u32);
 
     template<typename Function>
-    void launch_multi_kernel(Function);
+    void launch_multi_kernel(Function, std::string);
 
     static constexpr u32 RANDOM_MATRIX_NUM_ROWS = 1000000;
     static constexpr u32 RANDOM_MATRIX_AVG_NNZ_PER_ROW = 100;

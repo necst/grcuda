@@ -132,15 +132,19 @@ extern "C" __global__ void l2_norm_b12(const float *x, float *z, int N, int offs
         atomicAdd(z, sum); // The first thread in the warp updates the output;
 }
 
-__global__ void dot_product(const float *x, const float *y, float *z, int N, int offset) {
-    int warp_size = 32;
+__global__ void dot_product(const float *x, const float *y, float *z, const int N, const int offset) {
+
+    static constexpr int WARP_SIZE = 32;
     float sum = 0;
-    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {
+    const u32 begin = blockIdx.x * blockDim.x + threadIdx.x;
+    const u32 stride = blockDim.x * gridDim.x;
+    for (u32 i = begin; i < N; i += stride) {
         sum += x[i] * y[i + offset];
     }
     sum = warp_reduce(sum); // Obtain the sum of values in the current warp;
-    if ((threadIdx.x & (warp_size - 1)) == 0) // Same as (threadIdx.x % warp_size) == 0 but faster
+    if ((threadIdx.x & (WARP_SIZE - 1)) == 0) { // Same as (threadIdx.x % WARP_SIZE) == 0 but faster
         atomicAdd(z, sum); // The first thread in the warp updates the output;
+    }
 }
 
 __global__ void set(float *v_in, float value, const int N) {
@@ -163,91 +167,87 @@ axpb_xtended(const float alpha, const float *x, const float *b, const float beta
     }
 }
 
-
-template <typename T>
-T accumulate(T *arr, const u32 size, const T init = T(0)){
-    T accumulator = init;
-    for(u32 i = 0; i < size; ++i){
-        accumulator += arr[i];
-    }
-
-    return accumulator;
-}
-
 void Benchmark12M::alloc_vectors() {
     for (const auto &partition: this->coo_partitions) {
-        f32 *tmp_vec_in, *tmp_spmv_out, *tmp_intermediate_dot_product_values;
+        f32 *tmp_vec_in, *tmp_spmv_out;
         f32 *tmp_vec_next, *tmp_lanczos_vectors, *tmp_normalized_out;
-
+        f32 *tmp_alpha, *tmp_beta;
         CUDA_CHECK_ERROR(cudaMallocManaged(&tmp_vec_in, sizeof(f32) * this->matrix.N));
         CUDA_CHECK_ERROR(cudaMallocManaged(&tmp_spmv_out, sizeof(f32) * partition->N));
-        CUDA_CHECK_ERROR(cudaMallocManaged(&tmp_intermediate_dot_product_values, sizeof(f32) * 32));
         CUDA_CHECK_ERROR(cudaMallocManaged(&tmp_vec_next, sizeof(f32) * partition->N));
         CUDA_CHECK_ERROR(
                 cudaMallocManaged(&tmp_lanczos_vectors, sizeof(f32) * this->num_eigencomponents * partition->N));
         CUDA_CHECK_ERROR(cudaMallocManaged(&tmp_normalized_out, sizeof(f32) * partition->N));
 
+        CUDA_CHECK_ERROR(cudaMallocManaged(&tmp_alpha, sizeof(f32)));
+        CUDA_CHECK_ERROR(cudaMallocManaged(&tmp_beta, sizeof(f32)));
+
         this->vec_in.push_back(tmp_vec_in);
         this->spmv_vec_out.push_back(tmp_spmv_out);
-        this->intermediate_dot_product_values.push_back(tmp_intermediate_dot_product_values);
         this->vec_next.push_back(tmp_vec_next);
         this->lanczos_vectors.push_back(tmp_lanczos_vectors);
         this->normalized_out.push_back(tmp_normalized_out);
+
     }
 
-    CUDA_CHECK_ERROR(cudaMallocManaged(&alpha_intermediate, sizeof(f32) * this->num_partitions));
-    CUDA_CHECK_ERROR(cudaMallocManaged(&beta_intermediate, sizeof(f32) * this->num_partitions));
+    CUDA_CHECK_ERROR(cudaMallocManaged(&this->alpha_intermediate, sizeof(f32) * this->num_partitions));
+    CUDA_CHECK_ERROR(cudaMallocManaged(&this->beta_intermediate, sizeof(f32) * this->num_partitions));
+
+}
+
+coo_matrix_t *Benchmark12M::assign_partition(u32 begin, u32 end, u32 last_n) {
+    auto *partition = new coo_matrix_t();
+    auto nnz = end - begin;
+    i32 *x, *y;
+    f32 *val;
+    CUDA_CHECK_ERROR(cudaMallocManaged(&x, sizeof(i32) * nnz));
+    CUDA_CHECK_ERROR(cudaMallocManaged(&y, sizeof(i32) * nnz));
+    CUDA_CHECK_ERROR(cudaMallocManaged(&val, sizeof(f32) * nnz));
+
+    partition->x = x;
+    partition->y = y;
+    partition->val = val;
+    partition->nnz = nnz;
+    partition->begin = begin;
+    partition->end = end;
+
+    for (u32 i = 0; i < nnz; ++i) {
+        partition->x[i] = this->matrix.x[i + begin];
+        partition->y[i] = this->matrix.y[i + begin] - last_n;
+        partition->val[i] = this->matrix.val[i + begin];
+    }
+
+    partition->N = this->matrix.y[end - 1] - last_n;
+
+    return partition;
 }
 
 void Benchmark12M::alloc_coo_partitions() {
+    const u32 nnz_per_partition = (u32) ((f32) (this->matrix.nnz + this->num_partitions) / this->num_partitions);
+    u32 begin_partition = 0;
+    u32 end_partition = nnz_per_partition;
+    u32 last_y_value = this->matrix.y[end_partition];
+    u32 last_n_value = 0;
 
-    const u32 nnz_per_partition = u32((this->matrix.nnz + this->num_partitions) / this->num_partitions);
-    u32 from_index = 0;
-    u32 to_index = nnz_per_partition;
-    u32 index_value = this->matrix.y[to_index];
+    for (u32 partition_id = 0; partition_id < this->num_partitions - 1; ++partition_id) {
+        // Advance the partition boundary until the partition is not finished (y value changes)
+        while (last_y_value == this->matrix.y[end_partition])
+            end_partition++;
 
-    for (u32 i = 0; i < this->num_partitions - 1; ++i) {
-        while (index_value == this->matrix.y[to_index]) {
-            to_index++;
-        }
-        const u32 offset = (from_index == 0) ? from_index : (this->matrix.y[from_index] - 1);
-        auto coo_partition = (this->assign_partition(from_index, to_index, offset));
-        this->coo_partitions.push_back(coo_partition);
-
-        from_index = to_index;
-        to_index += nnz_per_partition;
-        index_value = this->matrix.y[to_index];
-    }
-    const u32 offset = this->matrix.y[from_index];
-    auto coo_partition = (this->assign_partition(from_index, this->matrix.nnz, offset));
-    this->coo_partitions.push_back(coo_partition);
-}
-
-coo_matrix_t *Benchmark12M::assign_partition(u32 from_index, u32 to_index, u32 offset) {
-    i32 *tmp_x, *tmp_y;
-    f32 *tmp_val;
-    coo_matrix_t *coo_partition;
-    cudaMallocManaged(&coo_partition, sizeof(coo_matrix_t));
-    coo_partition->begin = from_index;
-    coo_partition->end = to_index;
-    CUDA_CHECK_ERROR(cudaMallocManaged(&tmp_x, sizeof(u32) * (to_index - from_index)));
-    CUDA_CHECK_ERROR(cudaMallocManaged(&tmp_y, sizeof(u32) * (to_index - from_index)));
-    CUDA_CHECK_ERROR(cudaMallocManaged(&tmp_val, sizeof(f32) * (to_index - from_index)));
-
-    coo_partition->x = tmp_x;
-    coo_partition->y = tmp_y;
-    coo_partition->val = tmp_val;
-
-    u32 j = 0;
-    for (u32 i = from_index; i < to_index; ++i, ++j) {
-        coo_partition->x[j] = this->matrix.x[i];
-        coo_partition->y[j] = this->matrix.y[i] - offset;
-        coo_partition->val[j] = this->matrix.val[i];
+        // current partition is in [begin_partition, end_partition)
+        auto *partition = this->assign_partition(begin_partition, end_partition, last_n_value);
+        this->coo_partitions.push_back(partition);
+        if (this->debug) std::cout << "Partition " << partition_id << ": " << *partition << std::endl;
+        last_n_value = this->matrix.y[end_partition - 1];
+        begin_partition = end_partition;
+        end_partition += nnz_per_partition;
     }
 
-    coo_partition->N = coo_partition->y[to_index - from_index - 1] + 1;
-    coo_partition->nnz = to_index - from_index;
-    return coo_partition;
+    // Last partition
+    auto *partition = this->assign_partition(begin_partition, this->matrix.nnz, last_n_value);
+    this->coo_partitions.push_back(partition);
+    if (this->debug) std::cout << "Partition " << this->num_partitions - 1 << ": " << *partition << std::endl;
+
 }
 
 void Benchmark12M::create_random_matrix(bool normalize = true) {
@@ -288,7 +288,7 @@ void Benchmark12M::create_random_matrix(bool normalize = true) {
 
 }
 
-void Benchmark12M::load_matrix(bool normalize = false) {
+void Benchmark12M::load_matrix(bool normalize = true) {
 
     i32 M, N, nnz;
     std::vector<i32> x, y;
@@ -297,9 +297,7 @@ void Benchmark12M::load_matrix(bool normalize = false) {
     i32 *x_mem, *y_mem;
     f32 *val_mem;
 
-
     read_matrix(this->matrix_path, N, M, nnz, x, y, val);
-
     x_mem = (i32 *) std::malloc(nnz * sizeof(i32));
     y_mem = (i32 *) std::malloc(nnz * sizeof(i32));
     val_mem = (f32 *) std::malloc(nnz * sizeof(f32));
@@ -309,7 +307,15 @@ void Benchmark12M::load_matrix(bool normalize = false) {
     std::memcpy(val_mem, val.data(), nnz * sizeof(f32));
 
 
-    this->matrix = {x_mem, y_mem, val_mem, 0, nnz, N, nnz};
+    this->matrix = {
+            .x = x_mem,
+            .y = y_mem,
+            .val = val_mem,
+            .begin = 0,
+            .end = nnz,
+            .N = N,
+            .nnz = nnz
+    };
 
     if (normalize) {
 
@@ -319,7 +325,6 @@ void Benchmark12M::load_matrix(bool normalize = false) {
             this->matrix.val[i] = 1.0f / norm;
 
     }
-
 }
 
 void Benchmark12M::alloc() {
@@ -340,12 +345,11 @@ void Benchmark12M::alloc() {
     // Create offsets
     this->offsets.push_back(0);
     for (u32 i = 1; i < this->num_partitions; ++i)
-        this->offsets.push_back(this->coo_partitions[i]->N - this->offsets[i - 1]);
+        this->offsets.push_back(this->coo_partitions[i]->N + this->offsets[i - 1]);
 
 }
 
 void Benchmark12M::reset() {
-    // std::cout << "Called reset" << std::endl;
     // Just call init, it resets all the necessary vectors;
     this->init();
 
@@ -355,8 +359,8 @@ void Benchmark12M::reset() {
             this->spmv_vec_out[i][j] = 0.0f;
         }
     }
-
-    // std::cout << "reset end" << std::endl;
+    *alpha = 0.0f;
+    *beta = 0.0f;
 
     this->tridiagonal_matrix.clear();
 
@@ -376,8 +380,8 @@ void Benchmark12M::create_streams() {
 
     for (u32 i = 0; i < this->num_partitions; ++i) {
         auto selected_device = select_gpu(i, this->num_devices);
-        CUDA_CHECK_ERROR(cudaSetDevice(selected_device));
         auto *stream = (cudaStream_t *) std::malloc(sizeof(cudaStream_t));
+        CUDA_CHECK_ERROR(cudaSetDevice(selected_device));
         CUDA_CHECK_ERROR(cudaStreamCreate(stream));
         this->streams.push_back(*stream);
     }
@@ -387,8 +391,9 @@ void Benchmark12M::create_streams() {
 }
 
 template<typename Function>
-void Benchmark12M::launch_multi_kernel(Function kernel_launch_function) {
-
+void Benchmark12M::launch_multi_kernel(Function kernel_launch_function, std::string kernel_name = "") {
+    if (this->debug)
+        std::cout << "Launching " << kernel_name << std::endl;
     for (u32 i = 0; i < this->num_partitions; ++i) {
         auto selected_device = select_gpu(i, this->num_devices);
         CUDA_CHECK_ERROR(cudaSetDevice(selected_device));
@@ -407,6 +412,13 @@ void Benchmark12M::execute(i32 iter) {
         std::cout << "[LANCZOS] Iteration " << iter << std::endl;
     }
 
+    const auto sum = [](const f32 acc, const f32 cur) -> f32 {
+        return acc + cur;
+    };
+
+    const auto sum_squares = [](const f32 acc, const f32 cur) -> f32 {
+        return acc + (cur * cur);
+    };
 
     this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
         spmv<<<this->num_blocks, this->block_size, 0, stream>>>(
@@ -417,28 +429,31 @@ void Benchmark12M::execute(i32 iter) {
                 this->spmv_vec_out[p_idx],
                 this->coo_partitions[p_idx]->nnz
         );
-    });
+    }, "SpMV");
+    //  vec_out -> 0.000878735
+    //  vec_in  -> 0.000878735
+    //  vec_outN-> 0.000878735
+
+
 
     this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
-        // std::cout << "dot_product 0th" << std::endl;
         this->alpha_intermediate[p_idx] = 0.0;
         dot_product<<<this->num_blocks, this->block_size, 0, stream>>>(
                 this->spmv_vec_out[p_idx],
                 this->vec_in[p_idx],
-                &this->alpha_intermediate[p_idx],
+                this->alpha_intermediate + p_idx,
                 this->coo_partitions[p_idx]->N,
                 this->offsets[p_idx]
         );
 
-    });
+    }, "Dot Product");
 
     this->sync_all();
-    *alpha = accumulate(this->alpha_intermediate, this->num_partitions);
+
+    *alpha = std::accumulate(this->alpha_intermediate, this->alpha_intermediate + this->num_partitions, 0.0f, sum);
     this->tridiagonal_matrix.push_back(*alpha);
 
-    // std::cout << alpha << std::endl;
     this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
-        // std::cout << "axpb_xtedned 0th" << std::endl;
         axpb_xtended<<<this->num_blocks, this->block_size, 0, stream>>>(
                 -(*alpha),
                 this->vec_in[p_idx],
@@ -450,48 +465,37 @@ void Benchmark12M::execute(i32 iter) {
                 this->offsets[p_idx],
                 0
         );
-    });
+    }, "AXpB XTended");
 
-    for (u32 i = 1; i < this->num_eigencomponents; ++i) {
+    for (u32 cur_eigen = 1; cur_eigen < this->num_eigencomponents; ++cur_eigen) {
 
         this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
-            // std::cout << "l2_norm" << std::endl;
             this->beta_intermediate[p_idx] = 0.0f;
             l2_norm_b12<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->vec_next[p_idx],
-                    &this->beta_intermediate[p_idx],
+                    this->beta_intermediate + p_idx,
                     this->coo_partitions[p_idx]->N,
                     0
             );
 
-        });
+        }, "L2 Norm");
 
 
         this->sync_all();
-        *beta = accumulate(this->beta_intermediate, this->num_partitions);
+
+        *beta = std::accumulate(beta_intermediate, beta_intermediate + this->num_partitions, 0.0f, sum_squares);
         *beta = std::sqrt(*beta);
+
         this->tridiagonal_matrix.push_back(*beta);
 
         this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
-            // std::cout << "normalize" << std::endl;
             normalize<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->vec_next[p_idx],
                     1.0f / (*beta),
                     this->normalized_out[p_idx],
                     this->coo_partitions[p_idx]->N
             );
-        });
-
-        this->launch_multi_kernel([&, i](u32 p_idx, const cudaStream_t &stream) {
-            // std::cout << "copy_partition_to_vec" << std::endl;
-            copy_partition_to_vec<<<this->num_blocks, this->block_size, 0, stream>>>(
-                    this->vec_in[p_idx],
-                    this->lanczos_vectors[p_idx],
-                    this->offsets[p_idx],
-                    this->coo_partitions[p_idx]->N * (i - 1),
-                    this->offsets[p_idx]
-            );
-        });
+        }, "Normalize");
 
         for (u32 j = 0; j < this->num_partitions; ++j) {
             this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
@@ -502,23 +506,23 @@ void Benchmark12M::execute(i32 iter) {
                         offsets[p_idx],
                         0
                 );
-            });
+            }, "copy_partition_to_vec");
 
-            auto first = this->vec_in.front();
-            this->vec_in.erase(this->vec_in.begin());
-            this->vec_in.push_back(first);
+            std::rotate(vec_in.begin(), vec_in.begin() + 1, vec_in.end());
         }
 
-        this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream){
+        if (this->num_partitions != 1)
+            std::rotate(vec_in.begin(), vec_in.begin() + 1, vec_in.end());
+
+        this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
             set<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->spmv_vec_out[p_idx],
                     0.0f,
                     this->coo_partitions[p_idx]->N
             );
-        });
+        }, "set");
 
         this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
-            // std::cout << "spmv" << std::endl;
             spmv<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->coo_partitions[p_idx]->x,
                     this->coo_partitions[p_idx]->y,
@@ -527,44 +531,42 @@ void Benchmark12M::execute(i32 iter) {
                     this->spmv_vec_out[p_idx],
                     this->coo_partitions[p_idx]->nnz
             );
-        });
+        }, "Spmv");
 
         this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
-            // std::cout << "dot_product" << std::endl;
             this->alpha_intermediate[p_idx] = 0.0f;
             dot_product<<<this->num_blocks, this->block_size, 0, stream>>>(
                     this->spmv_vec_out[p_idx],
                     this->vec_in[p_idx],
-                    &this->alpha_intermediate[p_idx],
+                    this->alpha_intermediate + p_idx,
                     this->coo_partitions[p_idx]->N,
                     this->offsets[p_idx]
             );
 
-        });
+        }, "Dot Product");
 
         this->sync_all();
-        *alpha = accumulate(this->alpha_intermediate, this->num_partitions);
+        *alpha = std::accumulate(this->alpha_intermediate, this->alpha_intermediate + this->num_partitions, 0.0f, sum);
         tridiagonal_matrix.push_back(*alpha);
 
-        this->launch_multi_kernel([&, i](u32 p_idx, const cudaStream_t &stream) {
-            // std::cout << "axpb_xtended" << std::endl;
+        this->launch_multi_kernel([&, cur_eigen](u32 p_idx, const cudaStream_t &stream) {
             axpb_xtended<<<this->num_blocks, this->block_size, 0, stream>>>(
                     -(*alpha),
-                    this->vec_in[p_idx], // Right
-                    this->spmv_vec_out[p_idx], // Right
+                    this->vec_in[p_idx],
+                    this->spmv_vec_out[p_idx],
                     -(*beta),
                     this->lanczos_vectors[p_idx],
-                    this->vec_next[p_idx], // Right
-                    this->coo_partitions[p_idx]->N, // Right
-                    this->offsets[p_idx], // Right
-                    this->coo_partitions[p_idx]->N * (i - 1)
+                    this->vec_next[p_idx],
+                    this->coo_partitions[p_idx]->N,
+                    this->offsets[p_idx],
+                    this->coo_partitions[p_idx]->N * (cur_eigen - 1)
             );
-        });
+        }, "axpb_xtended");
 
 
         if (this->reorthogonalize) {
 
-            for (u32 j = 0; j < i; ++j) {
+            for (u32 j = 0; j < cur_eigen; ++j) {
                 this->launch_multi_kernel([&, j](u32 p_idx, const cudaStream_t &stream) {
 
                     dot_product<<<this->num_blocks, this->block_size, 0, stream>>>(
@@ -574,7 +576,7 @@ void Benchmark12M::execute(i32 iter) {
                             this->coo_partitions[p_idx]->N,
                             this->offsets[p_idx] * j
                     );
-                });
+                }, "Dot Product - Reorthogonalize");
                 this->sync_all();
 
                 this->launch_multi_kernel([&](u32 p_idx, const cudaStream_t &stream) {
@@ -585,7 +587,7 @@ void Benchmark12M::execute(i32 iter) {
                             this->coo_partitions[p_idx]->N,
                             this->coo_partitions[p_idx]->N
                     );
-                });
+                }, "Subtract - Reorthogonalize");
 
             }
 
@@ -616,14 +618,14 @@ void Benchmark12M::execute_async(int iter) {
 std::string Benchmark12M::print_result(bool short_form = false) {
 
     std::string base = "";
-    if(this->debug){
-       for (u32 i = 0; i < this->num_eigencomponents * 2 - 1; ++i) {
-           const auto &r = this->tridiagonal_matrix[i];
-           base += std::to_string(i) + " -> " + std::to_string(r) + ", ";
-       }
+    if (this->debug) {
+        for (u32 i = 0; i < this->num_eigencomponents * 2 - 1; ++i) {
+            const auto &r = this->tridiagonal_matrix[i];
+            base += std::to_string(i) + " -> " + std::to_string(r) + ", ";
+        }
 
-       base += "\n";
-   }
+        base += "\n";
+    }
 
     return base;
 }
