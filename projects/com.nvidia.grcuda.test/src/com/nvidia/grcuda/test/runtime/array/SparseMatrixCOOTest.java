@@ -3,11 +3,10 @@ package com.nvidia.grcuda.test.runtime.array;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -57,7 +56,7 @@ public class SparseMatrixCOOTest {
         return new Value[]{spMat, rowIdx, colIdx, nnz};
     };
 
-    @Test(expected = Exception.class)
+    @Test
     public void testFreeMatrix() {
         try (Context context = GrCUDATestUtil.buildTestContext().build()) {
             Value[] spMatrixValues = createSpMatrixCOO(context);
@@ -68,10 +67,8 @@ public class SparseMatrixCOOTest {
             Value nnz = spMatrixValues[3];
             assertFalse(spMatrixCOO.getMember("isMemoryFreed").asBoolean());
             // First free, should succeed
-            spMatrixCOO.getMember("isMemoryFreed").execute();
-            assertTrue(spMatrixCOO.getMember("isMemoryFreed").asBoolean());
-            // Second free, should fail
             spMatrixCOO.getMember("free").execute();
+            assertTrue(spMatrixCOO.getMember("isMemoryFreed").asBoolean());
         }
     }
 }

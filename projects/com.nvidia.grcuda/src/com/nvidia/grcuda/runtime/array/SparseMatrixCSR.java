@@ -35,9 +35,14 @@
  */
 package com.nvidia.grcuda.runtime.array;
 
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
+
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.MemberSet;
 import com.nvidia.grcuda.NoneValue;
+import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
+import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV.CUSPARSESpMVMatrixType;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
@@ -75,6 +80,7 @@ public class SparseMatrixCSR implements TruffleObject {
     protected static final String VALUES = "values";
     protected static final String ROW_CUMULATIVE = "cumulativeNnz";
     protected static final String COL_INDICES = "colIndices";
+    protected static final String SPMV = "SpMV";
 
     /**
      * Column and row-cumulative indices of nnz elements.
@@ -87,7 +93,7 @@ public class SparseMatrixCSR implements TruffleObject {
      */
     private final DeviceArray values;
 
-    protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, ROW_CUMULATIVE, COL_INDICES);
+    protected static final MemberSet MEMBERS = new MemberSet(FREE, SPMV, IS_MEMORY_FREED, VALUES, ROW_CUMULATIVE, COL_INDICES);
 
     public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray cumulativeNnz, DeviceArray colIdx, DeviceArray nnzValues, long dimRows, long dimCols) {
         this.dimRows = dimRows;
@@ -182,7 +188,7 @@ public class SparseMatrixCSR implements TruffleObject {
     boolean isMemberReadable(String memberName,
                              @Cached.Shared("memberName") @Cached("createIdentityProfile()") ValueProfile memberProfile) {
         String name = memberProfile.profile(memberName);
-        return FREE.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || ROW_CUMULATIVE.equals(name) || COL_INDICES.equals(name);
+        return FREE.equals(name) || SPMV.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || ROW_CUMULATIVE.equals(name) || COL_INDICES.equals(name);
     }
 
     @ExportMessage
@@ -194,6 +200,10 @@ public class SparseMatrixCSR implements TruffleObject {
         }
         if (FREE.equals(memberName)) {
             return new SparseMatrixCSRFreeFunction();
+        }
+
+        if (SPMV.equals(memberName)) {
+            return new SparseMatrixCSRSpMVFunction();
         }
 
         if (IS_MEMORY_FREED.equals(memberName)) {
@@ -220,7 +230,7 @@ public class SparseMatrixCSR implements TruffleObject {
     @ExportMessage
     @SuppressWarnings("static-method")
     boolean isMemberInvocable(String memberName) {
-        return FREE.equals(memberName);
+        return FREE.equals(memberName) || SPMV.equals(memberName);
     }
 
     @ExportMessage
@@ -249,6 +259,55 @@ public class SparseMatrixCSR implements TruffleObject {
             }
             freeMemory();
             return NoneValue.get();
+        }
+    }
+
+    @ExportLibrary(InteropLibrary.class)
+    final class SparseMatrixCSRSpMVFunction implements TruffleObject {
+        @ExportMessage
+        boolean isExecutable() {
+            return true;
+        }
+
+        @ExportMessage
+        Object execute(Object[] arguments) throws ArityException {
+            checkFreeMatrix();
+            if (arguments.length != 4) {
+                CompilerDirectives.transferToInterpreter();
+                throw ArityException.create(4, arguments.length);
+            }
+            
+            Context polyglot = Context.getCurrent();
+            DeviceArray alpha = (DeviceArray) arguments[0];
+            DeviceArray beta = (DeviceArray) arguments[1];
+
+            DeviceArray dnVec = (DeviceArray) arguments[2];
+            DeviceArray outVec = (DeviceArray) arguments[3];
+
+            final long numElements = values.getArraySize();
+
+            Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
+
+            cusparseSpMV.execute(
+                CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
+                alpha,
+                numElements,
+                numElements,
+                numElements,
+                cumulativeNnz,
+                colIndices,
+                values,
+                CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I.ordinal(),
+                CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
+                CUSPARSERegistry.CUDADataType.CUDA_R_32F.ordinal(),
+                dnVec,
+                CUSPARSERegistry.CUDADataType.CUDA_R_32F.ordinal(),
+                beta,
+                outVec,
+                CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
+                CUSPARSESpMVMatrixType.SPMV_MATRIX_TYPE_CSR.ordinal());
+
+            return outVec;
         }
     }
 }

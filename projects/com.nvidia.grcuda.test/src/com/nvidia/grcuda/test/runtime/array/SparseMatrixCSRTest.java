@@ -1,13 +1,12 @@
 package com.nvidia.grcuda.test.runtime.array;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.util.Arrays;
 import java.util.Collection;
 
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -44,34 +43,72 @@ public class SparseMatrixCSRTest {
         });
     }
 
-    private Value[] createSpMatrixCOO(Context context) {
-        Value sparseMatrixCOOCtor = context.eval("grcuda", "SparseMatrixCOO");
+    private Value[] createSpMatrixCSR(Context context) {
+        final int numElements = numNnz;
+        Value sparseMatrixCSRCtor = context.eval("grcuda", "SparseMatrixCSR");
         Value deviceArrayCtor = context.eval("grcuda", "DeviceArray");
-        Value cumulativeNnz = deviceArrayCtor.execute(this.idxType, this.numNnz + 1);
+        Value rowPtr = deviceArrayCtor.execute(this.idxType, this.numNnz + 1);
         Value colIdx = deviceArrayCtor.execute(this.idxType, this.numNnz);
         Value nnz = deviceArrayCtor.execute(this.valueType, this.numNnz);
-//        Value rowIdx = deviceArrayCtor.execute(this.numNnz, this.idxType);
-//        Value colIdx = deviceArrayCtor.execute(this.numNnz, this.idxType);
-//        Value nnz = deviceArrayCtor.execute(this.numNnz, this.idxType);
-        Value spMat = sparseMatrixCOOCtor.execute(colIdx, cumulativeNnz, nnz, rows, cols);
-        return new Value[]{spMat, cumulativeNnz, colIdx, nnz};
+
+        float edgeValue = (float) Math.random();
+
+        for (int i = 0; i < numElements; ++i) {
+            rowPtr.setArrayElement(i, i);
+            colIdx.setArrayElement(i, i);
+            nnz.setArrayElement(i, edgeValue);
+        }
+
+        rowPtr.setArrayElement(numElements, numElements);
+
+        Value spMat = sparseMatrixCSRCtor.execute(colIdx, rowPtr, nnz, rows, cols);
+        return new Value[]{spMat, rowPtr, colIdx, nnz};
     };
 
-    @Test(expected = Exception.class)
+    @Test
     public void testFreeMatrix() {
         try (Context context = GrCUDATestUtil.buildTestContext().build()) {
-            Value[] spMatrixValues = createSpMatrixCOO(context);
+            Value[] spMatrixValues = createSpMatrixCSR(context);
             // The memory is not freed when the array has just been created
-            Value spMatrixCOO = spMatrixValues[0];
+            Value spMatrixCSR = spMatrixValues[0];
             Value rowIdx = spMatrixValues[1];
             Value colIdx = spMatrixValues[2];
             Value nnz = spMatrixValues[3];
-            assertFalse(spMatrixCOO.getMember("isMemoryFreed").asBoolean());
+            assertFalse(spMatrixCSR.getMember("isMemoryFreed").asBoolean());
             // First free, should succeed
-            spMatrixCOO.getMember("isMemoryFreed").execute();
-            assertTrue(spMatrixCOO.getMember("isMemoryFreed").asBoolean());
-            // Second free, should fail
-            spMatrixCOO.getMember("free").execute();
+            spMatrixCSR.getMember("free").execute();
+            assertTrue(spMatrixCSR.getMember("isMemoryFreed").asBoolean());
+        }
+    }
+
+    @Test
+    public void testSpMVCSR() {
+        try (Context context = GrCUDATestUtil.buildTestContext()
+                .option("grcuda.CuSPARSEEnabled", String.valueOf(true)).build()) {
+            Value[] spMatrixValues = createSpMatrixCSR(context);
+            // The memory is not freed when the array has just been created
+            Value spMatrixCSR = spMatrixValues[0];
+            Value rowIdx = spMatrixValues[1];
+            Value colIdx = spMatrixValues[2];
+            Value nnz = spMatrixValues[3];
+
+            Value cu = context.eval("grcuda", "CU");
+
+            final int numElements = numNnz;
+            Value alpha = cu.invokeMember("DeviceArray", "float", 1);
+            Value beta = cu.invokeMember("DeviceArray", "float", 1);
+            Value dnVec = cu.invokeMember("DeviceArray", "float", numElements);
+            Value outVec = cu.invokeMember("DeviceArray", "float", numElements);
+
+            alpha.setArrayElement(0, 1);
+            beta.setArrayElement(0, 0);
+
+            for (int i = 0; i < numElements; ++i) {
+                dnVec.setArrayElement(i, 1.0);
+            }
+
+
+            spMatrixCSR.getMember("SpMV").execute(alpha, beta, dnVec, outVec);
         }
     }
 }
