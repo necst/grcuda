@@ -74,13 +74,19 @@ public abstract class CUDALibraryFunction extends Function {
      * @return list of inputs mapped to signature elements, used to compute dependencies
      */
     public List<ComputationArgumentWithValue> createComputationArgumentWithValueList(Object[] args, Long libraryHandle) {
-        ArrayList<ComputationArgumentWithValue> argumentsWithValue = new ArrayList<>();
-        // Set the library handle;
-        argumentsWithValue.add(new ComputationArgumentWithValue(this.computationArguments.get(0), libraryHandle));
-        // Set the other arguments;
-        for (int i = 0; i < args.length; i++) {
-            argumentsWithValue.add(new ComputationArgumentWithValue(this.computationArguments.get(i + 1), args[i]));
+        ArrayList<ComputationArgumentWithValue> argumentsWithValue = new ArrayList<>(args.length+1);
+
+        int i = 0;
+        // Set the library handle if not null;
+        if (libraryHandle != null) {
+            argumentsWithValue.add(new ComputationArgumentWithValue(this.computationArguments.get(i++), libraryHandle));
         }
+
+        // Set the other arguments;
+        for (Object arg : args) {
+            argumentsWithValue.add(new ComputationArgumentWithValue(this.computationArguments.get(i++), arg));
+        }
+
         return argumentsWithValue;
     }
 }
