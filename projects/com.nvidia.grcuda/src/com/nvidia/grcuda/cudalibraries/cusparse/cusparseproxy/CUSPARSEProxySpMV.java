@@ -46,6 +46,7 @@ import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
+import com.nvidia.grcuda.runtime.array.SparseMatrixCSR;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -73,51 +74,27 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
         } else {
             args = new Object[nArgsRaw];
 
-            // v1 and v2 can be X, Y, rowPtr
-            DeviceArray v1 = (DeviceArray) rawArgs[5];
-            DeviceArray v2 = (DeviceArray) rawArgs[6];
-            DeviceArray values = (DeviceArray) rawArgs[7];
-
-            // Last argument is the matrix type
-            CUSPARSESpMVMatrixType matrixType = CUSPARSESpMVMatrixType.values()[expectInt(rawArgs[rawArgs.length - 1])];
 
             UnsafeHelper.Integer64Object dnVecXDescr = UnsafeHelper.createInteger64Object();
             UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object();
-            UnsafeHelper.Integer64Object matDescr = UnsafeHelper.createInteger64Object();
             UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
 
             CUSPARSERegistry.CUSPARSEOperation opA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(rawArgs[0])];
             DeviceArray alpha = (DeviceArray) rawArgs[1];
-            long rows = expectLong(rawArgs[2]);
-            long cols = expectLong(rawArgs[3]);
-            long nnz = expectLong(rawArgs[4]);
-            CUSPARSEIndexType idxType = CUSPARSEIndexType.values()[expectInt(rawArgs[8])];
-            CUSPARSEIndexBase idxBase = CUSPARSEIndexBase.values()[expectInt(rawArgs[9])];
-            CUDADataType valueType = CUDADataType.values()[expectInt(rawArgs[10])];
-            DeviceArray valuesX = (DeviceArray) rawArgs[11];
-            CUDADataType valueTypeVec = CUDADataType.values()[expectInt(rawArgs[12])];
-            DeviceArray beta = (DeviceArray) rawArgs[13];
-            DeviceArray valuesY = (DeviceArray) rawArgs[14];
-            CUSPARSESpMVAlg alg = CUSPARSESpMVAlg.values()[expectInt(rawArgs[15])];
+            SparseMatrixCSR sparseMatrix = (SparseMatrixCSR) rawArgs[2];
+            DeviceArray valuesX = (DeviceArray) rawArgs[3];
+            CUDADataType valueTypeVec = CUDADataType.values()[expectInt(rawArgs[4])];
+            DeviceArray beta = (DeviceArray) rawArgs[5];
+            DeviceArray valuesY = (DeviceArray) rawArgs[6];
+            CUSPARSESpMVAlg alg = CUSPARSESpMVAlg.values()[expectInt(rawArgs[7])];
 
-            switch (matrixType){
-                case SPMV_MATRIX_TYPE_COO: {
-                    Object resultCoo = INTEROP.execute(cusparseCreateCooFunction, matDescr.getAddress(), rows, cols, nnz, v1, v2, values, idxType.ordinal(), idxBase.ordinal(),
-                            valueType.ordinal());
-                    break;
-                }
-                case SPMV_MATRIX_TYPE_CSR: {
-                    Object resultCsr = INTEROP.execute(cusparseCreateCsrFunction, matDescr.getAddress(), rows, cols, nnz, v1, v2, values, idxType.ordinal(),
-                            idxType.ordinal(), idxBase.ordinal(), valueType.ordinal());
-                    break;
-                }
-
-            }
+            final long cols = sparseMatrix.getDimRows();
+            CUDADataType valueType = sparseMatrix.getDataType();
+            UnsafeHelper.Integer64Object matDescr = sparseMatrix.getMatDescr();
 
             // create dense vectors X and Y descriptors
             Object resultX = INTEROP.execute(cusparseCreateDnVecFunction, dnVecXDescr.getAddress(), cols, valuesX, valueTypeVec.ordinal());
             Object resultY = INTEROP.execute(cusparseCreateDnVecFunction, dnVecYDescr.getAddress(), cols, valuesY, valueTypeVec.ordinal());
-
 
             // create buffer
             Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunction, handle, opA.ordinal(), alpha, matDescr.getValue(), dnVecXDescr.getValue(), beta,
@@ -148,5 +125,10 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
             return args;
         }
+    }
+
+    @Override
+    public boolean requiresHandle() {
+        return true;
     }
 }

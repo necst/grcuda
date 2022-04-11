@@ -34,7 +34,6 @@
 package com.nvidia.grcuda.cudalibraries.cusparse;
 
 import static com.nvidia.grcuda.functions.Function.INTEROP;
-import static com.nvidia.grcuda.functions.Function.checkArgumentLength;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 
 import java.util.ArrayList;
@@ -46,16 +45,14 @@ import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDAInternalException;
 import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.Namespace;
-import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxy;
+import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyNoHandle;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyGemvi;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
-import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
-import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
 import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.runtime.stream.CUSPARSESetStreamFunction;
@@ -70,8 +67,6 @@ import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-import org.graalvm.polyglot.Value;
-import org.graalvm.polyglot.Context;
 
 public class CUSPARSERegistry {
     public static final String DEFAULT_LIBRARY = (System.getenv("LIBCUSPARSE_DIR") != null ? System.getenv("LIBCUSPARSE_DIR") : "") + "libcusparse.so";
@@ -118,6 +113,10 @@ public class CUSPARSERegistry {
         CUDA_C_8I,  // 8 bit complex as a pair of signed integers
         CUDA_R_8U,   // 8 bit real as a signed integer
         CUDA_C_8U;  // 8 bit complex as a pair of signed integers
+
+        public boolean isComplex() {
+            return this.ordinal() > 3;
+        }
     }
 
     public enum CUSPARSEOperation {
@@ -256,7 +255,12 @@ public class CUSPARSERegistry {
                         Object[] formattedArguments = proxy.formatArguments(arguments, cusparseHandle);
 
 
-                        List<ComputationArgumentWithValue> computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, cusparseHandle);
+                        List<ComputationArgumentWithValue> computationArgumentsWithValue;
+                        if (proxy.requiresHandle()) {
+                            computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, cusparseHandle);
+                        } else {
+                            computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, null);
+                        }
 
                         Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
                                         computationArgumentsWithValue).schedule();
@@ -323,6 +327,10 @@ public class CUSPARSERegistry {
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV = new ExternalFunctionFactory("cusparseSpMV", "cusparseSpMV", "(sint64, sint32, pointer, sint64, " +
                     "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECSR = new ExternalFunctionFactory("cusparseCreateCsr", "cusparseCreateCsr", "(pointer, sint64, sint64, sint64," +
+            "pointer, pointer, pointer, sint32, sint32, sint32, sint32): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATEDNVEC = new ExternalFunctionFactory("cusparseCreateDnVec", "cusparseCreateDnVec", "(pointer, sint64, pointer, " +
+            "sint32): sint32");
     private static final ArrayList<CUSPARSEProxy> functions = new ArrayList<>();
 
     static {
@@ -334,6 +342,8 @@ public class CUSPARSERegistry {
         }
 
         functions.add(new CUSPARSEProxySpMV(CUSPARSE_CUSPARSESPMV));
+        functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATECSR));
+        functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATEDNVEC));
     }
 
 }

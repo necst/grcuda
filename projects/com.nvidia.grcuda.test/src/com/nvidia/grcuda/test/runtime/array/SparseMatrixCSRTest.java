@@ -3,6 +3,9 @@ package com.nvidia.grcuda.test.runtime.array;
 import java.util.Arrays;
 import java.util.Collection;
 
+import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
+import com.nvidia.grcuda.runtime.array.DeviceArray;
+import com.nvidia.grcuda.runtime.array.SparseMatrixCSR;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import static org.junit.Assert.assertFalse;
@@ -60,14 +63,14 @@ public class SparseMatrixCSRTest {
         }
 
         rowPtr.setArrayElement(numElements, numElements);
-
-        Value spMat = sparseMatrixCSRCtor.execute(colIdx, rowPtr, nnz, rows, cols);
+        Value spMat = sparseMatrixCSRCtor.execute(colIdx, rowPtr, nnz, "CUDA_R_32F", rows, cols);
         return new Value[]{spMat, rowPtr, colIdx, nnz};
     };
 
     @Test
     public void testFreeMatrix() {
-        try (Context context = GrCUDATestUtil.buildTestContext().build()) {
+        try (Context context = GrCUDATestUtil.buildTestContext().option(
+                "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
             Value[] spMatrixValues = createSpMatrixCSR(context);
             // The memory is not freed when the array has just been created
             Value spMatrixCSR = spMatrixValues[0];
@@ -83,8 +86,8 @@ public class SparseMatrixCSRTest {
 
     @Test
     public void testSpMVCSR() {
-        try (Context context = GrCUDATestUtil.buildTestContext()
-                .option("grcuda.CuSPARSEEnabled", String.valueOf(true)).build()) {
+        try (Context context = GrCUDATestUtil.buildTestContext().option(
+                "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
             Value[] spMatrixValues = createSpMatrixCSR(context);
             // The memory is not freed when the array has just been created
             Value spMatrixCSR = spMatrixValues[0];
@@ -100,6 +103,7 @@ public class SparseMatrixCSRTest {
             Value dnVec = cu.invokeMember("DeviceArray", "float", numElements);
             Value outVec = cu.invokeMember("DeviceArray", "float", numElements);
 
+
             alpha.setArrayElement(0, 1);
             beta.setArrayElement(0, 0);
 
@@ -109,6 +113,8 @@ public class SparseMatrixCSRTest {
 
 
             spMatrixCSR.getMember("SpMV").execute(alpha, beta, dnVec, outVec);
+
+            outVec.getArrayElement(0);
         }
     }
 }

@@ -340,6 +340,7 @@ public abstract class CUSPARSEProxy {
 
     public abstract Object[] formatArguments(Object[] rawArgs, long handle) throws UnsupportedTypeException, UnsupportedMessageException, ArityException;
 
+    public abstract boolean requiresHandle();
 
     @CompilerDirectives.TruffleBoundary
     public void cudaDeviceSynchronize() {

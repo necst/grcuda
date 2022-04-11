@@ -130,4 +130,9 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
             return args;
         }
     }
+
+    @Override
+    public boolean requiresHandle() {
+        return true;
+    }
 }

@@ -35,7 +35,9 @@
  */
 package com.nvidia.grcuda.runtime.array;
 
+import com.nvidia.grcuda.runtime.UnsafeHelper;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
 
 import com.nvidia.grcuda.GrCUDAException;
@@ -58,6 +60,8 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
+import static com.nvidia.grcuda.functions.Function.INTEROP;
+
 @ExportLibrary(InteropLibrary.class)
 public class SparseMatrixCSR implements TruffleObject {
 
@@ -74,7 +78,6 @@ public class SparseMatrixCSR implements TruffleObject {
     /**
      * Attributes to be exported
      */
-
     protected static final String FREE = "free";
     protected static final String IS_MEMORY_FREED = "isMemoryFreed";
     protected static final String VALUES = "values";
@@ -92,15 +95,41 @@ public class SparseMatrixCSR implements TruffleObject {
      * Values of nnz elements.
      */
     private final DeviceArray values;
+    private final long numElements;
+
+    private final CUSPARSERegistry.CUDADataType dataType;
+
+    private final UnsafeHelper.Integer64Object matDescr;
 
     protected static final MemberSet MEMBERS = new MemberSet(FREE, SPMV, IS_MEMORY_FREED, VALUES, ROW_CUMULATIVE, COL_INDICES);
 
-    public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray cumulativeNnz, DeviceArray colIdx, DeviceArray nnzValues, long dimRows, long dimCols) {
+    public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray cumulativeNnz, DeviceArray colIdx, DeviceArray nnzValues, CUSPARSERegistry.CUDADataType dataType, long dimRows, long dimCols) {
         this.dimRows = dimRows;
         this.dimCols = dimCols;
         this.cumulativeNnz = cumulativeNnz;
         this.colIndices = colIdx;
         this.values = nnzValues;
+        this.dataType = dataType;
+        this.numElements = dataType.isComplex() ? nnzValues.getArraySize() / 2 : nnzValues.getArraySize();
+
+        // matrix descriptor creation
+        matDescr = UnsafeHelper.createInteger64Object();
+
+        Context polyglot = Context.getCurrent();
+        Value cusparseCreateCsrFunction = polyglot.eval("grcuda", "SPARSE::cusparseCreateCsr");
+
+        Object resultCsr = cusparseCreateCsrFunction.execute(
+                matDescr.getAddress(),
+                dimRows,
+                dimCols,
+                nnzValues.getArraySize(),
+                cumulativeNnz,
+                colIdx,
+                nnzValues,
+                CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I.ordinal(),
+                CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I.ordinal(),
+                CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
+                dataType.ordinal());
     }
 
     private void checkFreeMatrix() {
@@ -159,6 +188,22 @@ public class SparseMatrixCSR implements TruffleObject {
         matrixFreed = true;
     }
 
+    public UnsafeHelper.Integer64Object getMatDescr() {
+        return matDescr;
+    }
+
+    public CUSPARSERegistry.CUDADataType getDataType() {
+        return dataType;
+    }
+
+    public long getDimRows() {
+        return dimRows;
+    }
+
+    public long getDimCols() {
+        return dimCols;
+    }
+
     @ExportMessage
     @SuppressWarnings("static-method")
     boolean hasMembers() {
@@ -203,7 +248,7 @@ public class SparseMatrixCSR implements TruffleObject {
         }
 
         if (SPMV.equals(memberName)) {
-            return new SparseMatrixCSRSpMVFunction();
+            return new SparseMatrixCSRSpMVFunction(this);
         }
 
         if (IS_MEMORY_FREED.equals(memberName)) {
@@ -264,6 +309,12 @@ public class SparseMatrixCSR implements TruffleObject {
 
     @ExportLibrary(InteropLibrary.class)
     final class SparseMatrixCSRSpMVFunction implements TruffleObject {
+        private final SparseMatrixCSR matrix;
+
+        public SparseMatrixCSRSpMVFunction(SparseMatrixCSR matrix) {
+            this.matrix = matrix;
+        }
+
         @ExportMessage
         boolean isExecutable() {
             return true;
@@ -278,34 +329,23 @@ public class SparseMatrixCSR implements TruffleObject {
             }
             
             Context polyglot = Context.getCurrent();
-            DeviceArray alpha = (DeviceArray) arguments[0];
-            DeviceArray beta = (DeviceArray) arguments[1];
+            Object alpha = arguments[0];
+            Object beta = arguments[1];
 
-            DeviceArray dnVec = (DeviceArray) arguments[2];
-            DeviceArray outVec = (DeviceArray) arguments[3];
-
-            final long numElements = values.getArraySize();
+            Object dnVec = arguments[2];
+            Object outVec = arguments[3];
 
             Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
 
             cusparseSpMV.execute(
                 CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
                 alpha,
-                numElements,
-                numElements,
-                numElements,
-                cumulativeNnz,
-                colIndices,
-                values,
-                CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I.ordinal(),
-                CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
-                CUSPARSERegistry.CUDADataType.CUDA_R_32F.ordinal(),
+                matrix,
                 dnVec,
-                CUSPARSERegistry.CUDADataType.CUDA_R_32F.ordinal(),
+                dataType.ordinal(),
                 beta,
                 outVec,
-                CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
-                CUSPARSESpMVMatrixType.SPMV_MATRIX_TYPE_CSR.ordinal());
+                CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal());
 
             return outVec;
         }
