@@ -40,7 +40,7 @@ from pathlib import Path
 
 V100 = "V100"
 A100 = "A100"
-GPU = A100
+GPU = V100
 
 BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph.csv"
 
