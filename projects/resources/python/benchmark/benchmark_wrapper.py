@@ -194,7 +194,7 @@ new_stream_policies = ["always-new"]  #, "reuse"]
 
 parent_stream_policies = ["disjoint", "multigpu-disjoint"]  # ["same-as-parent", "disjoint", "multigpu-early-disjoint", "multigpu-disjoint"]
 
-choose_device_policies = ["round-robin", "stream-aware", "minmax-transfer-time"]  # ["single-gpu", "round-robin", "stream-aware", "min-transfer-size", "minmin-transfer-time", "minmax-transfer-time"]
+choose_device_policies = ["round-robin", "stream-aware", "min-transfer-size", "minmax-transfer-time"]  # ["single-gpu", "round-robin", "stream-aware", "min-transfer-size", "minmin-transfer-time", "minmax-transfer-time"]
 
 memory_advise = ["none"]
 
