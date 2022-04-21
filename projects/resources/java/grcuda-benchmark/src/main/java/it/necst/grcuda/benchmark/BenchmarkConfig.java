@@ -38,13 +38,63 @@ public class BenchmarkConfig {
     /**
      * Default parameters
      */
-    public String name = "";
+    public String benchmarkName = "";
     public String setupId = "";
-    public int testSize = 100;
-    public int threadsPerBlock = 128;
-    public int blocks = 8;
+
+    public int totIter;
+    public int currentIter;
+    public int randomSeed = 42;
+    public int size;
+    public int blockSize1D = 32;
+    public int blockSize2D = 8;
+    boolean timePhases = false;
+
+
+    public int numBlocks = 8;
     public boolean randomInit = false;
     public boolean reInit = false;
-    public int iterations = 100;
     public boolean cpuValidate = true;
+
+    // GrCUDA context settings
+    public String executionPolicy;
+    public boolean inputPrefetch;
+    public String retrieveNewStreamPolicy;
+    public String retrieveParentStreamPolicy;
+    public String dependencyPolicy;
+    public String deviceSelectionPolicy;
+    public boolean forceStreamAttach;
+    public boolean enableComputationTimers;
+    public int numGpus;
+    public String memAdvisePolicy;
+    public String bandwidthMatrix;
+
+    @Override
+    public String toString() {
+        return "BenchmarkConfig{" +
+                "benchmarkName='" + benchmarkName + '\'' +
+                ", setupId='" + setupId + '\'' +
+                ", totIter=" + totIter +
+                ", currentIter=" + currentIter +
+                ", randomSeed=" + randomSeed +
+                ", size=" + size +
+                ", blockSize1D=" + blockSize1D +
+                ", blockSize2D=" + blockSize2D +
+                ", timePhases=" + timePhases +
+                ", numBlocks=" + numBlocks +
+                ", randomInit=" + randomInit +
+                ", reInit=" + reInit +
+                ", cpuValidate=" + cpuValidate +
+                ", executionPolicy='" + executionPolicy + '\'' +
+                ", inputPrefetch=" + inputPrefetch +
+                ", retrieveNewStreamPolicy='" + retrieveNewStreamPolicy + '\'' +
+                ", retrieveParentStreamPolicy='" + retrieveParentStreamPolicy + '\'' +
+                ", dependencyPolicy='" + dependencyPolicy + '\'' +
+                ", deviceSelectionPolicy='" + deviceSelectionPolicy + '\'' +
+                ", forceStreamAttach=" + forceStreamAttach +
+                ", enableComputationTimers=" + enableComputationTimers +
+                ", numGpus=" + numGpus +
+                ", memAdvisePolicy='" + memAdvisePolicy + '\'' +
+                ", bandwidthMatrix='" + bandwidthMatrix + '\'' +
+                '}';
+    }
 }

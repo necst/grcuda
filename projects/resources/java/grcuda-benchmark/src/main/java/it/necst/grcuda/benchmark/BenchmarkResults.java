@@ -42,19 +42,17 @@ import java.util.stream.Collectors;
  */
 public class BenchmarkResults {
     List<BenchmarkRecord> phases = new LinkedList<>();
-    final String currentBenchmark;
-    final String currentSetupId;
+    final BenchmarkConfig config;
     public float gpu_result; // here we store the result of the gpu computation (if a reduction is done)
     public float cpu_result; // here we store the result of the cpu computation (if a reduction is done)
     
 
-    BenchmarkResults(String benchmarkName, String setupId){
-        this.currentBenchmark = benchmarkName;
-        this.currentSetupId = setupId;
+    BenchmarkResults(BenchmarkConfig config){
+        this.config = config;
     }
 
     public void addPhase(String phaseName, Long phaseDuration, Integer iteration) {
-        phases.add(new BenchmarkRecord(phaseName, currentBenchmark, currentSetupId, phaseDuration, iteration));
+        phases.add(new BenchmarkRecord(phaseName, config.benchmarkName, config.setupId, phaseDuration, iteration));
     }
     
     public void addPhase(BenchmarkRecord record) {
@@ -62,7 +60,7 @@ public class BenchmarkResults {
     }
    
     public BenchmarkResults filter(String phaseName){
-        BenchmarkResults filtered = new BenchmarkResults(this.currentBenchmark, this.currentSetupId);
+        BenchmarkResults filtered = new BenchmarkResults(this.config);
         phases.stream().filter(phase -> phase.phaseName.equals(phaseName)).forEach(filtered::addPhase);
         return filtered;
     }

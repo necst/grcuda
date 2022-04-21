@@ -40,15 +40,64 @@ public abstract class Benchmark {
     public final BenchmarkResults benchmarkResults;
 
     public Benchmark(BenchmarkConfig currentConfig) {
-        context = Context
+        /*
+            TODO: We need to set in the Context those values:
+            1) ExecutionPolicy
+            2) DependencyPolicy
+            3) RetrieveNewStreamPolicy
+            4) NumberOfGPUs
+            5) RetrieveParentStreamPolicy
+            6) DeviceSelectionPolicy
+            7) MemAdvisePolicy
+            8) InputPrefetch
+            9) BandwidthMatrix
+
+            // GrCUDATestUtil -- GrCUDATestOptionsStruct
+            return Context.newBuilder()
+                .allowAllAccess(true)
+                .allowExperimentalOptions(true)
+                .logHandler(new TestLogHandler())
+                .option("log.grcuda.com.nvidia.grcuda.level", "WARNING")
+            //  .option("log.grcuda." + GrCUDALogger.COMPUTATION_LOGGER + ".level", "FINE")  // Uncomment to print kernel log;
+                ;
+            return buildTestContext()
+                .option("grcuda.ExecutionPolicy", options.policy.toString())
+                .option("grcuda.InputPrefetch", String.valueOf(options.inputPrefetch))
+                .option("grcuda.RetrieveNewStreamPolicy", options.retrieveNewStreamPolicy.toString())
+                .option("grcuda.RetrieveParentStreamPolicy", options.retrieveParentStreamPolicy.toString())
+                .option("grcuda.DependencyPolicy", options.dependencyPolicy.toString())
+                .option("grcuda.DeviceSelectionPolicy", options.deviceSelectionPolicy.toString())
+                .option("grcuda.ForceStreamAttach", String.valueOf(options.forceStreamAttach))
+                .option("grcuda.EnableComputationTimers", String.valueOf(options.timeComputation))
+                .option("grcuda.NumberOfGPUs", String.valueOf(numberOfGPUs))
+                .build();
+         */
+        this.config = currentConfig;
+        this.benchmarkResults = new BenchmarkResults(currentConfig);
+        this.context = createContext(currentConfig);
+    }
+
+    private Context createContext(BenchmarkConfig config){
+         return  Context
                 .newBuilder()
                 .allowAllAccess(true)
                 .allowExperimentalOptions(true)
+                //logging settings
                 .option("log.grcuda.com.nvidia.grcuda.level", "WARNING")
                 .option("log.grcuda.com.nvidia.grcuda.GrCUDAContext.level", "SEVERE")
+                //GrCUDA env settings
+                .option("grcuda.ExecutionPolicy", config.executionPolicy)
+                .option("grcuda.InputPrefetch", String.valueOf(config.inputPrefetch))
+                .option("grcuda.RetrieveNewStreamPolicy", config.retrieveNewStreamPolicy)
+                .option("grcuda.RetrieveParentStreamPolicy", config.retrieveParentStreamPolicy)
+                .option("grcuda.DependencyPolicy", config.dependencyPolicy)
+                .option("grcuda.DeviceSelectionPolicy", config.deviceSelectionPolicy)
+                .option("grcuda.ForceStreamAttach", String.valueOf(config.forceStreamAttach))
+                .option("grcuda.EnableComputationTimers", String.valueOf(config.enableComputationTimers))
+                .option("grcuda.MemAdvisePolicy", config.memAdvisePolicy)
+                .option("grcuda.NumberOfGPUs", String.valueOf(config.numGpus))
+                .option("grcuda.BandwidthMatrix", config.bandwidthMatrix)
                 .build();
-        config = currentConfig;
-        benchmarkResults = new BenchmarkResults(config.name, config.setupId);
     }
 
     /**
@@ -69,17 +118,31 @@ public abstract class Benchmark {
      * It will use the information stored in the config attribute to decide whether to do an additional initialization phase and the cpuValidation.
      */
     public void run() {
-        for (int i = 0; i < config.iterations; ++i) {
+        System.out.println("INSIDE run()");
+        for (int i = 0; i < config.totIter; ++i) {
+
+            // TODO: start recording total time
+
             if (config.reInit || i == 0)
+                //TODO: should we separate the "initialize" phase from the "alloc" phase (like on python)?
                 time(i, "init", this::initializeTest);
 
             time(i, "reset", this::resetIteration);
 
+            //TODO: add nvprof_profile step
+
             time(i, "execution", this::runTest);
-            
+
+            //TODO: stop nvprof_profile step
+
+            //TODO: end recording total time
+
             if (config.cpuValidate) 
                 cpuValidation();
+
+            //TODO: save to file each iteration
         }
+
     }
 
     /**
