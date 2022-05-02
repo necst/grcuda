@@ -5,11 +5,13 @@
   "cpuValidation": true,
   "heap_size": 26,
   "num_elem": {
-    "B1": [60000000, 80000000, 100000000, 120000000, 200000000]
+    "B1": [60000000, 80000000, 100000000, 120000000, 200000000],
+    "B5M": [10000000, 16000000, 21000000, 28000000, 35000000]
   },
-  "benchmarks": ["B1"],
+  "benchmarks": ["B1", "B5M"],
   "numBlocks": {
-    "B1":  176
+    "B1":  176,
+    "B5M": 64
   },
   "exec_policies" : ["sync", "async"],
   "dependency_policies": ["with-const"],
@@ -22,9 +24,11 @@
   "time_computation": [false],
   "num_gpus": [1],
   "block_size1d": {
-    "B1": 32
+    "B1": 32,
+    "B5M": 1024
     },
   "block_size2d": {
-    "B1":  8
+    "B1":  8,
+    "B5M": 8
   }
 }

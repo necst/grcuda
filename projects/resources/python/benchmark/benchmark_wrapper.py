@@ -56,7 +56,7 @@ HEAP_SIZE = 26
 # HEAP_SIZE = 140 # P100
 if GPU == V100:
     HEAP_SIZE = 470 # 2 x V100
-elif GPU == A00:
+elif GPU == A100:
     HEAP_SIZE = 470
 
 # Benchmark settings;

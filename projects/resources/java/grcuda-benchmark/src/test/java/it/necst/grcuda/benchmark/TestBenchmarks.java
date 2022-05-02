@@ -3,7 +3,6 @@ package it.necst.grcuda.benchmark;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
-import it.necst.grcuda.benchmark.bench.single_gpu.B1;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;

@@ -40,38 +40,6 @@ public abstract class Benchmark {
     public final BenchmarkResults benchmarkResults;
 
     public Benchmark(BenchmarkConfig currentConfig) {
-        /*
-            TODO: We need to set in the Context those values:
-            1) ExecutionPolicy
-            2) DependencyPolicy
-            3) RetrieveNewStreamPolicy
-            4) NumberOfGPUs
-            5) RetrieveParentStreamPolicy
-            6) DeviceSelectionPolicy
-            7) MemAdvisePolicy
-            8) InputPrefetch
-            9) BandwidthMatrix
-
-            // GrCUDATestUtil -- GrCUDATestOptionsStruct
-            return Context.newBuilder()
-                .allowAllAccess(true)
-                .allowExperimentalOptions(true)
-                .logHandler(new TestLogHandler())
-                .option("log.grcuda.com.nvidia.grcuda.level", "WARNING")
-            //  .option("log.grcuda." + GrCUDALogger.COMPUTATION_LOGGER + ".level", "FINE")  // Uncomment to print kernel log;
-                ;
-            return buildTestContext()
-                .option("grcuda.ExecutionPolicy", options.policy.toString())
-                .option("grcuda.InputPrefetch", String.valueOf(options.inputPrefetch))
-                .option("grcuda.RetrieveNewStreamPolicy", options.retrieveNewStreamPolicy.toString())
-                .option("grcuda.RetrieveParentStreamPolicy", options.retrieveParentStreamPolicy.toString())
-                .option("grcuda.DependencyPolicy", options.dependencyPolicy.toString())
-                .option("grcuda.DeviceSelectionPolicy", options.deviceSelectionPolicy.toString())
-                .option("grcuda.ForceStreamAttach", String.valueOf(options.forceStreamAttach))
-                .option("grcuda.EnableComputationTimers", String.valueOf(options.timeComputation))
-                .option("grcuda.NumberOfGPUs", String.valueOf(numberOfGPUs))
-                .build();
-         */
         this.config = currentConfig;
         this.benchmarkResults = new BenchmarkResults(currentConfig);
         this.context = createContext(currentConfig);
