@@ -32,10 +32,12 @@ package com.nvidia.grcuda.test.runtime;
 
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
-import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.GraphExport;
 import com.nvidia.grcuda.runtime.stream.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.mock.*;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 import org.junit.Test;
@@ -65,7 +67,7 @@ public class ExecutionDAGExportTest {
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {RetrieveNewStreamPolicyEnum.ALWAYS_NEW},
-                {RetrieveNewStreamPolicyEnum.FIFO},
+                {RetrieveNewStreamPolicyEnum.REUSE},
         });
     }
 
@@ -77,7 +79,7 @@ public class ExecutionDAGExportTest {
 
     @Test
     public void complexFrontierExportTest() throws UnsupportedTypeException {
-        GrCUDAExecutionContext context = new GrCUDAExecutionContextMock();
+        AsyncGrCUDAExecutionContext context = new AsyncGrCUDAExecutionContextMock();
 
         // A(1,2) -> B(1) -> D(1,3) -> E(1,4) -> F(4)
         //    \----> C(2)
@@ -97,7 +99,7 @@ public class ExecutionDAGExportTest {
 
     @Test
     public void streamSelection2ExportTest() throws UnsupportedTypeException {
-        GrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder().setRetrieveNewStreamPolicy(this.policy).build();
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder().setRetrieveNewStreamPolicy(this.policy).build();
 
         // A(1,2) -> B(1) -> D(1,3)
         //    \----> C(2)
@@ -125,7 +127,7 @@ public class ExecutionDAGExportTest {
 
     @Test
     public void streamSelectionSimpleWithSyncExportTest() throws UnsupportedTypeException {
-        GrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder().setRetrieveNewStreamPolicy(this.policy).build();
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder().setRetrieveNewStreamPolicy(this.policy).build();
         // Create 4 mock kernel executions. In this case, kernel 3 requires 1 and 2 to finish,
         //   and kernel 4 requires kernel 3 to finish. The final frontier is composed of kernel 3 (arguments "1" and "2" are active),
         //   and kernel 4 (argument "3" is active);
@@ -152,7 +154,7 @@ public class ExecutionDAGExportTest {
 
     @Test
     public void disjointArgumentStreamCross2Test() throws UnsupportedTypeException {
-        GrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.policy).setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT).build();
 
         // A(1,2,7) -> D(1,3,5)
@@ -185,7 +187,7 @@ public class ExecutionDAGExportTest {
 
     @Test
     public void syncParentsOfParentsTest() throws UnsupportedTypeException {
-        GrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.policy).setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT).build();
 
         // A(1,2) -> B(1)
