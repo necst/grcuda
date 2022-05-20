@@ -55,11 +55,14 @@ public class GraphExport {
     public void graphGenerator(String path) {
         StringBuilder output;
         List<Integer> streams = new ArrayList<>();
+        List<Integer> devices = new ArrayList<>();
 
         for (ExecutionDAG.DAGVertex vertex : vertices){
             streams.add(vertex.getComputation().getStream().getStreamNumber());
+            devices.add(vertex.getComputation().getStream().getStreamDeviceId());
         }
         streams = streams.stream().distinct().collect(Collectors.toList());
+        devices = devices.stream().distinct().collect(Collectors.toList());
 
         output = new StringBuilder(new String("digraph G {\n" +
                 "\tfontname=\"Helvetica,Arial,sans-serif\"\n" +
@@ -67,20 +70,32 @@ public class GraphExport {
                 "\tedge [fontname=\"Helvetica,Arial,sans-serif\"]\n" +
                 "\n\n"));
 
-        for (Integer stream : streams) {
-            output.append("\tsubgraph cluster_").append(stream).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
 
-            for (ExecutionDAG.DAGVertex vertex : vertices){
-                if (vertex.getComputation().getStream().getStreamNumber() == stream){
-                    output = new StringBuilder(output + "\"V" + vertex.getId() + vertex.getComputation().getArgumentsThatCanCreateDependencies() + "\";\n");
+        for (Integer device : devices) {
+            output.append("\tsubgraph cluster_").append(device).append(" {\n");
+
+            for (Integer stream : streams) {
+                output.append("\tsubgraph cluster_").append(stream).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
+
+                for (ExecutionDAG.DAGVertex vertex : vertices) {
+                    if (vertex.getComputation().getStream().getStreamNumber() == stream && vertex.getComputation().getStream().getStreamDeviceId() == device) {
+                        output = new StringBuilder(output + "\"V" + vertex.getId() + vertex.getComputation().getArgumentsThatCanCreateDependencies() + "\";\n");
+                    }
                 }
+
+                output = new StringBuilder(output + "\n");
+                output = new StringBuilder(new String(output + "\t\tlabel = \"stream " + stream + "\";\n" +
+                        "\t\tcolor=orange;\n" +
+                        "\t}\n"));
             }
 
             output = new StringBuilder(output + "\n");
-            output = new StringBuilder(new String(output + "\t\tlabel = \"stream " + stream + "\";\n" +
-                    "\t\tcolor=orange;\n" +
+            output = new StringBuilder(new String(output + "\t\tlabel = \"device " + device + "\";\n" +
+                    "\t\tcolor=green;\n" +
                     "\t}\n"));
+
         }
+
         output = new StringBuilder(output + "\n");
 
         for (ExecutionDAG.DAGVertex vertex : vertices) {

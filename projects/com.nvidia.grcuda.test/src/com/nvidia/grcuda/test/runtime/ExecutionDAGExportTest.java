@@ -118,7 +118,7 @@ public class ExecutionDAGExportTest {
         if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
             graphExport.graphGenerator("/home/users/mauro.fama/streamSelection2ExportTestAlwaysNew.gv.txt");
         } else {
-            graphExport.graphGenerator("/home/users/mauro.fama/streamSelection2ExportTestFIFO.gv.txt");
+            graphExport.graphGenerator("/home/users/mauro.fama/streamSelection2ExportTestReuse.gv.txt");
         }
 
     }
@@ -146,7 +146,7 @@ public class ExecutionDAGExportTest {
         if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
             graphExport.graphGenerator("/home/users/mauro.fama/streamSelectionSimpleWithSyncExportTestAlwaysNew.gv.txt");
         } else {
-            graphExport.graphGenerator("/home/users/mauro.fama/streamSelectionSimpleWithSyncExportTestFIFO.gv.txt");
+            graphExport.graphGenerator("/home/users/mauro.fama/streamSelectionSimpleWithSyncExportTestReuse.gv.txt");
         }
     }
 
@@ -179,7 +179,7 @@ public class ExecutionDAGExportTest {
         if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
             graphExport.graphGenerator("/home/users/mauro.fama/disjointArgumentStreamCross2TestAlwaysNew.gv.txt");
         } else {
-            graphExport.graphGenerator("/home/users/mauro.fama/disjointArgumentStreamCross2TestFIFO.gv.txt");
+            graphExport.graphGenerator("/home/users/mauro.fama/disjointArgumentStreamCross2TestReuse.gv.txt");
         }
     }
 
@@ -203,7 +203,9 @@ public class ExecutionDAGExportTest {
         if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
             graphExport.graphGenerator("/home/users/mauro.fama/syncParentsOfParentsTestAlwaysNew.gv.txt");
         } else {
-            graphExport.graphGenerator("/home/users/mauro.fama/syncParentsOfParentsTestFIFO.gv.txt");
+            graphExport.graphGenerator("/home/users/mauro.fama/syncParentsOfParentsTestReuse.gv.txt");
         }
     }
+
+
 }
