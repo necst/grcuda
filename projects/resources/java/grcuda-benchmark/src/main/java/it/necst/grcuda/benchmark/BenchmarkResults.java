@@ -43,8 +43,8 @@ import java.util.stream.Collectors;
 public class BenchmarkResults {
     List<BenchmarkRecord> phases = new LinkedList<>();
     final BenchmarkConfig config;
-    public float gpu_result; // here we store the result of the gpu computation (if a reduction is done)
-    public float cpu_result; // here we store the result of the cpu computation (if a reduction is done)
+    public double gpu_result; // here we store the result of the gpu computation (if a reduction is done)
+    public double cpu_result; // here we store the result of the cpu computation (if a reduction is done)
     
 
     BenchmarkResults(BenchmarkConfig config){

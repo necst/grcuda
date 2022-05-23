@@ -40,7 +40,6 @@ public class BenchmarkConfig {
      */
     public String benchmarkName = "";
     public String setupId = "";
-
     public int totIter;
     public int currentIter;
     public int randomSeed = 42;
@@ -48,13 +47,11 @@ public class BenchmarkConfig {
     public int blockSize1D = 32;
     public int blockSize2D = 8;
     boolean timePhases = false;
-
-
     public int numBlocks = 8;
     public boolean randomInit = false;
     public boolean reInit = false;
+    public boolean reAlloc = false;
     public boolean cpuValidate = true;
-
     // GrCUDA context settings
     public String executionPolicy;
     public boolean inputPrefetch;
@@ -83,6 +80,7 @@ public class BenchmarkConfig {
                 ", numBlocks=" + numBlocks +
                 ", randomInit=" + randomInit +
                 ", reInit=" + reInit +
+                ", reAlloc=" +reAlloc+
                 ", cpuValidate=" + cpuValidate +
                 ", executionPolicy='" + executionPolicy + '\'' +
                 ", inputPrefetch=" + inputPrefetch +

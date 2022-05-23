@@ -3,6 +3,8 @@ package it.necst.grcuda.benchmark;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
+import it.necst.grcuda.benchmark.bench.single_gpu.B5M;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
@@ -171,6 +173,39 @@ public class TestBenchmarks {
          */
     }
 
+    @Test
+    public void B5M_debug(){
+        BenchmarkConfig benchmarkConfig = new BenchmarkConfig();
+        benchmarkConfig.benchmarkName = "B5M";
+        benchmarkConfig.setupId = "";
+        benchmarkConfig.totIter = 2;
+        benchmarkConfig.currentIter = 0;
+        benchmarkConfig.randomSeed = 42;
+        benchmarkConfig.size = 1000000;
+        benchmarkConfig.blockSize1D = 1024;
+        benchmarkConfig.blockSize2D = 8;
+        benchmarkConfig.timePhases = false;
+        benchmarkConfig.numBlocks = 64;
+        benchmarkConfig.randomInit = false;
+        benchmarkConfig.reInit = false;
+        benchmarkConfig.reAlloc = false;
+        benchmarkConfig.cpuValidate = true;
+        benchmarkConfig.executionPolicy = "sync";
+        benchmarkConfig.inputPrefetch = false;
+        benchmarkConfig.retrieveNewStreamPolicy = "always-new";
+        benchmarkConfig.retrieveParentStreamPolicy = "disjoint";
+        benchmarkConfig.dependencyPolicy = "with-const";
+        benchmarkConfig.deviceSelectionPolicy = "round-robin";
+        benchmarkConfig.forceStreamAttach = false;
+        benchmarkConfig.numGpus = 1;
+        benchmarkConfig.memAdvisePolicy = "none";
+        benchmarkConfig.bandwidthMatrix="/home/users/ian.didio/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv";
+
+        B5M bench = new B5M(benchmarkConfig);
+        bench.run();
+        bench.saveResults();
+
+    }
 
 }
 

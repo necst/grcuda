@@ -46,7 +46,7 @@ public abstract class Benchmark {
     }
 
     private Context createContext(BenchmarkConfig config){
-         return  Context
+        return  Context
                 .newBuilder()
                 .allowAllAccess(true)
                 .allowExperimentalOptions(true)
@@ -83,38 +83,49 @@ public abstract class Benchmark {
 
     /**
      * This method is used to run the current benchmark.
-     * It will use the information stored in the config attribute to decide whether to do an additional initialization phase and the cpuValidation.
+     * It will use the information stored in the config attribute to decide whether to do an additional initialization phase and
+     the cpuValidation.
      */
     public void run() {
         System.out.println("INSIDE run()");
         for (int i = 0; i < config.totIter; ++i) {
 
-            // TODO: start recording total time
+            // Start a timer to monitor the total GPU execution time
+            long start = System.nanoTime();
 
-            if (config.reInit || i == 0)
-                //TODO: should we separate the "initialize" phase from the "alloc" phase (like on python)?
-                time(i, "init", this::initializeTest);
+            // Allocate memory for the benchmark
+            if (config.reAlloc || i == 0) time(i, "alloc", this::allocateTest);
 
+            // Initialize memory for the benchmark
+            if (config.reInit || i == 0) time(i, "init", this::initializeTest);
+
+            // Reset the result
             time(i, "reset", this::resetIteration);
 
             //TODO: add nvprof_profile step
 
+            // Execute the benchmark
             time(i, "execution", this::runTest);
 
             //TODO: stop nvprof_profile step
 
-            //TODO: end recording total time
+            // Stop the timer
+            long end = System.nanoTime();
 
-            if (config.cpuValidate) 
+            // Perform validation on CPU
+            if (config.cpuValidate)
                 cpuValidation();
+
+            System.out.println("VALIDATION \nCPU: " + benchmarkResults.cpu_result +"\nGPU: " + benchmarkResults.gpu_result);
+
 
             //TODO: save to file each iteration
         }
-
     }
 
     /**
-     * This function is tasked with saving a json file with the results of the current benchmark, computing the needed statistics.
+     * This function is tasked with saving a json file with the results of the current benchmark, computing the needed
+     statistics.
      */
     public void saveResults() {
         System.out.println(this.benchmarkResults);
@@ -132,7 +143,7 @@ public abstract class Benchmark {
                         METHODS TO BE IMPLEMENTED IN THE BENCHMARKS
         ###################################################################################
     */
-    
+
     /**
      * Here goes the read of the test parameters,
      * the initialization of the necessary arrays
@@ -140,6 +151,12 @@ public abstract class Benchmark {
      * @param iteration the current number of the iteration
      */
     public abstract void initializeTest(int iteration);
+
+    /**
+     * Allocate new memory on GPU used for the benchmark
+     * @param iteration the current number of the iteration
+     */
+    public abstract void allocateTest(int iteration);
 
     /**
      * Reset code, to be run before each test

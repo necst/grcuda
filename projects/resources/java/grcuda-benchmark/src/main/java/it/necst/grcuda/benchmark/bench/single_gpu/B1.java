@@ -39,32 +39,24 @@ import it.necst.grcuda.benchmark.Benchmark;
 import it.necst.grcuda.benchmark.BenchmarkConfig;
 
 
-
 public class B1 extends Benchmark {
 
-    private static final String SQUARE_KERNEL =
+    private static final String SQUARE_KERNEL = "" +
             "extern \"C\" __global__ void square(float* x, float* y, int n) { \n" +
-                    "for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {\n" +
-                    "y[i] = x[i] * x[i];\n" +
-                    "}\n" +
-                    "}\n";
+            "    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x) {\n" +
+            "        y[i] = x[i] * x[i];\n" +
+            "    }\n" +
+            "}\n";
 
     private static final String REDUCE_KERNEL = "" +
             "// From https://devblogs.nvidia.com/faster-parallel-reductions-kepler/\n" +
-            "\n" +
-            "__inline__ __device__ float warp_reduce(float val) {\n" +
-            "    int warp_size = 32;\n" +
-            "    for (int offset = warp_size / 2; offset > 0; offset /= 2)\n" +
+            "\n" + "__inline__ __device__ float warp_reduce(float val) {\n" +
+            "    int warp_size = 32;\n" + "    for (int offset = warp_size / 2; offset > 0; offset /= 2)\n" +
             "        val += __shfl_down_sync(0xFFFFFFFF, val, offset);\n" +
-            "    return val;\n" +
-            "}\n" +
-            "\n" +
-            "__global__ void reduce(float *x, float *y, float* z, int N) {\n" +
-            "    int warp_size = 32;\n" +
-            "    float sum = float(0);\n" +
+            "    return val;\n" + "}\n" + "\n" + "__global__ void reduce(float *x, float *y, float* z, int N) {\n" +
+            "    int warp_size = 32;\n" + "    float sum = float(0);\n" +
             "    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {\n" +
-            "        sum += x[i] - y[i];\n" +
-            "    }\n" +
+            "        sum += x[i] - y[i];\n" + "    }\n" +
             "    sum = warp_reduce(sum); // Obtain the sum of values in the current warp;\n" +
             "    if ((threadIdx.x & (warp_size - 1)) == 0) // Same as (threadIdx.x % warp_size) == 0 but faster\n" +
             "        atomicAdd(z, sum); // The first thread in the warp updates the output;\n" +
@@ -80,50 +72,54 @@ public class B1 extends Benchmark {
 
     @Override
     public void initializeTest(int iteration) {
-        // Context initialization
-        Value buildKernel = context.eval("grcuda", "buildkernel");
-
-        // Kernel build
-        squareKernelFunction = buildKernel.execute(SQUARE_KERNEL, "square", "pointer, pointer, sint32");
-        reduceKernelFunction = buildKernel.execute(REDUCE_KERNEL, "reduce", "pointer, pointer, pointer, sint32");
-
-        // Array initialization
-        Value deviceArray = context.eval("grcuda", "DeviceArray");
-        x = deviceArray.execute("float", config.size);
-        x1 = deviceArray.execute("float", config.size);
-        y = deviceArray.execute("float", config.size);
-        y1 = deviceArray.execute("float", config.size);
-        res = deviceArray.execute("float", 1);
-
-    }
-
-    @Override
-    public void resetIteration(int iteration) {
         assert (!config.randomInit);
         for (int i = 0; i < config.size; i++) {
             x.setArrayElement(i, 1.0f / (i + 1));
             y.setArrayElement(i, 2.0f / (i + 1));
         }
+    }
+
+    @Override
+    public void allocateTest(int iteration) {
+        // Allocate 2 vectors
+        Value deviceArray = context.eval("grcuda", "DeviceArray");
+        x = deviceArray.execute("float", config.size);
+        x1 = deviceArray.execute("float", config.size);
+        y = deviceArray.execute("float", config.size);
+        y1 = deviceArray.execute("float", config.size);
+
+        // Allocate a support vector
+        res = deviceArray.execute("float", 1);
+
+        // Context initialization
+        Value buildKernel = context.eval("grcuda", "buildkernel");
+
+        // Build the kernels;
+        squareKernelFunction = buildKernel.execute(SQUARE_KERNEL, "square", "pointer, pointer, sint32");
+        reduceKernelFunction = buildKernel.execute(REDUCE_KERNEL, "reduce", "pointer, pointer, pointer, sint32");
+    }
+
+    @Override
+    public void resetIteration(int iteration) {
+        initializeTest(iteration);
         res.setArrayElement(0, 0.0f);
     }
 
     @Override
     public void runTest(int iteration) {
-        System.out.println("    INSIDE runTest() - "+iteration);
+        System.out.println("    INSIDE runTest() - " + iteration);
 
-        squareKernelFunction
-                .execute(config.numBlocks, config.blockSize1D) // Set parameters
+        // A, B. Call the kernel. The 2 computations are independent, and can be done in parallel
+        squareKernelFunction.execute(config.numBlocks, config.blockSize1D) // Set parameters
                 .execute(x, x1, config.size); // Execute actual kernel
-
-        squareKernelFunction
-                .execute(config.numBlocks, config.blockSize1D) // Set parameters
+        squareKernelFunction.execute(config.numBlocks, config.blockSize1D) // Set parameters
                 .execute(y, y1, config.size); // Execute actual kernel
 
-        reduceKernelFunction
-                .execute(config.numBlocks, config.blockSize1D) // Set parameters
+        // C. Compute the sum of the result
+        reduceKernelFunction.execute(config.numBlocks, config.blockSize1D) // Set parameters
                 .execute(x1, y1, res, config.size); // Execute actual kernel
 
-        // sync step to measure the real computation time
+        // Sync step to measure the real computation time
         benchmarkResults.gpu_result = res.getArrayElement(0).asFloat();
     }
 
@@ -133,27 +129,29 @@ public class B1 extends Benchmark {
 
         float[] xHost = new float[config.size];
         float[] yHost = new float[config.size];
-        float[] resHostTmp = new float[config.size];
+        // float[] resHostTmp = new float[config.size];
+
         for (int i = 0; i < config.size; i++) {
             xHost[i] = 1.0f / (i + 1);
             yHost[i] = 2.0f / (i + 1);
-            resHostTmp[i] = 0.0f;
+            // resHostTmp[i] = 0.0f;
         }
 
         for (int i = 0; i < config.size; i++) {
-            float xHostTmp = xHost[i] * xHost[i];
-            float yHostTmp = yHost[i] * yHost[i];
-            resHostTmp[i] = xHostTmp - yHostTmp;
+            xHost[i] = xHost[i] * xHost[i];
+            yHost[i]=  yHost[i] * yHost[i];
+            xHost[i] -= yHost[i];
         }
 
         float acc = 0.0f;
 
         for (int i = 0; i < config.size; i++) {
-            acc += resHostTmp[i];
+            acc += xHost[i];
         }
 
-        //assertEquals(benchmarkResults.gpu_result, acc, 1e-5); //TODO: IT IS FAILING WITH THIS DELTA --> INVESTIGATE
-        assertEquals(benchmarkResults.gpu_result, acc, 1e-3); //with 1e-3 it is not failing
+        benchmarkResults.cpu_result = acc;
+
+        assertEquals(benchmarkResults.gpu_result, acc, 1e-3); //TODO: IT IS FAILING WITH THIS DELTA --> INVESTIGATE
 
     }
 
