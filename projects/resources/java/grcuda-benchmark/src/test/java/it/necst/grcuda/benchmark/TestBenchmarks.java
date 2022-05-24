@@ -29,7 +29,7 @@ public class TestBenchmarks {
         //TODO: Proper refactoring should be done to generate the set of tests needed from the json file
      */
     private void iterateAllPossibleConfig(Config parsedConfig, GPUs currentGPUmodel) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        String BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_graph.csv";
+        String BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_graph_2_v100.csv";
 
         ArrayList<String> dp, nsp, psp, cdp;
         ArrayList<Integer> ng, block_sizes;
@@ -150,6 +150,7 @@ public class TestBenchmarks {
 
     }
 
+    @Ignore
     @Test
     public void runAll_gtx1660_super() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         GPUs gpuModel = GPUs.GTX1660_SUPER;
@@ -158,6 +159,29 @@ public class TestBenchmarks {
 
         // get the configuration for the selected GPU into a Config class
         String CONFIG_PATH = PATH + "/config_GTX1660_super.json";
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
+        Config parsedConfig = gson.fromJson(reader, Config.class);
+        System.out.println(gson.toJson(parsedConfig)); // print the current configuration
+
+        iterateAllPossibleConfig(parsedConfig, gpuModel);
+
+        /*
+            TODO:
+                0) skip the test if the gpu is not the one present in the system
+                1) parse the json config file
+                2) sequentially run all the specified benchmarks configurations like in python code
+         */
+    }
+
+    @Test
+    public void runAll_gtx960_multi() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        GPUs gpuModel = GPUs.GTX960;
+        // TODO: given that we are following the selection procedure of the benchmarks in python
+        //      we need to be sure that we have inserted the values in the same order like "dependencies_policies"
+
+        // get the configuration for the selected GPU into a Config class
+        String CONFIG_PATH = PATH + "/config_GTX960.json";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
         Config parsedConfig = gson.fromJson(reader, Config.class);

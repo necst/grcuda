@@ -121,6 +121,18 @@ public class B1 extends Benchmark {
 
         // Sync step to measure the real computation time
         benchmarkResults.gpu_result = res.getArrayElement(0).asFloat();
+
+
+    }
+
+    @Override
+    public void freeMemory(){
+        // temp debugging, manually freeing the allocated memory
+        x.invokeMember("free");
+        x1.invokeMember("free");
+        y.invokeMember("free");
+        y1.invokeMember("free");
+        res.invokeMember("free");
     }
 
     @Override

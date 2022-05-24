@@ -33,6 +33,7 @@ package it.necst.grcuda.benchmark;
 
 import java.util.function.Consumer;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 
 public abstract class Benchmark {
     public final Context context;
@@ -121,6 +122,12 @@ public abstract class Benchmark {
 
             //TODO: save to file each iteration
         }
+
+        //  close the currently created engine and context
+        //  TODO: investigate the need to use freeMemory()
+        //  Value cu = context.eval("grcuda", "cudaDeviceReset()"); // -> crashes the JVM after some time
+        this.freeMemory();
+        context.close();
     }
 
     /**
@@ -137,12 +144,13 @@ public abstract class Benchmark {
     }
 
 
-
     /*
         ###################################################################################
                         METHODS TO BE IMPLEMENTED IN THE BENCHMARKS
         ###################################################################################
     */
+
+    public abstract void freeMemory();
 
     /**
      * Here goes the read of the test parameters,

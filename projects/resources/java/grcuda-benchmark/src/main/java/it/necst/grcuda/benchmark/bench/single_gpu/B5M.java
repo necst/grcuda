@@ -109,7 +109,9 @@ public class B5M extends Benchmark {
     public void allocateTest(int iteration) {
         // Allocate vectors
         Value deviceArray = context.eval("grcuda", "DeviceArray");
+
         for (int i = 0; i < this.local_K; i++) {
+            System.out.println("    "+i+")asking for two deviceArray of double of size: " + this.config.size);
             this.x[i] = deviceArray.execute("double", this.config.size);
             this.y[i] = deviceArray.execute("double", this.config.size);
         }
@@ -119,6 +121,15 @@ public class B5M extends Benchmark {
 
         // Build the kernels
         bs_kernelFunction = buildKernel.execute(BS_KERNEL, "bs", "const pointer, pointer, sint32, double, double, double, double");
+    }
+
+    @Override
+    public void freeMemory(){
+        // temp debugging, manually freeing the allocated memory
+        for (int i = 0; i < this.local_K; i++) {
+            this.x[i].invokeMember("free");
+            this.y[i].invokeMember("free");
+        }
     }
 
     @Override
