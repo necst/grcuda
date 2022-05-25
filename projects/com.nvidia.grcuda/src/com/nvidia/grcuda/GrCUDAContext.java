@@ -223,7 +223,7 @@ public final class GrCUDAContext {
         if (grCUDAOptionMap.isExportDAGEnabled()){
             ExecutionDAG dag = grCUDAExecutionContext.getDag();
             GraphExport graphExport = new GraphExport(dag);
-            graphExport.graphGenerator("../../ExecutionDAG.gv.txt");
+            graphExport.graphGenerator("../../../ExecutionDAG.gv.txt");
         }
         this.grCUDAExecutionContext.cleanup();
     }
