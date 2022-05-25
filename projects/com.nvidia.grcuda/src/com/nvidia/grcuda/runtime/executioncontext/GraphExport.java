@@ -63,10 +63,8 @@ public class GraphExport {
             streams.add(vertex.getComputation().getStream().getStreamNumber());
             devices.add(vertex.getComputation().getStream().getStreamDeviceId());
         }
-        streams.add(-1);
         int offset = streams.size();
         streams = streams.stream().distinct().map(val -> val < 0 ? -val+offset : val).collect(Collectors.toList());
-        System.out.println(streams);
         devices = devices.stream().distinct().collect(Collectors.toList());
 
         output = new StringBuilder(new String("digraph G {\n" +
@@ -79,6 +77,7 @@ public class GraphExport {
             output.append("\tsubgraph cluster_").append(device).append(" {\n");
 
             for (Integer stream : streams) {
+                if (stream<0) stream = streams.size() + (-stream);
                 output.append("\tsubgraph cluster_").append(stream).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
 
                 for (ExecutionDAG.DAGVertex vertex : vertices) {
