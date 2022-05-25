@@ -64,7 +64,7 @@ public class GraphExport {
             devices.add(vertex.getComputation().getStream().getStreamDeviceId());
         }
         int offset = streams.size();
-        streams = streams.stream().distinct().map(val -> val < 0 ? -val+offset : val).collect(Collectors.toList());
+        streams = streams.stream().distinct().map(val -> val < 0 ? (val*-1)+offset : val).collect(Collectors.toList());
         devices = devices.stream().distinct().collect(Collectors.toList());
 
         output = new StringBuilder(new String("digraph G {\n" +
