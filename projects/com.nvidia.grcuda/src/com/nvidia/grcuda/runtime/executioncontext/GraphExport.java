@@ -62,6 +62,11 @@ public class GraphExport {
             devices.add(vertex.getComputation().getStream().getStreamDeviceId());
         }
         streams = streams.stream().distinct().collect(Collectors.toList());
+        for (Integer stream: streams){
+            if (stream<0) {
+                 stream = stream + streams.size();
+            }
+        }
         devices = devices.stream().distinct().collect(Collectors.toList());
 
         output = new StringBuilder(new String("digraph G {\n" +
