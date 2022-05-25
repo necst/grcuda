@@ -36,6 +36,8 @@
 
 package com.nvidia.grcuda.runtime.executioncontext;
 
+import com.nvidia.grcuda.runtime.stream.CUDAStream;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -61,8 +63,10 @@ public class GraphExport {
             streams.add(vertex.getComputation().getStream().getStreamNumber());
             devices.add(vertex.getComputation().getStream().getStreamDeviceId());
         }
+        streams.add(-1);
         int offset = streams.size();
         streams = streams.stream().distinct().map(val -> val < 0 ? -val+offset : val).collect(Collectors.toList());
+        System.out.println(streams);
         devices = devices.stream().distinct().collect(Collectors.toList());
 
         output = new StringBuilder(new String("digraph G {\n" +
