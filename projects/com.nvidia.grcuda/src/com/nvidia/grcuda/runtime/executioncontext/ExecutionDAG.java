@@ -326,7 +326,7 @@ public class ExecutionDAG implements TruffleObject {
         final private DAGVertex end;
         final private int id;
         /**
-         * Set of objects that represents depenencies between the two vertices;
+         * Set of objects that represents dependencies between the two vertices;
          */
         private Collection<ComputationArgumentWithValue> dependencies;
 

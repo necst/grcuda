@@ -50,8 +50,10 @@ import com.nvidia.grcuda.functions.map.MapFunction;
 import com.nvidia.grcuda.functions.map.ShredFunction;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.GraphExport;
 import com.nvidia.grcuda.runtime.executioncontext.SyncGrCUDAExecutionContext;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.TruffleLanguage;
@@ -218,6 +220,11 @@ public final class GrCUDAContext {
      * Cleanup the GrCUDA context at the end of the execution;
      */
     public void cleanup() {
+        if (grCUDAOptionMap.isExportDAGEnabled()){
+            ExecutionDAG dag = grCUDAExecutionContext.getDag();
+            GraphExport graphExport = new GraphExport(dag);
+            graphExport.graphGenerator("../../ExecutionDAG.gv.txt");
+        }
         this.grCUDAExecutionContext.cleanup();
     }
 }

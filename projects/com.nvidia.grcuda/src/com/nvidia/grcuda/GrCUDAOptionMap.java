@@ -85,6 +85,7 @@ public class GrCUDAOptionMap implements TruffleObject {
             "projects" + File.separatorChar + "resources" + File.separatorChar +
             "connection_graph" + File.separatorChar + "datasets" + File.separatorChar + "connection_graph.csv";
     public static final double DEFAULT_DATA_THRESHOLD = 0.1;
+    public static final boolean DEFAULT_EXPORT_DAG = false;
 
     public GrCUDAOptionMap(OptionValues options) {
         optionsMap = new HashMap<>();
@@ -244,6 +245,10 @@ public class GrCUDAOptionMap implements TruffleObject {
 
     public Double getDataThreshold() {
         return (Double) getOptionValueFromOptionKey(GrCUDAOptions.DataThreshold);
+    }
+
+    public Boolean isExportDAGEnabled(){
+        return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.ExportDAG);
     }
 
     public MemAdviserEnum getMemAdvisePolicy() {

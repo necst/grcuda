@@ -101,4 +101,7 @@ public final class GrCUDAOptions {
     @Option(category = OptionCategory.USER, help = "When selecting a device, do not give priority to devices that have less than this percentage of data already available, " +
             "in some DeviceSelectionPolicies such as min-transfer-size. A lower percentage favors exploitation, a high percentage favors exploration.", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<Double> DataThreshold = new OptionKey<>(GrCUDAOptionMap.DEFAULT_DATA_THRESHOLD);
+
+    @Option(category = OptionCategory.USER, help = "Dump scheduling DAG", stability = OptionStability.EXPERIMENTAL) //
+    public static final OptionKey<Boolean> ExportDAG = new OptionKey<>(GrCUDAOptionMap.DEFAULT_EXPORT_DAG);
 }
