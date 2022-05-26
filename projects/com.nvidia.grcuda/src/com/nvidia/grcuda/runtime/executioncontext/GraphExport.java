@@ -123,6 +123,7 @@ public class GraphExport {
                 "\tend [shape=Msquare];\n" +
                 "}");
 
+        path = path + ".dot";
         File graph = new File(path);
         try {
             FileWriter writer = new FileWriter(graph);
@@ -134,7 +135,5 @@ public class GraphExport {
             e.printStackTrace();
         }
     }
-
-
 
 }

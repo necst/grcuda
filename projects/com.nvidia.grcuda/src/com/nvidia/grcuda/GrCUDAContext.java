@@ -220,11 +220,14 @@ public final class GrCUDAContext {
      * Cleanup the GrCUDA context at the end of the execution;
      */
     public void cleanup() {
-        if (!grCUDAOptionMap.getExportDAGPath().equals("false")){
+        if (grCUDAOptionMap.getExportDAGPath().equals("true")){
+            System.out.println("Please specify the destination path for the scheduling DAG export");
+        } else if (!grCUDAOptionMap.getExportDAGPath().equals("false")){
             ExecutionDAG dag = grCUDAExecutionContext.getDag();
             GraphExport graphExport = new GraphExport(dag);
             graphExport.graphGenerator(grCUDAOptionMap.getExportDAGPath());
         }
         this.grCUDAExecutionContext.cleanup();
     }
+
 }

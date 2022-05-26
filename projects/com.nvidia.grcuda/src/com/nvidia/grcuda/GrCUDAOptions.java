@@ -102,6 +102,6 @@ public final class GrCUDAOptions {
             "in some DeviceSelectionPolicies such as min-transfer-size. A lower percentage favors exploitation, a high percentage favors exploration.", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<Double> DataThreshold = new OptionKey<>(GrCUDAOptionMap.DEFAULT_DATA_THRESHOLD);
 
-    @Option(category = OptionCategory.USER, help = "Add this option to dump scheduling DAG. Specify the destination path and the file name with extension .dot as value of the option (e.g. ../../../ExecutionDAG.dot)", stability = OptionStability.EXPERIMENTAL) //
+    @Option(category = OptionCategory.USER, help = "Add this option to dump scheduling DAG. Specify the destination path and the file name as value of the option (e.g. ../../../ExecutionDAG). File will be saved with .dot extension.", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> ExportDAG = new OptionKey<>(GrCUDAOptionMap.DEFAULT_EXPORT_DAG);
 }
