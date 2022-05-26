@@ -63,9 +63,9 @@ public class GraphExport {
             streams.add(vertex.getComputation().getStream().getStreamNumber());
             devices.add(vertex.getComputation().getStream().getStreamDeviceId());
         }
-        int offset = streams.size();
-        streams = streams.stream().distinct().map(val -> val < 0 ? (val*-1)+offset : val).collect(Collectors.toList());
+        streams = streams.stream().distinct().collect(Collectors.toList());
         devices = devices.stream().distinct().collect(Collectors.toList());
+        int offset = streams.size();
 
         output = new StringBuilder(new String("digraph G {\n" +
                 "\tfontname=\"Helvetica,Arial,sans-serif\"\n" +
@@ -74,10 +74,11 @@ public class GraphExport {
                 "\n\n"));
 
         for (Integer device : devices) {
-            output.append("\tsubgraph cluster_").append(device).append(" {\n");
+            output.append("\tsubgraph device_").append(device).append(" {\n");
 
             for (Integer stream : streams) {
-                output.append("\tsubgraph cluster_").append(stream).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
+                if (stream < 0 ) output.append("\tsubgraph stream_").append((stream*-1)+offset).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
+                else output.append("\tsubgraph stream_").append(stream).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
 
                 for (ExecutionDAG.DAGVertex vertex : vertices) {
                     if (vertex.getComputation().getStream().getStreamNumber() == stream && vertex.getComputation().getStream().getStreamDeviceId() == device) {
@@ -129,7 +130,7 @@ public class GraphExport {
             writer.close();
             System.out.println("Execution DAG successfully exported at " + path);
         } catch (IOException e) {
-            System.out.println("An error occurred while exporting the Execution DAG");
+            System.out.println("An error occurred while exporting the Execution DAG, please check the path");
             e.printStackTrace();
         }
     }

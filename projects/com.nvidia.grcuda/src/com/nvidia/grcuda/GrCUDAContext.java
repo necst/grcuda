@@ -220,10 +220,10 @@ public final class GrCUDAContext {
      * Cleanup the GrCUDA context at the end of the execution;
      */
     public void cleanup() {
-        if (grCUDAOptionMap.isExportDAGEnabled()){
+        if (!grCUDAOptionMap.getExportDAGPath().equals("false")){
             ExecutionDAG dag = grCUDAExecutionContext.getDag();
             GraphExport graphExport = new GraphExport(dag);
-            graphExport.graphGenerator("../../../ExecutionDAG.gv.txt");
+            graphExport.graphGenerator(grCUDAOptionMap.getExportDAGPath());
         }
         this.grCUDAExecutionContext.cleanup();
     }
