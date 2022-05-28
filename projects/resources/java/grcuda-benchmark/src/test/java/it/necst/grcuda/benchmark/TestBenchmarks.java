@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import it.necst.grcuda.benchmark.bench.single_gpu.B5M;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -41,6 +43,7 @@ public class TestBenchmarks {
         boolean mock = true; // TODO: FOR NOW SIMULATE ONLY THE COMMAND
         String output_date = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.ITALIAN).format(new Date());
 
+        Benchmark benchToRun;
         for(String bench : parsedConfig.benchmarks){ // given bench X from the set of all the benchmarks iterate over the number of elements associated with that benchmark
             ArrayList<Integer> sizes = parsedConfig.num_elem.get(bench);
             if(sizes == null) continue; //skip everything if no sizes are specified for the current bench
@@ -119,7 +122,7 @@ public class TestBenchmarks {
                                                         config.enableComputationTimers =t;
 
                                                         System.out.println(config);
-                                                        Benchmark benchToRun = createBench(config);
+                                                        benchToRun = createBench(config);
                                                         benchToRun.run();
                                                         benchToRun.saveResults();
                                                     }
@@ -195,40 +198,6 @@ public class TestBenchmarks {
                 1) parse the json config file
                 2) sequentially run all the specified benchmarks configurations like in python code
          */
-    }
-
-    @Test
-    public void B5M_debug(){
-        BenchmarkConfig benchmarkConfig = new BenchmarkConfig();
-        benchmarkConfig.benchmarkName = "B5M";
-        benchmarkConfig.setupId = "";
-        benchmarkConfig.totIter = 2;
-        benchmarkConfig.currentIter = 0;
-        benchmarkConfig.randomSeed = 42;
-        benchmarkConfig.size = 1000000;
-        benchmarkConfig.blockSize1D = 1024;
-        benchmarkConfig.blockSize2D = 8;
-        benchmarkConfig.timePhases = false;
-        benchmarkConfig.numBlocks = 64;
-        benchmarkConfig.randomInit = false;
-        benchmarkConfig.reInit = false;
-        benchmarkConfig.reAlloc = false;
-        benchmarkConfig.cpuValidate = true;
-        benchmarkConfig.executionPolicy = "sync";
-        benchmarkConfig.inputPrefetch = false;
-        benchmarkConfig.retrieveNewStreamPolicy = "always-new";
-        benchmarkConfig.retrieveParentStreamPolicy = "disjoint";
-        benchmarkConfig.dependencyPolicy = "with-const";
-        benchmarkConfig.deviceSelectionPolicy = "round-robin";
-        benchmarkConfig.forceStreamAttach = false;
-        benchmarkConfig.numGpus = 1;
-        benchmarkConfig.memAdvisePolicy = "none";
-        benchmarkConfig.bandwidthMatrix="/home/users/ian.didio/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv";
-
-        B5M bench = new B5M(benchmarkConfig);
-        bench.run();
-        bench.saveResults();
-
     }
 
 }

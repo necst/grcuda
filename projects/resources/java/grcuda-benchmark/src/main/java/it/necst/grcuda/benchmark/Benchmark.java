@@ -36,7 +36,7 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 
 public abstract class Benchmark {
-    public final Context context;
+    public Context context;
     public final BenchmarkConfig config;
     public final BenchmarkResults benchmarkResults;
 
@@ -126,8 +126,10 @@ public abstract class Benchmark {
         //  close the currently created engine and context
         //  TODO: investigate the need to use freeMemory()
         //  Value cu = context.eval("grcuda", "cudaDeviceReset()"); // -> crashes the JVM after some time
-        this.freeMemory();
+        //this.freeMemory();
         context.close();
+        //context = null;
+        //Runtime.getRuntime().gc(); // hint garbage collector
     }
 
     /**
