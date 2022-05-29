@@ -31,6 +31,7 @@
 
 package it.necst.grcuda.benchmark;
 
+import java.util.ArrayList;
 import java.util.function.Consumer;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
@@ -39,15 +40,107 @@ public abstract class Benchmark {
     public Context context;
     public final BenchmarkConfig config;
     public final BenchmarkResults benchmarkResults;
+    public ArrayList<Value> deviceArrayList = new ArrayList<>(); // used to store all the arrays to be freed at the end of the benchmark
+    public Value deviceArray;
 
     public Benchmark(BenchmarkConfig currentConfig) {
         this.config = currentConfig;
         this.benchmarkResults = new BenchmarkResults(currentConfig);
         this.context = createContext(currentConfig);
+        this.deviceArray = context.eval("grcuda", "DeviceArray");
+    }
+
+    /**
+     * This method is used to run the current benchmark.
+     * It will use the information stored in the config attribute to decide whether to do an additional initialization phase and
+     the cpuValidation.
+     */
+    public void run() {
+        if(config.debug)
+            System.out.println("INSIDE run()");
+
+        for (int i = 0; i < config.totIter; ++i) {
+
+            // Start a timer to monitor the total GPU execution time
+            long overall_gpu_start = System.nanoTime();
+
+            // Allocate memory for the benchmark
+            if (config.reAlloc || i == 0) time(i, "alloc", this::allocateTest);
+
+            // Initialize memory for the benchmark
+            if (config.reInit || i == 0) time(i, "init", this::initializeTest);
+
+            // Reset the result
+            time(i, "reset", this::resetIteration);
+
+            //TODO: add nvprof_profile step
+
+            // Execute the benchmark
+            time(i, "execution", this::runTest);
+
+            //TODO: stop nvprof_profile step
+
+            // Stop the timer
+            long overall_gpu_end = System.nanoTime();
+
+            // Perform validation on CPU
+            if (config.cpuValidate)
+                cpuValidation();
+
+            if(config.debug)
+                System.out.println("VALIDATION \nCPU: " + benchmarkResults.cpu_result +"\nGPU: " + benchmarkResults.gpu_result);
+        }
+
+        // Save the benchmark results
+        saveResults();
+
+        // Free the allocated arrays
+        deallocDeviceArrays();
+
+        //  Gracefully close the current context
+        context.close();
+    }
+
+    /**
+     * This method is used to time the function passed to it.
+     * It will add the timing and the phase name to the benchmarkResult attribute.
+     * @param iteration the current iteration of the benchmark
+     * @param phaseName the current phase of the benchmark
+     * @param functionToTime the function to time passed like "class::funName"
+     */
+    private void time(int iteration, String phaseName, Consumer<Integer> functionToTime){
+        long begin = System.nanoTime();
+        functionToTime.accept(iteration);
+        this.benchmarkResults.addPhase(phaseName, System.nanoTime() - begin, iteration);
+    }
+
+    /**
+     * This function is tasked with saving a json file with the results of the current benchmark, computing the needed
+     statistics.
+     */
+    private void saveResults() {
+        if(config.debug)
+            System.out.println(this.benchmarkResults);
+        /*  TODO:
+                - Compute the various statistics as in the Python version of the benchmarks
+                - Store the statistics in a json object
+                - Save the json object to a file
+         */
+    }
+
+    protected void deallocDeviceArrays(){
+        for(Value v : deviceArrayList)
+            v.invokeMember("free");
+    }
+
+    protected Value requestArray(String type, int size){
+        Value vector = deviceArray.execute(type, size);
+        deviceArrayList.add(vector);
+        return vector;
     }
 
     private Context createContext(BenchmarkConfig config){
-        return  Context
+        return Context
                 .newBuilder()
                 .allowAllAccess(true)
                 .allowExperimentalOptions(true)
@@ -69,90 +162,11 @@ public abstract class Benchmark {
                 .build();
     }
 
-    /**
-     * This method is used to time the function passed to it.
-     * It will add the timing and the phase name to the benchmarkResult attribute.
-     * @param iteration the current iteration of the benchmark
-     * @param phaseName the current phase of the benchmark
-     * @param functionToTime the function to time passed like "class::funName"
-     */
-    private void time(int iteration, String phaseName, Consumer<Integer> functionToTime){
-        long begin = System.nanoTime();
-        functionToTime.accept(iteration);
-        this.benchmarkResults.addPhase(phaseName, System.nanoTime() - begin, iteration);
-    }
-
-    /**
-     * This method is used to run the current benchmark.
-     * It will use the information stored in the config attribute to decide whether to do an additional initialization phase and
-     the cpuValidation.
-     */
-    public void run() {
-        System.out.println("INSIDE run()");
-        for (int i = 0; i < config.totIter; ++i) {
-
-            // Start a timer to monitor the total GPU execution time
-            long start = System.nanoTime();
-
-            // Allocate memory for the benchmark
-            if (config.reAlloc || i == 0) time(i, "alloc", this::allocateTest);
-
-            // Initialize memory for the benchmark
-            if (config.reInit || i == 0) time(i, "init", this::initializeTest);
-
-            // Reset the result
-            time(i, "reset", this::resetIteration);
-
-            //TODO: add nvprof_profile step
-
-            // Execute the benchmark
-            time(i, "execution", this::runTest);
-
-            //TODO: stop nvprof_profile step
-
-            // Stop the timer
-            long end = System.nanoTime();
-
-            // Perform validation on CPU
-            if (config.cpuValidate)
-                cpuValidation();
-
-            System.out.println("VALIDATION \nCPU: " + benchmarkResults.cpu_result +"\nGPU: " + benchmarkResults.gpu_result);
-
-
-            //TODO: save to file each iteration
-        }
-
-        //  close the currently created engine and context
-        //  TODO: investigate the need to use freeMemory()
-        //  Value cu = context.eval("grcuda", "cudaDeviceReset()"); // -> crashes the JVM after some time
-        //this.freeMemory();
-        context.close();
-        //context = null;
-        //Runtime.getRuntime().gc(); // hint garbage collector
-    }
-
-    /**
-     * This function is tasked with saving a json file with the results of the current benchmark, computing the needed
-     statistics.
-     */
-    public void saveResults() {
-        System.out.println(this.benchmarkResults);
-        /*  TODO:
-                - Compute the various statistics as in the Python version of the benchmarks
-                - Store the statistics in a json object
-                - Save the json object to a file
-         */
-    }
-
-
     /*
         ###################################################################################
                         METHODS TO BE IMPLEMENTED IN THE BENCHMARKS
         ###################################################################################
     */
-
-    public abstract void freeMemory();
 
     /**
      * Here goes the read of the test parameters,
@@ -160,30 +174,30 @@ public abstract class Benchmark {
      * and the creation of the kernels (if applicable)
      * @param iteration the current number of the iteration
      */
-    public abstract void initializeTest(int iteration);
+    protected abstract void initializeTest(int iteration);
 
     /**
      * Allocate new memory on GPU used for the benchmark
      * @param iteration the current number of the iteration
      */
-    public abstract void allocateTest(int iteration);
+    protected abstract void allocateTest(int iteration);
 
     /**
      * Reset code, to be run before each test
      * Here you clean up the arrays and other reset stuffs
      * @param iteration the current number of the iteration
      */
-    public abstract void resetIteration(int iteration);
+    protected abstract void resetIteration(int iteration);
 
     /**
      * Run the actual test
      * @param iteration the current number of the iteration
      */
-    public abstract void runTest(int iteration);
+    protected abstract void runTest(int iteration);
 
     /**
      * (numerically) validate results against CPU
      */
-    public abstract void cpuValidation();
+    protected abstract void cpuValidation();
 
 }

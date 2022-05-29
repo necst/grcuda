@@ -64,6 +64,8 @@ public class BenchmarkConfig {
     public int numGpus;
     public String memAdvisePolicy;
     public String bandwidthMatrix;
+    // Debug parameters
+    public boolean debug;
 
     @Override
     public String toString() {

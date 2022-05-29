@@ -81,15 +81,14 @@ public class B1 extends Benchmark {
 
     @Override
     public void allocateTest(int iteration) {
-        // Allocate 2 vectors
-        Value deviceArray = context.eval("grcuda", "DeviceArray");
-        x = deviceArray.execute("float", config.size);
-        x1 = deviceArray.execute("float", config.size);
-        y = deviceArray.execute("float", config.size);
-        y1 = deviceArray.execute("float", config.size);
+        // Alloc arrays
+        x = requestArray("float", config.size);
+        x1 = requestArray("float", config.size);
+        y = requestArray("float", config.size);
+        y1 = requestArray("float", config.size);
 
         // Allocate a support vector
-        res = deviceArray.execute("float", 1);
+        res = requestArray("float", 1);
 
         // Context initialization
         Value buildKernel = context.eval("grcuda", "buildkernel");
@@ -107,7 +106,8 @@ public class B1 extends Benchmark {
 
     @Override
     public void runTest(int iteration) {
-        System.out.println("    INSIDE runTest() - " + iteration);
+        if(config.debug)
+            System.out.println("    INSIDE runTest() - " + iteration);
 
         // A, B. Call the kernel. The 2 computations are independent, and can be done in parallel
         squareKernelFunction.execute(config.numBlocks, config.blockSize1D) // Set parameters
@@ -121,19 +121,8 @@ public class B1 extends Benchmark {
 
         // Sync step to measure the real computation time
         benchmarkResults.gpu_result = res.getArrayElement(0).asFloat();
-
-
     }
 
-    @Override
-    public void freeMemory(){
-        // temp debugging, manually freeing the allocated memory
-        x.invokeMember("free");
-        x1.invokeMember("free");
-        y.invokeMember("free");
-        y1.invokeMember("free");
-        res.invokeMember("free");
-    }
 
     @Override
     public void cpuValidation() {
@@ -141,12 +130,10 @@ public class B1 extends Benchmark {
 
         float[] xHost = new float[config.size];
         float[] yHost = new float[config.size];
-        // float[] resHostTmp = new float[config.size];
 
         for (int i = 0; i < config.size; i++) {
             xHost[i] = 1.0f / (i + 1);
             yHost[i] = 2.0f / (i + 1);
-            // resHostTmp[i] = 0.0f;
         }
 
         for (int i = 0; i < config.size; i++) {

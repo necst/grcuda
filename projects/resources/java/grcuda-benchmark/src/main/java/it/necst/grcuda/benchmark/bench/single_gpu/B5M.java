@@ -86,7 +86,7 @@ public class B5M extends Benchmark {
     public B5M(BenchmarkConfig currentConfig) {
         super(currentConfig);
 
-        this.local_K = 24;
+        this.local_K = 11; //previously was 24
         this.x = new Value[this.local_K];
         this.x_tmp = null;
         this.y = new Value[this.local_K];
@@ -108,12 +108,11 @@ public class B5M extends Benchmark {
     @Override
     public void allocateTest(int iteration) {
         // Allocate vectors
-        Value deviceArray = context.eval("grcuda", "DeviceArray");
-
         for (int i = 0; i < this.local_K; i++) {
-            System.out.println("    "+i+")asking for two deviceArray of double of size: " + this.config.size);
-            this.x[i] = deviceArray.execute("double", this.config.size);
-            this.y[i] = deviceArray.execute("double", this.config.size);
+            if(config.debug)
+                System.out.println("    "+i+")asking for two deviceArray of double of size: " + this.config.size);
+            this.x[i] = requestArray("double", config.size);
+            this.y[i] = requestArray("double", config.size);
         }
 
         // Context initialization
@@ -121,15 +120,6 @@ public class B5M extends Benchmark {
 
         // Build the kernels
         bs_kernelFunction = buildKernel.execute(BS_KERNEL, "bs", "const pointer, pointer, sint32, double, double, double, double");
-    }
-
-    @Override
-    public void freeMemory(){
-        // temp debugging, manually freeing the allocated memory
-        for (int i = 0; i < this.local_K; i++) {
-            this.x[i].invokeMember("free");
-            this.y[i].invokeMember("free");
-        }
     }
 
     @Override

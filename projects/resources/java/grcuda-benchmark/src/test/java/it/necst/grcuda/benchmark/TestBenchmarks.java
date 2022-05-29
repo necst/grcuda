@@ -106,6 +106,7 @@ public class TestBenchmarks {
                                                         blockSize2D = parsedConfig.block_size2d.get(bench);
                                                         if(blockSize2D != null) config.blockSize2D = blockSize2D;
 
+                                                        config.debug = parsedConfig.debug;
                                                         config.benchmarkName = bench;
                                                         config.size = curr_size;
                                                         config.numGpus = num_gpu;
@@ -124,7 +125,6 @@ public class TestBenchmarks {
                                                         System.out.println(config);
                                                         benchToRun = createBench(config);
                                                         benchToRun.run();
-                                                        benchToRun.saveResults();
                                                     }
                                                 }
                                             }
@@ -209,6 +209,9 @@ enum GPUs {
     GTX960
 }
 
+/**
+ * Used to map/parse the json config files to a class
+ */
 class Config {
     int num_iter;
     int heap_size;
@@ -216,6 +219,7 @@ class Config {
     boolean reInit = false;
     boolean randomInit;
     boolean cpuValidation;
+    boolean debug;
 
     ArrayList<String> benchmarks;
     ArrayList<String> exec_policies;
