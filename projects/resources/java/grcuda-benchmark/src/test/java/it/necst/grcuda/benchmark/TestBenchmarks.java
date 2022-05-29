@@ -3,35 +3,94 @@ package it.necst.grcuda.benchmark;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
-import it.necst.grcuda.benchmark.bench.single_gpu.B5M;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static org.junit.Assert.*;
+import static org.junit.Assume.assumeThat;
+import static org.junit.Assume.assumeTrue;
 
-/*
-    TODO:
-        1) missing  create_block_size_list()
-        2) missing execute_grcuda_benchmark()
-        3) the function written in runAll_gtx1660_super() can be abstracted to be used with all the gpus
- */
+
 public class TestBenchmarks {
     private static final String PATH = System.getenv("GRCUDA_HOME")+"/projects/resources/java/grcuda-benchmark/src/test/java/it/necst/grcuda/benchmark";
+    private GPU currentGPU;
+
+    @Before
+    public void init() throws IOException, InterruptedException {
+        // Compute BANDWIDTH MATRIX if necessary
+        String BANDWIDTH_MATRIX_PATH = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_graph.csv";
+        File f = new File(BANDWIDTH_MATRIX_PATH);
+        if(!f.exists() && !f.isDirectory()) {
+            // we need to compute the interconnection bandwidth matrix
+            ProcessBuilder builder = new ProcessBuilder();
+            builder.directory(new File(System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph"));
+            builder.command("sh -c ./run.sh".split("\\s+"));
+            Process process = builder.start();
+            int exitCode = process.waitFor();
+            assertEquals("Return value should be 0", 0, exitCode);
+        }
+
+        // Get the model of GPUs installed in the system
+        Set<GPU> detectedGPUS = new HashSet<>();
+        ProcessBuilder builder = new ProcessBuilder();
+        builder.command("nvidia-smi --query-gpu=gpu_name --format=csv".split("\\s+"));
+        Process process = builder.start();
+        int exitCode = process.waitFor();
+        assertEquals("Return value should be 0", 0, exitCode);
+        BufferedReader br=new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line;
+        StringBuilder sb = new StringBuilder();
+        br.readLine(); // discard "name" at the beginning of the output
+        while((line=br.readLine())!=null){
+            GPU g = GPU.valueOfName(line);
+            assertNotEquals("GPU should be present in the GPU enum",null, g);
+            detectedGPUS.add(g);
+        }
+        assertEquals(1, detectedGPUS.size());
+        this.currentGPU = detectedGPUS.iterator().next();
+    }
+
+    @Test
+    public void runAll_gtx1660_super() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        assumeTrue(this.currentGPU.equals(GPU.GTX1660_SUPER));
+
+         // get the configuration for the selected GPU into a Config class
+        String CONFIG_PATH = PATH + "/config_GTX1660_super.json";
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
+        Config parsedConfig = gson.fromJson(reader, Config.class);
+        System.out.println(gson.toJson(parsedConfig)); // print the current configuration
+
+        iterateAllPossibleConfig(parsedConfig);
+    }
+
+    @Test
+    public void runAll_gtx960_multi() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        assumeTrue(this.currentGPU.equals(GPU.GTX960));
+
+        // get the configuration for the selected GPU into a Config class
+        String CONFIG_PATH = PATH + "/config_GTX960.json";
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
+        Config parsedConfig = gson.fromJson(reader, Config.class);
+        System.out.println(gson.toJson(parsedConfig)); // print the current configuration
+
+        iterateAllPossibleConfig(parsedConfig);
+    }
 
     /*
-        This method reflects the pattern of benchmark_wrapper.py present in the python suite.
-        //TODO: Proper refactoring should be done to generate the set of tests needed from the json file
-     */
-    private void iterateAllPossibleConfig(Config parsedConfig, GPUs currentGPUmodel) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        String BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_graph_2_v100.csv";
+    This method reflects the pattern of benchmark_wrapper.py present in the python suite.
+    //TODO: Proper refactoring should be done to generate the set of tests needed from the json file
+ */
+    private void iterateAllPossibleConfig(Config parsedConfig) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        String BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_graph.csv";
 
         ArrayList<String> dp, nsp, psp, cdp;
         ArrayList<Integer> ng, block_sizes;
@@ -80,12 +139,12 @@ public class TestBenchmarks {
                             for(Boolean p : parsedConfig.prefetch ){
                                 for(Boolean s : parsedConfig.stream_attach){
                                     for(Boolean t : parsedConfig.time_computation){ // select the correct connection graph
-                                        if(currentGPUmodel == GPUs.V100){
+                                        if(this.currentGPU.equals(GPU.V100)){
                                             BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")
                                                     + "/projects/resources/connection_graph/datasets"
                                                     +"/connection_graph_" + num_gpu + "_v100.csv";
                                         }
-                                        else if (currentGPUmodel == GPUs.A100) {
+                                        else if (this.currentGPU.equals(GPU.A100)) {
                                             BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")
                                                     + "/projects/resources/connection_graph/datasets"
                                                     +"/connection_graph_8_a100.csv";
@@ -153,60 +212,27 @@ public class TestBenchmarks {
 
     }
 
-    @Ignore
-    @Test
-    public void runAll_gtx1660_super() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        GPUs gpuModel = GPUs.GTX1660_SUPER;
-        // TODO: given that we are following the selection procedure of the benchmarks in python
-        //      we need to be sure that we have inserted the values in the same order like "dependencies_policies"
-
-        // get the configuration for the selected GPU into a Config class
-        String CONFIG_PATH = PATH + "/config_GTX1660_super.json";
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
-        Config parsedConfig = gson.fromJson(reader, Config.class);
-        System.out.println(gson.toJson(parsedConfig)); // print the current configuration
-
-        iterateAllPossibleConfig(parsedConfig, gpuModel);
-
-        /*
-            TODO:
-                0) skip the test if the gpu is not the one present in the system
-                1) parse the json config file
-                2) sequentially run all the specified benchmarks configurations like in python code
-         */
-    }
-
-    @Test
-    public void runAll_gtx960_multi() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        GPUs gpuModel = GPUs.GTX960;
-        // TODO: given that we are following the selection procedure of the benchmarks in python
-        //      we need to be sure that we have inserted the values in the same order like "dependencies_policies"
-
-        // get the configuration for the selected GPU into a Config class
-        String CONFIG_PATH = PATH + "/config_GTX960.json";
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
-        Config parsedConfig = gson.fromJson(reader, Config.class);
-        System.out.println(gson.toJson(parsedConfig)); // print the current configuration
-
-        iterateAllPossibleConfig(parsedConfig, gpuModel);
-
-        /*
-            TODO:
-                0) skip the test if the gpu is not the one present in the system
-                1) parse the json config file
-                2) sequentially run all the specified benchmarks configurations like in python code
-         */
-    }
-
 }
 
-enum GPUs {
-    GTX1660_SUPER,
-    A100,
-    V100,
-    GTX960
+enum GPU {
+    GTX1660_SUPER("GeForce GTX 1660 SUPER"),
+    A100("to_compute_A100"),
+    V100("to_compute_V100"),
+    GTX960("GeForce GTX 960");
+
+    public final String name;
+
+    GPU(String name){
+        this.name = name;
+    }
+
+    public static GPU valueOfName(String toGet){
+        for(GPU g : values()){
+            if(g.name.equals(toGet))
+                return g;
+        }
+        return null;
+    }
 }
 
 /**
