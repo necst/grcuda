@@ -103,7 +103,7 @@ public class SparseMatrixCSR implements TruffleObject {
 
     protected static final MemberSet MEMBERS = new MemberSet(FREE, SPMV, IS_MEMORY_FREED, VALUES, ROW_CUMULATIVE, COL_INDICES);
 
-    public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray cumulativeNnz, DeviceArray colIdx, DeviceArray nnzValues, CUSPARSERegistry.CUDADataType dataType, long dimRows, long dimCols) {
+    public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray colIdx, DeviceArray cumulativeNnz, DeviceArray nnzValues, CUSPARSERegistry.CUDADataType dataType, long dimRows, long dimCols) {
         this.dimRows = dimRows;
         this.dimCols = dimCols;
         this.cumulativeNnz = cumulativeNnz;
@@ -118,7 +118,7 @@ public class SparseMatrixCSR implements TruffleObject {
         Context polyglot = Context.getCurrent();
         Value cusparseCreateCsrFunction = polyglot.eval("grcuda", "SPARSE::cusparseCreateCsr");
 
-        Object resultCsr = cusparseCreateCsrFunction.execute(
+        Value resultCsr = cusparseCreateCsrFunction.execute(
                 matDescr.getAddress(),
                 dimRows,
                 dimCols,
@@ -248,7 +248,7 @@ public class SparseMatrixCSR implements TruffleObject {
         }
 
         if (SPMV.equals(memberName)) {
-            return new SparseMatrixCSRSpMVFunction(this);
+            return new SparseMatrixCSRSpMVFunction();
         }
 
         if (IS_MEMORY_FREED.equals(memberName)) {
@@ -309,12 +309,6 @@ public class SparseMatrixCSR implements TruffleObject {
 
     @ExportLibrary(InteropLibrary.class)
     final class SparseMatrixCSRSpMVFunction implements TruffleObject {
-        private final SparseMatrixCSR matrix;
-
-        public SparseMatrixCSRSpMVFunction(SparseMatrixCSR matrix) {
-            this.matrix = matrix;
-        }
-
         @ExportMessage
         boolean isExecutable() {
             return true;
@@ -340,7 +334,7 @@ public class SparseMatrixCSR implements TruffleObject {
             cusparseSpMV.execute(
                 CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
                 alpha,
-                matrix,
+                SparseMatrixCSR.this,
                 dnVec,
                 dataType.ordinal(),
                 beta,

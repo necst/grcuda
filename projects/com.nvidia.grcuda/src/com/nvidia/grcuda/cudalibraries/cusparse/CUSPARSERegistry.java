@@ -267,8 +267,6 @@ public class CUSPARSERegistry {
 
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
 
-                        System.out.println(result);
-
                         return result;
 
                     } catch (InteropException e) {

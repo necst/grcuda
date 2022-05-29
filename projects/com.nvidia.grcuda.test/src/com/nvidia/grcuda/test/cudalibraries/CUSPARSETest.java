@@ -95,6 +95,8 @@ public class CUSPARSETest {
                         this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
                                         "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
 
+            //System.err.println("TESTING " + this.type + " FOR SpMVCSR");
+
             final int numElements = 1000;
             final boolean isComplex = this.type == 'C' || this.type == 'Z';
             final boolean isDouble = this.type == 'D' || this.type == 'Z';
@@ -137,7 +139,6 @@ public class CUSPARSETest {
 
             rowPtr.setArrayElement(numElements, numElements);
 
-            Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
             Value sparseCsrMatrixCreator = polyglot.eval("grcuda", "SparseMatrixCSR");
 
             int cudaDataType = asCudaOrdinalDataType(this.type);
@@ -147,27 +148,11 @@ public class CUSPARSETest {
 
             csrMatrix.getMember("SpMV").execute(alpha, beta, dnVec, outVec);
 
-            // order of the arguments should be the following
-            /*cusparseSpMV.execute(
-                            CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
-                            alpha,
-                            numElements,
-                            numElements,
-                            numElements,
-                            rowPtr,
-                            colIdx,
-                            nnzVec,
-                            CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I.ordinal(),
-                            CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
-                            cudaDataType,
-                            dnVec,
-                            cudaDataType,
-                            beta,
-                            outVec,
-                            CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
-                            CUSPARSESpMVMatrixType.SPMV_MATRIX_TYPE_CSR.ordinal());*/
+            Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
+            sync.execute();
 
-            /*for (int i = 0; i < numElements; ++i) {
+
+            for (int i = 0; i < numElements; ++i) {
                 for (int j = 0; j < complexScaleSize; ++j) {
                     if (isDouble) {
                         assertEquals(j == 0 ? edgeValue : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-5);
@@ -176,7 +161,7 @@ public class CUSPARSETest {
                     }
 
                 }
-            }*/
+            }
         }
     }
 
@@ -271,8 +256,8 @@ public class CUSPARSETest {
                         this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
                                         "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
 
-            System.out.println("testing type" + this.type + " for TGemvi");
-            final int numElements = 10;
+            //System.out.println("testing type" + this.type + " for TGemvi");
+            final int numElements = 1000;
             final boolean isComplex = this.type == 'C' || this.type == 'Z';
             final boolean isDouble = this.type == 'D' || this.type == 'Z';
             int complexScaleSize = isComplex ? 2 : 1;
@@ -351,10 +336,16 @@ public class CUSPARSETest {
             for (int i = 0; i < numElements; i++) {
                 for (int j = 0; j < complexScaleSize; ++j) {
                     if (isDouble) {
-//                        assertEquals(j == 0 ? expectedResult : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-3f);
+                        if (Math.abs((j == 0 ? expectedResult : 0.0) - outVec.getArrayElement(i * complexScaleSize + j).asDouble()) > 1e-3f) {
+                            //System.out.println("ERROR INDEX: " + i + " " + (j == 0 ? expectedResult : 0.0) + " vs " + outVec.getArrayElement(i * complexScaleSize + j).asDouble());
+                        }
+                        //assertEquals(j == 0 ? expectedResult : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-3f);
                          //System.out.println("out_vec[" + (i * complexScaleSize + j) + "] -> " +
                          //outVec.getArrayElement(i * complexScaleSize + j).asDouble());
                     } else {
+                        if (Math.abs((j == 0 ? expectedResult : 0.0) - outVec.getArrayElement(i * complexScaleSize + j).asFloat()) > 1e-3f) {
+                            System.out.println("ERROR INDEX: " + i);
+                        }
                         assertEquals(j == 0 ? expectedResult : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-3f);
                          //System.out.println("out_vec[" + (i * complexScaleSize + j) + "] -> " +
                          //outVec.getArrayElement(i * complexScaleSize + j).asFloat());

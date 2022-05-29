@@ -25,9 +25,9 @@ public class SparseMatrixCOOTest {
 
 
     public SparseMatrixCOOTest(String indexType, String valueType, int numNnz, int rows, int cols) {
-        this.rows = rows;
+        SparseMatrixCOOTest.rows = rows;
         this.valueType = valueType;
-        this.cols = cols;
+        SparseMatrixCOOTest.cols = cols;
         this.numNnz = numNnz;
         this.idxType = indexType;
     }
