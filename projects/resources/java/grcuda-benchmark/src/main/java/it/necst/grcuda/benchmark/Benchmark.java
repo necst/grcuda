@@ -134,7 +134,7 @@ public abstract class Benchmark {
     }
 
     protected Value requestArray(String type, int size){
-        Value vector = deviceArray.execute(type, size);
+        Value vector = context.eval("grcuda", "float["+Integer.toString(size)+"]");
         deviceArrayList.add(vector);
         return vector;
     }
