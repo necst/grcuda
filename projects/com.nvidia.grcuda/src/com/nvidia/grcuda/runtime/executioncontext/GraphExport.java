@@ -76,7 +76,7 @@ public class GraphExport {
 
             for (Integer stream : streams) {
                 if (stream < 0 ) output.append("\tsubgraph cluster_").append((stream*-1)+offset).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
-                else output.append("\tsubgraph stream_").append(stream).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
+                else output.append("\tsubgraph cluster_").append(stream).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
 
                 for (ExecutionDAG.DAGVertex vertex : vertices) {
                     if (vertex.getComputation().getStream().getStreamNumber() == stream && vertex.getComputation().getStream().getStreamDeviceId() == device) {
