@@ -42,6 +42,11 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Class that receives from its constructor the ExecutionDAG object
+ * and has the functionality to exports its graphical representation in .dot format.
+ * The graph will be exported to the path entered as input by the user in the option argument.
+ */
 public class GraphExport {
 
     private final List<ExecutionDAG.DAGVertex> vertices;
@@ -52,6 +57,11 @@ public class GraphExport {
         this.edges = dag.getEdges();
     }
 
+    /**
+     * If path is valid, this method creates a .dot file with the graphical representation
+     * of the scheduling DAG created during the computations.
+     * @param path Destination path of the .dot file.
+     */
     public void graphGenerator(String path) {
         StringBuilder output;
         List<Integer> streams = new ArrayList<>();
