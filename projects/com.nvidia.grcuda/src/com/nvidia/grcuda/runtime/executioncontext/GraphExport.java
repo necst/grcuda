@@ -36,8 +36,6 @@
 
 package com.nvidia.grcuda.runtime.executioncontext;
 
-import com.nvidia.grcuda.runtime.stream.CUDAStream;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -74,15 +72,15 @@ public class GraphExport {
                 "\n\n"));
 
         for (Integer device : devices) {
-            output.append("\tsubgraph device_").append(device).append(" {\n");
+            output.append("\tsubgraph cluster_").append(device).append(" {\n");
 
             for (Integer stream : streams) {
-                if (stream < 0 ) output.append("\tsubgraph stream_").append((stream*-1)+offset).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
+                if (stream < 0 ) output.append("\tsubgraph cluster_").append((stream*-1)+offset).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
                 else output.append("\tsubgraph stream_").append(stream).append(" {\n").append("\t\tstyle=filled;\n").append("\t\tnode [style=filled];\n");
 
                 for (ExecutionDAG.DAGVertex vertex : vertices) {
                     if (vertex.getComputation().getStream().getStreamNumber() == stream && vertex.getComputation().getStream().getStreamDeviceId() == device) {
-                        output = new StringBuilder(output + "\"V" + vertex.getId() + vertex.getComputation().getArgumentsThatCanCreateDependencies() + "\";\n");
+                        output = new StringBuilder(output + "\"CE" + vertex.getId() + vertex.getComputation().getArgumentsThatCanCreateDependencies() + "\";\n");
                     }
                 }
 
