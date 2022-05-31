@@ -101,7 +101,7 @@ public class GraphExport {
 
         for (ExecutionDAG.DAGVertex vertex : vertices) {
             if (vertex.isStart()) {
-                output = new StringBuilder(output + "start -> " + "\"V" + vertex.getId() + vertex.getComputation().getArgumentsThatCanCreateDependencies() + "\";\n");
+                output = new StringBuilder(output + "start -> " + "\"CE" + vertex.getId() + vertex.getComputation().getArgumentsThatCanCreateDependencies() + "\";\n");
             }
         }
 
@@ -113,7 +113,7 @@ public class GraphExport {
 
         for (ExecutionDAG.DAGVertex vertex : vertices) {
             if (vertex.isFrontier()) {
-                output = new StringBuilder(output + "\"V" + vertex.getId() + vertex.getComputation().getArgumentsThatCanCreateDependencies() + "\" -> end;\n");
+                output = new StringBuilder(output + "\"CE" + vertex.getId() + vertex.getComputation().getArgumentsThatCanCreateDependencies() + "\" -> end;\n");
             }
         }
 
