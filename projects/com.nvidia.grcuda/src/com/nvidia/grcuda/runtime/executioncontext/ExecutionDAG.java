@@ -364,7 +364,7 @@ public class ExecutionDAG implements TruffleObject {
         }
 
         public String toExportGraph(){
-            return "\"V" + start.getId() + start.getComputation().getArgumentsThatCanCreateDependencies() + "\" -> \"V" +  + end.getId() + end.getComputation().getArgumentsThatCanCreateDependencies() + "\"";
+            return "\"CE" + start.getId() + start.getComputation().getArgumentsThatCanCreateDependencies() + "\" -> \"CE" +  + end.getId() + end.getComputation().getArgumentsThatCanCreateDependencies() + "\"";
         }
 
         @Override
