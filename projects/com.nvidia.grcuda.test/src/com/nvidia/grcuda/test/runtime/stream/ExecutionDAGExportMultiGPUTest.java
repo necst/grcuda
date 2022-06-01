@@ -217,9 +217,9 @@ public class ExecutionDAGExportMultiGPUTest{
         GraphExport graphExport = new GraphExport(dag);
 
         if (retrieveNewStreamPolicy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
-            graphExport.graphGenerator("../" + name + "AlwaysNew.gv.txt");
+            graphExport.graphGenerator("../" + name + "AlwaysNew");
         } else {
-            graphExport.graphGenerator("../" + name + "Reuse.gv.txt");
+            graphExport.graphGenerator("../" + name + "Reuse");
         }
     }
 }

@@ -30,7 +30,6 @@
  */
 package com.nvidia.grcuda.test.runtime;
 
-import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.GraphExport;
@@ -44,16 +43,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import com.nvidia.grcuda.test.util.mock.ArgumentMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
 import com.nvidia.grcuda.test.util.mock.KernelExecutionMock;
-import com.nvidia.grcuda.test.util.mock.SyncExecutionMock;
-import com.oracle.truffle.api.interop.UnsupportedTypeException;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -92,7 +84,7 @@ public class ExecutionDAGExportTest {
         ExecutionDAG dag = context.getDag();
 
         GraphExport graphExport = new GraphExport(dag);
-        graphExport.graphGenerator("/home/users/mauro.fama/graphComplexFrontierExportTest.gv.txt");
+        graphExport.graphGenerator("../graphComplexFrontierExportTest");
     }
 
     @Test
@@ -116,9 +108,9 @@ public class ExecutionDAGExportTest {
         GraphExport graphExport = new GraphExport(dag);
 
         if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
-            graphExport.graphGenerator("/home/users/mauro.fama/streamSelection2ExportTestAlwaysNew.gv.txt");
+            graphExport.graphGenerator("../streamSelection2ExportTestAlwaysNew");
         } else {
-            graphExport.graphGenerator("/home/users/mauro.fama/streamSelection2ExportTestReuse.gv.txt");
+            graphExport.graphGenerator("../streamSelection2ExportTestReuse");
         }
 
     }
@@ -144,9 +136,9 @@ public class ExecutionDAGExportTest {
 
 
         if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
-            graphExport.graphGenerator("/home/users/mauro.fama/streamSelectionSimpleWithSyncExportTestAlwaysNew.gv.txt");
+            graphExport.graphGenerator("../streamSelectionSimpleWithSyncExportTestAlwaysNew");
         } else {
-            graphExport.graphGenerator("/home/users/mauro.fama/streamSelectionSimpleWithSyncExportTestReuse.gv.txt");
+            graphExport.graphGenerator("../streamSelectionSimpleWithSyncExportTestReuse");
         }
     }
 
@@ -177,9 +169,9 @@ public class ExecutionDAGExportTest {
         GraphExport graphExport = new GraphExport(dag);
 
         if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
-            graphExport.graphGenerator("/home/users/mauro.fama/disjointArgumentStreamCross2TestAlwaysNew.gv.txt");
+            graphExport.graphGenerator("../disjointArgumentStreamCross2TestAlwaysNew");
         } else {
-            graphExport.graphGenerator("/home/users/mauro.fama/disjointArgumentStreamCross2TestReuse.gv.txt");
+            graphExport.graphGenerator("../disjointArgumentStreamCross2TestReuse");
         }
     }
 
@@ -201,9 +193,9 @@ public class ExecutionDAGExportTest {
         GraphExport graphExport = new GraphExport(dag);
 
         if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
-            graphExport.graphGenerator("/home/users/mauro.fama/syncParentsOfParentsTestAlwaysNew.gv.txt");
+            graphExport.graphGenerator("../syncParentsOfParentsTestAlwaysNew");
         } else {
-            graphExport.graphGenerator("/home/users/mauro.fama/syncParentsOfParentsTestReuse.gv.txt");
+            graphExport.graphGenerator("../syncParentsOfParentsTestReuse");
         }
     }
 
