@@ -217,7 +217,8 @@ public final class GrCUDAContext {
     }
 
     /**
-     * Cleanup the GrCUDA context at the end of the execution;
+     * Cleanup the GrCUDA context at the end of the execution. If ExportDAG option is enabled,
+     * scheduling DAG will be dumped before the cleanup.
      */
     public void cleanup() {
         if (grCUDAOptionMap.getExportDAGPath().equals("true")){

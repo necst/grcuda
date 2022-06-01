@@ -43,9 +43,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Class that receives from its constructor the ExecutionDAG object
- * and has the functionality to exports its graphical representation in .dot format.
- * The graph will be exported to the path entered as input by the user in the option argument.
+ * Class that receives from its constructor the ExecutionDAG and has
+ * the functionality of export its graphical representation in .dot format.
+ * The graph will be exported to the path inserted by the user in the option argument.
  */
 public class GraphExport {
 
@@ -75,11 +75,11 @@ public class GraphExport {
         devices = devices.stream().distinct().collect(Collectors.toList());
         int offset = streams.size();
 
-        output = new StringBuilder(new String("digraph G {\n" +
+        output = new StringBuilder("digraph G {\n" +
                 "\tfontname=\"Helvetica,Arial,sans-serif\"\n" +
                 "\tnode [fontname=\"Helvetica,Arial,sans-serif\"]\n" +
                 "\tedge [fontname=\"Helvetica,Arial,sans-serif\"]\n" +
-                "\n\n"));
+                "\n\n");
 
         for (Integer device : devices) {
             output.append("\tsubgraph cluster_").append(device).append(" {\n");
@@ -95,15 +95,15 @@ public class GraphExport {
                 }
 
                 output = new StringBuilder(output + "\n");
-                output = new StringBuilder(new String(output + "\t\tlabel = \"stream " + stream + "\";\n" +
+                output = new StringBuilder(output + "\t\tlabel = \"stream " + stream + "\";\n" +
                         "\t\tcolor=orange;\n" +
-                        "\t}\n"));
+                        "\t}\n");
             }
 
             output = new StringBuilder(output + "\n");
-            output = new StringBuilder(new String(output + "\t\tlabel = \"device " + device + "\";\n" +
+            output = new StringBuilder(output + "\t\tlabel = \"device " + device + "\";\n" +
                     "\t\tcolor=green;\n" +
-                    "\t}\n"));
+                    "\t}\n");
 
         }
 
