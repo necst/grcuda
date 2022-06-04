@@ -12,7 +12,7 @@ import com.oracle.truffle.api.library.ExportLibrary;
 @ExportLibrary(InteropLibrary.class)
 public class SparseMatrixCSRFunction extends Function {
     private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
-    private final int NUM_ARGUMENTS = 6;
+    private final int NUM_ARGUMENTS = 5;
 
     public SparseMatrixCSRFunction(AbstractGrCUDAExecutionContext grCUDAExecutionContext) {
         super("SparseMatrixCSR");
@@ -32,11 +32,10 @@ public class SparseMatrixCSRFunction extends Function {
         DeviceArray colIndices = (DeviceArray) arguments[0];
         DeviceArray cumulativeNnz = (DeviceArray) arguments[1];
         DeviceArray nnzValues = (DeviceArray) arguments[2];
-        String type = (String) arguments[3];
-        long dimRow = expectLong(arguments[4]);
-        long dimCol = expectLong(arguments[5]);
+        long dimRow = expectLong(arguments[3]);
+        long dimCol = expectLong(arguments[4]);
 
-        return new SparseMatrixCSR(grCUDAExecutionContext, colIndices, cumulativeNnz, nnzValues, CUSPARSERegistry.CUDADataType.valueOf(type), dimRow, dimCol);
+        return new SparseMatrixCSR(grCUDAExecutionContext, colIndices, cumulativeNnz, nnzValues, dimRow, dimCol);
     }
 
 }

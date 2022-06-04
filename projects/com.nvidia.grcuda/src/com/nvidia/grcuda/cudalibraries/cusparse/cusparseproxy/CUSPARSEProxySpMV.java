@@ -35,10 +35,7 @@ package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
 import static com.nvidia.grcuda.functions.Function.INTEROP;
 import static com.nvidia.grcuda.functions.Function.expectInt;
-import static com.nvidia.grcuda.functions.Function.expectLong;
 
-import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSEIndexType;
-import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSEIndexBase;
 import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
 import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
 
@@ -50,8 +47,6 @@ import com.nvidia.grcuda.runtime.array.SparseMatrixCSR;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-
-import com.sun.jdi.Value;
 
 public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
@@ -88,9 +83,9 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             DeviceArray valuesY = (DeviceArray) rawArgs[6];
             CUSPARSESpMVAlg alg = CUSPARSESpMVAlg.values()[expectInt(rawArgs[7])];
 
-            final long cols = sparseMatrix.getDimRows();
+            final long cols = sparseMatrix.getRows();
             CUDADataType valueType = sparseMatrix.getDataType();
-            UnsafeHelper.Integer64Object matDescr = sparseMatrix.getMatDescr();
+            UnsafeHelper.Integer64Object matDescr = sparseMatrix.getSpMatDescr();
 
             // create dense vectors X and Y descriptors
             Object resultX = INTEROP.execute(cusparseCreateDnVecFunction, dnVecXDescr.getAddress(), cols, valuesX, valueTypeVec.ordinal());

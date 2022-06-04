@@ -45,6 +45,7 @@ import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDAInternalException;
 import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.Namespace;
+import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxy;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyNoHandle;
@@ -95,6 +96,20 @@ public class CUSPARSERegistry {
         CUSPARSE_INDEX_16U,
         CUSPARSE_INDEX_32I,
         CUSPARSE_INDEX_64I;
+
+        public static CUSPARSEIndexType fromGrCUDAType(Type type) {
+            switch (type) {
+                case UINT16:
+                    return CUSPARSE_INDEX_16U;
+                case CHAR32:
+                case SINT32:
+                    return CUSPARSE_INDEX_32I;
+                case SINT64:
+                    return CUSPARSE_INDEX_64I;
+                default:
+                    return CUSPARSE_INDEX_UNUSED;
+            }
+        }
     }
 
     public enum CUSPARSEIndexBase {
@@ -116,6 +131,21 @@ public class CUSPARSERegistry {
 
         public boolean isComplex() {
             return this.ordinal() > 3;
+        }
+
+        public static CUDADataType fromGrCUDAType(Type type) {
+            switch (type) {
+                case FLOAT:
+                    return CUDA_R_32F;
+                case DOUBLE:
+                    return CUDA_R_64F;
+                case CHAR:
+                    return CUDA_R_8I;
+                case UINT8:
+                    return CUDA_R_8U;
+                default:
+                    return CUDA_R_32F;
+            }
         }
     }
 

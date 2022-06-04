@@ -65,7 +65,7 @@ public class SparseMatrixCSRTest {
 
         rowPtr.setArrayElement(numElements, numElements);
 
-        Value spMat = sparseMatrixCSRCtor.execute(colIdx, rowPtr, nnz, "CUDA_R_32F", rows, cols);
+        Value spMat = sparseMatrixCSRCtor.execute(colIdx, rowPtr, nnz, rows, cols);
         return spMat;
     };
 
