@@ -99,13 +99,13 @@ public class SparseMatrixCSR implements TruffleObject {
 
     protected static final MemberSet MEMBERS = new MemberSet(FREE, SPMV, IS_MEMORY_FREED, VALUES, ROW_CUMULATIVE, COL_INDICES);
 
-    public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray csrColInd, DeviceArray csrRowOffsets, DeviceArray csrValues, long rows, long cols) {
+    public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray csrColInd, DeviceArray csrRowOffsets, DeviceArray csrValues, long rows, long cols, boolean isComplex) {
         this.rows = rows;
         this.cols = cols;
         this.csrRowOffsets = csrRowOffsets;
         this.csrColInd = csrColInd;
         this.csrValues = csrValues;
-        this.dataType = CUSPARSERegistry.CUDADataType.fromGrCUDAType(csrValues.getElementType());
+        this.dataType = CUSPARSERegistry.CUDADataType.fromGrCUDAType(csrValues.getElementType(), isComplex);
         this.numElements = dataType.isComplex() ? csrValues.getArraySize() / 2 : csrValues.getArraySize();
 
         // matrix descriptor creation

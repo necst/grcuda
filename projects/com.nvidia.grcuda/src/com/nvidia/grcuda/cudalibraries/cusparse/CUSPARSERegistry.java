@@ -133,18 +133,16 @@ public class CUSPARSERegistry {
             return this.ordinal() > 3;
         }
 
-        public static CUDADataType fromGrCUDAType(Type type) {
+        public static CUDADataType fromGrCUDAType(Type type, boolean isComplex) {
             switch (type) {
-                case FLOAT:
-                    return CUDA_R_32F;
                 case DOUBLE:
-                    return CUDA_R_64F;
+                    if (isComplex) return CUDA_C_64F; else return CUDA_R_64F;
                 case CHAR:
-                    return CUDA_R_8I;
+                    if (isComplex) return CUDA_C_8I; else return CUDA_R_8I;
                 case UINT8:
-                    return CUDA_R_8U;
+                    if (isComplex) return CUDA_C_8U; else return CUDA_R_8U;
                 default:
-                    return CUDA_R_32F;
+                    if (isComplex) return CUDA_C_32F; else return CUDA_R_32F;
             }
         }
     }

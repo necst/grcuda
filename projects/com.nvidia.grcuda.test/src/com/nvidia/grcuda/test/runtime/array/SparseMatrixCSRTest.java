@@ -65,7 +65,7 @@ public class SparseMatrixCSRTest {
 
         rowPtr.setArrayElement(numElements, numElements);
 
-        Value spMat = sparseMatrixCSRCtor.execute(colIdx, rowPtr, nnz, rows, cols);
+        Value spMat = sparseMatrixCSRCtor.execute(colIdx, rowPtr, nnz, rows, cols, false);
         return spMat;
     };
 

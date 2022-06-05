@@ -143,25 +143,22 @@ public class CUSPARSETest {
 
             int cudaDataType = asCudaOrdinalDataType(this.type);
 
-            Value csrMatrix = sparseCsrMatrixCreator.execute(colIdx, rowPtr, nnzVec, numElements, numElements);
+            Value csrMatrix = sparseCsrMatrixCreator.execute(colIdx, rowPtr, nnzVec, numElements, numElements, isComplex);
 
             csrMatrix.getMember("SpMV").execute(alpha, beta, dnVec, outVec);
 
             Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
             sync.execute();
 
-            int acc = 0;
-            for (int i = 0; i < 1000000; ++i) acc+= i;
-
             for (int i = 0; i < numElements; ++i) {
                 for (int j = 0; j < complexScaleSize; ++j) {
                     if (isDouble) {
-                        //assertEquals(j == 0 ? edgeValue : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-5);
+                        assertEquals(j == 0 ? edgeValue : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-5);
                     } else {
-                        if (Math.abs((j == 0 ? edgeValue : 0.0) - outVec.getArrayElement(i * complexScaleSize + j).asFloat()) >= 1e-5) {
-                            System.out.println(isComplex);
-                        }
-                        //assertEquals(j == 0 ? edgeValue : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-5);
+                        //if (Math.abs((j == 0 ? edgeValue : 0.0) - outVec.getArrayElement(i * complexScaleSize + j).asFloat()) >= 1e-5) {
+                        //    System.out.println(isComplex);
+                        //}
+                        assertEquals(j == 0 ? edgeValue : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-5);
                     }
 
                 }
