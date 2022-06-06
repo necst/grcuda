@@ -43,6 +43,7 @@ import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
+import com.nvidia.grcuda.runtime.array.SparseMatrix;
 import com.nvidia.grcuda.runtime.array.SparseMatrixCSR;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
@@ -76,7 +77,7 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
             CUSPARSERegistry.CUSPARSEOperation opA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(rawArgs[0])];
             DeviceArray alpha = (DeviceArray) rawArgs[1];
-            SparseMatrixCSR sparseMatrix = (SparseMatrixCSR) rawArgs[2];
+            SparseMatrix sparseMatrix = (SparseMatrix) rawArgs[2];
             DeviceArray valuesX = (DeviceArray) rawArgs[3];
             CUDADataType valueTypeVec = CUDADataType.values()[expectInt(rawArgs[4])];
             DeviceArray beta = (DeviceArray) rawArgs[5];

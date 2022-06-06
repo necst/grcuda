@@ -67,7 +67,7 @@ public class SparseMatrixCSRTest {
 
         Value spMat = sparseMatrixCSRCtor.execute(colIdx, rowPtr, nnz, rows, cols, false);
         return spMat;
-    };
+    }
 
     @Test
     public void testFreeMatrix() {

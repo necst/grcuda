@@ -355,6 +355,8 @@ public class CUSPARSERegistry {
                     "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECSR = new ExternalFunctionFactory("cusparseCreateCsr", "cusparseCreateCsr", "(pointer, sint64, sint64, sint64," +
             "pointer, pointer, pointer, sint32, sint32, sint32, sint32): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo", "(pointer, sint64, sint64, sint64," +
+            "pointer, pointer, pointer, sint32, sint32, sint32): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATEDNVEC = new ExternalFunctionFactory("cusparseCreateDnVec", "cusparseCreateDnVec", "(pointer, sint64, pointer, " +
             "sint32): sint32");
     private static final ArrayList<CUSPARSEProxy> functions = new ArrayList<>();
@@ -370,6 +372,7 @@ public class CUSPARSERegistry {
         functions.add(new CUSPARSEProxySpMV(CUSPARSE_CUSPARSESPMV));
         functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATECSR));
         functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATEDNVEC));
+        functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATECOO));
     }
 
 }

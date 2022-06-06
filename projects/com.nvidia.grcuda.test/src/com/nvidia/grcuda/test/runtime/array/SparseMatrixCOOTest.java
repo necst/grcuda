@@ -15,10 +15,10 @@ import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 
 @RunWith(Parameterized.class)
 public class SparseMatrixCOOTest {
-    private static final int TEST_NNZ = 1000;
+    private static final int TEST_NNZ = 100;
 
-    private static int rows = 1000000;
-    private static int cols = 1000000;
+    private static int rows = 100;
+    private static int cols = 100;
     private final int numNnz;
     private final String idxType;
     private final String valueType;
@@ -49,16 +49,14 @@ public class SparseMatrixCOOTest {
         Value rowIdx = deviceArrayCtor.execute(this.idxType, this.numNnz);
         Value colIdx = deviceArrayCtor.execute(this.idxType, this.numNnz);
         Value nnz = deviceArrayCtor.execute(this.valueType, this.numNnz);
-//        Value rowIdx = deviceArrayCtor.execute(this.numNnz, this.idxType);
-//        Value colIdx = deviceArrayCtor.execute(this.numNnz, this.idxType);
-//        Value nnz = deviceArrayCtor.execute(this.numNnz, this.idxType);
-        Value spMat = sparseMatrixCOOCtor.execute(colIdx, rowIdx, nnz, rows, cols);
+        Value spMat = sparseMatrixCOOCtor.execute(colIdx, rowIdx, nnz, rows, cols, false);
         return new Value[]{spMat, rowIdx, colIdx, nnz};
     };
 
     @Test
     public void testFreeMatrix() {
-        try (Context context = GrCUDATestUtil.buildTestContext().build()) {
+        try (Context context = GrCUDATestUtil.buildTestContext().option(
+                "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
             Value[] spMatrixValues = createSpMatrixCOO(context);
             // The memory is not freed when the array has just been created
             Value spMatrixCOO = spMatrixValues[0];

@@ -38,6 +38,8 @@ package com.nvidia.grcuda.runtime.array;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.MemberSet;
 import com.nvidia.grcuda.NoneValue;
+import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
+import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
@@ -52,67 +54,66 @@ import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 
 @ExportLibrary(InteropLibrary.class)
-public class SparseMatrixCOO implements TruffleObject {
+public class SparseMatrixCOO extends SparseMatrix {
 
     private static final String UNSUPPORTED_WRITE_ON_SPARSE_DS = "unsupported write on sparse data structures";
     private static final String UNSUPPORTED_DIRECT_READ_ON_SPARSE_DS = "unsupported direct read on sparse data structures";
-    private boolean matrixFreed;
-
-    /**
-     * Row and column dimensions
-     */
-    private final long dimRows;
-    private final long dimCols;
 
     /**
      * Attributes to be exported
      */
-
     protected static final String FREE = "free";
     protected static final String IS_MEMORY_FREED = "isMemoryFreed";
     protected static final String VALUES = "values";
     protected static final String ROW_INDICES = "rowIndices";
     protected static final String COL_INDICES = "colIndices";
+    protected static final String SPMV = "SpMV";
 
     /**
      * Row and column indices of nnz elements.
      */
-    private final DeviceArray rowIndices;
-    private final DeviceArray colIndices;
-
-    /**
-     * Values of nnz elements.
-     */
-    private final DeviceArray values;
+    private final DeviceArray cooRowInd;
+    private final DeviceArray cooColInd;
 
 
     protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, ROW_INDICES, COL_INDICES);
 
-    public SparseMatrixCOO(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray rowIdx, DeviceArray colIdx, DeviceArray nnzValues, long dimRows, long dimCols) {
-        this.dimRows = dimRows;
-        this.dimCols = dimCols;
-        this.rowIndices = rowIdx;
-        this.colIndices = colIdx;
-        this.values = nnzValues;
+    public SparseMatrixCOO(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray cooRowInd, DeviceArray cooColInd, DeviceArray cooValues, long rows, long cols, boolean isComplex) {
+        super(cooValues, rows, cols, isComplex);
+        this.cooRowInd = cooRowInd;
+        this.cooColInd = cooColInd;
+
+        Context polyglot = Context.getCurrent();
+        Value cusparseCreateCooFunction = polyglot.eval("grcuda", "SPARSE::cusparseCreateCoo");
+
+        cusparseCreateCooFunction.execute(
+                spMatDescr.getAddress(),
+                rows,
+                cols,
+                numElements,
+                cooRowInd,
+                cooColInd,
+                cooValues,
+                CUSPARSERegistry.CUSPARSEIndexType.fromGrCUDAType(cooRowInd.getElementType()).ordinal(),
+                CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
+                dataType.ordinal()
+        );
     }
 
-    private void checkFreeMatrix() {
-        if (matrixFreed) {
-            CompilerDirectives.transferToInterpreter();
-            throw new GrCUDAException("Matrix freed already");
-        }
-    }
+
 
     final public long getSizeBytes() {
         checkFreeMatrix();
-        return values.getSizeBytes() + rowIndices.getSizeBytes() + colIndices.getSizeBytes();
+        return getValues().getSizeBytes() + cooRowInd.getSizeBytes() + cooColInd.getSizeBytes();
     }
 
     @ExportMessage
     final long getArraySize() throws UnsupportedMessageException {
-        return values.getArraySize() + rowIndices.getArraySize() + colIndices.getArraySize();
+        return getValues().getArraySize() + cooRowInd.getArraySize() + cooColInd.getArraySize();
     }
 
     protected void finalize() throws Throwable {
@@ -122,16 +123,12 @@ public class SparseMatrixCOO implements TruffleObject {
         super.finalize();
     }
 
-    public DeviceArray getRowIndices() {
-        return rowIndices;
+    public DeviceArray getCooRowInd() {
+        return cooRowInd;
     }
 
-    public DeviceArray getColIndices() {
-        return colIndices;
-    }
-
-    public DeviceArray getValues() {
-        return values;
+    public DeviceArray getCooColInd() {
+        return cooColInd;
     }
 
     @ExportMessage
@@ -145,19 +142,19 @@ public class SparseMatrixCOO implements TruffleObject {
     public String toString() {
         return "SparseMatrixCOO{" +
                 "matrixFreed=" + matrixFreed +
-                ", dimRows=" + dimRows +
-                ", dimCols=" + dimCols +
-                ", rowIndices=" + rowIndices +
-                ", colIndices=" + colIndices +
-                ", values=" + values +
+                ", dimRows=" + rows +
+                ", dimCols=" + cols +
+                ", rowIndices=" + cooRowInd +
+                ", colIndices=" + cooColInd +
+                ", values=" + getValues() +
                 '}';
     }
 
     public void freeMemory() {
         checkFreeMatrix();
-        values.freeMemory();
-        rowIndices.freeMemory();
-        colIndices.freeMemory();
+        super.freeMemory();
+        cooRowInd.freeMemory();
+        cooColInd.freeMemory();
         matrixFreed = true;
     }
 
@@ -199,9 +196,12 @@ public class SparseMatrixCOO implements TruffleObject {
             throw UnknownIdentifierException.create(memberName);
         }
         if (FREE.equals(memberName)) {
-            return new SparseMatrixCOOFreeFunction();
+            return new SparseMatrixFreeFunction();
         }
 
+        if (SPMV.equals(memberName)) {
+            return new SparseMatrixCOOSpMVFunction();
+        }
 
         if (IS_MEMORY_FREED.equals(memberName)) {
             return isMatrixFreed();
@@ -212,11 +212,11 @@ public class SparseMatrixCOO implements TruffleObject {
         }
 
         if(COL_INDICES.equals(memberName)){
-            return getColIndices();
+            return getCooColInd();
         }
 
         if(ROW_INDICES.equals(memberName)){
-            return getRowIndices();
+            return getCooRowInd();
         }
 
         CompilerDirectives.transferToInterpreter();
@@ -227,7 +227,7 @@ public class SparseMatrixCOO implements TruffleObject {
     @ExportMessage
     @SuppressWarnings("static-method")
     boolean isMemberInvocable(String memberName) {
-        return FREE.equals(memberName);
+        return FREE.equals(memberName) || SPMV.equals(memberName);
     }
 
     @ExportMessage
@@ -240,9 +240,8 @@ public class SparseMatrixCOO implements TruffleObject {
     }
 
     @ExportLibrary(InteropLibrary.class)
-    final class SparseMatrixCOOFreeFunction implements TruffleObject {
+    final class SparseMatrixCOOSpMVFunction implements TruffleObject {
         @ExportMessage
-        @SuppressWarnings("static-method")
         boolean isExecutable() {
             return true;
         }
@@ -250,12 +249,31 @@ public class SparseMatrixCOO implements TruffleObject {
         @ExportMessage
         Object execute(Object[] arguments) throws ArityException {
             checkFreeMatrix();
-            if (arguments.length != 0) {
+            if (arguments.length != 4) {
                 CompilerDirectives.transferToInterpreter();
-                throw ArityException.create(0, arguments.length);
+                throw ArityException.create(4, arguments.length);
             }
-            freeMemory();
-            return NoneValue.get();
+
+            Context polyglot = Context.getCurrent();
+            Object alpha = arguments[0];
+            Object beta = arguments[1];
+
+            Object dnVec = arguments[2];
+            Object outVec = arguments[3];
+
+            Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
+
+            cusparseSpMV.execute(
+                    CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
+                    alpha,
+                    SparseMatrixCOO.this,
+                    dnVec,
+                    dataType.ordinal(),
+                    beta,
+                    outVec,
+                    CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal());
+
+            return outVec;
         }
     }
 }

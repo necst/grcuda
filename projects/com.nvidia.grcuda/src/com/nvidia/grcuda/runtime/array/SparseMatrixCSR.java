@@ -59,17 +59,11 @@ import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
 @ExportLibrary(InteropLibrary.class)
-public class SparseMatrixCSR implements TruffleObject {
+public class SparseMatrixCSR extends SparseMatrix {
 
     private static final String UNSUPPORTED_WRITE_ON_SPARSE_DS = "unsupported write on sparse data structures";
     private static final String UNSUPPORTED_DIRECT_READ_ON_SPARSE_DS = "unsupported direct read on sparse data structures";
-    private boolean matrixFreed;
 
-    /**
-     * Row and column dimensions
-     */
-    private final long rows;
-    private final long cols;
 
     /**
      * Attributes to be exported
@@ -87,29 +81,13 @@ public class SparseMatrixCSR implements TruffleObject {
     private final DeviceArray csrRowOffsets;
     private final DeviceArray csrColInd;
 
-    /**
-     * Values of nnz elements.
-     */
-    private final DeviceArray csrValues;
-    private final long numElements;
-
-    private final CUSPARSERegistry.CUDADataType dataType;
-
-    private final UnsafeHelper.Integer64Object spMatDescr;
 
     protected static final MemberSet MEMBERS = new MemberSet(FREE, SPMV, IS_MEMORY_FREED, VALUES, ROW_CUMULATIVE, COL_INDICES);
 
     public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray csrColInd, DeviceArray csrRowOffsets, DeviceArray csrValues, long rows, long cols, boolean isComplex) {
-        this.rows = rows;
-        this.cols = cols;
+        super(csrValues, rows, cols, isComplex);
         this.csrRowOffsets = csrRowOffsets;
         this.csrColInd = csrColInd;
-        this.csrValues = csrValues;
-        this.dataType = CUSPARSERegistry.CUDADataType.fromGrCUDAType(csrValues.getElementType(), isComplex);
-        this.numElements = dataType.isComplex() ? csrValues.getArraySize() / 2 : csrValues.getArraySize();
-
-        // matrix descriptor creation
-        spMatDescr = UnsafeHelper.createInteger64Object();
 
         Context polyglot = Context.getCurrent();
         Value cusparseCreateCsrFunction = polyglot.eval("grcuda", "SPARSE::cusparseCreateCsr");
@@ -118,7 +96,7 @@ public class SparseMatrixCSR implements TruffleObject {
                 spMatDescr.getAddress(),
                 rows,
                 cols,
-                csrValues.getArraySize(),
+                numElements,
                 csrRowOffsets,
                 csrColInd,
                 csrValues,
@@ -128,21 +106,14 @@ public class SparseMatrixCSR implements TruffleObject {
                 dataType.ordinal());
     }
 
-    private void checkFreeMatrix() {
-        if (matrixFreed) {
-            CompilerDirectives.transferToInterpreter();
-            throw new GrCUDAException("Matrix freed already");
-        }
-    }
-
     final public long getSizeBytes() {
         checkFreeMatrix();
-        return csrValues.getSizeBytes() + csrRowOffsets.getSizeBytes() + csrColInd.getSizeBytes();
+        return getValues().getSizeBytes() + csrRowOffsets.getSizeBytes() + csrColInd.getSizeBytes();
     }
 
     @ExportMessage
     final long getArraySize() throws UnsupportedMessageException {
-        return csrValues.getArraySize() + csrRowOffsets.getArraySize() + csrColInd.getArraySize();
+        return getValues().getArraySize() + csrRowOffsets.getArraySize() + csrColInd.getArraySize();
     }
 
     @Override
@@ -153,7 +124,7 @@ public class SparseMatrixCSR implements TruffleObject {
                 ", dimCols=" + cols +
                 ", cumulativeNnz=" + csrRowOffsets +
                 ", colIndices=" + csrColInd +
-                ", values=" + csrValues +
+                ", values=" + getValues() +
                 '}';
     }
 
@@ -165,10 +136,6 @@ public class SparseMatrixCSR implements TruffleObject {
         return csrColInd;
     }
 
-    public DeviceArray getCsrValues() {
-        return csrValues;
-    }
-
     protected void finalize() throws Throwable {
         if (!matrixFreed) {
             this.freeMemory();
@@ -178,26 +145,10 @@ public class SparseMatrixCSR implements TruffleObject {
 
     public void freeMemory() {
         checkFreeMatrix();
-        csrValues.freeMemory();
+        super.freeMemory();
         csrRowOffsets.freeMemory();
         csrColInd.freeMemory();
         matrixFreed = true;
-    }
-
-    public UnsafeHelper.Integer64Object getSpMatDescr() {
-        return spMatDescr;
-    }
-
-    public CUSPARSERegistry.CUDADataType getDataType() {
-        return dataType;
-    }
-
-    public long getRows() {
-        return rows;
-    }
-
-    public long getCols() {
-        return cols;
     }
 
     @ExportMessage
@@ -240,7 +191,7 @@ public class SparseMatrixCSR implements TruffleObject {
             throw UnknownIdentifierException.create(memberName);
         }
         if (FREE.equals(memberName)) {
-            return new SparseMatrixCSRFreeFunction();
+            return new SparseMatrixFreeFunction();
         }
 
         if (SPMV.equals(memberName)) {
@@ -252,7 +203,7 @@ public class SparseMatrixCSR implements TruffleObject {
         }
 
         if(VALUES.equals(memberName)){
-            return getCsrValues();
+            return getValues();
         }
 
         if(COL_INDICES.equals(memberName)){
@@ -281,26 +232,6 @@ public class SparseMatrixCSR implements TruffleObject {
                         @CachedLibrary(limit = "1") InteropLibrary interopExecute)
             throws UnsupportedTypeException, ArityException, UnsupportedMessageException, UnknownIdentifierException {
         return interopExecute.execute(interopRead.readMember(this, memberName), arguments);
-    }
-
-    @ExportLibrary(InteropLibrary.class)
-    final class SparseMatrixCSRFreeFunction implements TruffleObject {
-        @ExportMessage
-        @SuppressWarnings("static-method")
-        boolean isExecutable() {
-            return true;
-        }
-
-        @ExportMessage
-        Object execute(Object[] arguments) throws ArityException {
-            checkFreeMatrix();
-            if (arguments.length != 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw ArityException.create(0, arguments.length);
-            }
-            freeMemory();
-            return NoneValue.get();
-        }
     }
 
     @ExportLibrary(InteropLibrary.class)

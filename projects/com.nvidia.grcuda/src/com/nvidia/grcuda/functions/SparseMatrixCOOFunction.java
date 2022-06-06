@@ -12,7 +12,7 @@ import com.oracle.truffle.api.library.ExportLibrary;
 @ExportLibrary(InteropLibrary.class)
 public class SparseMatrixCOOFunction extends Function {
     private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
-    private final int NUM_ARGUMENTS = 5;
+    private final int NUM_ARGUMENTS = 6;
 
     public SparseMatrixCOOFunction(AbstractGrCUDAExecutionContext grCUDAExecutionContext) {
         super("SparseMatrixCOO");
@@ -34,8 +34,9 @@ public class SparseMatrixCOOFunction extends Function {
         DeviceArray nnzValues = (DeviceArray) arguments[2];
         long dimRow = expectLong(arguments[3]);
         long dimCol = expectLong(arguments[4]);
+        boolean isComplex = (Boolean) arguments[5];
 
-        return new SparseMatrixCOO(grCUDAExecutionContext, colIndices, rowIndices, nnzValues, dimRow, dimCol);
+        return new SparseMatrixCOO(grCUDAExecutionContext, colIndices, rowIndices, nnzValues, dimRow, dimCol, isComplex);
     }
 
 }
