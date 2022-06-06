@@ -80,7 +80,7 @@ public class SparseMatrixCOO extends SparseMatrix {
     private final DeviceArray cooColInd;
 
 
-    protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, ROW_INDICES, COL_INDICES);
+    protected static final MemberSet MEMBERS = new MemberSet(FREE, SPMV, IS_MEMORY_FREED, VALUES, ROW_INDICES, COL_INDICES);
 
     public SparseMatrixCOO(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray cooRowInd, DeviceArray cooColInd, DeviceArray cooValues, long rows, long cols, boolean isComplex) {
         super(cooValues, rows, cols, isComplex);
@@ -181,7 +181,7 @@ public class SparseMatrixCOO extends SparseMatrix {
     boolean isMemberReadable(String memberName,
                              @Cached.Shared("memberName") @Cached("createIdentityProfile()") ValueProfile memberProfile) {
         String name = memberProfile.profile(memberName);
-        return FREE.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || ROW_INDICES.equals(name) || COL_INDICES.equals(name);
+        return FREE.equals(name) || SPMV.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || ROW_INDICES.equals(name) || COL_INDICES.equals(name);
     }
 
     public boolean isMatrixFreed() {

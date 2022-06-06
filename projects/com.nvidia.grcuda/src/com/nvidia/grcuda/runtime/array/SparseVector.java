@@ -89,6 +89,9 @@ public class SparseVector implements TruffleObject {
     private final DeviceArray indices;
     private final DeviceArray values;
 
+    private final boolean isComplex;
+    private final CUSPARSERegistry.CUDADataType dataType;
+
     /**
      * Number non zero elements stored in the array.
      */
@@ -111,12 +114,14 @@ public class SparseVector implements TruffleObject {
      */
     protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, INDICES, GEMVI);
 
-    public SparseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray indices, DeviceArray values, long N) {
+    public SparseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray values, DeviceArray indices, long N, boolean isComplex) {
         this.values = values;
         this.indices = indices;
         this.numNnz = values.getArraySize();
         this.sizeBytes = values.getSizeBytes() + indices.getSizeBytes();
         this.N = N;
+        this.isComplex = isComplex;
+        this.dataType = CUSPARSERegistry.CUDADataType.fromGrCUDAType(values.getElementType(), isComplex);
     }
 
     @ExportMessage
@@ -231,34 +236,41 @@ public class SparseVector implements TruffleObject {
         vectorFreed = true;
     }
 
-    private void executeGemvi(int numRows, int numCols, float alpha, DeviceArray matA, float beta, DeviceArray outVec){
+    private void executeGemvi(int numRows, int numCols, DeviceArray alpha, DeviceArray matA, DeviceArray beta, DeviceArray outVec) {
 
-        Value deviceAlpha = cu.invokeMember("DeviceArray", "float", 1);
-        Value deviceBeta = cu.invokeMember("DeviceArray", "float", 1);
+        char type;
+        switch (dataType) {
+            case CUDA_R_64F:
+                type = 'D';
+                break;
+            case CUDA_C_32F:
+                type = 'C';
+                break;
+            case CUDA_C_64F:
+                type = 'Z';
+                break;
+            default:
+                type = 'S';
+        }
 
-        deviceAlpha.setArrayElement(0, alpha);
-        deviceBeta.setArrayElement(0, beta);
 
         this.polyglot
-                .eval("grcuda", "SPARSE::cusparseSgemvi")
+                .eval("grcuda", "SPARSE::cusparse" + type + "gemvi")
                 .execute(
-                        CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE,
+                        CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
                         numRows,
                         numCols,
-                        deviceAlpha,
+                        alpha,
                         matA,
                         numRows,
                         this.numNnz,
                         this.values,
                         this.indices,
-                        deviceBeta,
+                        beta,
                         outVec,
-                        CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO,
-                        'S'
+                        CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
+                        type
                 );
-
-        Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
-        sync.execute();
     }
 
     private void checkFreeVector() {
@@ -343,9 +355,9 @@ public class SparseVector implements TruffleObject {
             }
             int row = expectInt(arguments[0]);
             int col = expectInt(arguments[1]);
-            float alpha = expectFloat(arguments[2]);
+            DeviceArray alpha = (DeviceArray) arguments[2];
             DeviceArray matA = (DeviceArray) arguments[3];
-            float beta = expectFloat(arguments[4]);
+            DeviceArray beta = (DeviceArray) arguments[4];
             DeviceArray outVec = (DeviceArray) arguments[5];
             executeGemvi(row, col, alpha, matA, beta, outVec);
             return NoneValue.get();
