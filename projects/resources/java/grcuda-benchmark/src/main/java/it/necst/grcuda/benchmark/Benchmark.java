@@ -33,21 +33,21 @@ package it.necst.grcuda.benchmark;
 
 import java.util.ArrayList;
 import java.util.function.Consumer;
+
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
+
 
 public abstract class Benchmark {
     public Context context;
     public final BenchmarkConfig config;
     public final BenchmarkResults benchmarkResults;
     public ArrayList<Value> deviceArrayList = new ArrayList<>(); // used to store all the arrays to be freed at the end of the benchmark
-    public Value deviceArray;
 
     public Benchmark(BenchmarkConfig currentConfig) {
         this.config = currentConfig;
         this.benchmarkResults = new BenchmarkResults(currentConfig);
         this.context = createContext(currentConfig);
-        this.deviceArray = context.eval("grcuda", "DeviceArray");
     }
 
     /**
@@ -60,6 +60,7 @@ public abstract class Benchmark {
             System.out.println("INSIDE run()");
 
         for (int i = 0; i < config.totIter; ++i) {
+            benchmarkResults.startNewIteration(i, config.timePhases); // create the current iteration in the result class
 
             // Start a timer to monitor the total GPU execution time
             long overall_gpu_start = System.nanoTime();
@@ -73,26 +74,33 @@ public abstract class Benchmark {
             // Reset the result
             time(i, "reset", this::resetIteration);
 
-            //TODO: add nvprof_profile step
+            if(config.nvprof_profile){
+                context.eval("grcuda", "cudaProfilerStart").execute();
+            }
 
             // Execute the benchmark
             time(i, "execution", this::runTest);
 
-            //TODO: stop nvprof_profile step
+            if(config.nvprof_profile){
+                context.eval("grcuda", "cudaProfilerStop").execute();
+            }
 
             // Stop the timer
             long overall_gpu_end = System.nanoTime();
+
+            benchmarkResults.setCurrentTotalTime((overall_gpu_end - overall_gpu_start) / 1000000000F);
 
             // Perform validation on CPU
             if (config.cpuValidate)
                 cpuValidation();
 
             if(config.debug)
-                System.out.println("VALIDATION \nCPU: " + benchmarkResults.cpu_result +"\nGPU: " + benchmarkResults.gpu_result);
+                System.out.println("VALIDATION \nCPU: " + benchmarkResults.getCurrentIteration().cpu_result +"\nGPU: " + benchmarkResults.getCurrentIteration().gpu_result);
         }
 
         // Save the benchmark results
-        saveResults();
+        benchmarkResults.saveToJsonFile();
+
 
         // Free the allocated arrays
         deallocDeviceArrays();
@@ -111,21 +119,8 @@ public abstract class Benchmark {
     private void time(int iteration, String phaseName, Consumer<Integer> functionToTime){
         long begin = System.nanoTime();
         functionToTime.accept(iteration);
-        this.benchmarkResults.addPhase(phaseName, System.nanoTime() - begin, iteration);
-    }
-
-    /**
-     * This function is tasked with saving a json file with the results of the current benchmark, computing the needed
-     statistics.
-     */
-    private void saveResults() {
-        if(config.debug)
-            System.out.println(this.benchmarkResults);
-        /*  TODO:
-                - Compute the various statistics as in the Python version of the benchmarks
-                - Store the statistics in a json object
-                - Save the json object to a file
-         */
+        long end = System.nanoTime();
+        benchmarkResults.addPhaseToCurrentIteration(phaseName, (end - begin)/ 1000000000F);
     }
 
     protected void deallocDeviceArrays(){
@@ -134,7 +129,7 @@ public abstract class Benchmark {
     }
 
     protected Value requestArray(String type, int size){
-        Value vector = context.eval("grcuda", "float["+Integer.toString(size)+"]");
+        Value vector = context.eval("grcuda", type+"["+ size +"]");
         deviceArrayList.add(vector);
         return vector;
     }

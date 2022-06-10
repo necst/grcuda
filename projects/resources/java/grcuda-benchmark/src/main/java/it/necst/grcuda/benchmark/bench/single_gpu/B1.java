@@ -106,6 +106,8 @@ public class B1 extends Benchmark {
 
     @Override
     public void runTest(int iteration) {
+        long start = System.nanoTime();
+
         if(config.debug)
             System.out.println("    INSIDE runTest() - " + iteration);
 
@@ -119,8 +121,13 @@ public class B1 extends Benchmark {
         reduceKernelFunction.execute(config.numBlocks, config.blockSize1D) // Set parameters
                 .execute(x1, y1, res, config.size); // Execute actual kernel
 
+        long end = System.nanoTime();
+
+
         // Sync step to measure the real computation time
-        benchmarkResults.gpu_result = res.getArrayElement(0).asFloat();
+        benchmarkResults.setCurrentGpuResult(res.getArrayElement(0).asFloat());
+        benchmarkResults.setCurrentComputationSec((end-start)/1000000000F);
+
     }
 
 
@@ -148,9 +155,9 @@ public class B1 extends Benchmark {
             acc += xHost[i];
         }
 
-        benchmarkResults.cpu_result = acc;
+        benchmarkResults.setCurrentCpuResult(acc);
 
-        assertEquals(benchmarkResults.gpu_result, acc, 1e-3); //TODO: IT IS FAILING WITH THIS DELTA --> INVESTIGATE
+        assertEquals(benchmarkResults.getCurrentCpuResult(), benchmarkResults.getCurrentGpuResult(), 1e-3); //TODO: IT IS FAILING WITH THIS DELTA --> INVESTIGATE
 
     }
 

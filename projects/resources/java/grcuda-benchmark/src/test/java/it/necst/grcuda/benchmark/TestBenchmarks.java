@@ -1,5 +1,6 @@
 package it.necst.grcuda.benchmark;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
@@ -10,6 +11,7 @@ import org.junit.Test;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -21,9 +23,23 @@ import static org.junit.Assume.assumeTrue;
 public class TestBenchmarks {
     private static final String PATH = System.getenv("GRCUDA_HOME")+"/projects/resources/java/grcuda-benchmark/src/test/java/it/necst/grcuda/benchmark";
     private GPU currentGPU;
+    private String results_path;
 
     @Before
     public void init() throws IOException, InterruptedException {
+        //create the folder to store the json results of the benchmarks
+        Format formatter = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss");
+        Date currentDate = new Date();
+        String results_path = "./results/"+formatter.format(currentDate);
+        this.results_path = results_path;
+
+        int i=0;
+        while(!new File(results_path).mkdirs()){
+            results_path = "./results/"+formatter.format(currentDate)+"_("+i+")";
+            i++;
+        }
+
+
         // Compute BANDWIDTH MATRIX if necessary
         String BANDWIDTH_MATRIX_PATH = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_graph.csv";
         File f = new File(BANDWIDTH_MATRIX_PATH);
@@ -58,7 +74,7 @@ public class TestBenchmarks {
     }
 
     @Test
-    public void runAll_gtx1660_super() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    public void runAll_gtx1660_super() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
         assumeTrue(this.currentGPU.equals(GPU.GTX1660_SUPER));
 
          // get the configuration for the selected GPU into a Config class
@@ -66,13 +82,13 @@ public class TestBenchmarks {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
         Config parsedConfig = gson.fromJson(reader, Config.class);
-        System.out.println(gson.toJson(parsedConfig)); // print the current configuration
+        //System.out.println(gson.toJson(parsedConfig)); // print the current configuration
 
         iterateAllPossibleConfig(parsedConfig);
     }
 
     @Test
-    public void runAll_gtx960_multi() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    public void runAll_gtx960_multi() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
         assumeTrue(this.currentGPU.equals(GPU.GTX960));
 
         // get the configuration for the selected GPU into a Config class
@@ -80,7 +96,7 @@ public class TestBenchmarks {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
         Config parsedConfig = gson.fromJson(reader, Config.class);
-        System.out.println(gson.toJson(parsedConfig)); // print the current configuration
+        //System.out.println(gson.toJson(parsedConfig)); // print the current configuration
 
         iterateAllPossibleConfig(parsedConfig);
     }
@@ -89,7 +105,7 @@ public class TestBenchmarks {
     This method reflects the pattern of benchmark_wrapper.py present in the python suite.
     //TODO: Proper refactoring should be done to generate the set of tests needed from the json file
  */
-    private void iterateAllPossibleConfig(Config parsedConfig) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    private void iterateAllPossibleConfig(Config parsedConfig) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
         String BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_graph.csv";
 
         ArrayList<String> dp, nsp, psp, cdp;
@@ -180,6 +196,9 @@ public class TestBenchmarks {
                                                         config.memAdvisePolicy = m;
                                                         config.bandwidthMatrix = BANDWIDTH_MATRIX;
                                                         config.enableComputationTimers =t;
+                                                        config.nvprof_profile = parsedConfig.nvprof_profile;
+                                                        config.gpuModel = this.currentGPU.name;
+                                                        config.results_path = this.results_path;
 
                                                         System.out.println(config);
                                                         benchToRun = createBench(config);
@@ -246,6 +265,7 @@ class Config {
     boolean randomInit;
     boolean cpuValidation;
     boolean debug;
+    boolean nvprof_profile;
 
     ArrayList<String> benchmarks;
     ArrayList<String> exec_policies;

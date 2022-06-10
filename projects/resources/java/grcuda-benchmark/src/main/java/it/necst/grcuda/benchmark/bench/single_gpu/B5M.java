@@ -35,8 +35,6 @@ import it.necst.grcuda.benchmark.Benchmark;
 import it.necst.grcuda.benchmark.BenchmarkConfig;
 import org.graalvm.polyglot.Value;
 
-import java.util.Random;
-
 import static org.junit.Assert.assertEquals;
 
 public class B5M extends Benchmark {
@@ -134,6 +132,8 @@ public class B5M extends Benchmark {
 
     @Override
     public void runTest(int iteration) {
+        long start = System.nanoTime();
+
         double[] result = new double[local_K]; // default 0
 
         for (int i = 0; i < local_K; i++) {
@@ -141,10 +141,15 @@ public class B5M extends Benchmark {
                     .execute(this.x[i], this.y[i], this.config.size, R, V, T, global_K); // Execute actual kernel
         }
 
-        for (int i = 0; i < local_K; i++)
+        for (int i = 0; i < local_K; i++){
             result[i] = this.y[i].getArrayElement(0).asDouble();
+        }
 
-        benchmarkResults.gpu_result = result[0];
+        long end = System.nanoTime();
+
+        benchmarkResults.setCurrentGpuResult(result[0]);
+        benchmarkResults.setCurrentComputationSec((end-start)/1000000000F);
+
     }
 
     @Override
@@ -152,9 +157,9 @@ public class B5M extends Benchmark {
         double[] res;
         res = BS(this.x_tmp, R, V, T, global_K);
 
-        benchmarkResults.cpu_result = res[0];
+        benchmarkResults.setCurrentCpuResult(res[0]);
 
-        assertEquals(benchmarkResults.gpu_result, res[0], 1e-5);
+        assertEquals(benchmarkResults.getCurrentGpuResult(), res[0], 1e-5);
     }
 
     private double[] CND(double[] X) {

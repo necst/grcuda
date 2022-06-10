@@ -33,7 +33,6 @@ package it.necst.grcuda.benchmark.bench.single_gpu;
 
 import it.necst.grcuda.benchmark.Benchmark;
 import it.necst.grcuda.benchmark.BenchmarkConfig;
-import it.necst.grcuda.benchmark.BenchmarkResults;
 import org.graalvm.polyglot.Value;
 
 import static org.junit.Assert.assertEquals;
@@ -147,7 +146,7 @@ public class B11M extends Benchmark {
     @Override
     public void resetIteration(int iteration) {
         // Reset result
-        benchmarkResults.gpu_result = 0.0;
+        // benchmarkResults.gpu_result = 0.0; //TODO: check if needed
 
         for (int i = 0; i < this.P; i++) this.initialize.execute(this.x[i]);
         for (int i = 0; i < this.M; i++) {
@@ -169,6 +168,8 @@ public class B11M extends Benchmark {
 
     @Override
     public void runTest(int iteration) {
+        long start = System.nanoTime();
+
         // Compute all partitions
         for (int p = 0; p < this.P; p++) {
             // this.matrix_vector_mult_kernel.execute(config.numBlocks, config.blockSize1D)
@@ -187,7 +188,11 @@ public class B11M extends Benchmark {
         float sum = 0;
         for (int i = 0; i < 10; i++) sum += this.z_out.getArrayElement(i).asFloat();
 
-        benchmarkResults.gpu_result = sum;
+        long end = System.nanoTime();
+
+        benchmarkResults.setCurrentGpuResult(sum);
+        benchmarkResults.setCurrentComputationSec((end-start)/1000000000F);
+
     }
 
     @Override
@@ -217,10 +222,10 @@ public class B11M extends Benchmark {
 
         sum = 0;
         for (int i = 0; i < 10; i++) sum += z_cpu[i];
-        benchmarkResults.cpu_result = sum;
+        benchmarkResults.setCurrentCpuResult(sum);
 
         // Compare GPU and CPU results
-        assertEquals(benchmarkResults.gpu_result, sum, 1e-4);
+        assertEquals(benchmarkResults.getCurrentGpuResult(), sum, 1e-4);
     }
 
     private float[] matrixMult(float[][] a, float[] b) {

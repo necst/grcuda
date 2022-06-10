@@ -31,6 +31,8 @@
 
 package it.necst.grcuda.benchmark;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * This class will be passed to initialize the configuration of a benchmark.
  */
@@ -49,7 +51,7 @@ public class BenchmarkConfig {
     boolean timePhases = false;
     public int numBlocks = 8;
     public boolean randomInit = false;
-    public boolean reInit = false;
+    public boolean reInit = true;
     public boolean reAlloc = false;
     public boolean cpuValidate = true;
     // GrCUDA context settings
@@ -63,9 +65,12 @@ public class BenchmarkConfig {
     public boolean enableComputationTimers;
     public int numGpus;
     public String memAdvisePolicy;
-    public String bandwidthMatrix;
+    @JsonIgnore public String bandwidthMatrix;
     // Debug parameters
     public boolean debug;
+    public boolean nvprof_profile;
+    public String gpuModel;
+    @JsonIgnore public String results_path;
 
     @Override
     public String toString() {

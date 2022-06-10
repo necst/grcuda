@@ -34,9 +34,7 @@ package it.necst.grcuda.benchmark.bench.single_gpu;
 import it.necst.grcuda.benchmark.Benchmark;
 import it.necst.grcuda.benchmark.BenchmarkConfig;
 import org.graalvm.polyglot.Value;
-
 import java.util.ArrayList;
-
 import static org.junit.Assert.assertEquals;
 
 
@@ -66,10 +64,10 @@ public class B1M extends Benchmark {
     private Value squareKernelFunction;
     private Value reduceKernelFunction;
     private ArrayList<Value> x, x1, y, y1, res;
-    private Value initialize;
-    float res_tot=0;
+    //private Value initialize;
+    double res_tot=0;
     private int partitionSize;
-    private final int P = 100000;
+    private final int P = 16;
 
     public B1M(BenchmarkConfig currentConfig) {
         super(currentConfig);
@@ -79,16 +77,38 @@ public class B1M extends Benchmark {
     public void initializeTest(int iteration) {
         assert (!config.randomInit);
         for(int i=0; i<P; i++){
-            initialize.execute(x.get(i), i, config.size, 1);
-            initialize.execute(y.get(i), i, config.size, 2);
+            //initialize.execute(x.get(i), i, config.size, 1);
+            //initialize.execute(y.get(i), i, config.size, 2);
+            initializeWithJava(x.get(i), i, config.size, 1.0f);
+            initializeWithJava(y.get(i), i, config.size, 2.0f);
+        }
+    }
+
+    private void initializeWithJava(Value x, int i, int N, float a){
+        /*
+            (x, i, N, a) =>
+                {
+                    for (let j = 0; j < x.length; j++) {
+                        let index = i * x.length + j;
+                        if (index < N) {
+                            x[j] = a / (index + 1);
+                        }
+                    }
+                }
+         */
+        long index;
+        for(int j = 0; j<x.getArraySize(); j++){
+            index = i * x.getArraySize() + j;
+            if(index < N ){
+                x.setArrayElement(j, a / (index+1));
+            }
         }
     }
 
     @Override
     public void allocateTest(int iteration) {
+        // Compute the partition size
         partitionSize = (config.size + P -1) / P;
-        if(config.debug)
-            System.out.println("PARTITION SIZE: "+partitionSize);
 
         // Alloc arrays
         x = new ArrayList<>();
@@ -97,15 +117,12 @@ public class B1M extends Benchmark {
         y1 = new ArrayList<>();
         res = new ArrayList<>();
 
-        float allocatedMem=0;
         for(int i=0; i<P; i++){
-            allocatedMem += (float)(partitionSize*4*4) / 1000000;
             x.add(requestArray("float", partitionSize));
             x1.add(requestArray("float", partitionSize));
             y.add(requestArray("float", partitionSize));
             y1.add(requestArray("float", partitionSize));
             res.add(requestArray("float", 1));
-            System.out.println("Allocated memory: "+allocatedMem+" MB");
         }
 
         // Context initialization
@@ -114,15 +131,13 @@ public class B1M extends Benchmark {
         // Build the kernels;
         squareKernelFunction = buildKernel.execute(SQUARE_KERNEL, "square", "pointer, pointer, sint32");
         reduceKernelFunction = buildKernel.execute(REDUCE_KERNEL, "reduce", "pointer, pointer, pointer, sint32");
-
-        initialize = context.eval("js", "(x, i, N, a) => { for (let j = 0; j < x.length; j++) { let index = i * x.length + j; if (index < N) {x[j] = a / (index + 1); }}}");
     }
 
     @Override
     public void resetIteration(int iteration) {
         for(int i=0; i<P; i++){
-            initialize.execute(x.get(i), i, config.size, 1);
-            initialize.execute(y.get(i), i, config.size, 2);
+            initializeWithJava(x.get(i), i, config.size, 1.0f);
+            initializeWithJava(y.get(i), i, config.size, 2.0f);
             res.get(i).setArrayElement(0, 0.0f);
         }
         res_tot = 0;
@@ -130,8 +145,7 @@ public class B1M extends Benchmark {
 
     @Override
     public void runTest(int iteration) {
-        if(config.debug)
-            System.out.println("    INSIDE runTest() - " + iteration);
+        long start = System.nanoTime();
 
         for(int i=0; i<P; i++){
             // A, B. Call the kernel. The 2 computations are independent, and can be done in parallel;
@@ -141,15 +155,16 @@ public class B1M extends Benchmark {
             reduceKernelFunction.execute(config.numBlocks, config.blockSize1D).execute(x1.get(i), y1.get(i), res.get(i), partitionSize);
         }
 
-
         for(int i=0; i<P; i++){
             float val = res.get(i).getArrayElement(0).asFloat();
             if(!Float.isNaN(val))
                 res_tot += val;
         }
+        long end = System.nanoTime();
 
         // Sync step to measure the real computation time
-        benchmarkResults.gpu_result = res_tot;
+        benchmarkResults.setCurrentGpuResult(res_tot);
+        benchmarkResults.setCurrentComputationSec((end-start)/1000000000F);
     }
 
 
@@ -171,15 +186,15 @@ public class B1M extends Benchmark {
             xHost[i] -= yHost[i];
         }
 
-        float acc = 0.0f;
+        double acc = 0.0f;
 
         for (int i = 0; i < config.size; i++) {
             acc += xHost[i];
         }
 
-        benchmarkResults.cpu_result = acc;
+        benchmarkResults.setCurrentCpuResult(acc);
 
-        assertEquals(benchmarkResults.cpu_result, benchmarkResults.gpu_result, 1e-3); //TODO: IT IS FAILING WITH THIS DELTA --> INVESTIGATE
+        assertEquals(benchmarkResults.getCurrentCpuResult(), benchmarkResults.getCurrentGpuResult(), 1e-3);
 
     }
 
