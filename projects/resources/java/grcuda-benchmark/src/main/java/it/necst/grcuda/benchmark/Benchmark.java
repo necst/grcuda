@@ -60,18 +60,32 @@ public abstract class Benchmark {
             System.out.println("INSIDE run()");
 
         for (int i = 0; i < config.totIter; ++i) {
+            if(config.debug)
+                System.out.println("["+i+"] START");
             benchmarkResults.startNewIteration(i, config.timePhases); // create the current iteration in the result class
 
             // Start a timer to monitor the total GPU execution time
             long overall_gpu_start = System.nanoTime();
 
             // Allocate memory for the benchmark
-            if (config.reAlloc || i == 0) time(i, "alloc", this::allocateTest);
+
+            if (config.reAlloc || i == 0){
+                if(config.debug)
+                    System.out.println("["+i+"] alloc");
+                time(i, "alloc", this::allocateTest);
+            }
 
             // Initialize memory for the benchmark
-            if (config.reInit || i == 0) time(i, "init", this::initializeTest);
+
+            if (config.reInit || i == 0){
+                if(config.debug)
+                    System.out.println("["+i+"] init");
+                time(i, "init", this::initializeTest);
+            }
 
             // Reset the result
+            if(config.debug)
+                System.out.println("["+i+"] reset");
             time(i, "reset", this::resetIteration);
 
             if(config.nvprof_profile){
@@ -79,6 +93,8 @@ public abstract class Benchmark {
             }
 
             // Execute the benchmark
+            if(config.debug)
+                System.out.println("["+i+"] execution");
             time(i, "execution", this::runTest);
 
             if(config.nvprof_profile){
@@ -91,11 +107,11 @@ public abstract class Benchmark {
             benchmarkResults.setCurrentTotalTime((overall_gpu_end - overall_gpu_start) / 1000000000F);
 
             // Perform validation on CPU
-            if (config.cpuValidate)
+            if (config.cpuValidate && i == 0)
                 cpuValidation();
 
             if(config.debug)
-                System.out.println("VALIDATION \nCPU: " + benchmarkResults.getCurrentIteration().cpu_result +"\nGPU: " + benchmarkResults.getCurrentIteration().gpu_result);
+                System.out.println("["+i+"] VALIDATION \nCPU: " + benchmarkResults.cpu_result+"\nGPU: " + benchmarkResults.currentIteration().gpu_result);
         }
 
         // Save the benchmark results

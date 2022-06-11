@@ -63,6 +63,7 @@ public class B1M extends Benchmark {
 
     private Value squareKernelFunction;
     private Value reduceKernelFunction;
+    private Value initialize;
     private ArrayList<Value> x, x1, y, y1, res;
     //private Value initialize;
     double res_tot=0;
@@ -77,10 +78,10 @@ public class B1M extends Benchmark {
     public void initializeTest(int iteration) {
         assert (!config.randomInit);
         for(int i=0; i<P; i++){
-            //initialize.execute(x.get(i), i, config.size, 1);
-            //initialize.execute(y.get(i), i, config.size, 2);
-            initializeWithJava(x.get(i), i, config.size, 1.0f);
-            initializeWithJava(y.get(i), i, config.size, 2.0f);
+            initialize.execute(x.get(i), i, config.size, 1.0f);
+            initialize.execute(y.get(i), i, config.size, 2.0f);
+            //initializeWithJava(x.get(i), i, config.size, 1.0f);
+            //initializeWithJava(y.get(i), i, config.size, 2.0f);
         }
     }
 
@@ -131,13 +132,18 @@ public class B1M extends Benchmark {
         // Build the kernels;
         squareKernelFunction = buildKernel.execute(SQUARE_KERNEL, "square", "pointer, pointer, sint32");
         reduceKernelFunction = buildKernel.execute(REDUCE_KERNEL, "reduce", "pointer, pointer, pointer, sint32");
+
+        initialize = context.eval("js", "(x, i, N, a) => { for (let j = 0; j < x.length; j++) { let index = i * x.length + j; if (index < N) {x[j] = a / (index + 1); }}}");
+
     }
 
     @Override
     public void resetIteration(int iteration) {
         for(int i=0; i<P; i++){
-            initializeWithJava(x.get(i), i, config.size, 1.0f);
-            initializeWithJava(y.get(i), i, config.size, 2.0f);
+            initialize.execute(x.get(i), i, config.size, 1);
+            initialize.execute(y.get(i), i, config.size, 2);
+            //initializeWithJava(x.get(i), i, config.size, 1.0f);
+            //initializeWithJava(y.get(i), i, config.size, 2.0f);
             res.get(i).setArrayElement(0, 0.0f);
         }
         res_tot = 0;
@@ -194,7 +200,7 @@ public class B1M extends Benchmark {
 
         benchmarkResults.setCurrentCpuResult(acc);
 
-        assertEquals(benchmarkResults.getCurrentCpuResult(), benchmarkResults.getCurrentGpuResult(), 1e-3);
+        assertEquals(benchmarkResults.currentCpuResult(), benchmarkResults.currentGpuResult(), 1e-3);
 
     }
 

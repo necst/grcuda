@@ -225,7 +225,7 @@ public class B11M extends Benchmark {
         benchmarkResults.setCurrentCpuResult(sum);
 
         // Compare GPU and CPU results
-        assertEquals(benchmarkResults.getCurrentGpuResult(), sum, 1e-4);
+        assertEquals(benchmarkResults.currentGpuResult(), sum, 1e-4);
     }
 
     private float[] matrixMult(float[][] a, float[] b) {

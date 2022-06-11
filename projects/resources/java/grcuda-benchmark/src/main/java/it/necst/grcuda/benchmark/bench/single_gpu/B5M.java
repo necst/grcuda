@@ -159,7 +159,7 @@ public class B5M extends Benchmark {
 
         benchmarkResults.setCurrentCpuResult(res[0]);
 
-        assertEquals(benchmarkResults.getCurrentGpuResult(), res[0], 1e-5);
+        assertEquals(benchmarkResults.currentGpuResult(), res[0], 1e-5);
     }
 
     private double[] CND(double[] X) {

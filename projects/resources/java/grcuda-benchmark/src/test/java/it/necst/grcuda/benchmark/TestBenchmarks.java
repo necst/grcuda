@@ -21,10 +21,11 @@ import static org.junit.Assume.assumeTrue;
 
 
 public class TestBenchmarks {
-    private static final String PATH = System.getenv("GRCUDA_HOME")+"/projects/resources/java/grcuda-benchmark/src/test/java/it/necst/grcuda/benchmark";
+    private static final String PATH = "/home/ubuntu/grcuda/projects/resources/java/grcuda-benchmark/src/test/java/it/necst/grcuda/benchmark";
     private GPU currentGPU;
     private String results_path;
 
+    @Ignore
     @Before
     public void init() throws IOException, InterruptedException {
         //create the folder to store the json results of the benchmarks
@@ -41,12 +42,12 @@ public class TestBenchmarks {
 
 
         // Compute BANDWIDTH MATRIX if necessary
-        String BANDWIDTH_MATRIX_PATH = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_graph.csv";
+        String BANDWIDTH_MATRIX_PATH = "/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv";
         File f = new File(BANDWIDTH_MATRIX_PATH);
         if(!f.exists() && !f.isDirectory()) {
             // we need to compute the interconnection bandwidth matrix
             ProcessBuilder builder = new ProcessBuilder();
-            builder.directory(new File(System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph"));
+            builder.directory(new File("/home/ubuntu/grcuda/projects/resources/connection_graph"));
             builder.command("sh -c ./run.sh".split("\\s+"));
             Process process = builder.start();
             int exitCode = process.waitFor();
@@ -101,12 +102,26 @@ public class TestBenchmarks {
         iterateAllPossibleConfig(parsedConfig);
     }
 
+    @Test
+    public void runAll_V100_multi() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
+        assumeTrue(this.currentGPU.equals(GPU.V100));
+
+        // get the configuration for the selected GPU into a Config class
+        String CONFIG_PATH = PATH + "/config_V100.json";
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
+        Config parsedConfig = gson.fromJson(reader, Config.class);
+        System.out.println(gson.toJson(parsedConfig)); // print the current configuration
+
+        iterateAllPossibleConfig(parsedConfig);
+    }
+
     /*
     This method reflects the pattern of benchmark_wrapper.py present in the python suite.
     //TODO: Proper refactoring should be done to generate the set of tests needed from the json file
  */
     private void iterateAllPossibleConfig(Config parsedConfig) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
-        String BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_graph.csv";
+        String BANDWIDTH_MATRIX = System.getenv("/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv");
 
         ArrayList<String> dp, nsp, psp, cdp;
         ArrayList<Integer> ng, block_sizes;
@@ -199,6 +214,7 @@ public class TestBenchmarks {
                                                         config.nvprof_profile = parsedConfig.nvprof_profile;
                                                         config.gpuModel = this.currentGPU.name;
                                                         config.results_path = this.results_path;
+                                                        config.reInit = parsedConfig.reInit;
 
                                                         System.out.println(config);
                                                         benchToRun = createBench(config);
@@ -236,7 +252,7 @@ public class TestBenchmarks {
 enum GPU {
     GTX1660_SUPER("GeForce GTX 1660 SUPER"),
     A100("to_compute_A100"),
-    V100("to_compute_V100"),
+    V100("Tesla V100-SXM2-16GB"),
     GTX960("GeForce GTX 960");
 
     public final String name;

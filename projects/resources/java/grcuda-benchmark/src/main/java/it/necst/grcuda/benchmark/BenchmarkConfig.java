@@ -51,9 +51,9 @@ public class BenchmarkConfig {
     boolean timePhases = false;
     public int numBlocks = 8;
     public boolean randomInit = false;
-    public boolean reInit = true;
+    public boolean reInit = false;
     public boolean reAlloc = false;
-    public boolean cpuValidate = true;
+    public boolean cpuValidate = false;
     // GrCUDA context settings
     public String executionPolicy;
     public boolean inputPrefetch;

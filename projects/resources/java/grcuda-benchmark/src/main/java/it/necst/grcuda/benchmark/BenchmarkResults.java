@@ -37,7 +37,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
@@ -49,6 +48,7 @@ public class BenchmarkResults {
     public final BenchmarkConfig config;
     public LinkedList<Iteration> iterations = new LinkedList<>();
     public ArrayList<String> filteredPhases = new ArrayList<>();
+    public double cpu_result;
 
     BenchmarkResults(BenchmarkConfig config){
         this.config = config;
@@ -97,7 +97,7 @@ public class BenchmarkResults {
         iterations.getLast().gpu_result = gpuResult;
     }
     public void setCurrentCpuResult(double cpuResult){
-        iterations.getLast().cpu_result = cpuResult;
+        this.cpu_result = cpuResult;
     }
     public void setCurrentComputationSec(double computationSec){iterations.getLast().computation_sec = computationSec;}
     public void setCurrentOverheadSec(double overheadSec){iterations.getLast().overhead_sec = overheadSec;}
@@ -113,13 +113,13 @@ public class BenchmarkResults {
     }
 
 
-    public double getCurrentGpuResult(){
+    public double currentGpuResult(){
         return iterations.getLast().gpu_result;
     }
-    public double getCurrentCpuResult(){
-        return iterations.getLast().cpu_result;
+    public double currentCpuResult(){
+        return this.cpu_result;
     }
-    public Iteration getCurrentIteration(){return iterations.getLast();}
+    public Iteration currentIteration(){return iterations.getLast();}
 
 }
 
@@ -127,7 +127,6 @@ class Iteration{
     public int iteration;
     public boolean time_phases;
     public double gpu_result;
-    public double cpu_result;
 
     public double computation_sec;
     public double total_time_sec;

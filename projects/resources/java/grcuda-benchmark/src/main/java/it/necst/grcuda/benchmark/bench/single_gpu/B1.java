@@ -157,7 +157,7 @@ public class B1 extends Benchmark {
 
         benchmarkResults.setCurrentCpuResult(acc);
 
-        assertEquals(benchmarkResults.getCurrentCpuResult(), benchmarkResults.getCurrentGpuResult(), 1e-3); //TODO: IT IS FAILING WITH THIS DELTA --> INVESTIGATE
+        assertEquals(benchmarkResults.currentCpuResult(), benchmarkResults.currentGpuResult(), 1e-3); //TODO: IT IS FAILING WITH THIS DELTA --> INVESTIGATE
 
     }
 
