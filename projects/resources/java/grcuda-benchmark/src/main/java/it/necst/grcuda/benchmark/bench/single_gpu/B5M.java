@@ -107,8 +107,6 @@ public class B5M extends Benchmark {
     public void allocateTest(int iteration) {
         // Allocate vectors
         for (int i = 0; i < this.local_K; i++) {
-            if(config.debug)
-                System.out.println("    "+i+")asking for two deviceArray of double of size: " + this.config.size);
             this.x[i] = requestArray("double", config.size);
             this.y[i] = requestArray("double", config.size);
         }

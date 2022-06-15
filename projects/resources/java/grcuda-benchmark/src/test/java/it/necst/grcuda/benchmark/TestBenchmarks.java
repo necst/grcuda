@@ -21,7 +21,7 @@ import static org.junit.Assume.assumeTrue;
 
 
 public class TestBenchmarks {
-    private static final String PATH = "/home/ubuntu/grcuda/projects/resources/java/grcuda-benchmark/src/test/java/it/necst/grcuda/benchmark";
+    private static final String PATH = System.getenv("GRCUDA_HOME")+"/projects/resources/java/grcuda-benchmark/src/test/java/it/necst/grcuda/benchmark";
     private GPU currentGPU;
     private String results_path;
 
@@ -42,12 +42,12 @@ public class TestBenchmarks {
 
 
         // Compute BANDWIDTH MATRIX if necessary
-        String BANDWIDTH_MATRIX_PATH = "/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv";
+        String BANDWIDTH_MATRIX_PATH = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_graph.csv";
         File f = new File(BANDWIDTH_MATRIX_PATH);
         if(!f.exists() && !f.isDirectory()) {
             // we need to compute the interconnection bandwidth matrix
             ProcessBuilder builder = new ProcessBuilder();
-            builder.directory(new File("/home/ubuntu/grcuda/projects/resources/connection_graph"));
+            builder.directory(new File(System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph"));
             builder.command("sh -c ./run.sh".split("\\s+"));
             Process process = builder.start();
             int exitCode = process.waitFor();
@@ -121,7 +121,7 @@ public class TestBenchmarks {
     //TODO: Proper refactoring should be done to generate the set of tests needed from the json file
  */
     private void iterateAllPossibleConfig(Config parsedConfig) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
-        String BANDWIDTH_MATRIX = System.getenv("/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv");
+        String BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_8_v100.csv";
 
         ArrayList<String> dp, nsp, psp, cdp;
         ArrayList<Integer> ng, block_sizes;
