@@ -35,11 +35,8 @@
  */
 package com.nvidia.grcuda.runtime.array;
 
-import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.MemberSet;
-import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
-import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;

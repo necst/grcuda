@@ -1,10 +1,8 @@
 package com.nvidia.grcuda.functions;
 
-import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.SparseVector;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;

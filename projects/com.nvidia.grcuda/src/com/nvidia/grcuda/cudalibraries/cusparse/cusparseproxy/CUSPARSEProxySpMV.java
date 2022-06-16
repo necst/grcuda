@@ -44,7 +44,6 @@ import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.SparseMatrix;
-import com.nvidia.grcuda.runtime.array.SparseMatrixCSR;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;

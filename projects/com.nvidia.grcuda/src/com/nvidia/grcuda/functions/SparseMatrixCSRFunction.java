@@ -1,6 +1,5 @@
 package com.nvidia.grcuda.functions;
 
-import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.SparseMatrixCSR;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;

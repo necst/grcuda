@@ -33,6 +33,8 @@
  */
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
+import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
+import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
 import static com.nvidia.grcuda.functions.Function.INTEROP;
 import static com.nvidia.grcuda.functions.Function.expectInt;
 
@@ -40,65 +42,47 @@ import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
+import com.nvidia.grcuda.runtime.array.SparseMatrix;
+import com.nvidia.grcuda.runtime.array.SparseVector;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
-public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
+public class CUSPARSEProxySpVV extends CUSPARSEProxy {
 
-    private final int nArgsRaw = 13; // args for library function
+    private final int nArgsRaw = 6; // args for library function
 
-    public CUSPARSEProxyGemvi(ExternalFunctionFactory externalFunctionFactory) {
+    public CUSPARSEProxySpVV(ExternalFunctionFactory externalFunctionFactory) {
         super(externalFunctionFactory);
     }
 
     @Override
     public Object[] formatArguments(Object[] rawArgs, long handle) throws UnsupportedTypeException, UnsupportedMessageException, ArityException {
         this.initializeNfi();
-        if (rawArgs.length == 0) {
+        if (rawArgs.length == nArgsRaw) {
             return rawArgs;
         } else {
-
             args = new Object[nArgsRaw];
 
-            UnsafeHelper.Integer32Object bufferSize = UnsafeHelper.createInteger32Object();
+            UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object();
+            UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
 
-            bufferSize.setValue(0);
+            CUSPARSERegistry.CUSPARSEOperation opX = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(rawArgs[0])];
+            SparseVector vecX = (SparseVector) rawArgs[1];
+            DeviceArray vecYData = (DeviceArray) rawArgs[2];
+            DeviceArray result = (DeviceArray) rawArgs[3];
 
-            CUSPARSERegistry.CUSPARSEOperation transA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(rawArgs[0])];
-            int rows = expectInt(rawArgs[1]);
-            int cols = expectInt(rawArgs[2]);
-            DeviceArray alpha = (DeviceArray) rawArgs[3];
-            DeviceArray matA = (DeviceArray) rawArgs[4];
-            int lda = expectInt(rawArgs[5]);
-            int nnz = expectInt(rawArgs[6]);
-            DeviceArray x = (DeviceArray) rawArgs[7];
-            DeviceArray xInd = (DeviceArray) rawArgs[8];
-            DeviceArray beta = (DeviceArray) rawArgs[9];
-            DeviceArray outVec = (DeviceArray) rawArgs[10];
-            CUSPARSERegistry.CUSPARSEIndexBase idxBase = CUSPARSERegistry.CUSPARSEIndexBase.values()[expectInt(rawArgs[11])];
-            char type = (char) rawArgs[12];
+            CUDADataType valueType = vecX.getDataType();
+            UnsafeHelper.Integer64Object vecXDescr = vecX.getSpVecDescr();
+
+            long size = vecX.getN();
+
+            // create dense vectors X and Y descriptors
+            Object resultX = INTEROP.execute(cusparseCreateDnVecFunction, dnVecYDescr.getAddress(), size, vecYData, valueType.ordinal());
 
             // create buffer
-
-            switch (type) {
-                case 'S': {
-                    Object resultBufferSize = INTEROP.execute(cusparseSgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
-                    break;
-                }
-                case 'D': {
-                    Object resultBufferSize = INTEROP.execute(cusparseDgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
-                    break;
-                }
-                case 'C': {
-                    Object resultBufferSize = INTEROP.execute(cusparseCgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
-                    break;
-                }
-                case 'Z': {
-                    Object resultBufferSize = INTEROP.execute(cusparseZgemvi_bufferSizeFunction, handle, transA.ordinal(), rows, cols, nnz, bufferSize.getAddress());
-                    break;
-                }
-            }
+            Object resultBufferSize = INTEROP.execute(cusparseSpVV_bufferSizeFunction, handle, opX.ordinal(), vecX.getSpVecDescr().getValue(),
+                                dnVecYDescr.getValue(), result, valueType.ordinal(), bufferSize.getAddress());
 
 
             long numElements;
@@ -106,26 +90,19 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
             if (bufferSize.getValue() == 0) {
                 numElements = 1;
             } else {
-                numElements = (long) bufferSize.getValue();
+                numElements = (long) bufferSize.getValue() / 4;
             }
 
-            DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, alpha.getElementType());
+            DeviceArray buffer = new DeviceArray(vecYData.getGrCUDAExecutionContext(), numElements, vecYData.getElementType());
 
             cudaDeviceSynchronize();
-
-            args[0] = transA.ordinal();
-            args[1] = rows;
-            args[2] = cols;
-            args[3] = alpha;
-            args[4] = matA;
-            args[5] = lda;
-            args[6] = nnz;
-            args[7] = x;
-            args[8] = xInd;
-            args[9] = beta;
-            args[10] = outVec;
-            args[11] = idxBase.ordinal();
-            args[12] = buffer;
+            // format new arguments
+            args[0] = opX.ordinal();
+            args[1] = vecXDescr.getValue();
+            args[2] = dnVecYDescr.getValue();
+            args[3] = result;
+            args[4] = valueType.ordinal();
+            args[5] = buffer;
 
             return args;
         }

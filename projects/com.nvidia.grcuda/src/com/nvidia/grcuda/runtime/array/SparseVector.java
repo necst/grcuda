@@ -46,6 +46,8 @@ import static com.nvidia.grcuda.functions.Function.expectLong;
 
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.UnsafeHelper;
+import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayCopyException;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -75,6 +77,7 @@ public class SparseVector implements TruffleObject {
     protected static final String VALUES = "values";
     protected static final String INDICES = "indices";
     protected static final String GEMVI = "gemvi";
+    protected static final String SPVV = "SpVV";
 
 
     /**
@@ -91,6 +94,8 @@ public class SparseVector implements TruffleObject {
 
     private final boolean isComplex;
     private final CUSPARSERegistry.CUDADataType dataType;
+
+    private final UnsafeHelper.Integer64Object spVecDescr;
 
     /**
      * Number non zero elements stored in the array.
@@ -112,16 +117,31 @@ public class SparseVector implements TruffleObject {
     /**
      * Callable functions or general accessible members
      */
-    protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, INDICES, GEMVI);
+    protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, INDICES, GEMVI, SPVV);
 
     public SparseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray values, DeviceArray indices, long N, boolean isComplex) {
         this.values = values;
         this.indices = indices;
-        this.numNnz = values.getArraySize();
+        this.numNnz = isComplex ? values.getArraySize() / 2 : values.getArraySize();
         this.sizeBytes = values.getSizeBytes() + indices.getSizeBytes();
         this.N = N;
         this.isComplex = isComplex;
         this.dataType = CUSPARSERegistry.CUDADataType.fromGrCUDAType(values.getElementType(), isComplex);
+
+        spVecDescr = UnsafeHelper.createInteger64Object();
+
+        Context polyglot = Context.getCurrent();
+        Value cusparseCreateSpVecFunction = polyglot.eval("grcuda", "SPARSE::cusparseCreateSpVec");
+
+        Value resultSpVec = cusparseCreateSpVecFunction.execute(
+                spVecDescr.getAddress(),
+                N,
+                numNnz,
+                indices,
+                values,
+                CUSPARSERegistry.CUSPARSEIndexType.fromGrCUDAType(indices.getElementType()).ordinal(),
+                CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
+                dataType.ordinal());
     }
 
     @ExportMessage
@@ -157,7 +177,7 @@ public class SparseVector implements TruffleObject {
     boolean isMemberReadable(String memberName,
                              @Cached.Shared("memberName") @Cached("createIdentityProfile()") ValueProfile memberProfile) {
         String name = memberProfile.profile(memberName);
-        return FREE.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || INDICES.equals(name) || GEMVI.equals(name);
+        return FREE.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || INDICES.equals(name) || GEMVI.equals(name) || SPVV.equals(name);
     }
 
     @ExportMessage
@@ -173,6 +193,10 @@ public class SparseVector implements TruffleObject {
 
         if(GEMVI.equals(memberName)){
             return new SparseVectorGemviFunction();
+        }
+
+        if (SPVV.equals(memberName)) {
+            return new SparseVectorSpVVFunction();
         }
 
         if (IS_MEMORY_FREED.equals(memberName)) {
@@ -212,7 +236,7 @@ public class SparseVector implements TruffleObject {
     @ExportMessage
     @SuppressWarnings("static-method")
     boolean isMemberInvocable(String memberName) {
-        return FREE.equals(memberName) || GEMVI.equals(memberName);
+        return FREE.equals(memberName) || GEMVI.equals(memberName) || SPVV.equals(memberName);
     }
 
     @ExportMessage
@@ -236,6 +260,18 @@ public class SparseVector implements TruffleObject {
         vectorFreed = true;
     }
 
+    public CUSPARSERegistry.CUDADataType getDataType() {
+        return dataType;
+    }
+
+    public UnsafeHelper.Integer64Object getSpVecDescr() {
+        return spVecDescr;
+    }
+
+    public long getN() {
+        return N;
+    }
+
     private void executeGemvi(int numRows, int numCols, DeviceArray alpha, DeviceArray matA, DeviceArray beta, DeviceArray outVec) {
 
         char type;
@@ -252,7 +288,6 @@ public class SparseVector implements TruffleObject {
             default:
                 type = 'S';
         }
-
 
         this.polyglot
                 .eval("grcuda", "SPARSE::cusparse" + type + "gemvi")
@@ -334,6 +369,30 @@ public class SparseVector implements TruffleObject {
                 throw ArityException.create(0, arguments.length);
             }
             freeMemory();
+            return NoneValue.get();
+        }
+    }
+
+    @ExportLibrary(InteropLibrary.class)
+    final class SparseVectorSpVVFunction implements TruffleObject {
+        private static final int NUM_ARGS = 2;
+        @ExportMessage
+        @SuppressWarnings("static-method")
+        boolean isExecutable() {
+            return true;
+        }
+        @ExportMessage
+        Object execute(Object[] arguments) throws ArityException, UnsupportedTypeException {
+            checkFreeVector();
+            if (arguments.length != NUM_ARGS) {
+                CompilerDirectives.transferToInterpreter();
+                throw ArityException.create(NUM_ARGS, arguments.length);
+            }
+            DeviceArray vecY = (DeviceArray) arguments[0];
+            DeviceArray result = (DeviceArray) arguments[1];
+            polyglot
+                .eval("grcuda", "SPARSE::cusparseSpVV")
+                .execute((int)0, SparseVector.this, vecY, result);
             return NoneValue.get();
         }
     }

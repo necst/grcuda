@@ -3,9 +3,6 @@ package com.nvidia.grcuda.test.runtime.array;
 import java.util.Arrays;
 import java.util.Collection;
 
-import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
-import com.nvidia.grcuda.runtime.array.DeviceArray;
-import com.nvidia.grcuda.runtime.array.SparseMatrixCSR;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 

@@ -2,7 +2,6 @@ package com.nvidia.grcuda.functions;
 
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.SparseMatrixCOO;
-import com.nvidia.grcuda.runtime.array.SparseVector;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropLibrary;

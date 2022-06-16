@@ -51,6 +51,7 @@ import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxy;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyNoHandle;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyGemvi;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV;
+import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpVV;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
@@ -352,13 +353,17 @@ public class CUSPARSERegistry {
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSEDESTROY = new ExternalFunctionFactory("cusparseDestroy", "cusparseDestroy", "(sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV = new ExternalFunctionFactory("cusparseSpMV", "cusparseSpMV", "(sint64, sint32, pointer, sint64, " +
-                    "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
+            "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPVV = new ExternalFunctionFactory("cusparseSpVV", "cusparseSpVV", "(sint64, sint32, sint64, " +
+            "sint64, pointer, sint32, pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECSR = new ExternalFunctionFactory("cusparseCreateCsr", "cusparseCreateCsr", "(pointer, sint64, sint64, sint64," +
             "pointer, pointer, pointer, sint32, sint32, sint32, sint32): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo", "(pointer, sint64, sint64, sint64," +
             "pointer, pointer, pointer, sint32, sint32, sint32): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATEDNVEC = new ExternalFunctionFactory("cusparseCreateDnVec", "cusparseCreateDnVec", "(pointer, sint64, pointer, " +
             "sint32): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATESPVEC = new ExternalFunctionFactory("cusparseCreateSpVec", "cusparseCreateSpVec", "(pointer, sint64, sint64, pointer, " +
+            "pointer, sint32, sint32, sint32): sint32");
     private static final ArrayList<CUSPARSEProxy> functions = new ArrayList<>();
 
     static {
@@ -370,8 +375,10 @@ public class CUSPARSERegistry {
         }
 
         functions.add(new CUSPARSEProxySpMV(CUSPARSE_CUSPARSESPMV));
+        functions.add(new CUSPARSEProxySpVV(CUSPARSE_CUSPARSESPVV));
         functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATECSR));
         functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATEDNVEC));
+        functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATESPVEC));
         functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATECOO));
     }
 
