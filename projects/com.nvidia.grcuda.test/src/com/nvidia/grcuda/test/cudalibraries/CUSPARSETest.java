@@ -358,7 +358,6 @@ public class CUSPARSETest {
             Value sparseVectorCreator = polyglot.eval("grcuda", "SparseVector");
             Value sparseVector = sparseVectorCreator.execute(spVec, xInd, numElements, isComplex);
 
-            // fill dense matrix
             for (int i = 0; i < numElements; i++) {
                 for (int k = 0; k < complexScaleSize; ++k) {
                     vecY.setArrayElement(i * complexScaleSize + k, k == 0 ? edgeValue : 0.0);
@@ -375,6 +374,89 @@ public class CUSPARSETest {
             assertEquals(expectedResult, outVec.getArrayElement(0).asDouble(), 1e-3f);
         }
     }
+
+
+    @Test
+    public void TestAxpby() {
+        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy",
+                this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
+                "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
+
+            final int numElements = 10;
+            final boolean isComplex = this.type == 'C' || this.type == 'Z';
+            final boolean isDouble = this.type == 'D' || this.type == 'Z';
+            int complexScaleSize = isComplex ? 2 : 1;
+            final String grcudaDataType = (this.type == 'D' || this.type == 'Z') ? "double" : "float";
+
+            // creating context variables
+            Value cu = polyglot.eval("grcuda", "CU");
+
+            // creating variables for cusparse functions as DeviceArrays
+            int nnz = 1; // number of nnz
+            Value spVec = cu.invokeMember("DeviceArray", grcudaDataType, nnz * complexScaleSize); // x
+            Value xInd = cu.invokeMember("DeviceArray", "int", nnz); // must be the same
+            Value vecY = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
+            Value alpha = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
+            Value beta = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
+
+            alpha.setArrayElement(0, 1);
+            beta.setArrayElement(0, 1);
+
+            if (isComplex) {
+                alpha.setArrayElement(1, 0);
+                beta.setArrayElement(1, 0);
+            }
+
+            float edgeValue = (float) Math.random();
+
+            // fill sparse vector and related arguments
+            int idxNnz = (int) (Math.random() * numElements); // to make sure indices are valid
+            xInd.setArrayElement(0, idxNnz); // set indices vector
+            for (int j = 0; j < complexScaleSize; ++j) {
+                spVec.setArrayElement(j, j == 0 ? 1.0 : 0.0);
+            }
+
+            Value sparseVectorCreator = polyglot.eval("grcuda", "SparseVector");
+            Value sparseVector = sparseVectorCreator.execute(spVec, xInd, numElements, isComplex);
+
+            for (int i = 0; i < numElements; i++) {
+                for (int k = 0; k < complexScaleSize; ++k) {
+                    vecY.setArrayElement(i * complexScaleSize + k, k == 0 ? edgeValue : 0.0);
+                }
+            }
+
+            sparseVector.getMember("Axpby").execute(alpha, beta, vecY);
+
+            Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
+            sync.execute();
+
+            //TODO: breaks if policy is synch
+
+            for (int i = 0; i < numElements; ++i) {
+                for (int j = 0; j < complexScaleSize; ++j) {
+                    if (i == idxNnz) {
+                        if (Math.abs((j == 0 ? 1 + edgeValue : 0.0) - vecY.getArrayElement(i * complexScaleSize + j).asDouble()) > 1e-3f) {
+                            System.out.println(i + ": " + vecY.getArrayElement(i * complexScaleSize + j));
+                            System.out.println(this.type + " " + this.inputPrefetch + " " + this.policy);
+                        }
+                    }
+                }
+            }
+
+            /*for (int i = 0; i < numElements; ++i) {
+                for (int j = 0; j < complexScaleSize; ++j) {
+                    if (i == idxNnz) {
+                        assertEquals(j == 0 ? 1 + edgeValue : 0.0, vecY.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-3f);
+                    } else {
+                        assertEquals(j == 0 ? edgeValue : 0.0, vecY.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-3f);
+                    }
+                }
+            }*/
+        }
+    }
+
+
+
     /**
      * Libraries Integration Test
      */

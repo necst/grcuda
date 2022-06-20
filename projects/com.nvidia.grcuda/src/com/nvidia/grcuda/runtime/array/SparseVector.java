@@ -78,6 +78,7 @@ public class SparseVector implements TruffleObject {
     protected static final String INDICES = "indices";
     protected static final String GEMVI = "gemvi";
     protected static final String SPVV = "SpVV";
+    protected static final String AXPBY = "Axpby";
 
 
     /**
@@ -117,7 +118,7 @@ public class SparseVector implements TruffleObject {
     /**
      * Callable functions or general accessible members
      */
-    protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, INDICES, GEMVI, SPVV);
+    protected static final MemberSet MEMBERS = new MemberSet(FREE, IS_MEMORY_FREED, VALUES, INDICES, GEMVI, SPVV, AXPBY);
 
     public SparseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray values, DeviceArray indices, long N, boolean isComplex) {
         this.values = values;
@@ -177,7 +178,7 @@ public class SparseVector implements TruffleObject {
     boolean isMemberReadable(String memberName,
                              @Cached.Shared("memberName") @Cached("createIdentityProfile()") ValueProfile memberProfile) {
         String name = memberProfile.profile(memberName);
-        return FREE.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || INDICES.equals(name) || GEMVI.equals(name) || SPVV.equals(name);
+        return FREE.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || INDICES.equals(name) || GEMVI.equals(name) || SPVV.equals(name) || AXPBY.equals(name);
     }
 
     @ExportMessage
@@ -197,6 +198,10 @@ public class SparseVector implements TruffleObject {
 
         if (SPVV.equals(memberName)) {
             return new SparseVectorSpVVFunction();
+        }
+
+        if (AXPBY.equals(memberName)) {
+            return new SparseVectorAxpbyFunction();
         }
 
         if (IS_MEMORY_FREED.equals(memberName)) {
@@ -236,7 +241,7 @@ public class SparseVector implements TruffleObject {
     @ExportMessage
     @SuppressWarnings("static-method")
     boolean isMemberInvocable(String memberName) {
-        return FREE.equals(memberName) || GEMVI.equals(memberName) || SPVV.equals(memberName);
+        return FREE.equals(memberName) || GEMVI.equals(memberName) || SPVV.equals(memberName) || AXPBY.equals(memberName);
     }
 
     @ExportMessage
@@ -393,6 +398,31 @@ public class SparseVector implements TruffleObject {
             polyglot
                 .eval("grcuda", "SPARSE::cusparseSpVV")
                 .execute((int)0, SparseVector.this, vecY, result);
+            return NoneValue.get();
+        }
+    }
+
+    @ExportLibrary(InteropLibrary.class)
+    final class SparseVectorAxpbyFunction implements TruffleObject {
+        private static final int NUM_ARGS = 3;
+        @ExportMessage
+        @SuppressWarnings("static-method")
+        boolean isExecutable() {
+            return true;
+        }
+        @ExportMessage
+        Object execute(Object[] arguments) throws ArityException, UnsupportedTypeException {
+            checkFreeVector();
+            if (arguments.length != NUM_ARGS) {
+                CompilerDirectives.transferToInterpreter();
+                throw ArityException.create(NUM_ARGS, arguments.length);
+            }
+            DeviceArray alpha = (DeviceArray) arguments[0];
+            DeviceArray beta = (DeviceArray) arguments[1];
+            DeviceArray y = (DeviceArray) arguments[2];
+            polyglot
+                    .eval("grcuda", "SPARSE::cusparseAxpby")
+                    .execute(alpha, SparseVector.this, beta, y);
             return NoneValue.get();
         }
     }

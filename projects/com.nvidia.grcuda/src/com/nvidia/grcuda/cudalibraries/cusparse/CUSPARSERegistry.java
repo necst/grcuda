@@ -48,6 +48,7 @@ import com.nvidia.grcuda.Namespace;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxy;
+import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyAxpby;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyNoHandle;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyGemvi;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV;
@@ -356,6 +357,8 @@ public class CUSPARSERegistry {
             "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPVV = new ExternalFunctionFactory("cusparseSpVV", "cusparseSpVV", "(sint64, sint32, sint64, " +
             "sint64, pointer, sint32, pointer): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSEAXPBY = new ExternalFunctionFactory("cusparseAxpby", "cusparseAxpby", "(sint64, pointer, sint64, " +
+            "pointer, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECSR = new ExternalFunctionFactory("cusparseCreateCsr", "cusparseCreateCsr", "(pointer, sint64, sint64, sint64," +
             "pointer, pointer, pointer, sint32, sint32, sint32, sint32): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo", "(pointer, sint64, sint64, sint64," +
@@ -380,6 +383,7 @@ public class CUSPARSERegistry {
         functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATEDNVEC));
         functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATESPVEC));
         functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATECOO));
+        functions.add(new CUSPARSEProxyAxpby(CUSPARSE_CUSPARSEAXPBY));
     }
 
 }
