@@ -33,89 +33,79 @@
  */
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
+import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
 import static com.nvidia.grcuda.functions.Function.INTEROP;
 import static com.nvidia.grcuda.functions.Function.expectInt;
-
-import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
-import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
 
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
-import com.nvidia.grcuda.runtime.array.DenseVector;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.SparseMatrix;
+import com.nvidia.grcuda.runtime.array.SparseVector;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
-public class CUSPARSEProxySpMV extends CUSPARSEProxy {
+public class CUSPARSEProxySpMM extends CUSPARSEProxy {
 
-    public enum CUSPARSESpMVMatrixType {
-        SPMV_MATRIX_TYPE_COO,
-        SPMV_MATRIX_TYPE_CSR
-    }
+    private final int nArgsRaw = 10; // args for library function
 
-    private final int nArgsRaw = 9; // args for library function
-
-    public CUSPARSEProxySpMV(ExternalFunctionFactory externalFunctionFactory) {
+    public CUSPARSEProxySpMM(ExternalFunctionFactory externalFunctionFactory) {
         super(externalFunctionFactory);
     }
 
     @Override
     public Object[] formatArguments(Object[] rawArgs, long handle) throws UnsupportedTypeException, UnsupportedMessageException, ArityException {
         this.initializeNfi();
-        if (rawArgs.length == nArgsRaw) {
-            return rawArgs;
+        args = new Object[nArgsRaw];
+
+        UnsafeHelper.Integer64Object matBDescr = UnsafeHelper.createInteger64Object();
+        UnsafeHelper.Integer64Object matCDescr = UnsafeHelper.createInteger64Object();
+
+        CUSPARSERegistry.CUSPARSEOperation opA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(rawArgs[0])];
+        CUSPARSERegistry.CUSPARSEOperation opB = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(rawArgs[1])];
+        SparseVector alpha = (SparseVector) rawArgs[2];
+        SparseMatrix matA = (SparseMatrix) rawArgs[3];
+        DeviceArray matB = (DeviceArray) rawArgs[4];
+        DeviceArray beta = (DeviceArray) rawArgs[5];
+        DeviceArray matC = (DeviceArray) rawArgs[6];
+        int alg = expectInt(rawArgs[7]);
+
+        //CUDADataType valueType = vecX.getDataType();
+        //UnsafeHelper.Integer64Object vecXDescr = vecX.getSpVecDescr();
+
+        //long size = vecX.getN();
+
+        // create dense vectors X and Y descriptors
+        /*INTEROP.execute(cusparseCreateDnMatFunction, matBDescr.getAddress(), size, vecYData, valueType.ordinal());
+        INTEROP.execute(cusparseCreateDnMatFunction, matCDescr.getAddress(), size, vecYData, valueType.ordinal());
+
+        // create buffer
+        Object resultBufferSize = INTEROP.execute(cusparseSpVV_bufferSizeFunction, handle, opX.ordinal(), vecX.getSpVecDescr().getValue(),
+                            dnVecYDescr.getValue(), result, valueType.ordinal(), bufferSize.getAddress());
+
+
+        long numElements;
+
+        if (bufferSize.getValue() == 0) {
+            numElements = 1;
         } else {
-            args = new Object[nArgsRaw];
-
-            UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
-
-            CUSPARSERegistry.CUSPARSEOperation opA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(rawArgs[0])];
-            DeviceArray alpha = (DeviceArray) rawArgs[1];
-            SparseMatrix sparseMatrix = (SparseMatrix) rawArgs[2];
-            DenseVector vecX = (DenseVector) rawArgs[3];
-            CUDADataType valueTypeVec = CUDADataType.values()[expectInt(rawArgs[4])];
-            DeviceArray beta = (DeviceArray) rawArgs[5];
-            DenseVector vecY = (DenseVector) rawArgs[6];
-            CUSPARSESpMVAlg alg = CUSPARSESpMVAlg.values()[expectInt(rawArgs[7])];
-
-            final long cols = sparseMatrix.getRows();
-            CUDADataType valueType = sparseMatrix.getDataType();
-            UnsafeHelper.Integer64Object matDescr = sparseMatrix.getSpMatDescr();
-
-
-            // create buffer
-            Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunction, handle, opA.ordinal(), alpha,
-                    matDescr.getValue(), vecX.getDnVecDescr().getValue(), beta,
-                    vecY.getDnVecDescr().getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
-
-            long numElements;
-
-            if (bufferSize.getValue() == 0) {
-                numElements = 1;
-            } else {
-                numElements = (long) bufferSize.getValue() / 4;
-            }
-
-            DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, alpha.getElementType());
-
-            cudaDeviceSynchronize();
-
-            // format new arguments
-            args[0] = opA.ordinal();
-            args[1] = alpha;
-            args[2] = matDescr.getValue();
-            args[3] = vecX.getDnVecDescr().getValue();
-            args[4] = beta;
-            args[5] = vecY.getDnVecDescr().getValue();
-            args[6] = valueType.ordinal();
-            args[7] = alg.ordinal();
-            args[8] = buffer;
-
-            return args;
+            numElements = (long) bufferSize.getValue() / 4;
         }
+
+        DeviceArray buffer = new DeviceArray(vecYData.getGrCUDAExecutionContext(), numElements, vecYData.getElementType());
+
+        cudaDeviceSynchronize();
+        // format new arguments
+        args[0] = opX.ordinal();
+        args[1] = vecXDescr.getValue();
+        args[2] = dnVecYDescr.getValue();
+        args[3] = result;
+        args[4] = valueType.ordinal();
+        args[5] = buffer;
+*/
+        return args;
     }
 
     @Override

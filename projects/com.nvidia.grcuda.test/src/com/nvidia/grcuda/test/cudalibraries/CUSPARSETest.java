@@ -107,8 +107,8 @@ public class CUSPARSETest {
             Value rowPtr = cu.invokeMember("DeviceArray", "int", numElements + 1);
             Value colIdx = cu.invokeMember("DeviceArray", "int", numElements);
             Value nnzVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
-            Value dnVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
-            Value outVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
+            Value dnVecData = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
+            Value outVecData = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
 
             // variables initialization
 
@@ -128,15 +128,17 @@ public class CUSPARSETest {
 
                 for (int j = 0; j < complexScaleSize; ++j) {
                     nnzVec.setArrayElement(i * complexScaleSize + j, j == 0 ? edgeValue : 0.0);
-                    dnVec.setArrayElement(i * complexScaleSize + j, j == 0 ? 1.0 : 0.0);
-                    outVec.setArrayElement(i * complexScaleSize + j, 0.0);
+                    dnVecData.setArrayElement(i * complexScaleSize + j, j == 0 ? 1.0 : 0.0);
+                    outVecData.setArrayElement(i * complexScaleSize + j, 0.0);
                 }
             }
 
             rowPtr.setArrayElement(numElements, numElements);
 
-            Value sparseCsrMatrixCreator = polyglot.eval("grcuda", "SparseMatrixCSR");
-            Value csrMatrix = sparseCsrMatrixCreator.execute(colIdx, rowPtr, nnzVec, numElements, numElements, isComplex);
+            Value dnVec = polyglot.eval("grcuda", "DenseVector").execute(dnVecData, isComplex);
+            Value outVec  = polyglot.eval("grcuda", "DenseVector").execute(outVecData, isComplex);
+
+            Value csrMatrix = polyglot.eval("grcuda", "SparseMatrixCSR").execute(colIdx, rowPtr, nnzVec, numElements, numElements, isComplex);
 
             csrMatrix.getMember("SpMV").execute(alpha, beta, dnVec, outVec);
 
@@ -146,9 +148,9 @@ public class CUSPARSETest {
             for (int i = 0; i < numElements; ++i) {
                 for (int j = 0; j < complexScaleSize; ++j) {
                     if (isDouble) {
-                        assertEquals(j == 0 ? edgeValue : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-5);
+                        assertEquals(j == 0 ? edgeValue : 0.0, outVecData.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-5);
                     } else {
-                        assertEquals(j == 0 ? edgeValue : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-5);
+                        assertEquals(j == 0 ? edgeValue : 0.0, outVecData.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-5);
                     }
                 }
             }
@@ -178,8 +180,8 @@ public class CUSPARSETest {
             Value coordX = cu.invokeMember("DeviceArray", "int", numElements);
             Value coordY = cu.invokeMember("DeviceArray", "int", numElements);
             Value nnzVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
-            Value dnVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
-            Value outVec = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
+            Value dnVecData = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
+            Value outVecData = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
 
             // variables initialization
             alpha.setArrayElement(0, 1);
@@ -198,11 +200,14 @@ public class CUSPARSETest {
                 coordY.setArrayElement(i, i);
                 for (int j = 0; j < complexScaleSize; ++j) {
                     nnzVec.setArrayElement(i * complexScaleSize + j, j == 0 ? edgeValue : 0.0);
-                    dnVec.setArrayElement(i * complexScaleSize + j, j == 0 ? 1.0 : 0.0);
-                    outVec.setArrayElement(i * complexScaleSize + j, 0.0);
+                    dnVecData.setArrayElement(i * complexScaleSize + j, j == 0 ? 1.0 : 0.0);
+                    outVecData.setArrayElement(i * complexScaleSize + j, 0.0);
                 }
             }
 
+
+            Value dnVec = polyglot.eval("grcuda", "DenseVector").execute(dnVecData, isComplex);
+            Value outVec = polyglot.eval("grcuda", "DenseVector").execute(outVecData, isComplex);
             Value sparseCooMatrixCreator = polyglot.eval("grcuda", "SparseMatrixCOO");
             Value cooMatrix = sparseCooMatrixCreator.execute(coordX, coordY, nnzVec, numElements, numElements, isComplex);
 
@@ -215,9 +220,9 @@ public class CUSPARSETest {
             for (int i = 0; i < numElements; ++i) {
                 for (int j = 0; j < complexScaleSize; ++j) {
                     if (isDouble) {
-                        assertEquals(j == 0 ? edgeValue : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-5);
+                        assertEquals(j == 0 ? edgeValue : 0.0, outVecData.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-5);
                     } else {
-                        assertEquals(j == 0 ? edgeValue : 0.0, outVec.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-5);
+                        assertEquals(j == 0 ? edgeValue : 0.0, outVecData.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-5);
                     }
                 }
             }
@@ -340,7 +345,7 @@ public class CUSPARSETest {
             int nnz = 1; // number of nnz
             Value spVec = cu.invokeMember("DeviceArray", grcudaDataType, nnz * complexScaleSize); // x
             Value xInd = cu.invokeMember("DeviceArray", "int", nnz); // must be the same
-            Value vecY = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize); // output
+            Value vecYData = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize); // output
             Value outVec = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize); // output
 
 
@@ -360,9 +365,11 @@ public class CUSPARSETest {
 
             for (int i = 0; i < numElements; i++) {
                 for (int k = 0; k < complexScaleSize; ++k) {
-                    vecY.setArrayElement(i * complexScaleSize + k, k == 0 ? edgeValue : 0.0);
+                    vecYData.setArrayElement(i * complexScaleSize + k, k == 0 ? edgeValue : 0.0);
                 }
             }
+
+            Value vecY = polyglot.eval("grcuda", "DenseVector").execute(vecYData, isComplex);
 
             sparseVector.getMember("SpVV").execute(vecY, outVec);
 

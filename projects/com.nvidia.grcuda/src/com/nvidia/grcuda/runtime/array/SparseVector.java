@@ -393,7 +393,7 @@ public class SparseVector implements TruffleObject {
                 CompilerDirectives.transferToInterpreter();
                 throw ArityException.create(NUM_ARGS, arguments.length);
             }
-            DeviceArray vecY = (DeviceArray) arguments[0];
+            DenseVector vecY = (DenseVector) arguments[0];
             DeviceArray result = (DeviceArray) arguments[1];
             polyglot
                 .eval("grcuda", "SPARSE::cusparseSpVV")

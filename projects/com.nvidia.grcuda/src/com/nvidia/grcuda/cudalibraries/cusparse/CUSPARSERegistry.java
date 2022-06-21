@@ -163,6 +163,13 @@ public class CUSPARSERegistry {
         CUSPARSE_SPMV_CSR_ALG2;
     }
 
+    public enum CUSPARSEOrder {
+        CUSPARSE_ORDER_ROW,
+        CUSPARSE_ORDER_COL
+    }
+
+
+
     public CUSPARSERegistry(GrCUDAContext context) {
         this.context = context;
         // created field in GrCUDAOptions
@@ -359,6 +366,8 @@ public class CUSPARSERegistry {
             "sint64, pointer, sint32, pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSEAXPBY = new ExternalFunctionFactory("cusparseAxpby", "cusparseAxpby", "(sint64, pointer, sint64, " +
             "pointer, sint64): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMM = new ExternalFunctionFactory("cusparseSpMM", "cusparseSpMM", "(sint64, sint32, sint32, " +
+            "pointer, sint64, sint64, pointer, sint64, sint32, sint32, pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECSR = new ExternalFunctionFactory("cusparseCreateCsr", "cusparseCreateCsr", "(pointer, sint64, sint64, sint64," +
             "pointer, pointer, pointer, sint32, sint32, sint32, sint32): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo", "(pointer, sint64, sint64, sint64," +

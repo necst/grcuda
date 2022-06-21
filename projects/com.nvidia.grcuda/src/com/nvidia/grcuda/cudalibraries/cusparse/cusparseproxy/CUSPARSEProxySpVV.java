@@ -34,15 +34,14 @@
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
 import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
-import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
 import static com.nvidia.grcuda.functions.Function.INTEROP;
 import static com.nvidia.grcuda.functions.Function.expectInt;
 
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
+import com.nvidia.grcuda.runtime.array.DenseVector;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
-import com.nvidia.grcuda.runtime.array.SparseMatrix;
 import com.nvidia.grcuda.runtime.array.SparseVector;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
@@ -64,12 +63,11 @@ public class CUSPARSEProxySpVV extends CUSPARSEProxy {
         } else {
             args = new Object[nArgsRaw];
 
-            UnsafeHelper.Integer64Object dnVecYDescr = UnsafeHelper.createInteger64Object();
             UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
 
             CUSPARSERegistry.CUSPARSEOperation opX = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(rawArgs[0])];
             SparseVector vecX = (SparseVector) rawArgs[1];
-            DeviceArray vecYData = (DeviceArray) rawArgs[2];
+            DenseVector vecY = (DenseVector) rawArgs[2];
             DeviceArray result = (DeviceArray) rawArgs[3];
 
             CUDADataType valueType = vecX.getDataType();
@@ -78,11 +76,11 @@ public class CUSPARSEProxySpVV extends CUSPARSEProxy {
             long size = vecX.getN();
 
             // create dense vectors X and Y descriptors
-            Object resultX = INTEROP.execute(cusparseCreateDnVecFunction, dnVecYDescr.getAddress(), size, vecYData, valueType.ordinal());
+            //Object resultX = INTEROP.execute(cusparseCreateDnVecFunction, dnVecYDescr.getAddress(), size, vecYData, valueType.ordinal());
 
             // create buffer
             Object resultBufferSize = INTEROP.execute(cusparseSpVV_bufferSizeFunction, handle, opX.ordinal(), vecX.getSpVecDescr().getValue(),
-                                dnVecYDescr.getValue(), result, valueType.ordinal(), bufferSize.getAddress());
+                                vecY.getDnVecDescr().getValue(), result, valueType.ordinal(), bufferSize.getAddress());
 
 
             long numElements;
@@ -93,13 +91,13 @@ public class CUSPARSEProxySpVV extends CUSPARSEProxy {
                 numElements = (long) bufferSize.getValue() / 4;
             }
 
-            DeviceArray buffer = new DeviceArray(vecYData.getGrCUDAExecutionContext(), numElements, vecYData.getElementType());
+            DeviceArray buffer = new DeviceArray(result.getGrCUDAExecutionContext(), numElements, result.getElementType());
 
             cudaDeviceSynchronize();
             // format new arguments
             args[0] = opX.ordinal();
             args[1] = vecXDescr.getValue();
-            args[2] = dnVecYDescr.getValue();
+            args[2] = vecY.getDnVecDescr().getValue();
             args[3] = result;
             args[4] = valueType.ordinal();
             args[5] = buffer;
