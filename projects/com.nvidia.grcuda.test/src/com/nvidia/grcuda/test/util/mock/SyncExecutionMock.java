@@ -62,9 +62,9 @@ public class SyncExecutionMock extends GrCUDAComputationalElement {
 
     @Override
     public String toString() {
-        return "sync" + "; args=[" +
+        return "sync: args={" +
                 this.argumentsThatCanCreateDependencies.stream().map(Object::toString).collect(Collectors.joining(", ")) +
-                "]";
+                "}";
     }
 }
 

@@ -51,28 +51,39 @@ public class GrCUDAStreamPolicyMockTest {
         GrCUDAStreamPolicy.RoundRobinDeviceSelectionPolicy policy = getRoundRobinPolicy(4);
         Device d = policy.retrieve(null);
         assertEquals(0, d.getDeviceId());
+        assertEquals(1, policy.getInternalState());
         d = policy.retrieve(null);
         assertEquals(1, d.getDeviceId());
+        assertEquals(2, policy.getInternalState());
         d = policy.retrieve(null);
         assertEquals(2, d.getDeviceId());
+        assertEquals(3, policy.getInternalState());
         d = policy.retrieve(null);
         assertEquals(3, d.getDeviceId());
+        assertEquals(0, policy.getInternalState());
         d = policy.retrieve(null);
         assertEquals(0, d.getDeviceId());
+        assertEquals(1, policy.getInternalState());
         d = policy.retrieve(null, Collections.singletonList(new Device(0, null)));
         assertEquals(0, d.getDeviceId());
+        assertEquals(2, policy.getInternalState());
         d = policy.retrieve(null);
-        assertEquals(1, d.getDeviceId());
+        assertEquals(2, d.getDeviceId());
+        assertEquals(3, policy.getInternalState());
         d = policy.retrieve(null, Collections.singletonList(new Device(3, null)));
         assertEquals(3, d.getDeviceId());
+        assertEquals(0, policy.getInternalState());
         d = policy.retrieve(null);
         assertEquals(0, d.getDeviceId());
+        assertEquals(1, policy.getInternalState());
         d = policy.retrieve(null, Arrays.asList(new Device(3, null), new Device(1, null)));
-        assertEquals(1, d.getDeviceId());
+        assertEquals(3, d.getDeviceId());
+        assertEquals(2, policy.getInternalState());
         d = policy.retrieve(null, Arrays.asList(new Device(2, null), new Device(1, null)));
-        assertEquals(2, d.getDeviceId());
+        assertEquals(1, d.getDeviceId());
+        assertEquals(3, policy.getInternalState());
         d = policy.retrieve(null, Arrays.asList(new Device(0, null), new Device(1, null)));
-        assertEquals(0, d.getDeviceId());
+        assertEquals(1, d.getDeviceId());
     }
 
     @Test

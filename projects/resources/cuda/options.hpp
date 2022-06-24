@@ -157,19 +157,19 @@ struct Options {
     Options(int argc, char *argv[]) {
         map_init(policy_map)(Policy::Sync, "sync")(Policy::Async, "async")(Policy::CudaGraph, "cudagraph")(Policy::CudaGraphAsync, "cudagraphmanual")(Policy::CudaGraphSingle, "cudagraphsingle");
         map_init(benchmark_map)
-                (BenchmarkEnum::B1, "b1")
-                (BenchmarkEnum::B5, "b5")
-                (BenchmarkEnum::B6, "b6")
-                (BenchmarkEnum::B7, "b7")
-                (BenchmarkEnum::B8, "b8")
-                (BenchmarkEnum::B10, "b10")
-                (BenchmarkEnum::B1M, "b1m")
-                (BenchmarkEnum::B5M, "b5m")
-                (BenchmarkEnum::B6M, "b6m")
-                (BenchmarkEnum::B9M, "b9m")
-                (BenchmarkEnum::B11M, "b11m")
-                (BenchmarkEnum::B12M, "b12m")
-                (BenchmarkEnum::B13M, "b13m");
+                (BenchmarkEnum::B1, "b1 - VEC")
+                (BenchmarkEnum::B5, "b5 - B&S")
+                (BenchmarkEnum::B6, "b6 - ML")
+                (BenchmarkEnum::B7, "b7 - HITS")
+                (BenchmarkEnum::B8, "b8 - IMG")
+                (BenchmarkEnum::B10, "b10 - DL")
+                (BenchmarkEnum::B1M, "b1m - VEC")
+                (BenchmarkEnum::B5M, "b5m - B&S")
+                (BenchmarkEnum::B6M, "b6m - ML")
+                (BenchmarkEnum::B9M, "b9m - CG")
+                (BenchmarkEnum::B11M, "b11m - MUL")
+                (BenchmarkEnum::B12M, "b12m - LANCZOS")
+                (BenchmarkEnum::B13M, "b13m - MMUL");
 
         int opt;
         static struct option long_options[] = {{"debug", no_argument, 0, 'd'},

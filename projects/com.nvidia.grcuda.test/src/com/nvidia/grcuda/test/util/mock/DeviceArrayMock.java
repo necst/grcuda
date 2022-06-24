@@ -49,5 +49,10 @@ public class DeviceArrayMock extends DeviceArray {
     protected LittleEndianNativeArrayView allocateMemory() {
         return null;
     }
+
+    @Override
+    public String toString() {
+        return this.getElementType() + "[" + this.getArraySize() + "]";
+    }
 }
 

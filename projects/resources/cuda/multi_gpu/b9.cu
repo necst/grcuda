@@ -35,6 +35,14 @@
 #define BLOCK_SIZE_V100 64 // Just a recommendation of optimal block size for the V100;
 #define P 16
 #define ITER 50
+#define EPS 1e-12
+
+// Add a small epsilon to the main diagonal:
+extern "C" __global__ void precondition(float *A, int n, int m, int offset) {
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < m; i += blockDim.x * gridDim.x) {
+        A[i * n + i + offset] += EPS; 
+    }
+}
 
 // z = x @ y;
 extern "C" __global__ void matrix_vector_mult(const float* x, const float* y, float* z, int n, int m, int z_offset) {
@@ -154,7 +162,7 @@ void Benchmark9M::init() {
             A[p][(i % S) * N + j] = val;
             // A[j / S][(j % S) * N + i] = val;
         }
-        A[p][(i % S) * N + i] += 10e-12; 
+        // A[p][(i % S) * N + i] += 10e-12; 
     }
 
     // Random input b;
@@ -193,6 +201,7 @@ void Benchmark9M::execute_sync(int iter) {
     }
 
     for (int i = 0; i < P; i++) {
+        precondition<<<num_blocks, block_size_1d>>>(A[i], N, std::min(S, N - i * S), i * S);
         matrix_vector_mult_axpy<<<num_blocks, block_size_1d>>>(A[i], x, b, -1, r, std::min(S, N - i * S), N, i * S);
         cudaDeviceSynchronize();
     }
@@ -281,6 +290,7 @@ void Benchmark9M::execute_async(int iter) {
     cudaEvent_t e[P];
     for (int i = 0; i < P; i++) {
         cudaSetDevice(select_gpu(i, max_devices));
+        precondition<<<num_blocks, block_size_1d, 0, s[i]>>>(A[i], N, std::min(S, N - i * S), i * S);
         matrix_vector_mult_axpy<<<num_blocks, block_size_1d, 0, s[i]>>>(A[i], x, b, -1, r, std::min(S, N - i * S), N, i * S);
         cudaEventCreate(&e[i]);
         cudaEventRecord(e[i], s[i]);

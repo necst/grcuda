@@ -67,7 +67,7 @@ class Benchmark1M(Benchmark):
     """
 
     def __init__(self, benchmark: BenchmarkResult, nvprof_profile: bool = False):
-        super().__init__("b1", benchmark, nvprof_profile)
+        super().__init__("b1m", benchmark, nvprof_profile)
         self.size = 0
         self.S = 0
         self.x = None
@@ -79,6 +79,7 @@ class Benchmark1M(Benchmark):
         self.square_kernel = None
         self.diff_kernel = None
         self.reduce_kernel = None
+        self.initialize = None
         self.res_tot = 0
         self.cpu_result = 0
 
@@ -112,23 +113,20 @@ class Benchmark1M(Benchmark):
         self.square_kernel = build_kernel(SQUARE_KERNEL, "square", "const pointer, pointer, sint32")
         self.reduce_kernel = build_kernel(REDUCE_KERNEL, "reduce", "const pointer, const pointer, pointer, sint32")
 
+        self.initialize = polyglot.eval(language="js", string="(x, i, N, a) => { for (let j = 0; j < x.length; j++) { let index = i * x.length + j; if (index < N) {x[j] = a / (index + 1); }}}")
+
+
     @time_phase("initialization")
     def init(self):
         for i in range(P):
-            for j in range(self.S):
-                index = i * self.S + j
-                if index < self.size:
-                    self.x[i][j] = 1 / (index + 1)
-                    self.y[i][j] = 2 / (index + 1)
+            self.initialize(self.x[i], i, self.size, 1)
+            self.initialize(self.y[i], i, self.size, 2)
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
         for i in range(P):
-            for j in range(self.S):
-                index = i * self.S + j
-                if index < self.size:
-                    self.x[i][j] = 1 / (index + 1)
-                    self.y[i][j] = 2 / (index + 1)
+            self.initialize(self.x[i], i, self.size, 1)
+            self.initialize(self.y[i], i, self.size, 2)
             self.res[i][0] = 0.0
         self.res_tot = 0
 

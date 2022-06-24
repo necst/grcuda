@@ -84,6 +84,7 @@ public class GrCUDAOptionMap implements TruffleObject {
     public static final String DEFAULT_BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME") + File.separatorChar +
             "projects" + File.separatorChar + "resources" + File.separatorChar +
             "connection_graph" + File.separatorChar + "datasets" + File.separatorChar + "connection_graph.csv";
+    public static final double DEFAULT_DATA_THRESHOLD = 0.1;
 
     public GrCUDAOptionMap(OptionValues options) {
         optionsMap = new HashMap<>();
@@ -248,6 +249,10 @@ public class GrCUDAOptionMap implements TruffleObject {
     }
 
     public String getBandwidthMatrix() { return (String) getOptionValueFromOptionKey(GrCUDAOptions.BandwidthMatrix); }
+
+    public Double getDataThreshold() {
+        return (Double) getOptionValueFromOptionKey(GrCUDAOptions.DataThreshold);
+    }
 
     public MemAdviserEnum getMemAdvisePolicy() {
         return (MemAdviserEnum) getOptionValueFromOptionKey(GrCUDAOptions.MemAdvisePolicy);

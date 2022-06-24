@@ -38,7 +38,6 @@ public class GrCUDAStreamPolicy {
     private final RetrieveNewStreamPolicy retrieveNewStreamPolicy;
     private final RetrieveParentStreamPolicy retrieveParentStreamPolicy;
     protected final DeviceSelectionPolicy deviceSelectionPolicy;
-    private final String bandwidthMatrixPath;
 
     private static final TruffleLogger STREAM_LOGGER = GrCUDALogger.getLogger(GrCUDALogger.STREAM_LOGGER);
 
@@ -46,9 +45,9 @@ public class GrCUDAStreamPolicy {
                               RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
                               RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
                               DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
-                              String bandwidthMatrixPath) {
+                              String bandwidthMatrixPath,
+                              double dataThreshold) {
         this.devicesManager = devicesManager;
-        this.bandwidthMatrixPath = bandwidthMatrixPath;
         // When using a stream selection policy that supports multiple GPUs,
         // we also need a policy to choose the device where the computation is executed;
         switch (deviceSelectionPolicyEnum) {
@@ -59,13 +58,13 @@ public class GrCUDAStreamPolicy {
                 this.deviceSelectionPolicy = new StreamAwareDeviceSelectionPolicy(devicesManager);
                 break;
             case MIN_TRANSFER_SIZE:
-                this.deviceSelectionPolicy = new MinimizeTransferSizeDeviceSelectionPolicy(devicesManager);
+                this.deviceSelectionPolicy = new MinimizeTransferSizeDeviceSelectionPolicy(devicesManager, dataThreshold);
                 break;
             case MINMIN_TRANSFER_TIME:
-                this.deviceSelectionPolicy = new MinMinTransferTimeDeviceSelectionPolicy(devicesManager);
+                this.deviceSelectionPolicy = new MinMinTransferTimeDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
                 break;
             case MINMAX_TRANSFER_TIME:
-                this.deviceSelectionPolicy = new MinMaxTransferTimeDeviceSelectionPolicy(devicesManager);
+                this.deviceSelectionPolicy = new MinMaxTransferTimeDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
                 break;
             default:
                 STREAM_LOGGER.finer("Disabled device selection policy, it is not necessary to use one as retrieveParentStreamPolicyEnum=" + retrieveParentStreamPolicyEnum);
@@ -107,8 +106,9 @@ public class GrCUDAStreamPolicy {
                               RetrieveNewStreamPolicyEnum retrieveNewStreamPolicyEnum,
                               RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
                               DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
-                              String bandwidthMatrixPath) {
-        this(new GrCUDADevicesManager(runtime), retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum, bandwidthMatrixPath);
+                              String bandwidthMatrixPath,
+                              double dataThrehsold) {
+        this(new GrCUDADevicesManager(runtime), retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum, bandwidthMatrixPath, dataThrehsold);
     }
 
     /**
@@ -424,6 +424,10 @@ public class GrCUDAStreamPolicy {
             this.nextDevice = (startDevice + 1) % this.devicesManager.getNumberOfGPUsToUse();
         }
 
+        public int getInternalState() {
+            return nextDevice;
+        }
+
         @Override
         public Device retrieve(ExecutionDAG.DAGVertex vertex) {
             Device device = this.devicesManager.getDevice(nextDevice);
@@ -433,30 +437,12 @@ public class GrCUDAStreamPolicy {
 
         @Override
         Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
-            if (devices.size() == 1) {
-                Device device = devices.get(0);
-                // The next device to use is the one after the only device in the list;
-                increaseNextDevice(device.getDeviceId());
-                return device;
-            } else {
-                // Sort the devices by ID;
-                List<Device> sortedDevices = devices.stream().sorted(Comparator.comparingInt(Device::getDeviceId)).collect(Collectors.toList());
-                // Go through the devices until we find the first device with ID bigger or equal than nextDevice;
-                for (Device d : sortedDevices) {
-                    if (nextDevice <= d.getDeviceId()) {
-                        // The next device is the one after the current one;
-                        increaseNextDevice(d.getDeviceId());
-                        return d;
-                    }
-                }
-                // If we haven't found any device, return the first device in the list
-                // (i.e. reset nextDevice to 0 and start counting);
-                Device device = sortedDevices.get(0);
-                // Start counting from the current device;
-                increaseNextDevice(device.getDeviceId());
-                return device;
-            }
-
+            // Sort the devices by ID;
+            List<Device> sortedDevices = devices.stream().sorted(Comparator.comparingInt(Device::getDeviceId)).collect(Collectors.toList());
+            // Keep increasing the internal state, but make sure that the retrieved device is among the ones in the input list;
+            Device device = sortedDevices.get(nextDevice % devices.size());
+            increaseNextDevice(nextDevice);
+            return device;
         }
     }
 
@@ -489,10 +475,24 @@ public class GrCUDAStreamPolicy {
      */
     public static class MinimizeTransferSizeDeviceSelectionPolicy extends DeviceSelectionPolicy {
 
+        /**
+         * Some policies can use a threshold that specifies how much data (in percentage) must be available
+         * on a device so that the device can be considered for execution.
+         * A low threshold favors exploitation (using the same device for most computations),
+         * while a high threshold favors exploration (distribute the computations on different devices
+         * even if some device would have slightly lower synchronization time);
+         */
+        protected final double dataThreshold;
+
+        /**
+         * Fallback policy in case no GPU has any up-tp-date data. We assume that for any GPU, transferring all the data
+         * from the CPU would have the same cost, so we use this policy as tie-breaker;
+         */
         RoundRobinDeviceSelectionPolicy roundRobin = new RoundRobinDeviceSelectionPolicy(devicesManager);
 
-        public MinimizeTransferSizeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
+        public MinimizeTransferSizeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshsold) {
             super(devicesManager);
+            this.dataThreshold = dataThreshsold;
         }
 
         /**
@@ -503,7 +503,7 @@ public class GrCUDAStreamPolicy {
          *                               The array must be zero-initialized and have size equal to the number of usable GPUs
          * @return if any data is present on any GPU. If false, we can use a fallback policy instead
          */
-        private boolean computeDataSizeOnDevices(ExecutionDAG.DAGVertex vertex, long[] alreadyPresentDataSize) {
+        boolean computeDataSizeOnDevices(ExecutionDAG.DAGVertex vertex, long[] alreadyPresentDataSize) {
             List<AbstractArray> arguments = vertex.getComputation().getArrayArguments();
             boolean isAnyDataPresentOnGPUs = false;  // True if there's at least a GPU with some data already available;
             for (AbstractArray a : arguments) {
@@ -515,6 +515,45 @@ public class GrCUDAStreamPolicy {
                 }
             }
             return isAnyDataPresentOnGPUs;
+        }
+
+        /**
+         * Find if any of the array inputs of the computation is present on the selected devices.
+         * Used to understand if no device has any data already present, and the device selection policy
+         * should fallback to a simpler device selection policy.
+         * @param vertex the computation for which we want to select the device
+         * @param devices the list of devices where the computation could be executed
+         * @return if any of the computation's array inputs is already present on the specified devices
+         */
+        boolean isDataPresentOnGPUs(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
+            for (Device d : devices) {
+                for (AbstractArray a : vertex.getComputation().getArrayArguments()) {
+                    if (a.getArrayUpToDateLocations().contains(d.getDeviceId())) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Find if any device has at least TRANSFER_THRESHOLD % of the size of data that is required by the computation;
+         * @param alreadyPresentDataSize the size in bytes that is available on each device.
+         *                              The array must contain all devices in the system, not just a subset of them
+         * @param vertex the computation the we analyze
+         * @param devices the list of devices considered by the function
+         * @return if any device has at least RANSFER_THRESHOLD % of required data
+         */
+        boolean findIfAnyDeviceHasEnoughData(long[] alreadyPresentDataSize, ExecutionDAG.DAGVertex vertex, List<Device> devices) {
+            // Total size of the input arguments;
+            long totalSize = vertex.getComputation().getArrayArguments().stream().map(AbstractArray::getSizeBytes).reduce(0L, Long::sum);
+            // True if at least one device already has at least X% of the data required by the computation;
+            for (Device d : devices) {
+                if ((double) alreadyPresentDataSize[d.getDeviceId()] / totalSize > dataThreshold) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**
@@ -542,11 +581,11 @@ public class GrCUDAStreamPolicy {
             long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse()];
             // Compute the amount of data on each device, and if any device has any data at all;
             boolean isAnyDataPresentOnGPUs = computeDataSizeOnDevices(vertex, alreadyPresentDataSize);
-            if (isAnyDataPresentOnGPUs) {
+            // If not device has at least X% of data available, it's not worth optimizing data locality (exploration preferred to exploitation);
+            if (isAnyDataPresentOnGPUs && findIfAnyDeviceHasEnoughData(alreadyPresentDataSize, vertex, devicesManager.getUsableDevices())) {
                 // Find device with maximum available data;
                 return selectDeviceWithMostData(devicesManager.getUsableDevices(), alreadyPresentDataSize);
             } else {
-                // FIXME: using least-busy should be better, but it is currently unreliable;
                 // No data is present on any GPU: select the device with round-robin;
                 return roundRobin.retrieve(vertex);
             }
@@ -558,12 +597,11 @@ public class GrCUDAStreamPolicy {
             long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse()];
             // Compute the amount of data on each device, and if any device has any data at all;
             computeDataSizeOnDevices(vertex, alreadyPresentDataSize);
-            // Find if any data is present only on the selected GPUs;
-            if (isDataPresentOnGPUs(vertex, devices)) {
+            // If not device has at least X% of data available, it's not worth optimizing data locality (exploration preferred to exploitation);
+            if (findIfAnyDeviceHasEnoughData(alreadyPresentDataSize, vertex, devices)) {
                 // Find device with maximum available data;
                 return selectDeviceWithMostData(devices, alreadyPresentDataSize);
             } else {
-                // FIXME: using least-busy should be better, but it is currently unreliable;
                 // No data is present on any GPU: select the device with round-robin;
                 return roundRobin.retrieve(vertex, devices);
             }
@@ -580,13 +618,8 @@ public class GrCUDAStreamPolicy {
      * The speed of each GPU-GPU and CPU-GPU link is assumed to be stored in a file located in "$GRCUDA_HOME/grcuda_data/datasets/connection_graph/connection_graph.csv".
      * This file is generated as "cd $GRCUDA_HOME/projects/resources/cuda", "make connection_graph", "bin/connection_graph";
      */
-    public abstract static class TransferTimeDeviceSelectionPolicy extends DeviceSelectionPolicy {
+    public abstract static class TransferTimeDeviceSelectionPolicy extends MinimizeTransferSizeDeviceSelectionPolicy {
 
-        /**
-         * Fallback policy in case no GPU has any up-tp-date data. We assume that for any GPU, transferring all the data
-         * from the CPU would have the same cost, so we use this policy as tie-breaker;
-         */
-        private final RoundRobinDeviceSelectionPolicy roundRobin;
         /**
          * This functional tells how the transfer bandwidth for some array and device is computed.
          * It should be max, min, mean, etc.;
@@ -599,9 +632,8 @@ public class GrCUDAStreamPolicy {
 
         private final double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUsToUse() + 1][devicesManager.getNumberOfGPUsToUse() + 1];
 
-        public TransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, String bandwidthMatrixPath, java.util.function.BiFunction<Double, Double, Double> reduction, double startValue) {
-            super(devicesManager);
-            this.roundRobin = new RoundRobinDeviceSelectionPolicy(devicesManager);
+        public TransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath, java.util.function.BiFunction<Double, Double, Double> reduction, double startValue) {
+            super(devicesManager, dataThreshold);
             this.reduction = reduction;
             this.startValue = startValue;
 
@@ -625,7 +657,8 @@ public class GrCUDAStreamPolicy {
                 // Skip invalid entries, and ignore GPUs with ID larger than the number of GPUs to use;
                 if (startDevice >= -1 && startDevice < devicesManager.getNumberOfGPUsToUse()
                         && endDevice >= -1 && endDevice < devicesManager.getNumberOfGPUsToUse()) {
-                    double bandwidth = Double.parseDouble(records.get(il).get(2));
+                    // Approximate to the floor, to smooth random bandwidth fluctuations in data transfer;
+                    double bandwidth = Math.floor(Double.parseDouble(records.get(il).get(2)));
                     if (startDevice != -1) {
                         // GPU-GPU interconnection;
                         this.linkBandwidth[startDevice][endDevice] = bandwidth;
@@ -711,6 +744,28 @@ public class GrCUDAStreamPolicy {
         }
 
         /**
+         * Find the devices with at least TRANSFER_THRESHOLD % of the size of data that is required by the computation;
+         * @param alreadyPresentDataSize the size in bytes that is available on each device.
+         *                              The array must contain all devices in the system, not just a subset of them
+         * @param vertex the computation the we analyze
+         * @param devices the list of devices considered by the function
+         * @return the list of devices that has at least TRANSFER_THRESHOLD % of required data
+         */
+        List<Device> findDevicesWithEnoughData(long[] alreadyPresentDataSize, ExecutionDAG.DAGVertex vertex, List<Device> devices) {
+            // List of devices with enough data;
+            List<Device> devicesWithEnoughData = new ArrayList<>();
+            // Total size of the input arguments;
+            long totalSize = vertex.getComputation().getArrayArguments().stream().map(AbstractArray::getSizeBytes).reduce(0L, Long::sum);
+            // True if at least one device already has at least X% of the data required by the computation;
+            for (Device d : devices) {
+                if ((double) alreadyPresentDataSize[d.getDeviceId()] / totalSize > dataThreshold) {
+                    devicesWithEnoughData.add(d);
+                }
+            }
+            return devicesWithEnoughData;
+        }
+
+        /**
          * Find the device with the lower synchronization time. It's just an argmin on "argumentTransferTime",
          * returning the device whose ID correspond to the minimum's index
          * @param devices the list of devices to consider for the argmin
@@ -731,18 +786,7 @@ public class GrCUDAStreamPolicy {
 
         @Override
         public Device retrieve(ExecutionDAG.DAGVertex vertex) {
-            // Estimated transfer time if the computation is scheduled on device i-th;
-            double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUsToUse()];
-            // Compute the synchronization time on each device, and if any device has any data at all;
-            boolean isAnyDataPresentOnGPUs = computeTransferTimes(vertex, argumentTransferTime);
-            if (isAnyDataPresentOnGPUs) {
-                // The best device is the one with minimum transfer time;
-                return findDeviceWithLowestTransferTime(devicesManager.getUsableDevices(), argumentTransferTime);
-            } else {
-                // FIXME: using least-busy should be better, but it is currently unreliable;
-                // No data is present on any GPU: select the device with round-robin;
-                return roundRobin.retrieve(vertex);
-            }
+            return this.retrieveImpl(vertex, devicesManager.getUsableDevices());
         }
 
         @Override
@@ -750,13 +794,21 @@ public class GrCUDAStreamPolicy {
             // Estimated transfer time if the computation is scheduled on device i-th;
             double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUsToUse()];
             // Compute the synchronization time on each device, and if any device has any data at all;
-            computeTransferTimes(vertex, argumentTransferTime);
-            // Find if any data is present only on the selected GPUs;
-            if (isDataPresentOnGPUs(vertex, devices)) {
+            boolean isAnyDataPresentOnGPUs = computeTransferTimes(vertex, argumentTransferTime);
+            List<Device> devicesWithEnoughData = new ArrayList<>();
+            if (isAnyDataPresentOnGPUs) {  // Skip this step if no GPU has any data in it;
+                // Array that tracks the size, in bytes, of data that is already present on each device;
+                long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse()];
+                // Compute the amount of data on each device, and if any device has any data at all;
+                computeDataSizeOnDevices(vertex, alreadyPresentDataSize);
+                // Compute the list of devices that have at least X% of data already available;
+                devicesWithEnoughData = findDevicesWithEnoughData(alreadyPresentDataSize, vertex, devices);
+            }
+            // If no device has at least X% of data available, it's not worth optimizing data locality (exploration preferred to exploitation);
+            if (isAnyDataPresentOnGPUs && !devicesWithEnoughData.isEmpty()) {
                 // The best device is the one with minimum transfer time;
-                return findDeviceWithLowestTransferTime(devices, argumentTransferTime);
+                return findDeviceWithLowestTransferTime(devicesWithEnoughData, argumentTransferTime);
             } else {
-                // FIXME: using least-busy should be better, but it is currently unreliable;
                 // No data is present on any GPU: select the device with round-robin;
                 return roundRobin.retrieve(vertex, devices);
             }
@@ -772,9 +824,9 @@ public class GrCUDAStreamPolicy {
      * In other words, find the minimum transfer time among all devices considering the minimum transfer time for each device;
      */
     public class MinMinTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
-        public MinMinTransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
+        public MinMinTransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
             // Use max, we pick the maximum bandwidth between two devices;
-            super(devicesManager, bandwidthMatrixPath, Math::max, 0);
+            super(devicesManager, dataThreshold, bandwidthMatrixPath, Math::max, 0);
         }
     }
 
@@ -783,9 +835,9 @@ public class GrCUDAStreamPolicy {
      * In other words, find the minimum transfer time among all devices considering the maximum transfer time for each device;
      */
     public class MinMaxTransferTimeDeviceSelectionPolicy extends TransferTimeDeviceSelectionPolicy {
-        public MinMaxTransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
+        public MinMaxTransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
             // Use min, we pick the minimum bandwidth between two devices;
-            super(devicesManager, bandwidthMatrixPath, Math::min, Double.POSITIVE_INFINITY);
+            super(devicesManager, dataThreshold, bandwidthMatrixPath, Math::min, Double.POSITIVE_INFINITY);
         }
     }
 }

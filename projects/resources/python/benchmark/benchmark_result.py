@@ -39,8 +39,11 @@ class BenchmarkResult:
     DEFAULT_DEBUG = True
     DEFAULT_CPU_VALIDATION = False
     DEFAULT_REALLOC = False
-    DEFAULT_REINIT = True
+    DEFAULT_REINIT = False
     DEFAULT_RANDOM_INIT = False
+    DEFAULT_NUM_GPU = 1
+    DEFAULT_MEM_ADVISE = "none"
+    DEFAULT_EXEC_POLICY = "async"
 
     def __init__(self,
                  num_iterations: int = DEFAULT_NUM_ITER,
@@ -81,26 +84,27 @@ class BenchmarkResult:
 
     def start_new_benchmark(self, name: str, size: int, number_of_gpus: int,
                             block_size: dict, num_blocks: int, exec_policy: str,
-                            dep_policy: str, nstr_policy: str, pstr_policy: str,
-                            heuristic: str, mem_advise: str, prefetch: str,
-                            str_attach: str, timing: bool, iteration: int, 
+                            dependency_policy: str, new_stream_policy: str, parent_stream_policy: str,
+                            device_selection: str, mem_advise: str, prefetch: str,
+                            stream_attach: str, timing: bool, iteration: int, 
                             time_phases: bool, realloc: bool, reinit: bool) -> None:
         """
         Benchmark results are stored in a nested dictionary with the following structure.
-        self.results["benchmarks"]->{name}->{size}->{number_of_gpus}->{num_blocks}->{exec_policy}->{dep_policy}->
-        {nstr_policy}->{pstr_policy}->{heuristic}->{prefetch}->{str_attach}->{timing}->{realloc}->{reinit}->{block_size}_{actual result}
+        self.results["benchmarks"]->{name}->{size}->{number_of_gpus}->{num_blocks}->{exec_policy}->{dependency_policy}->
+        {new_stream_policy}->{parent_stream_policy}->{device_selection}->{mem_advise}->{prefetch}->{stream_attach}->{timing}->{realloc}->{reinit}->{block_size}_{actual result}
 
         :param name: name of the benchmark
         :param size: size of the input data
         :param number_of_gpus: number of GPU used in the benchmark
         :param num_blocks: number of GPU thread blocks 
         :param exec_policy: current execution policy used in the benchmark
-        :param dep_policy: current dependency policy used in the benchmark
-        :param nstr_policy: current new stream policy used in the benchmark
-        :param pstr_policy: current parent stream policy used in the benchmark
-        :param heuristic: current choose device heuristic used in the benchmark
+        :param dependency_policy: current dependency policy used in the benchmark
+        :param new_stream_policy: current new stream policy used in the benchmark
+        :param parent_stream_policy: current parent stream policy used in the benchmark
+        :param device_selection: current choose device device_selection used in the benchmark
+        :param mem_advise: memory advise flag used in the computation
         .param prefetch: current prefetcher used in the benchmark
-        :param str_attach: if stream attachment are forced
+        :param stream_attach: if stream attachment are forced
         :param timing: if kernel timing is enabled
         :param realloc: if reallocation is performed
         :param reinit: if re-initialization is performed
@@ -110,91 +114,23 @@ class BenchmarkResult:
          Note that this introduces overheads, and might influence the total execution time
         """
 
-        # 1. Benchmark name;
+        # First dictionary: benchmark name;
         if name in self._results["benchmarks"]:
             dict_size = self._results["benchmarks"][name]
         else:
             dict_size = {}
             self._results["benchmarks"][name] = dict_size
-        # 2. Input size;
-        if size in dict_size:
-            dict_nGPU = dict_size[size]
-        else:
-            dict_nGPU = {}
-            dict_size[size] = dict_nGPU
-        # 3. Number of GPUs;
-        if number_of_gpus in dict_nGPU:
-            dict_nblock = dict_nGPU[number_of_gpus]
-        else:
-            dict_nblock = {}
-            dict_nGPU[number_of_gpus] = dict_nblock
-        # 4. Number of blocks; 
-        if num_blocks in dict_nblock:
-            dict_exeP = dict_nblock[num_blocks]
-        else:
-            dict_exeP = {}
-            dict_nblock[num_blocks] = dict_exeP
-        # 5. Execution policy
-        if exec_policy in dict_exeP:
-            dict_depP = dict_exeP[exec_policy]
-        else:
-            dict_depP = {}
-            dict_exeP[exec_policy] = dict_depP
-        # 6. Dependency policy
-        if dep_policy in dict_depP:
-            dict_nstr = dict_depP[dep_policy]
-        else:
-            dict_nstr = {}
-            dict_depP[dep_policy] = dict_nstr
-        # 7. New stream policy
-        if nstr_policy in dict_nstr:
-            dict_pstr = dict_nstr[nstr_policy]
-        else:
-            dict_pstr = {}
-            dict_nstr[nstr_policy] = dict_pstr
-        # 8. Parent stream policy
-        if pstr_policy in dict_pstr:
-            dict_heur = dict_pstr[pstr_policy]
-        else:
-            dict_heur = {}
-            dict_pstr[pstr_policy] = dict_heur
-        # 9. Choose Device Heuristic
-        if heuristic in dict_heur:
-            dict_prefetch = dict_heur[heuristic]
-        else:
-            dict_prefetch = {}
-            dict_heur[heuristic] = dict_prefetch
-        # 10. Prefetcher 
-        if prefetch in dict_prefetch:
-            dict_sAtt = dict_prefetch[prefetch]
-        else:
-            dict_sAtt = {}
-            dict_prefetch[prefetch] = dict_sAtt
-        # 11. Stream Attachment
-        if str_attach in dict_sAtt:
-            dict_time = dict_sAtt[str_attach]
-        else:
-            dict_time = {}
-            dict_sAtt[str_attach] = dict_time
-        # 12. Kernel timing
-        if timing in dict_time:
-            dict_realloc = dict_time[timing]
-        else:
-            dict_realloc = {}
-            dict_time[timing] = dict_realloc
-        # 13. Realloc options;
-        if realloc in dict_realloc:
-            dict_reinit = dict_realloc[realloc]
-        else:
-            dict_reinit = {}
-            dict_realloc[realloc] = dict_reinit
-        # 14. Reinit options;
-        if reinit in dict_reinit:
-            dict_block = dict_reinit[reinit]
-        else:
-            dict_block = {}
-            dict_reinit[reinit] = dict_block
-        # 15. Block size options;
+        # Add intermediate dictionaries;
+        curr_dict = dict_size
+        for x in [size, number_of_gpus, num_blocks, exec_policy, dependency_policy, new_stream_policy, parent_stream_policy, device_selection, mem_advise, prefetch, stream_attach, timing, realloc, reinit]:
+            if x in curr_dict:
+                new_dict = curr_dict[x]
+            else:
+                new_dict = {}
+                curr_dict[x] = new_dict
+            curr_dict = new_dict
+        # Final dictionary: block size options;
+        dict_block = curr_dict
         self._dict_current = {"phases": [], "iteration": iteration, "time_phases": time_phases}
         if BenchmarkResult.create_block_size_key(block_size) in dict_block:
             dict_block[BenchmarkResult.create_block_size_key(block_size)] += [self._dict_current]
@@ -204,8 +140,8 @@ class BenchmarkResult:
         if self.debug:
             BenchmarkResult.log_message(
                 f"starting benchmark={name}, iter={iteration + 1}/{self.num_iterations}, size={size}, number_of_gpus={number_of_gpus}, num_blocks={num_blocks}, "
-                f"exec_policy={exec_policy}, dep_policy={dep_policy}, nstr_policy={nstr_policy}, pstr_policy={pstr_policy}, "
-                f"heuristic={heuristic}, realloc={realloc}, reinit={reinit}, prefetch={prefetch}, str_attach={str_attach}, "
+                f"exec_policy={exec_policy}, dependency_policy={dependency_policy}, new_stream_policy={new_stream_policy}, parent_stream_policy={parent_stream_policy}, "
+                f"device_selection={device_selection}, realloc={realloc}, reinit={reinit}, prefetch={prefetch}, stream_attach={stream_attach}, mem_advise={mem_advise}, "
                 f"block_size={BenchmarkResult.create_block_size_key(block_size)}, timing={timing}, time_phases={time_phases}")
 
     def add_to_benchmark(self, key: str, message: object) -> None:
@@ -255,9 +191,9 @@ class BenchmarkResult:
 
     def print_current_summary(self, name: str, size: int, number_of_gpus: int,
                             num_blocks: int, exec_policy: str,
-                            dep_policy: str, nstr_policy: str, pstr_policy: str,
-                            heuristic: str, mem_advise: str, prefetch: str,
-                            str_attach: str, timing: bool, block_size: dict,
+                            dependency_policy: str, new_stream_policy: str, parent_stream_policy: str,
+                            device_selection: str, mem_advise: str, prefetch: str,
+                            stream_attach: str, timing: bool, block_size: dict,
                             time_phases: bool, realloc: bool, reinit: bool, skip: int = 0) -> None:
         """
         Print a summary of the benchmark with the provided settings;
@@ -267,12 +203,13 @@ class BenchmarkResult:
         :param number_of_gpus: number of GPU used in the benchmark
         :param num_blocks: number of GPU thread blocks 
         :param exec_policy: current execution policy used in the benchmark
-        :param dep_policy: current dependency policy used in the benchmark
-        :param nstr_policy: current new stream policy used in the benchmark
-        :param pstr_policy: current parent stream policy used in the benchmark
-        :param heuristic: current choose device heuristic used in the benchmark
+        :param dependency_policy: current dependency policy used in the benchmark
+        :param new_stream_policy: current new stream policy used in the benchmark
+        :param parent_stream_policy: current parent stream policy used in the benchmark
+        :param device_selection: current choose device device_selection used in the benchmark
+        :param mem_advise: memory advise flag used in the computation
         .param prefetch: current prefetcher used in the benchmark
-        :param str_attach: if stream attachment are forced
+        :param stream_attach: if stream attachment are forced
         :param timing: if kernel timing is enabled
         :param realloc: if reallocation is performed
         :param reinit: if re-initialization is performed
@@ -281,11 +218,16 @@ class BenchmarkResult:
         :param skip: skip the first N iterations when computing the summary statistics
         """
         try:
-            results_filtered = self._results["benchmarks"][name][size][number_of_gpus][num_blocks][exec_policy][dep_policy][nstr_policy][pstr_policy][heuristic][prefetch][str_attach][timing][realloc][reinit][BenchmarkResult.create_block_size_key(block_size)]
+            var_list = [size, number_of_gpus, num_blocks, exec_policy, dependency_policy, new_stream_policy, parent_stream_policy, device_selection, mem_advise, prefetch, stream_attach, timing, realloc, reinit]
+            results_filtered = self._results["benchmarks"][name]
+            for x in var_list:
+                results_filtered = results_filtered[x]
+            results_filtered = results_filtered[BenchmarkResult.create_block_size_key(block_size)]
         except KeyError as e:
             results_filtered = []
             BenchmarkResult.log_message(f"WARNING: benchmark with signature"
-                                        f" [{name}][{size}][{number_of_gpus}][{num_blocks}][{exec_policy}][{dep_policy}][{nstr_policy}][{pstr_policy}][{heuristic}][{prefetch}][{str_attach}][{timing}][{realloc}][{reinit}][{BenchmarkResult.create_block_size_key(block_size)}] not found, exception {e}")
+                                        f" [{name}]" + "".join([f"[{x}]" for x in var_list]) + f"[{BenchmarkResult.create_block_size_key(block_size)}] not found, exception {e}")
+            print(self._results)
         # Retrieve execution times;
         exec_times = [x["total_time_sec"] for x in results_filtered][skip:]
         mean_time = np.mean(exec_times) if exec_times else np.nan
@@ -296,9 +238,9 @@ class BenchmarkResult:
         comp_std_time = np.std(comp_exec_times) if comp_exec_times else np.nan
 
         BenchmarkResult.log_message(f"summary of benchmark={name}, size={size}, number_of_gpus={number_of_gpus}, " +
-                                    f" num_blocks={num_blocks}, exec_policy={exec_policy}, dep_policy={dep_policy}, " +
-                                    f" nstr_policy={nstr_policy}, pstr_policy={pstr_policy}, heuristic={heuristic}, " + 
-                                    f" prefetch={prefetch}, str_attach={str_attach}, timing={timing}, " +
+                                    f" num_blocks={num_blocks}, exec_policy={exec_policy}, dependency_policy={dependency_policy}, " +
+                                    f" new_stream_policy={new_stream_policy}, parent_stream_policy={parent_stream_policy}, device_selection={device_selection}, " + 
+                                    f" prefetch={prefetch}, stream_attach={stream_attach}, timing={timing}, mem_advise={mem_advise}, " +
                                     f" realloc={realloc}, reinit={reinit}, block_size=({BenchmarkResult.create_block_size_key(block_size)});" +
                                     f" mean total time={mean_time:.4f}±{std_time:.4f} sec;" +
                                     f" mean computation time={comp_mean_time:.4f}±{comp_std_time:.4f} sec")

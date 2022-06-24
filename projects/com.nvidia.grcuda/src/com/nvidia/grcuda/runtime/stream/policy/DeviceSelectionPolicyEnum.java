@@ -14,7 +14,8 @@ public enum DeviceSelectionPolicyEnum {
         this.name = name;
     }
 
-    public final String getName() {
+    @Override
+    public String toString() {
         return name;
     }
 }

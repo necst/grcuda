@@ -137,9 +137,9 @@ class Benchmark(ABC):
 
     def run(self, num_iter: int,size: int, number_of_gpus: int,
                 block_size: dict, exec_policy: str,
-                dep_policy: str, nstr_policy: str, pstr_policy: str,
-                heuristic: str, mem_advise: str, prefetch: str,
-                str_attach: str, timing: bool,
+                dependency_policy: str, new_stream_policy: str, parent_stream_policy: str,
+                device_selection: str, mem_advise: str, prefetch: str,
+                stream_attach: str, timing: bool,
                 time_phases: bool, realloc: bool, reinit: bool, prevent_reinit=False, number_of_blocks=DEFAULT_NUM_BLOCKS) -> None:
 
         # Fix missing block size;
@@ -157,13 +157,13 @@ class Benchmark(ABC):
                                         block_size=block_size,
                                         num_blocks=number_of_blocks,
                                         exec_policy=exec_policy,
-                                        dep_policy=dep_policy,
-                                        nstr_policy=nstr_policy,
-                                        pstr_policy=pstr_policy,
-                                        heuristic=heuristic,
+                                        dependency_policy=dependency_policy,
+                                        new_stream_policy=new_stream_policy,
+                                        parent_stream_policy=parent_stream_policy,
+                                        device_selection=device_selection,
                                         mem_advise=mem_advise,
                                         prefetch=prefetch,
-                                        str_attach=str_attach,
+                                        stream_attach=stream_attach,
                                         timing=timing,
                                         realloc=realloc,
                                         reinit=reinit,

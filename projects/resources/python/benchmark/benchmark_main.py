@@ -93,22 +93,22 @@ num_elem = {
 
 policies = {
     # Single GPU;
-    "b1": ["default"],
-    "b2": ["default"],
-    "b3": ["default"],
-    "b4": ["default"],
-    "b5": ["default"],
-    "b6": ["default"],
-    "b7": ["default"],
-    "b8": ["default"],
-    "b9": ["default"],
-    "b10": ["default"],
+    "b1": ["async"],
+    "b2": ["async"],
+    "b3": ["async"],
+    "b4": ["async"],
+    "b5": ["async"],
+    "b6": ["async"],
+    "b7": ["async"],
+    "b8": ["async"],
+    "b9": ["async"],
+    "b10": ["async"],
     # Multi GPU;
-    "b1m": ["default"],
-    "b5m": ["default"],
-    "b6m": ["default"],
-    "b9m": ["default"],
-    "b11m": ["default"],
+    "b1m": ["async"],
+    "b5m": ["async"],
+    "b6m": ["async"],
+    "b9m": ["async"],
+    "b11m": ["async"],
 }
 
 ##############################
@@ -163,8 +163,8 @@ if __name__ == "__main__":
                         help="If present, run the benchmark only with the selected new stream policy")
     parser.add_argument("--parent_stream",
                         help="If present, run the benchmark only with the selected parent stream policy")
-    parser.add_argument("--heuristic",
-                        help="If present and parent policy is data aware, run the benchmark only with the selected heuristic")
+    parser.add_argument("--device_selection",
+                        help="If present and parent policy is data aware, run the benchmark only with the selected device_selection")
     parser.add_argument("--memory_advise_policy",
                         help="Select a managed memory memAdvise flag, if multiple GPUs are available")
     parser.add_argument("--prefetch",
@@ -207,13 +207,13 @@ if __name__ == "__main__":
     nvprof_profile = args.nvprof
     timing = args.timing
     prefetch = args.prefetch 
-    str_attach = args.force_stream_attach
-    nstr_policy = args.new_stream
-    pstr_policy = args.parent_stream
-    heuristic = args.heuristic
+    stream_attach = args.force_stream_attach
+    new_stream_policy = args.new_stream
+    parent_stream_policy = args.parent_stream
+    device_selection = args.device_selection
+    dependency_policy = args.dependency_policy
     number_of_gpus = args.number_of_gpus if args.number_of_gpus else [BenchmarkResult.DEFAULT_NUM_GPU]
     exec_policy = args.execution_policy if args.execution_policy else BenchmarkResult.DEFAULT_EXEC_POLICY
-    dep_policy = args.dependency_policy if args.dependency_policy else BenchmarkResult.DEFAULT_DEPE_POLICY
     mem_advise = args.memory_advise_policy if args.memory_advise_policy else BenchmarkResult.DEFAULT_MEM_ADVISE
     
     # Create a new benchmark result instance;
@@ -226,11 +226,6 @@ if __name__ == "__main__":
         if benchmark_res.debug:
             BenchmarkResult.log_message(f"using only benchmark: {args.benchmark}")
         benchmarks = {b: benchmarks[b] for b in args.benchmark}
-
-    # if args.policy:
-    #     if benchmark_res.debug:
-    #         BenchmarkResult.log_message(f"using only type: {args.policy}")
-    #     policies = {n: [args.policy] for n in policies.keys()}
 
     if args.size:
         if benchmark_res.debug:
@@ -256,14 +251,14 @@ if __name__ == "__main__":
                         for block_size in block_sizes:
                             for i in range(num_iter):
                                 benchmark.run(num_iter=i, size=n, number_of_gpus=number_of_gpus[0], block_size=block_size, exec_policy=exec_policy,
-                                          dep_policy=dep_policy, nstr_policy=nstr_policy, pstr_policy=pstr_policy, heuristic=heuristic,
-                                          mem_advise=mem_advise, prefetch=prefetch, str_attach=str_attach, timing=timing,
+                                          dependency_policy=dependency_policy, new_stream_policy=new_stream_policy, parent_stream_policy=parent_stream_policy, device_selection=device_selection,
+                                          mem_advise=mem_advise, prefetch=prefetch, stream_attach=stream_attach, timing=timing,
                                           realloc=re, reinit=ri, time_phases=time_phases, prevent_reinit=prevent_reinit,
                                           number_of_blocks=number_of_blocks)
                                 prevent_reinit = True
                             # Print the summary of this block;
                             if benchmark_res.debug:
                                 benchmark_res.print_current_summary(name=b_name, size=n, number_of_gpus=number_of_gpus[0], block_size=block_size, exec_policy=exec_policy,
-                                          dep_policy=dep_policy, nstr_policy=nstr_policy, pstr_policy=pstr_policy, heuristic=heuristic,
-                                          mem_advise=mem_advise, prefetch=prefetch, str_attach=str_attach, timing=timing,
+                                          dependency_policy=dependency_policy, new_stream_policy=new_stream_policy, parent_stream_policy=parent_stream_policy, device_selection=device_selection,
+                                          mem_advise=mem_advise, prefetch=prefetch, stream_attach=stream_attach, timing=timing,
                                           realloc=re, reinit=ri, time_phases=time_phases, num_blocks=number_of_blocks, skip=3)

@@ -39,7 +39,7 @@ __device__ inline double cndGPU(double d) {
     return cnd;
 }
 
-extern "C" __global__ void bs(double *x, double *y, int N, double R, double V, double T, double K) {
+extern "C" __global__ void bs(const double *x, double *y, int N, double R, double V, double T, double K) {
 
     double sqrtT = 1.0 / rsqrt(T);
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += blockDim.x * gridDim.x) {
@@ -68,7 +68,7 @@ class Benchmark5M(Benchmark):
     """
 
     def __init__(self, benchmark: BenchmarkResult, nvprof_profile: bool = False):
-        super().__init__("b5", benchmark, nvprof_profile)
+        super().__init__("b5m", benchmark, nvprof_profile)
         self.size = 0
 
         # self.num_blocks = DEFAULT_NUM_BLOCKS
@@ -96,7 +96,7 @@ class Benchmark5M(Benchmark):
 
         # Build the kernels;
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
-        self.bs_kernel = build_kernel(BS_KERNEL, "bs", "pointer, pointer, sint32, double, double, double, double")
+        self.bs_kernel = build_kernel(BS_KERNEL, "bs", "const pointer, pointer, sint32, double, double, double, double")
 
     @time_phase("initialization")
     def init(self):
@@ -110,8 +110,9 @@ class Benchmark5M(Benchmark):
     @time_phase("reset_result")
     def reset_result(self) -> None:
         for i in range(self.K):
+            X = self.x[i]
             for j in range(self.size):
-                self.x[i][j] = self.x_tmp[j]
+                X[j] = self.x_tmp[j]
 
     def execute(self) -> object:
         self.block_size = self._block_size["block_size_1d"]

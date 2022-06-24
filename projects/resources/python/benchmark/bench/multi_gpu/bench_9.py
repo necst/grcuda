@@ -14,6 +14,15 @@ BLOCK_SIZE_V100 = 64  # Just a recommendation of optimal block size for the V100
 P = 16
 ITER = 50
 
+PRECONDITION_KERNEL = """
+// Add a small epsilon to the main diagonal:
+extern "C" __global__ void precondition(float *A, int n, int m, int offset) {
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < m; i += blockDim.x * gridDim.x) {
+        A[i * n + i + offset] += 1e-12; 
+    }
+}
+"""
+
 MMUL_KERNEL = """
 // z = x @ y;
 extern "C" __global__ void matrix_vector_mult(const float* x, const float* y, float* z, int n, int m, int z_offset) {
@@ -99,7 +108,7 @@ class Benchmark9M(Benchmark):
     """
 
     def __init__(self, benchmark: BenchmarkResult, nvprof_profile: bool = False):
-        super().__init__("b9", benchmark, nvprof_profile)
+        super().__init__("b9m", benchmark, nvprof_profile)
         self.size = 0
         self.S = 0
         self.A = [None for _ in range(P)]
@@ -131,7 +140,6 @@ class Benchmark9M(Benchmark):
         seed(self.random_seed)
 
         # Allocate vectors;
-        self.A_CPU = [0.0] * self.size * self.size
         for i in range(P):
             self.A[i] = polyglot.eval(language="grcuda", string=f"float[{self.size * self.S}]")
         self.x = polyglot.eval(language="grcuda", string=f"float[{size}]")
@@ -144,41 +152,30 @@ class Benchmark9M(Benchmark):
 
         # Build the kernels;
         build_kernel = polyglot.eval(language="grcuda", string="buildkernel")
-        self.mmul_kernel = build_kernel(MMUL_KERNEL, "matrix_vector_mult", "const pointer, const pointer, pointer, sint32, sint32, sint32")
-        self.mmul_axpy_kernel = build_kernel(MMUL_KERNEL, "matrix_vector_mult_axpy", "const pointer, const pointer, const pointer, float, pointer, sint32, sint32, sint32")
+        self.precondition_kernel = build_kernel(PRECONDITION_KERNEL, "precondition", "pointer, sint32, sint32, sint32")
+        self.mmul_kernel = build_kernel(MMUL_KERNEL, "matrix_vector_mult", "const pointer, const pointer, const pointer, sint32, sint32, sint32")
+        self.mmul_axpy_kernel = build_kernel(MMUL_KERNEL, "matrix_vector_mult_axpy", "const pointer, const pointer, const pointer, float, const pointer, sint32, sint32, sint32")
         self.l2_norm_kernel = build_kernel(DP_KERNEL, "l2_norm", "const pointer, pointer, sint32")
-        self.dp_kernel = build_kernel(DP_KERNEL, "dot", "const pointer, const pointer, pointer, sint32")
+        self.dp_kernel = build_kernel(DP_KERNEL, "dot", "const pointer, pointer, pointer, sint32")
         self.saxpy_kernel = build_kernel(SAXPY_KERNEL, "saxpy", "pointer, const pointer, const pointer, float, sint32")
-        self.cpy_kernel = build_kernel(SAXPY_KERNEL, "cpy", "pointer, const pointer, sint32")
-        self.initialize_rand_old = polyglot.eval(language="js", string="(x) => { for (let i = 0; i < x.length; i++) { x[i] =  2 * Math.random() - 1}}")        
-        self.initialize_rand = polyglot.eval(language="js", string="""
-            (X, N) => { 
-                for (let i = 0; i < N; i++) {
-                    for (let j = i; j < N; j++) {
-                        const val = 2 * Math.random() - 1; 
-                        X[i * N + j] = val;
-                        X[j * N + i] = val;
-                    }
-                    X[i * N + i] += 10e-12;
+        self.cpy_kernel = build_kernel(SAXPY_KERNEL, "cpy", "pointer, pointer, sint32")
+        self.initialize_random_symmetric_matrix = polyglot.eval(language="js", string="""(X, S, N) => { 
+            for (let i = 0; i < N; i++) {
+                s = (i / S) >> 0;
+                k = i % S;
+                Xs = X[s];
+                i_N = k * N;
+                for (let j = i; j < N; j++) {
+                    val = 2 * Math.random() - 1; 
+                    Xs[i_N + j] = val;
+                    X[(j / S) >> 0][(j % S) * N + i] = val;
                 }
-            }
-            """)
-        self.partition_data = polyglot.eval(language="js", string="""
-            (X, Y, start) => { 
-                for (let i = 0; i < X.length; i++) {
-                    const index = start + i;
-                    if (index < Y.length) X[i] = Y[index];
-                }
-            }
+            }}
             """)
 
     @time_phase("initialization")
     def init(self):
-        self.initialize_rand(self.A_CPU, self.size)
-        for i in range(P):
-            self.partition_data(self.A[i], self.A_CPU, i * self.S * self.size)
-        for i in range(len(self.b)):
-            self.b[i] = 2 * random() - 1
+        self.initialize_random_symmetric_matrix(self.A, self.S, self.size)
 
     @time_phase("reset_result")
     def reset_result(self) -> None:
@@ -195,9 +192,13 @@ class Benchmark9M(Benchmark):
         start = 0
         
         # Initialization phase;
+        # precondition: A += I * np.eps;
+        for i in range(P):
+            self.execute_phase(f"precondition_{i}", self.precondition_kernel(self.num_blocks, self.block_size),
+                               self.A[i], self.size, min(self.S, self.size - i * self.S), i * self.S)
         # r = b - A * x
         for i in range(P):
-            self.execute_phase("mmul_init", self.mmul_axpy_kernel(self.num_blocks, self.block_size),
+            self.execute_phase(f"mmul_init_{i}", self.mmul_axpy_kernel(self.num_blocks, self.block_size),
                                self.A[i], self.x, self.b, -1, self.r, self.S, self.size, i * self.S)
         # p = r
         self.execute_phase("cpy_init", self.cpy_kernel(self.num_blocks, self.block_size),

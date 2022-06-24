@@ -22,7 +22,8 @@ public class GrCUDAStreamPolicyMock extends GrCUDAStreamPolicy {
                 retrieveNewStreamPolicyEnum,
                 retrieveParentStreamPolicyEnum,
                 deviceSelectionPolicyEnum,
-                bandwidthMatrixPath
+                bandwidthMatrixPath,
+                GrCUDAOptionMap.DEFAULT_DATA_THRESHOLD
         );
     }
 

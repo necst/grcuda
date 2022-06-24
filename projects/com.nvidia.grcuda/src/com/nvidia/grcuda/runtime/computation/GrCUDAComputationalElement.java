@@ -43,7 +43,6 @@ import com.nvidia.grcuda.runtime.stream.DefaultStream;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -57,7 +56,7 @@ import static com.nvidia.grcuda.GrCUDALogger.COMPUTATION_LOGGER;
  */
 public abstract class GrCUDAComputationalElement {
 
-    private TruffleLogger LOGGER = GrCUDALogger.getLogger(COMPUTATION_LOGGER);
+    private static final TruffleLogger LOGGER = GrCUDALogger.getLogger(COMPUTATION_LOGGER);
 
     /**
      * This list contains the original set of input arguments that are used to compute dependencies;
@@ -147,7 +146,7 @@ public abstract class GrCUDAComputationalElement {
     public void setExecutionTime(float executionTimeMs) {
         this.executionTimeMs = executionTimeMs;
         this.executionTimeMeasured = true;
-        LOGGER.fine("computation (" + this + "), execution time: " + executionTimeMs + " ms");
+        LOGGER.fine(() -> "computation (" + this + "), execution time: " + executionTimeMs + " ms");
     }
 
     public float getExecutionTime() {
