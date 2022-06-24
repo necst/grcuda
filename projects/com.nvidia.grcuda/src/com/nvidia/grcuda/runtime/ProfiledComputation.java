@@ -28,6 +28,8 @@
 package com.nvidia.grcuda.runtime;
 
 import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Abstract class that stores the historical execution data of a given computation (for example, a certain GPU kernel).
@@ -37,22 +39,23 @@ import java.util.HashMap;
  */
 public abstract class ProfiledComputation {
 
-    // Track the last execution time associated to the GPU on which it was executed;
-    HashMap<Integer, Float> collectionOfExecution;
+    // Track all the execution times associated to the GPU on which a kernel was executed;
+    HashMap<Integer, List<Float>> collectionOfExecutions;
 
     public ProfiledComputation() {
-        collectionOfExecution = new HashMap<>();
+        collectionOfExecutions = new HashMap<>();
     }
 
     public void addExecutionTime(int deviceId, float executionTime) {
-        collectionOfExecution.put(deviceId, executionTime);
+        collectionOfExecutions.putIfAbsent(deviceId, new ArrayList<>());
+        collectionOfExecutions.get(deviceId).add(executionTime);
     }
 
-    public float getExecutionTimeOnDevice(int deviceId) throws RuntimeException {
-        if (collectionOfExecution.containsKey(deviceId)) {
-            return collectionOfExecution.get(deviceId);
+    public List<Float> getExecutionTimesOnDevice(int deviceId) throws RuntimeException {
+        if (collectionOfExecutions.containsKey(deviceId)) {
+            return collectionOfExecutions.get(deviceId);
         } else {
-            throw new RuntimeException("Execution time for device=" + deviceId + " has not been collected");
+            throw new RuntimeException("Execution times for device=" + deviceId + "have not been collected");
         }
     }
 }

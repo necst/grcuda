@@ -203,6 +203,14 @@ public class GrCUDAOptionMap implements TruffleObject {
         return (String) getOptionValueFromOptionKey(GrCUDAOptions.CuMLLibrary);
     }
 
+    public Boolean isCuSPARSEEnabled(){
+        return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.CuSPARSEEnabled);
+    }
+
+    public String getCuSPARSELibrary(){
+        return (String) getOptionValueFromOptionKey(GrCUDAOptions.CuSPARSELibrary);
+    }
+
     public ExecutionPolicyEnum getExecutionPolicy(){
         return (ExecutionPolicyEnum) getOptionValueFromOptionKey(GrCUDAOptions.ExecutionPolicy);
     }

@@ -56,7 +56,6 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -100,9 +99,12 @@ public abstract class AbstractArray implements TruffleObject {
     protected CUDAStream streamMapping = DefaultStream.get();
 
     /**
-     * Function used to compute if we can skip the scheduling of a computational element for a given array access;
+     * Function used to compute if we can skip the scheduling of a computational element for a given array read;
      */
     private final SkipSchedulingInterface skipScheduleRead;
+    /**
+     * Function used to compute if we can skip the scheduling of a computational element for a given array write;
+     */
     private final SkipSchedulingInterface skipScheduleWrite;
 
     /** Flag set when underlying off-heap memory has been freed. */

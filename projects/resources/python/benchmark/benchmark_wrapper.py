@@ -488,6 +488,7 @@ if __name__ == "__main__":
                                         # elif GPU == A100:
                                         #      BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph_8_a100.csv"
                                         BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph.csv"
+
                                         for dependency_policy in dp:
                                             for new_stream_policy in nsp:
                                                 for parent_stream_policy in psp:
