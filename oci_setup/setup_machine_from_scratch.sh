@@ -49,12 +49,11 @@ sudo apt install unzip -y
 sudo apt install -y python-ctypes
 sudo apt install -y curl
 
-# clone repositories (GraalVM, MX, GrCUDA).
+# clone repositories (GraalVM, MX).
 #   We use the freely available GraalVM CE.
 #   At the bottom of this guide, it is explained how to install EE;
 git clone https://github.com/oracle/graal.git
 git clone https://github.com/graalvm/mx.git
-git clone https://github.com/AlbertoParravicini/grcuda.git
 
 # checkout commit of GraalVM corresponding to the release (21.2);
 cd graal

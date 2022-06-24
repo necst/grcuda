@@ -40,7 +40,7 @@ from pathlib import Path
 
 V100 = "V100"
 A100 = "A100"
-GPU = A100
+GPU = V100
 
 BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph.csv"
 
@@ -194,7 +194,7 @@ new_stream_policies = ["always-new"]  #, "reuse"]
 
 parent_stream_policies = ["disjoint", "multigpu-disjoint"]  # ["same-as-parent", "disjoint", "multigpu-early-disjoint", "multigpu-disjoint"]
 
-choose_device_policies = ["round-robin", "stream-aware", "minmax-transfer-time"]  # ["single-gpu", "round-robin", "stream-aware", "min-transfer-size", "minmin-transfer-time", "minmax-transfer-time"]
+choose_device_policies = ["round-robin", "stream-aware", "min-transfer-size", "minmax-transfer-time"]  # ["single-gpu", "round-robin", "stream-aware", "min-transfer-size", "minmin-transfer-time", "minmax-transfer-time"]
 
 memory_advise = ["none"]
 
@@ -483,10 +483,12 @@ if __name__ == "__main__":
                                 for s in stream_attach:
                                     for t in time_computation:
                                         # Select the correct connection graph;
-                                        if GPU == V100:
-                                            BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph_{num_gpu}_v100.csv"
-                                        elif GPU == A100:
-                                             BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph_8_a100.csv"
+                                        # if GPU == V100:
+                                        #     BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph_{num_gpu}_v100.csv"
+                                        # elif GPU == A100:
+                                        #      BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph_8_a100.csv"
+                                        BANDWIDTH_MATRIX = f"{os.getenv('GRCUDA_HOME')}/projects/resources/connection_graph/datasets/connection_graph.csv"
+
                                         for dependency_policy in dp:
                                             for new_stream_policy in nsp:
                                                 for parent_stream_policy in psp:
