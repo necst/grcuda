@@ -3,6 +3,11 @@
 Support for logging in Truffle languages and instruments is made by the TruffleLogger class.
 Different levels of logging are provided by the Level class, to differenciate the importance of occurring errors or warnings. This gives the possibility to decide up to which severity it is convenient to have them printed on the terminal. It is also possible to print them on a file.
 
+Using the logger from another language (e.g. Python)
+```bash
+graalpython --jvm --polyglot --log.grcuda.com.nvidia.grcuda.level=ALL my_script.py
+```
+
 ## LEVELS
 
 The logging Level objects are ordered and are specified by ordered integers. Enabling logging at a given level also enables logging at all higher levels.
@@ -74,25 +79,25 @@ It is possible to modify the level of all the messages in a file with graal opti
 In particular, it is possible to specify a unique output file for all the logger messages.
 Set the *path_to_file* (see examples below).
 
-```java
+```bash
 -- log.file=path_to_file
 ```
 It is also possible to specify the *logger_level* for each logger (see all possible levels above).
 
-```java
+```bash
 --log.grcuda.com.nvidia.grcuda.file_name.level=logger_level
 ```
 
 Some examples of loggers usage, starting from benchmark b1 (all the options are set to the default value):
 - sets all the loggers of grcuda to ALL, printed on screen as StandardOutput.
-```java
+```bash
 graalpython --jvm --polyglot --log.grcuda.com.nvidia.grcuda.level=ALL benchmark_main.py -d -b b1
 ```
 - sets all the loggers of grcuda to ALL, saved on file b1.log in the same folder from which the command is launched.
-```java
+```bash
 graalpython --jvm --polyglot --log.grcuda.com.nvidia.grcuda.level=ALL --log.file=./b1.log benchmark_main.py -d -b b1
 ```
 - set all the loggers of grcuda.runtime to ALL and all the other loggers of grcuda to OFF, saved on file b1.log in the root folder of grcuda *GRCUDA_HOME*.
-```java
+```bash
 graalpython --jvm --polyglot --log.grcuda.com.nvidia.grcuda.level=OFF --log.grcuda.com.nvidia.grcuda.runtime.level=ALL --log.file=$GRCUDA_HOME/b1.log benchmark_main.py -d -b b1
 ```
