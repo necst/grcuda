@@ -115,7 +115,7 @@ public class CUBLASRegistry {
                 }
             };
 
-            // create wrapper for cublasDestroy: cublasError_t cublasDestroy(long handle) -> void
+            // create wrapper for cublasDestroy: cublasError_t cublasDestroy(long handle)
             // cublasDestroy(long handle)
             cublasDestroyFunction = new Function(CUBLAS_CUBLASDESTROY.getName()) {
                 @Override
@@ -189,7 +189,6 @@ public class CUBLASRegistry {
                 @TruffleBoundary
                 protected Object call(Object[] arguments) {
                     ensureInitialized();
-
                     try {
                         if (nfiFunction == null) {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -264,4 +263,5 @@ public class CUBLASRegistry {
                             "(sint64, sint32, sint32, sint32, sint32, sint32, pointer, pointer, sint32, pointer, sint32, pointer, pointer, sint32): sint32"));
         }
     }
+
 }

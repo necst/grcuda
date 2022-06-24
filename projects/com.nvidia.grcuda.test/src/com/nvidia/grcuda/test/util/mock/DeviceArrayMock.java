@@ -1,6 +1,5 @@
 package com.nvidia.grcuda.test.util.mock;
 
-import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.runtime.CPUDevice;
 import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;

@@ -42,6 +42,7 @@ import org.graalvm.options.OptionStability;
 import com.nvidia.grcuda.cudalibraries.cublas.CUBLASRegistry;
 import com.nvidia.grcuda.cudalibraries.cuml.CUMLRegistry;
 import com.nvidia.grcuda.cudalibraries.tensorrt.TensorRTRegistry;
+import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.oracle.truffle.api.Option;
 
 @Option.Group(GrCUDALanguage.ID)
@@ -50,14 +51,20 @@ public final class GrCUDAOptions {
     @Option(category = OptionCategory.USER, help = "Enable cuBLAS support.", stability = OptionStability.STABLE) //
     public static final OptionKey<Boolean> CuBLASEnabled = new OptionKey<>(true);
 
-    @Option(category = OptionCategory.USER, help = "Set the location of the cublas library.", stability = OptionStability.STABLE) //
+    @Option(category = OptionCategory.USER, help = "Set the location of the cuBLAS library.", stability = OptionStability.STABLE) //
     public static final OptionKey<String> CuBLASLibrary = new OptionKey<>(CUBLASRegistry.DEFAULT_LIBRARY);
 
     @Option(category = OptionCategory.USER, help = "Enable cuML support.", stability = OptionStability.STABLE) //
     public static final OptionKey<Boolean> CuMLEnabled = new OptionKey<>(true);
 
-    @Option(category = OptionCategory.USER, help = "Set the location of the cuml library.", stability = OptionStability.STABLE) //
+    @Option(category = OptionCategory.USER, help = "Set the location of the cuML library.", stability = OptionStability.STABLE) //
     public static final OptionKey<String> CuMLLibrary = new OptionKey<>(CUMLRegistry.DEFAULT_LIBRARY);
+  
+    @Option(category = OptionCategory.USER, help = "Enable cuSPARSE support.", stability = OptionStability.STABLE) //
+    public static final OptionKey<Boolean> CuSPARSEEnabled = new OptionKey<>(true);
+
+    @Option(category = OptionCategory.USER, help = "Set the location of the cuSPARSE library.", stability = OptionStability.EXPERIMENTAL) //
+    public static final OptionKey<String> CuSPARSELibrary = new OptionKey<>(CUSPARSERegistry.DEFAULT_LIBRARY);
 
     @Option(category = OptionCategory.USER, help = "Enable TensorRT support.", stability = OptionStability.STABLE) //
     public static final OptionKey<Boolean> TensorRTEnabled = new OptionKey<>(GrCUDAOptionMap.DEFAULT_TENSORRT_ENABLED);
@@ -102,3 +109,4 @@ public final class GrCUDAOptions {
             "in some DeviceSelectionPolicies such as min-transfer-size. A lower percentage favors exploitation, a high percentage favors exploration.", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<Double> DataThreshold = new OptionKey<>(GrCUDAOptionMap.DEFAULT_DATA_THRESHOLD);
 }
+

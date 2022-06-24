@@ -115,7 +115,7 @@ public final class CUDARuntime {
      * Identifier of the GPU that is currently active;
      */
     private int currentGPU = DEFAULT_DEVICE;
-
+    
     public boolean isMultiGPUEnabled() {
         return this.numberOfGPUsToUse > 1;
     }
