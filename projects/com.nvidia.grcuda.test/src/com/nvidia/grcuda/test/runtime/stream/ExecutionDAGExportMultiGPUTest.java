@@ -216,10 +216,10 @@ public class ExecutionDAGExportMultiGPUTest{
     public void graphExport(ExecutionDAG dag, String name){
         GraphExport graphExport = new GraphExport(dag);
 
-        if (retrieveNewStreamPolicy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
-            graphExport.graphGenerator("../" + name + "AlwaysNew");
-        } else {
-            graphExport.graphGenerator("../" + name + "Reuse");
-        }
+//        if (retrieveNewStreamPolicy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
+//            graphExport.graphGenerator("../" + name + "AlwaysNew");
+//        } else {
+//            graphExport.graphGenerator("../" + name + "Reuse");
+//        }
     }
 }

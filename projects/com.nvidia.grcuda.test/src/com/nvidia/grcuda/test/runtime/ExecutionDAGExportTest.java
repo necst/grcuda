@@ -84,7 +84,7 @@ public class ExecutionDAGExportTest {
         ExecutionDAG dag = context.getDag();
 
         GraphExport graphExport = new GraphExport(dag);
-        graphExport.graphGenerator("../graphComplexFrontierExportTest");
+        //graphExport.graphGenerator("../graphComplexFrontierExportTest");
     }
 
     @Test
@@ -107,11 +107,11 @@ public class ExecutionDAGExportTest {
         ExecutionDAG dag = context.getDag();
         GraphExport graphExport = new GraphExport(dag);
 
-        if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
-            graphExport.graphGenerator("../streamSelection2ExportTestAlwaysNew");
-        } else {
-            graphExport.graphGenerator("../streamSelection2ExportTestReuse");
-        }
+//        if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
+//            graphExport.graphGenerator("../streamSelection2ExportTestAlwaysNew");
+//        } else {
+//            graphExport.graphGenerator("../streamSelection2ExportTestReuse");
+//        }
 
     }
 
@@ -135,11 +135,11 @@ public class ExecutionDAGExportTest {
         GraphExport graphExport = new GraphExport(dag);
 
 
-        if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
-            graphExport.graphGenerator("../streamSelectionSimpleWithSyncExportTestAlwaysNew");
-        } else {
-            graphExport.graphGenerator("../streamSelectionSimpleWithSyncExportTestReuse");
-        }
+//        if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
+//            graphExport.graphGenerator("../streamSelectionSimpleWithSyncExportTestAlwaysNew");
+//        } else {
+//            graphExport.graphGenerator("../streamSelectionSimpleWithSyncExportTestReuse");
+//        }
     }
 
     @Test
@@ -168,11 +168,11 @@ public class ExecutionDAGExportTest {
         ExecutionDAG dag = context.getDag();
         GraphExport graphExport = new GraphExport(dag);
 
-        if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
-            graphExport.graphGenerator("../disjointArgumentStreamCross2TestAlwaysNew");
-        } else {
-            graphExport.graphGenerator("../disjointArgumentStreamCross2TestReuse");
-        }
+//        if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
+//            graphExport.graphGenerator("../disjointArgumentStreamCross2TestAlwaysNew");
+//        } else {
+//            graphExport.graphGenerator("../disjointArgumentStreamCross2TestReuse");
+//        }
     }
 
     @Test
@@ -192,11 +192,11 @@ public class ExecutionDAGExportTest {
         ExecutionDAG dag = context.getDag();
         GraphExport graphExport = new GraphExport(dag);
 
-        if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
-            graphExport.graphGenerator("../syncParentsOfParentsTestAlwaysNew");
-        } else {
-            graphExport.graphGenerator("../syncParentsOfParentsTestReuse");
-        }
+//        if (policy==RetrieveNewStreamPolicyEnum.ALWAYS_NEW){
+//            graphExport.graphGenerator("../syncParentsOfParentsTestAlwaysNew");
+//        } else {
+//            graphExport.graphGenerator("../syncParentsOfParentsTestReuse");
+//        }
     }
 
 
