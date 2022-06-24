@@ -45,11 +45,11 @@ import java.util.function.Function;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import org.junit.Before;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
 
 @RunWith(Parameterized.class)
 public class CUBLASTest {
@@ -269,8 +269,8 @@ public class CUBLASTest {
         }
     }
 
-    private void assertOutputVectorIsCorrect(int len, Value deviceArray,
-                    Function<Integer, Integer> outFunc) {
+    void assertOutputVectorIsCorrect(int len, Value deviceArray,
+                                     Function<Integer, Integer> outFunc) {
         CUBLASTest.assertOutputVectorIsCorrect(len, deviceArray, outFunc, this.typeChar);
     }
 

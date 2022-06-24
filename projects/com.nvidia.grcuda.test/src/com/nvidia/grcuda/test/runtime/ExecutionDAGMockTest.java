@@ -253,7 +253,6 @@ public class ExecutionDAGMockTest {
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setArchitecturePascalOrNewer(false).build();
-
         // This time, simulate a computation on the GPU, and a concurrent CPU read & write.
         // As the GPU is pre-pascal, and we are running the kernel on the default stream, we must have a sync;
         DeviceArrayMock x = new DeviceArrayMock(context);
@@ -267,7 +266,6 @@ public class ExecutionDAGMockTest {
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setDependencyPolicy(DependencyPolicyEnum.NO_CONST)
                 .setArchitecturePascalOrNewer(true).build();
-
         // This time, simulate a computation on the GPU, and a concurrent CPU read & write.
         // As we are not considering "const", there should be a dependency;
         DeviceArrayMock x = new DeviceArrayMock(context);

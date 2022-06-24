@@ -83,7 +83,7 @@ public class Device extends AbstractDevice implements TruffleObject {
     public Device(int deviceId, CUDARuntime runtime) {
         super(deviceId);
         if (deviceId < 0) {
-            throw new GrCUDAException("GPU device must have id > 0, instead it is " + deviceId);
+            throw new GrCUDAException("GPU device must have id >= 0, instead it is " + deviceId);
         }
         this.runtime = runtime;
         this.properties = new GPUDeviceProperties(deviceId, runtime);
