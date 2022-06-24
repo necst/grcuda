@@ -403,6 +403,7 @@ The automatic DAG scheduling of GrCUDA supports different settings that can be u
 * `NumberOfGPUs`: set how many GPUs can be used during computation. It must be at least 1, and if > 1 more than 1 GPUs are used (if available). 1 by default;
 * `DeviceSelectionPolicy`: choose the heuristic that manages how GPU computations are mapped to devices, if multiple GPUs are available;
 * `MemAdvisePolicy`: select a managed memory `memAdvise` flag, if multiple GPUs are available. Options: `read-mostly`, `preferred-location`, `none` (default);
+* `ExportDAG`: add this option to dump scheduling DAG. Specify the destination path and the file name as value of the option (e.g. `--grcuda.ExportDAG=../ExecutionDAG`). File will be saved in dot format;
 
 ## Publications
 

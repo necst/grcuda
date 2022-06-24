@@ -57,6 +57,7 @@ public class SyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
         }
     }
 
+    // TODO check correctness
     /**
      * Register this computation for future execution by the {@link SyncGrCUDAExecutionContext},
      * and add it to the current computational DAG.

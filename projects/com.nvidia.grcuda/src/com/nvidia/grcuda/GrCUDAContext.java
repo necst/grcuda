@@ -51,8 +51,10 @@ import com.nvidia.grcuda.functions.map.MapFunction;
 import com.nvidia.grcuda.functions.map.ShredFunction;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.GraphExport;
 import com.nvidia.grcuda.runtime.executioncontext.SyncGrCUDAExecutionContext;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.TruffleLanguage;
@@ -222,9 +224,18 @@ public final class GrCUDAContext {
     }
 
     /**
-     * Cleanup the GrCUDA context at the end of the execution;
+     * Cleanup the GrCUDA context at the end of the execution. If ExportDAG option is enabled,
+     * scheduling DAG will be dumped before the cleanup.
      */
     public void cleanup() {
+        if (grCUDAOptionMap.getExportDAGPath().equals("true")){
+            System.out.println("Please specify the destination path for the scheduling DAG export");
+        } else if (!grCUDAOptionMap.getExportDAGPath().equals("false")){
+            ExecutionDAG dag = grCUDAExecutionContext.getDag();
+            GraphExport graphExport = new GraphExport(dag);
+            graphExport.graphGenerator(grCUDAOptionMap.getExportDAGPath());
+        }
         this.grCUDAExecutionContext.cleanup();
     }
+
 }
