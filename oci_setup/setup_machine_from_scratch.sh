@@ -36,7 +36,6 @@
 # Installation flags (change them to customize your installation);
 INSTALL_CUML=false
 INSTALL_RECENT_CMAKE=false
-ACTIVATE_GRAALPYTHON_ENV=true
 INSTALL_ON_NVSWITCH_SYSTEM=false
 
 # basic update on a newly created machine;
@@ -119,25 +118,6 @@ echo '' >> ~/.bashrc
 echo '##########################################' >> ~/.bashrc
 # reload  ~/.bashrc;
 source  ~/.bashrc
-
-# setup GraalVM;
-gu install native-image
-gu install llvm-toolchain
-gu install python
-gu install nodejs
-gu rebuild-images polyglot
-
-# create environment for Graalpython and set it up;
-graalpython -m venv ~/graalpython_venv
-source ~/graalpython_venv/bin/activate
-graalpython -m ginstall install setuptools
-graalpython -m ginstall install Cython
-graalpython -m ginstall install numpy
-
-if [ "$ACTIVATE_GRAALPYTHON_ENV" = true ] ; then
-    echo 'source ~/graalpython_venv/bin/activate' >> ~/.bashrc
-    source  ~/.bashrc
-fi
 
 # install miniconda (Python is required to build with mx);
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
