@@ -30,7 +30,7 @@
 #!/bin/bash
 
 # You can use this script to setup a clean machine with Ubuntu 20.04 to use GrCUDA. 
-# We install GraalVM, Nvidia's drivers, CUDA, conda, and download GrCUDA.
+# We install Nvidia's drivers, CUDA, conda, and download GrCUDA.
 # To install GrCUDA, run `cd $GRCUDA_HOME; ./install.sh` after running this script.
 
 # Installation flags (change them to customize your installation);
