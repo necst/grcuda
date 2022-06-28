@@ -64,18 +64,17 @@ cd mx
 git checkout 722b86b8ef87fbb297f7e33ee6014bbbd3f4a3a8
 cd ..
 
-# download the GraalVM release build (21.3.0) and the corresponding JVM;
-wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.0/graalvm-ce-java11-linux-amd64-21.3.0.tar.gz
-wget https://github.com/graalvm/labs-openjdk-11/releases/download/jvmci-21.3-b05/labsjdk-ce-11.0.13+7-jvmci-21.3-b05-linux-amd64.tar.gz
+# # download the GraalVM release build (21.3.2) and the corresponding JVM;
+wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.2/graalvm-ce-java11-linux-amd64-21.3.2.tar.gz
+wget https://github.com/graalvm/labs-openjdk-11/releases/download/jvmci-21.3-b19/labsjdk-ce-11.0.16+7-jvmci-21.3-b19-linux-amd64.tar.gz
 # extract them;
-tar xfz graalvm-ce-java11-linux-amd64-21.3.0.tar.gz
-tar xfz labsjdk-ce-11.0.13+7-jvmci-21.3-b05-linux-amd64.tar.gz
+tar xfz graalvm-ce-java11-linux-amd64-21.3.2.tar.gz
+tar xfz labsjdk-ce-11.0.16+7-jvmci-21.3-b19-linux-amd64.tar.gz
 # remove temporary files;
-rm graalvm-ce-java11-linux-amd64-21.3.0.tar.gz
-rm labsjdk-ce-11.0.13+7-jvmci-21.3-b05-linux-amd64.tar.gz
+rm graalvm-ce-java11-linux-amd64-21.3.2.tar.gz
+rm labsjdk-ce-11.0.16+7-jvmci-21.3-b19-linux-amd64.tar.gz
 
 # install CUDA and Nvidia drivers;
-
 # -> option 1 (more automatic, but possibly outdated);
 # sudo apt install nvidia-cuda-toolkit -y
 # sudo apt install ubuntu-drivers-common -y
@@ -133,7 +132,7 @@ if [ "$INSTALL_CUML" = true ] ; then
     source  ~/.bashrc
 fi
 
-# optional: install TensorRT - Currently not supported, it does not work with CUDA 11.4;
+# optional: install TensorRT - Currently not supported, it does not work with CUDA 11.7;
 
 # Install a recent version of CMake, following https://askubuntu.com/questions/355565/how-do-i-install-the-latest-version-of-cmake-from-the-command-line;
 if [ "$INSTALL_RECENT_CMAKE" = true ] ; then
