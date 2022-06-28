@@ -109,8 +109,8 @@ echo 'export CUDA_DIR=/usr/local/cuda' >> ~/.bashrc
 echo 'export PATH=$CUDA_DIR/bin:$PATH' >> ~/.bashrc
 echo '# GraalVM and GrCUDA;' >> ~/.bashrc
 echo 'export PATH=~/mx:$PATH' >> ~/.bashrc
-echo 'export JAVA_HOME=~/labsjdk-ce-11.0.13-jvmci-21.3-b05' >> ~/.bashrc
-echo 'export GRAAL_HOME=~/graalvm-ce-java11-21.3.0' >> ~/.bashrc
+echo 'export JAVA_HOME=~/labsjdk-ce-11.0.16-jvmci-21.3-b19' >> ~/.bashrc
+echo 'export GRAAL_HOME=~/graalvm-ce-java11-21.3.2' >> ~/.bashrc
 echo 'export PATH=$GRAAL_HOME/bin:$PATH' >> ~/.bashrc
 echo 'export PATH=$JAVA_HOME/bin:$PATH' >> ~/.bashrc
 echo 'export GRCUDA_HOME=~/grcuda' >> ~/.bashrc
