@@ -1,6 +1,8 @@
 # 2022-06-01
 
 * Added scheduling DAG export functionality. It is now possible to retrieve a graphic version of the scheduling DAG of the execution by adding `ExportDAG` in the startup options. The graph will be exported in .dot format in the path specified by the user as option argument.
+* This information can be leveraged to better understand the achieved runtime performance and to compare the schedules derived from different policies. Moreover, poorly written applications will results in DAGs with low-level of task-parallelism independently of the selected policy, suggesting designers to change their applications’ logic.
+
 
 # 2022-04-15
 
