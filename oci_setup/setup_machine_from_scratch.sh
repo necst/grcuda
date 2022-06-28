@@ -64,15 +64,15 @@ cd mx
 git checkout 722b86b8ef87fbb297f7e33ee6014bbbd3f4a3a8
 cd ..
 
-# # download the GraalVM release build (21.3.2) and the corresponding JVM;
-wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-21.3.2/graalvm-ce-java11-linux-amd64-21.3.2.tar.gz
-wget https://github.com/graalvm/labs-openjdk-11/releases/download/jvmci-21.3-b19/labsjdk-ce-11.0.16+7-jvmci-21.3-b19-linux-amd64.tar.gz
+# # download the GraalVM release build (22.1.0) and the corresponding JVM;
+wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java11-linux-amd64-22.1.0.tar.gz
+wget https://github.com/graalvm/labs-openjdk-11/releases/download/jvmci-22.1-b01/labsjdk-ce-11.0.15+2-jvmci-22.1-b01-linux-amd64.tar.gz
 # extract them;
-tar xfz graalvm-ce-java11-linux-amd64-21.3.2.tar.gz
-tar xfz labsjdk-ce-11.0.16+7-jvmci-21.3-b19-linux-amd64.tar.gz
+tar xfz graalvm-ce-java11-linux-amd64-22.1.0.tar.gz
+tar xfz labsjdk-ce-11.0.15+2-jvmci-22.1-b01-linux-amd64.tar.gz
 # remove temporary files;
-rm graalvm-ce-java11-linux-amd64-21.3.2.tar.gz
-rm labsjdk-ce-11.0.16+7-jvmci-21.3-b19-linux-amd64.tar.gz
+rm graalvm-ce-java11-linux-amd64-22.1.0.tar.gz
+rm labsjdk-ce-11.0.15+3-jvmci-22.1-b01-linux-amd64.tar.gz
 
 # install CUDA and Nvidia drivers;
 # -> option 1 (more automatic, but possibly outdated);
@@ -109,8 +109,8 @@ echo 'export CUDA_DIR=/usr/local/cuda' >> ~/.bashrc
 echo 'export PATH=$CUDA_DIR/bin:$PATH' >> ~/.bashrc
 echo '# GraalVM and GrCUDA;' >> ~/.bashrc
 echo 'export PATH=~/mx:$PATH' >> ~/.bashrc
-echo 'export JAVA_HOME=~/labsjdk-ce-11.0.16-jvmci-21.3-b19' >> ~/.bashrc
-echo 'export GRAAL_HOME=~/graalvm-ce-java11-21.3.2' >> ~/.bashrc
+echo 'export JAVA_HOME=~/labsjdk-ce-11.0.15-jvmci-22.1-b01' >> ~/.bashrc
+echo 'export GRAAL_HOME=~/graalvm-ce-java11-22.1.0' >> ~/.bashrc
 echo 'export PATH=$GRAAL_HOME/bin:$PATH' >> ~/.bashrc
 echo 'export PATH=$JAVA_HOME/bin:$PATH' >> ~/.bashrc
 echo 'export GRCUDA_HOME=~/grcuda' >> ~/.bashrc
