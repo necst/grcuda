@@ -87,7 +87,7 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
 
             // create buffer
-            Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunction, handle, opA.ordinal(), alpha,
+            Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunctionNFI, handle, opA.ordinal(), alpha,
                     matDescr.getValue(), vecX.getDnVecDescr().getValue(), beta,
                     vecY.getDnVecDescr().getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
 

@@ -80,7 +80,7 @@ public class SparseMatrixCOO extends SparseMatrix {
     protected static final MemberSet MEMBERS = new MemberSet(FREE, SPMV, IS_MEMORY_FREED, VALUES, ROW_INDICES, COL_INDICES);
 
     public SparseMatrixCOO(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray cooRowInd, DeviceArray cooColInd, DeviceArray cooValues, long rows, long cols, boolean isComplex) {
-        super(cooValues, rows, cols, isComplex);
+        super(grCUDAExecutionContext, cooValues, rows, cols, CUSPARSERegistry.CUDADataType.fromGrCUDAType(cooValues.getElementType(), isComplex), isComplex);
         this.cooRowInd = cooRowInd;
         this.cooColInd = cooColInd;
 

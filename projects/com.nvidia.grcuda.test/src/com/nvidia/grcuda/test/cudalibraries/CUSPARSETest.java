@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
@@ -55,7 +56,7 @@ public class CUSPARSETest {
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
                         {ExecutionPolicyEnum.SYNC.getName(), ExecutionPolicyEnum.ASYNC.getName()},
                         {true, false},
-                        {'S', 'C', 'D', 'Z'}
+                        {'S', 'D'}
         }));
     }
 
@@ -156,6 +157,93 @@ public class CUSPARSETest {
             }
         }
     }
+
+    @Test
+    public void TestSpGEMMCSR() {
+        try (Context polyglot = GrCUDATestUtil.buildTestContext().option("grcuda.ExecutionPolicy",
+                this.policy).option("grcuda.InputPrefetch", String.valueOf(this.inputPrefetch)).option(
+                "grcuda.CuSPARSEEnabled", String.valueOf(true)).allowAllAccess(true).build()) {
+
+            final int numElements = 100;
+            final boolean isComplex = this.type == 'C' || this.type == 'Z';
+            final boolean isDouble = this.type == 'D' || this.type == 'Z';
+            final int complexScaleSize = isComplex ? 2 : 1;
+            final String grcudaDataType = (this.type == 'D' || this.type == 'Z') ? "double" : "float";
+
+            final String emptyType;
+            switch (this.type) {
+                case 'D':
+                    emptyType = "CUDA_R_64F";
+                    break;
+                default:
+                    emptyType = "CUDA_R_32F";
+                    break;
+            }
+
+            System.out.println("TRY: policy=" + this.policy + ", prefetch=" + this.inputPrefetch + ", type=" + this.type);
+
+            Value cu = polyglot.eval("grcuda", "CU");
+
+            // creating variables for cusparse functions as DeviceArrays
+            Value alpha = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
+            Value beta = cu.invokeMember("DeviceArray", grcudaDataType, 1 * complexScaleSize);
+
+            // variables initialization
+
+            alpha.setArrayElement(0, 1);
+            beta.setArrayElement(0, 0);
+            if (isComplex) {
+                alpha.setArrayElement(1, 0);
+                beta.setArrayElement(1, 0);
+            }
+
+            // populating arrays
+            float edgeValue = (float) Math.random();
+
+            Value rowPtrA = cu.invokeMember("DeviceArray", "int", numElements + 1);
+            Value colIdxA = cu.invokeMember("DeviceArray", "int", numElements);
+            Value nnzVecA = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
+            Value rowPtrB = cu.invokeMember("DeviceArray", "int", numElements + 1);
+            Value colIdxB = cu.invokeMember("DeviceArray", "int", numElements);
+            Value nnzVecB = cu.invokeMember("DeviceArray", grcudaDataType, numElements * complexScaleSize);
+
+            for (int i = 0; i < numElements; ++i) {
+                rowPtrA.setArrayElement(i, i);
+                colIdxA.setArrayElement(i, i);
+                rowPtrB.setArrayElement(i, i);
+                colIdxB.setArrayElement(i, i);
+
+                for (int j = 0; j < complexScaleSize; ++j) {
+                    nnzVecA.setArrayElement(i * complexScaleSize + j, j == 0 ? edgeValue : 0.0);
+                    nnzVecB.setArrayElement(i * complexScaleSize + j, j == 0 ? edgeValue : 0.0);
+                }
+            }
+
+            rowPtrA.setArrayElement(numElements, numElements);
+            rowPtrB.setArrayElement(numElements, numElements);
+
+            Value csrMatrixA = polyglot.eval("grcuda", "SparseMatrixCSR").execute(colIdxA, rowPtrA, nnzVecA, numElements, numElements, isComplex);
+            Value csrMatrixB = polyglot.eval("grcuda", "SparseMatrixCSR").execute(colIdxB, rowPtrB, nnzVecB, numElements, numElements, isComplex);
+            Value csrMatrixC = polyglot.eval("grcuda", "SparseMatrixCSR").execute(numElements, numElements, isComplex, emptyType);
+
+            csrMatrixA.getMember("SpGEMM").execute(alpha, beta, csrMatrixB, csrMatrixC);
+            Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
+            sync.execute();
+
+
+            /*for (int i = 0; i < numElements; ++i) {
+                for (int j = 0; j < complexScaleSize; ++j) {
+                    if (isDouble) {
+                        assertEquals(j == 0 ? edgeValue : 0.0, outVecData.getArrayElement(i * complexScaleSize + j).asDouble(), 1e-5);
+                    } else {
+                        assertEquals(j == 0 ? edgeValue : 0.0, outVecData.getArrayElement(i * complexScaleSize + j).asFloat(), 1e-5);
+                    }
+                }
+            }*/
+        }
+    }
+
+
 
     /**
      * SPARSE SpMV function test with complex data type and COO matrix
@@ -444,7 +532,7 @@ public class CUSPARSETest {
                     if (i == idxNnz) {
                         if (Math.abs((j == 0 ? 1 + edgeValue : 0.0) - vecY.getArrayElement(i * complexScaleSize + j).asDouble()) > 1e-3f) {
                             System.out.println(i + ": " + vecY.getArrayElement(i * complexScaleSize + j));
-                            System.out.println(this.type + " " + this.inputPrefetch + " " + this.policy);
+                            //System.out.println(this.type + " " + this.inputPrefetch + " " + this.policy);
                         }
                     }
                 }

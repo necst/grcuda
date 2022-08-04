@@ -44,6 +44,7 @@ import static com.nvidia.grcuda.functions.Function.expectFloat;
 import static com.nvidia.grcuda.functions.Function.expectInt;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 
+import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
@@ -63,6 +64,7 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
 
 @ExportLibrary(InteropLibrary.class)
@@ -395,9 +397,13 @@ public class SparseVector implements TruffleObject {
             }
             DenseVector vecY = (DenseVector) arguments[0];
             DeviceArray result = (DeviceArray) arguments[1];
-            polyglot
-                .eval("grcuda", "SPARSE::cusparseSpVV")
-                .execute((int)0, SparseVector.this, vecY, result);
+            polyglot.eval("grcuda", "SPARSE::cusparseSpVV")
+                    .execute(
+                            0,
+                            SparseVector.this,
+                            vecY,
+                            result
+                    );
             return NoneValue.get();
         }
     }

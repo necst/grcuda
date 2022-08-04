@@ -34,18 +34,15 @@
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
-import com.oracle.truffle.api.interop.ArityException;
-import com.oracle.truffle.api.interop.UnsupportedMessageException;
-import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
-public class CUSPARSEProxyNoHandle extends CUSPARSEProxy {
+public class CUSPARSEProxyHandle extends CUSPARSEProxy {
 
-    public CUSPARSEProxyNoHandle(ExternalFunctionFactory externalFunctionFactory) {
+    public CUSPARSEProxyHandle(ExternalFunctionFactory externalFunctionFactory) {
         super(externalFunctionFactory);
     }
 
     @Override
     public boolean requiresHandle() {
-        return false;
+        return true;
     }
 }

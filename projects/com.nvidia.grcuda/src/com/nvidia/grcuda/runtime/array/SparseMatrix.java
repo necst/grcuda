@@ -5,6 +5,7 @@ import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
+import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropLibrary;
@@ -18,24 +19,42 @@ public abstract class SparseMatrix implements TruffleObject {
      */
     protected final long rows;
     protected final long cols;
-    protected final long numElements;
+    protected long numElements;
+    protected final boolean isComplex;
 
-    private final DeviceArray values;
+    private DeviceArray values;
 
-    protected final CUSPARSERegistry.CUDADataType dataType;
+    protected CUSPARSERegistry.CUDADataType dataType;
     protected final UnsafeHelper.Integer64Object spMatDescr;
 
     protected boolean matrixFreed;
 
-    protected SparseMatrix(DeviceArray values, long rows, long cols, boolean isComplex) {
+    private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
+
+    protected SparseMatrix(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Object values, long rows, long cols, CUSPARSERegistry.CUDADataType dataType, boolean isComplex) {
+        this.grCUDAExecutionContext = grCUDAExecutionContext;
         this.rows = rows;
         this.cols = cols;
-        this.values = values;
-        numElements = isComplex ? values.getArraySize() / 2 : values.getArraySize();
-
-        dataType = CUSPARSERegistry.CUDADataType.fromGrCUDAType(values.getElementType(), isComplex);
+        this.isComplex = isComplex;
+        this.dataType = dataType;
+        if (values == null) {
+            this.values = null;
+            numElements = 0;
+        } else {
+            this.values = (DeviceArray) values;
+            numElements = isComplex ? this.values.getArraySize() / 2 : this.values.getArraySize();
+        }
 
         spMatDescr = UnsafeHelper.createInteger64Object();
+    }
+
+    protected AbstractGrCUDAExecutionContext getGrCUDAExecutionContext() {
+        return grCUDAExecutionContext;
+    }
+
+    public void setValues(DeviceArray values) {
+        this.values = values;
+        numElements = isComplex ? values.getArraySize() / 2 : values.getArraySize();
     }
 
     public DeviceArray getValues() {

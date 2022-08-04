@@ -49,8 +49,10 @@ import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxy;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyAxpby;
+import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyHandle;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyNoHandle;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyGemvi;
+import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpGEMM;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpVV;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
@@ -164,10 +166,33 @@ public class CUSPARSERegistry {
     }
 
     public enum CUSPARSEOrder {
-        CUSPARSE_ORDER_ROW,
-        CUSPARSE_ORDER_COL
+        CUSPASE_ORDER_UNUSED,
+        CUSPARSE_ORDER_COL,
+        CUSPARSE_ORDER_ROW
     }
 
+    public enum CUSPARSESpMMAlg {
+        CUSPARSE_SPMM_ALG_DEFAULT,
+        CUSPARSE_SPMM_COO_ALG1,
+        CUSPARSE_SPMM_COO_ALG2,
+        CUSPARSE_SPMM_COO_ALG3,
+        CUSPARSE_SPMM_CSR_ALG1,
+        CUSPARSE_SPMM_COO_ALG4,
+        CUSPARSE_SPMM_CSR_ALG2,
+        CUSPARSE_SPMM_UNUSED7,
+        CUSPARSE_SPMM_UNUSED8,
+        CUSPARSE_SPMM_UNUSED9,
+        CUSPARSE_SPMM_UNUSED10,
+        CUSPARSE_SPMM_UNUSED11,
+        CUSPARSE_SPMM_CSR_ALG3,
+        CUSPARSE_SPMM_BLOCKED_ELL_ALG1
+    }
+
+    public enum CUSPARSESpGEMMAlg {
+        CUSPARSE_SPGEMM_DEFAULT,
+        CUSPARSE_SPGEMM_CSR_ALG_DETERMINITIC,
+        CUSPARSE_SPGEMM_CSR_ALG_NONDETERMINITIC
+    }
 
 
     public CUSPARSERegistry(GrCUDAContext context) {
@@ -341,14 +366,18 @@ public class CUSPARSERegistry {
             case 4:
                 return "CUSPARSE_STATUS_ARCH_MISMATCH";
             case 5:
-                return "CUSPARSE_STATUS_EXECUTION_FAILED";
+                return "CUSPARSE_STATUS_MAPPING_ERROR";
             case 6:
-                return "CUSPARSE_STATUS_INTERNAL_ERROR";
+                return "CUSPARSE_STATUS_EXECUTION_FAILED";
             case 7:
-                return "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
+                return "CUSPARSE_STATUS_INTERNAL_ERROR";
             case 8:
-                return "CUSPARSE_STATUS_NOT_SUPPORTED";
+                return "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
             case 9:
+                return "CUSPARSE_STATUS_ZERO_PIVOT";
+            case 10:
+                return "CUSPARSE_STATUS_NOT_SUPPORTED";
+            case 11:
                 return "CUSPARSE_STATUS_INSUFFICIENT_RESOURCES";
             default:
                 return "unknown error code: " + returnCode;
@@ -376,6 +405,22 @@ public class CUSPARSERegistry {
             "sint32): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATESPVEC = new ExternalFunctionFactory("cusparseCreateSpVec", "cusparseCreateSpVec", "(pointer, sint64, sint64, pointer, " +
             "pointer, sint32, sint32, sint32): sint32");
+
+    private static final ExternalFunctionFactory CUSPARSE_SPGEMM_CREATEDESCR = new ExternalFunctionFactory("cusparseSpGEMM_createDescr", "cusparseSpGEMM_createDescr", "(sint64): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_SPGEMM_DESTROYDESCR = new ExternalFunctionFactory("cusparseSpGEMM_destroyDescr", "cusparseSpGEMM_destroyDescr", "(sint64): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_SPGEMM_WORKESTIMATION = new ExternalFunctionFactory("cusparseSpGEMM_workEstimation", "cusparseSpGEMM_workEstimation",
+            "(sint64, sint32, sint32, pointer, sint64, sint64, pointer, sint64, sint32, sint32, sint64, sint64, pointer): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_SPGEMM_COMPUTE = new ExternalFunctionFactory("cusparseSpGEMM_compute", "cusparseSpGEMM_compute",
+            "(sint64, sint32, sint32, pointer, sint64, sint64, pointer, sint64, sint32, sint32, sint32, sint64, pointer): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_SPGEMM_COPY = new ExternalFunctionFactory("cusparseSpGEMM_copy", "cusparseSpGEMM_copy",
+            "(sint64, sint32, sint32, pointer, sint64, sint64, pointer, sint64, sint32, sint32, sint32): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_SPMATGETSIZE = new ExternalFunctionFactory("cusparseSpMatGetSize", "cusparseSpMatGetSize",
+            "(sint64, sint64, sint64, sint64): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CSRSETPOINTERS = new ExternalFunctionFactory("cusparseCsrSetPointers", "cusparseCsrSetPointers",
+            "(sint64, pointer, pointer, pointer): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPVV_BUFFERSIZE = new ExternalFunctionFactory("cusparseSpVV_bufferSize", "cusparseSpVV_bufferSize", "(sint64, sint32," +
+            "sint64, sint64, pointer, sint32, pointer): sint32");
+
     private static final ArrayList<CUSPARSEProxy> functions = new ArrayList<>();
 
     static {
@@ -393,6 +438,15 @@ public class CUSPARSERegistry {
         functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATESPVEC));
         functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CUSPARSECREATECOO));
         functions.add(new CUSPARSEProxyAxpby(CUSPARSE_CUSPARSEAXPBY));
+
+        functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_SPGEMM_CREATEDESCR));
+        functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_SPGEMM_DESTROYDESCR));
+        functions.add(new CUSPARSEProxy(CUSPARSE_SPGEMM_WORKESTIMATION));
+        functions.add(new CUSPARSEProxy(CUSPARSE_SPGEMM_COMPUTE));
+        functions.add(new CUSPARSEProxy(CUSPARSE_SPGEMM_COPY));
+
+        functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_SPMATGETSIZE));
+        functions.add(new CUSPARSEProxyNoHandle(CUSPARSE_CSRSETPOINTERS));
     }
 
 }

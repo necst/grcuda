@@ -12,10 +12,11 @@ public class DenseVector implements TruffleObject {
     private final DeviceArray values;
     private final CUSPARSERegistry.CUDADataType dataType;
     private final UnsafeHelper.Integer64Object dnVecDescr;
-    private boolean isComplex;
+    private final boolean isComplex;
 
     public DenseVector(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray values, boolean isComplex) {
         this.values = values;
+        this.isComplex = isComplex;
         numElements = isComplex ? values.getArraySize() / 2 : values.getArraySize();
         dataType = CUSPARSERegistry.CUDADataType.fromGrCUDAType(values.getElementType(), isComplex);
 

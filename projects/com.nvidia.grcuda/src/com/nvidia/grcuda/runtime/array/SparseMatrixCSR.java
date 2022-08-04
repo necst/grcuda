@@ -35,8 +35,12 @@
  */
 package com.nvidia.grcuda.runtime.array;
 
+import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
+import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.UnsafeHelper;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
 
 import com.nvidia.grcuda.MemberSet;
@@ -71,23 +75,38 @@ public class SparseMatrixCSR extends SparseMatrix {
     protected static final String ROW_CUMULATIVE = "cumulativeNnz";
     protected static final String COL_INDICES = "colIndices";
     protected static final String SPMV = "SpMV";
+    protected static final String SPGEMM = "SpGEMM";
 
     /**
      * Column and row-cumulative indices of nnz elements.
      */
-    private final DeviceArray csrRowOffsets;
-    private final DeviceArray csrColInd;
+    private DeviceArray csrRowOffsets;
+    private DeviceArray csrColInd;
+
+    private final CUSPARSERegistry.CUSPARSEIndexType rType;
+    private final CUSPARSERegistry.CUSPARSEIndexType cType;
 
 
-    protected static final MemberSet MEMBERS = new MemberSet(FREE, SPMV, IS_MEMORY_FREED, VALUES, ROW_CUMULATIVE, COL_INDICES);
+    protected static final MemberSet MEMBERS = new MemberSet(FREE, SPMV, SPGEMM, IS_MEMORY_FREED, VALUES, ROW_CUMULATIVE, COL_INDICES);
 
-    public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray csrColInd, DeviceArray csrRowOffsets, DeviceArray csrValues, long rows, long cols, boolean isComplex) {
-        super(csrValues, rows, cols, isComplex);
-        this.csrRowOffsets = csrRowOffsets;
-        this.csrColInd = csrColInd;
+    public SparseMatrixCSR(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Object csrColInd, Object csrRowOffsets, Object csrValues,
+                           CUSPARSERegistry.CUDADataType dataType,
+                           CUSPARSERegistry.CUSPARSEIndexType rType, CUSPARSERegistry.CUSPARSEIndexType cType,
+                           long rows, long cols, boolean isComplex) {
+        super(grCUDAExecutionContext, csrValues, rows, cols, dataType, isComplex);
+        if (csrValues == null) {
+            this.csrRowOffsets = new DeviceArray(grCUDAExecutionContext, rows+1, Type.UINT32);
+            this.csrColInd = null;
+        } else {
+            this.csrRowOffsets = (DeviceArray) csrRowOffsets;
+            this.csrColInd = (DeviceArray) csrColInd;
+        }
 
         Context polyglot = Context.getCurrent();
         Value cusparseCreateCsrFunction = polyglot.eval("grcuda", "SPARSE::cusparseCreateCsr");
+
+        this.rType = rType;
+        this.cType = cType;
 
         Value resultCsr = cusparseCreateCsrFunction.execute(
                 spMatDescr.getAddress(),
@@ -97,8 +116,8 @@ public class SparseMatrixCSR extends SparseMatrix {
                 csrRowOffsets,
                 csrColInd,
                 csrValues,
-                CUSPARSERegistry.CUSPARSEIndexType.fromGrCUDAType(csrRowOffsets.getElementType()).ordinal(),
-                CUSPARSERegistry.CUSPARSEIndexType.fromGrCUDAType(csrColInd.getElementType()).ordinal(),
+                rType.ordinal(),
+                cType.ordinal(),
                 CUSPARSERegistry.CUSPARSEIndexBase.CUSPARSE_INDEX_BASE_ZERO.ordinal(),
                 dataType.ordinal());
     }
@@ -106,6 +125,14 @@ public class SparseMatrixCSR extends SparseMatrix {
     final public long getSizeBytes() {
         checkFreeMatrix();
         return getValues().getSizeBytes() + csrRowOffsets.getSizeBytes() + csrColInd.getSizeBytes();
+    }
+
+    public void setCsrRowOffsets(DeviceArray csrRowOffsets) {
+        this.csrRowOffsets = csrRowOffsets;
+    }
+
+    public void setCsrColInd(DeviceArray csrColInd) {
+        this.csrColInd = csrColInd;
     }
 
     @ExportMessage
@@ -177,7 +204,7 @@ public class SparseMatrixCSR extends SparseMatrix {
     boolean isMemberReadable(String memberName,
                              @Cached.Shared("memberName") @Cached("createIdentityProfile()") ValueProfile memberProfile) {
         String name = memberProfile.profile(memberName);
-        return FREE.equals(name) || SPMV.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || ROW_CUMULATIVE.equals(name) || COL_INDICES.equals(name);
+        return FREE.equals(name) || SPMV.equals(name) || SPGEMM.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || ROW_CUMULATIVE.equals(name) || COL_INDICES.equals(name);
     }
 
     @ExportMessage
@@ -193,6 +220,10 @@ public class SparseMatrixCSR extends SparseMatrix {
 
         if (SPMV.equals(memberName)) {
             return new SparseMatrixCSRSpMVFunction();
+        }
+
+        if (SPGEMM.equals(memberName)) {
+            return new SparseMatrixCSRSpGEMMFunction();
         }
 
         if (IS_MEMORY_FREED.equals(memberName)) {
@@ -216,10 +247,12 @@ public class SparseMatrixCSR extends SparseMatrix {
     }
 
 
+
+
     @ExportMessage
     @SuppressWarnings("static-method")
     boolean isMemberInvocable(String memberName) {
-        return FREE.equals(memberName) || SPMV.equals(memberName);
+        return FREE.equals(memberName) || SPMV.equals(memberName) || SPGEMM.equals(memberName);
     }
 
     @ExportMessage
@@ -266,6 +299,95 @@ public class SparseMatrixCSR extends SparseMatrix {
                 CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal());
 
             return outVec;
+        }
+    }
+
+    @ExportLibrary(InteropLibrary.class)
+    final class SparseMatrixCSRSpGEMMFunction implements TruffleObject {
+        @ExportMessage
+        boolean isExecutable() {
+            return true;
+        }
+
+        @ExportMessage
+        Object execute(Object[] arguments) throws ArityException {
+            checkFreeMatrix();
+            if (arguments.length != 4 && arguments.length != 3) {
+                CompilerDirectives.transferToInterpreter();
+                throw ArityException.create(4, arguments.length);
+            }
+
+            Context polyglot = Context.getCurrent();
+            DeviceArray alpha = (DeviceArray) arguments[0];
+            DeviceArray beta = (DeviceArray) arguments[1];
+
+            SparseMatrixCSR matB = (SparseMatrixCSR) arguments[2];
+            SparseMatrixCSR matC;
+            if (arguments.length == 4)  matC = (SparseMatrixCSR) arguments[3];
+            else matC = new SparseMatrixCSR(
+                    getGrCUDAExecutionContext(), null, null, null,
+                    matB.getDataType(),
+                    CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I,
+                    CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I,
+                    matB.getRows(), matB.getCols(), isComplex);
+
+
+            try (
+                UnsafeHelper.Integer64Object descr = UnsafeHelper.createInteger64Object();
+                UnsafeHelper.Integer64Object bufferSize1 = UnsafeHelper.createInteger64Object();
+                UnsafeHelper.Integer64Object bufferSize2 = UnsafeHelper.createInteger64Object();
+
+                UnsafeHelper.Integer64Object numRows = UnsafeHelper.createInteger64Object();
+                UnsafeHelper.Integer64Object numCols = UnsafeHelper.createInteger64Object();
+                UnsafeHelper.Integer64Object numNnz = UnsafeHelper.createInteger64Object()
+            ) {
+                Value create = polyglot.eval("grcuda", "SPARSE::cusparseSpGEMM_createDescr");
+                Value work = polyglot.eval("grcuda", "SPARSE::cusparseSpGEMM_workEstimation");
+                Value compute = polyglot.eval("grcuda", "SPARSE::cusparseSpGEMM_compute");
+                Value copy = polyglot.eval("grcuda", "SPARSE::cusparseSpGEMM_copy");
+                Value destroy = polyglot.eval("grcuda", "SPARSE::cusparseSpGEMM_destroyDescr");
+                Value setPointers = polyglot.eval("grcuda", "SPARSE::cusparseCsrSetPointers");
+                Value getSize = polyglot.eval("grcuda", "SPARSE::cusparseSpMatGetSize");
+                Value cu = polyglot.eval("grcuda", "CU");
+                Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
+
+                create.execute(descr.getAddress());
+
+                work.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), 0);
+
+                DeviceArray buffer1 = new DeviceArray(getValues().grCUDAExecutionContext, bufferSize1.getValue(), Type.SINT8);
+
+                work.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), buffer1);
+
+                compute.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), 0);
+
+                DeviceArray buffer2 = new DeviceArray(getValues().grCUDAExecutionContext, bufferSize2.getValue(), Type.SINT8);
+
+                compute.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), buffer2);
+
+                getSize.execute(matC.getSpMatDescr().getValue(), numRows.getAddress(), numCols.getAddress(), numNnz.getAddress());
+
+                DeviceArray newColumns = new DeviceArray(getValues().grCUDAExecutionContext, numCols.getValue(), Type.FLOAT);
+                DeviceArray newValues = new DeviceArray(getValues().grCUDAExecutionContext, numNnz.getValue(), Type.FLOAT);
+
+                setPointers.execute(matC.getSpMatDescr().getValue(), matC.getCsrRowOffsets(), newColumns, newValues);
+
+                matC.setValues(newValues);
+                matC.setCsrColInd(newColumns);
+
+                copy.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue());
+
+                destroy.execute(descr.getValue());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return matC;
         }
     }
 }
