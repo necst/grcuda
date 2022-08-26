@@ -287,6 +287,9 @@ public class SparseMatrixCSR extends SparseMatrix {
             Object outVec = arguments[3];
 
             Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
+            Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
+
+            long start = System.nanoTime();
 
             cusparseSpMV.execute(
                 CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
@@ -297,6 +300,10 @@ public class SparseMatrixCSR extends SparseMatrix {
                 beta,
                 outVec,
                 CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal());
+
+            long end = System.nanoTime();
+
+            System.out.println("TOOK: " + (float)(end - start) / 1000000.f + "ms");
 
             return outVec;
         }
@@ -348,8 +355,8 @@ public class SparseMatrixCSR extends SparseMatrix {
                 Value destroy = polyglot.eval("grcuda", "SPARSE::cusparseSpGEMM_destroyDescr");
                 Value setPointers = polyglot.eval("grcuda", "SPARSE::cusparseCsrSetPointers");
                 Value getSize = polyglot.eval("grcuda", "SPARSE::cusparseSpMatGetSize");
-                Value cu = polyglot.eval("grcuda", "CU");
-                Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
+
+                long start = System.nanoTime();
 
                 create.execute(descr.getAddress());
 
@@ -371,7 +378,7 @@ public class SparseMatrixCSR extends SparseMatrix {
 
                 getSize.execute(matC.getSpMatDescr().getValue(), numRows.getAddress(), numCols.getAddress(), numNnz.getAddress());
 
-                DeviceArray newColumns = new DeviceArray(getValues().grCUDAExecutionContext, numCols.getValue(), Type.FLOAT);
+                DeviceArray newColumns = new DeviceArray(getValues().grCUDAExecutionContext, numNnz.getValue(), Type.FLOAT);
                 DeviceArray newValues = new DeviceArray(getValues().grCUDAExecutionContext, numNnz.getValue(), Type.FLOAT);
 
                 setPointers.execute(matC.getSpMatDescr().getValue(), matC.getCsrRowOffsets(), newColumns, newValues);
@@ -383,6 +390,11 @@ public class SparseMatrixCSR extends SparseMatrix {
                         matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue());
 
                 destroy.execute(descr.getValue());
+
+                long end = System.nanoTime();
+
+                System.out.println("TOOK: " + (float)(end - start) / 1000000.f + "ms");
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
