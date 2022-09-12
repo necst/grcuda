@@ -34,6 +34,9 @@ import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 
+import java.time.Duration;
+import java.time.Instant;
+
 /**
  * This abstract class defines how a {@link GrCUDAStreamPolicy}
  * will assign a {@link CUDAStream} to a {@link com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement}
@@ -65,7 +68,11 @@ public abstract class RetrieveNewStreamPolicy {
      * @return the stream where the computation is executed
      */
     final CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
+        Instant start = java.time.Instant.now();
         Device device = this.deviceSelectionPolicy.retrieve(vertex);
+        Instant end = java.time.Instant.now();
+        Duration between = java.time.Duration.between(start, end);
+        vertex.getComputation().setSchedulingTime(between);
         return this.retrieveStreamFromDevice(device);
     }
 

@@ -13,6 +13,8 @@ import com.oracle.truffle.api.TruffleLogger;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -254,10 +256,10 @@ public class GrCUDAStreamPolicy {
     }
 
     /**
-     * If a vertex has more than one children, each children is independent (otherwise the dependency would be added
-     * from one children to the other, and not from the actual parent).
+     * If a vertex has more than one child, each child is independent (otherwise the dependency would be added
+     * from one child to the other, and not from the actual parent).
      * As such, children can be executed on different streams. In practice, this situation happens when children
-     * depends on disjoint arguments subsets of the parent kernel, e.g. K1(X,Y), K2(X), K3(Y).
+     * depend on disjoint arguments subsets of the parent kernel, e.g. K1(X,Y), K2(X), K3(Y).
      * This policy re-uses the parent(s) stream(s) when possible,
      * and computes other streams using the current {@link RetrieveNewStreamPolicy};
      */
@@ -314,8 +316,13 @@ public class GrCUDAStreamPolicy {
             List<ExecutionDAG.DAGVertex> availableParents = vertex.getParentVertices().stream()
                     .filter(v -> !reusedComputations.contains(v))
                     .collect(Collectors.toList());
+
+            Instant start = java.time.Instant.now();
             // First, select the ideal device to execute this computation;
             Device selectedDevice = deviceSelectionPolicy.retrieve(vertex);
+            Instant end = java.time.Instant.now();
+            Duration between = java.time.Duration.between(start, end);
+            vertex.getComputation().setSchedulingTime(between);
 
             // If at least one of the parents' streams is on the selected device, use that stream.
             // Otherwise, create a new stream on the selected device;
@@ -370,8 +377,14 @@ public class GrCUDAStreamPolicy {
             // select the best device among the available parent devices.
             // If no stream is available, create a new stream on the best possible device;
             if (!availableParents.isEmpty()) {
+
+                Instant start = java.time.Instant.now();
                 // First, select the best device among the ones available;
                 Device selectedDevice = deviceSelectionPolicy.retrieve(vertex, new ArrayList<>(deviceParentMap.keySet()));
+                Instant end = java.time.Instant.now();
+                Duration between = java.time.Duration.between(start, end);
+                vertex.getComputation().setSchedulingTime(between);
+
                 ExecutionDAG.DAGVertex selectedParent = deviceParentMap.get(selectedDevice);
                 // We found a parent whose stream is on the selected device;
                 reusedComputations.add(selectedParent);
