@@ -71,7 +71,7 @@ public abstract class RetrieveNewStreamPolicy {
         long startTime = System.currentTimeMillis();
         Device device = this.deviceSelectionPolicy.retrieve(vertex);
         long endTime = System.currentTimeMillis();
-        vertex.getComputation().setSchedulingTime(endTime-startTime);
+        vertex.getComputation().setSchedulingTime(endTime, startTime);
         return this.retrieveStreamFromDevice(device);
     }
 
