@@ -68,11 +68,10 @@ public abstract class RetrieveNewStreamPolicy {
      * @return the stream where the computation is executed
      */
     final CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
-        Instant start = java.time.Instant.now();
+        long startTime = System.currentTimeMillis();
         Device device = this.deviceSelectionPolicy.retrieve(vertex);
-        Instant end = java.time.Instant.now();
-        Duration between = java.time.Duration.between(start, end);
-        vertex.getComputation().setSchedulingTime(between);
+        long endTime = System.currentTimeMillis();
+        vertex.getComputation().setSchedulingTime(endTime-startTime);
         return this.retrieveStreamFromDevice(device);
     }
 

@@ -317,12 +317,11 @@ public class GrCUDAStreamPolicy {
                     .filter(v -> !reusedComputations.contains(v))
                     .collect(Collectors.toList());
 
-            Instant start = java.time.Instant.now();
+            long startTime = System.currentTimeMillis();
             // First, select the ideal device to execute this computation;
             Device selectedDevice = deviceSelectionPolicy.retrieve(vertex);
-            Instant end = java.time.Instant.now();
-            Duration between = java.time.Duration.between(start, end);
-            vertex.getComputation().setSchedulingTime(between);
+            long endTime = System.currentTimeMillis();
+            vertex.getComputation().setSchedulingTime(endTime - startTime);
 
             // If at least one of the parents' streams is on the selected device, use that stream.
             // Otherwise, create a new stream on the selected device;
@@ -378,12 +377,11 @@ public class GrCUDAStreamPolicy {
             // If no stream is available, create a new stream on the best possible device;
             if (!availableParents.isEmpty()) {
 
-                Instant start = java.time.Instant.now();
+                long startTime = System.currentTimeMillis();
                 // First, select the best device among the ones available;
                 Device selectedDevice = deviceSelectionPolicy.retrieve(vertex, new ArrayList<>(deviceParentMap.keySet()));
-                Instant end = java.time.Instant.now();
-                Duration between = java.time.Duration.between(start, end);
-                vertex.getComputation().setSchedulingTime(between);
+                long endTime = System.currentTimeMillis();
+                vertex.getComputation().setSchedulingTime(endTime-startTime);
 
                 ExecutionDAG.DAGVertex selectedParent = deviceParentMap.get(selectedDevice);
                 // We found a parent whose stream is on the selected device;
