@@ -160,7 +160,8 @@ public abstract class GrCUDAComputationalElement {
     public void setSchedulingTime(Duration schedulingTimeMs) {
         this.schedulingTimeMS = schedulingTimeMs;
         LOGGER.fine(() -> "computation (" + this + "), scheduling time: " + schedulingTimeMs.toMillis() + " ms");
-        System.out.println("computation (" + this + "), scheduling time: " + schedulingTimeMs.toMillis() + " ms");
+        System.out.format("computation ( %s ), scheduling time: %06d ms", this, schedulingTimeMs.toMillis());
+        //System.out.println("computation (" + this + "), scheduling time: " + schedulingTimeMs.toMillis() + " ms");
     }
 
     public float getExecutionTime() {
