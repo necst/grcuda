@@ -322,10 +322,10 @@ public class GrCUDAStreamPolicy {
 //            long endTime = System.currentTimeMillis();
 //            vertex.getComputation().setSchedulingTime(endTime-startTime);
 
-            long startTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+            float startTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
             Device selectedDevice = deviceSelectionPolicy.retrieve(vertex);
-            long endTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-            vertex.getComputation().setSchedulingTime(endTime-startTime);
+            float endTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+            vertex.getComputation().setSchedulingTime((endTime-startTime)/1000000);
 
             // If at least one of the parents' streams is on the selected device, use that stream.
             // Otherwise, create a new stream on the selected device;
@@ -381,11 +381,11 @@ public class GrCUDAStreamPolicy {
             // If no stream is available, create a new stream on the best possible device;
             if (!availableParents.isEmpty()) {
 
-                long startTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+                float startTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
                 // First, select the best device among the ones available;
                 Device selectedDevice = deviceSelectionPolicy.retrieve(vertex, new ArrayList<>(deviceParentMap.keySet()));
-                long endTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
-                vertex.getComputation().setSchedulingTime(endTime-startTime);
+                float endTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+                vertex.getComputation().setSchedulingTime((endTime-startTime)/1000000);
 
                 ExecutionDAG.DAGVertex selectedParent = deviceParentMap.get(selectedDevice);
                 // We found a parent whose stream is on the selected device;
