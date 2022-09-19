@@ -116,7 +116,7 @@ public abstract class GrCUDAComputationalElement {
     private float executionTimeMs = 0;
 
     //TODO: doc
-    private long schedulingTimeMS;
+    private long schedulingTimeNS;
 
     /**
      * Constructor that takes an argument set initializer to build the set of arguments used in the dependency computation
@@ -155,12 +155,12 @@ public abstract class GrCUDAComputationalElement {
 
     /**
      * Store the scheduling time for this ComputationalElement (in milliseconds)
-     * @param schedulingTimeMs the scheduling time of this ComputationalElement
+     * @param schedulingTimeNs the scheduling time of this ComputationalElement
      */
-    public void setSchedulingTime(long schedulingTimeMs) {
-        this.schedulingTimeMS = schedulingTimeMs;
-        LOGGER.fine(() -> "computation (" + this + "), scheduling time: " + schedulingTimeMs + " ms");
-        //System.out.format("computation ( %s ), scheduling time: end %06d ms, start %06d \n", this, end, start);
+    public void setSchedulingTime(long schedulingTimeNs) {
+        this.schedulingTimeNS = schedulingTimeNs;
+        LOGGER.fine(() -> "computation (" + this + "), scheduling time: " + schedulingTimeNs + " ns");
+        System.out.format("computation ( %s ), scheduling time: %09d ns", this, schedulingTimeNs);
     }
 
     public float getExecutionTime() {

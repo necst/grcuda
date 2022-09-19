@@ -13,8 +13,7 @@ import com.oracle.truffle.api.TruffleLogger;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
+import java.lang.management.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -317,10 +316,15 @@ public class GrCUDAStreamPolicy {
                     .filter(v -> !reusedComputations.contains(v))
                     .collect(Collectors.toList());
 
-            long startTime = System.currentTimeMillis();
-            // First, select the ideal device to execute this computation;
+//            long startTime = System.currentTimeMillis();
+//            // First, select the ideal device to execute this computation;
+//            Device selectedDevice = deviceSelectionPolicy.retrieve(vertex);
+//            long endTime = System.currentTimeMillis();
+//            vertex.getComputation().setSchedulingTime(endTime-startTime);
+
+            long startTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
             Device selectedDevice = deviceSelectionPolicy.retrieve(vertex);
-            long endTime = System.currentTimeMillis();
+            long endTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
             vertex.getComputation().setSchedulingTime(endTime-startTime);
 
             // If at least one of the parents' streams is on the selected device, use that stream.
@@ -377,10 +381,10 @@ public class GrCUDAStreamPolicy {
             // If no stream is available, create a new stream on the best possible device;
             if (!availableParents.isEmpty()) {
 
-                long startTime = System.currentTimeMillis();
+                long startTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
                 // First, select the best device among the ones available;
                 Device selectedDevice = deviceSelectionPolicy.retrieve(vertex, new ArrayList<>(deviceParentMap.keySet()));
-                long endTime = System.currentTimeMillis();
+                long endTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
                 vertex.getComputation().setSchedulingTime(endTime-startTime);
 
                 ExecutionDAG.DAGVertex selectedParent = deviceParentMap.get(selectedDevice);

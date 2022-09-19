@@ -34,6 +34,7 @@ import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 
+import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -68,9 +69,9 @@ public abstract class RetrieveNewStreamPolicy {
      * @return the stream where the computation is executed
      */
     final CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
-        long startTime = System.currentTimeMillis();
+        long startTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
         Device device = this.deviceSelectionPolicy.retrieve(vertex);
-        long endTime = System.currentTimeMillis();
+        long endTime = ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
         vertex.getComputation().setSchedulingTime(endTime-startTime);
         return this.retrieveStreamFromDevice(device);
     }
