@@ -150,7 +150,7 @@ public abstract class GrCUDAComputationalElement {
     public void setExecutionTime(float executionTimeMs) {
         this.executionTimeMs = executionTimeMs;
         this.executionTimeMeasured = true;
-        LOGGER.finer(() -> "computation (" + this + "), execution time: " + executionTimeMs + " ms");
+        LOGGER.fine(() -> "computation (" + this + "), execution time: " + executionTimeMs + " ms");
     }
 
     /**
@@ -160,7 +160,7 @@ public abstract class GrCUDAComputationalElement {
      */
     public void setSchedulingTime(float schedulingTimeMs) {
         this.schedulingTimeMs = schedulingTimeMs;
-        LOGGER.finer(() -> "computation (" + this + "), scheduling time: " + schedulingTimeMs+ " ms");
+        LOGGER.fine(() -> "computation (" + this + "), scheduling time: " + schedulingTimeMs+ " ms");
         //System.out.format("computation ( %s ), scheduling time: %04f ms\n", this, schedulingTimeMs);
         this.grCUDAExecutionContext.setTotalSchedulingTime(schedulingTimeMs);
     }
