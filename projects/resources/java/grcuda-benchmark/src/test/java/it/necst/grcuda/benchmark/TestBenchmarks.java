@@ -117,6 +117,20 @@ public class TestBenchmarks{
         iterateAllPossibleConfig(parsedConfig);
     }
 
+    @Test
+    public void runAll_A100_multi() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
+        assumeTrue(this.currentGPU.equals(GPU.A100));
+
+        // get the configuration for the selected GPU into a Config class
+        String CONFIG_PATH = PATH + "/config_A100.json";
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
+        Config parsedConfig = gson.fromJson(reader, Config.class);
+        //System.out.println(gson.toJson(parsedConfig)); // print the current configuration
+
+        iterateAllPossibleConfig(parsedConfig);
+    }
+
     /*
     This method reflects the pattern of benchmark_wrapper.py present in the python suite.
     //TODO: Proper refactoring should be done to generate the set of tests needed from the json file
@@ -252,7 +266,7 @@ public class TestBenchmarks{
 
 enum GPU {
     GTX1660_SUPER("GeForce GTX 1660 SUPER"),
-    A100("to_compute_A100"),
+    A100("NVIDIA A100-SXM4-40GB"),
     V100("Tesla V100-SXM2-16GB"),
     GTX960("GeForce GTX 960");
 
