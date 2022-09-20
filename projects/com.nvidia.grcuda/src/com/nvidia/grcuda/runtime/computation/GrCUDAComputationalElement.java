@@ -155,12 +155,14 @@ public abstract class GrCUDAComputationalElement {
 
     /**
      * Store the scheduling time for this ComputationalElement (in milliseconds)
+     * //TODO: update doc
      * @param schedulingTimeMs the scheduling time of this ComputationalElement
      */
     public void setSchedulingTime(float schedulingTimeMs) {
         this.schedulingTimeMs = schedulingTimeMs;
         LOGGER.fine(() -> "computation (" + this + "), scheduling time: " + schedulingTimeMs+ " ms");
         //System.out.format("computation ( %s ), scheduling time: %04f ms\n", this, schedulingTimeMs);
+        this.grCUDAExecutionContext.setTotalSchedulingTime(schedulingTimeMs);
     }
 
     public float getExecutionTime() {

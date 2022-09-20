@@ -96,6 +96,9 @@ public abstract class AbstractGrCUDAExecutionContext {
      */
     private final boolean isConstAware;
 
+    //TODO: doc
+    private float totalSchedulingTime = 0;
+
     public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {
         this.cudaRuntime = cudaRuntime;
         // Compute the dependency policy to use;
@@ -169,6 +172,14 @@ public abstract class AbstractGrCUDAExecutionContext {
 
     public int getCurrentGPU() {
         return this.cudaRuntime.getCurrentGPU();
+    }
+
+    public float getTotalSchedulingTime() {
+        return totalSchedulingTime;
+    }
+
+    public void setTotalSchedulingTime(float totalSchedulingTime) {
+        this.totalSchedulingTime = this.totalSchedulingTime + totalSchedulingTime;
     }
 
     /**
