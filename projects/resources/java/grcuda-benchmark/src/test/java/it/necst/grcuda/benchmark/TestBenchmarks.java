@@ -20,15 +20,16 @@ import static org.junit.Assume.assumeThat;
 import static org.junit.Assume.assumeTrue;
 
 
-public class TestBenchmarks {
-    private static final String PATH = System.getenv("GRCUDA_HOME")+"/projects/resources/java/grcuda-benchmark/src/test/java/it/necst/grcuda/benchmark";
+public class TestBenchmarks{
+    private String GRCUDA_HOME = "/home/ubuntu/grcuda";
+    private String PATH;
     private GPU currentGPU;
     private String results_path;
 
-    @Ignore
     @Before
     public void init() throws IOException, InterruptedException {
         //create the folder to store the json results of the benchmarks
+        PATH = GRCUDA_HOME+"/projects/resources/java/grcuda-benchmark/src/test/java/it/necst/grcuda/benchmark";
         Format formatter = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss");
         Date currentDate = new Date();
         String results_path = "./results/"+formatter.format(currentDate);
@@ -42,13 +43,13 @@ public class TestBenchmarks {
 
 
         // Compute BANDWIDTH MATRIX if necessary
-        String BANDWIDTH_MATRIX_PATH = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_graph.csv";
+        String BANDWIDTH_MATRIX_PATH = GRCUDA_HOME+"/projects/resources/connection_graph/datasets/connection_graph.csv";
         File f = new File(BANDWIDTH_MATRIX_PATH);
         if(!f.exists() && !f.isDirectory()) {
             // we need to compute the interconnection bandwidth matrix
             ProcessBuilder builder = new ProcessBuilder();
-            builder.directory(new File(System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph"));
-            builder.command("sh -c ./run.sh".split("\\s+"));
+            builder.directory(new File(GRCUDA_HOME+"/projects/resources/connection_graph"));
+            builder.command("bash -c ./run.sh".split("\\s+"));
             Process process = builder.start();
             int exitCode = process.waitFor();
             assertEquals("Return value should be 0", 0, exitCode);

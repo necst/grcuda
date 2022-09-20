@@ -10,16 +10,18 @@
     "B1": [160000000, 250000000, 500000000, 800000000, 950000000],
     "B1M": [950000000],
     "B5M": [10000000,16000000, 21000000, 28000000, 35000000],
+    "B6M": [1000000,1200000, 1400000, 1600000, 1800000],
     "B11M": [20000, 30000, 40000, 50000, 60000]
   },
-  "benchmarks": ["B5M","B11M"],
+  "benchmarks": ["B6M"],
   "numBlocks": {
     "B1":  64,
     "B1M": 64,
     "B5M": 64,
+    "B6M": 64,
     "B11M": 64
   },
-  "exec_policies" : ["sync","async"],
+  "exec_policies" : ["async"],
   "dependency_policies": ["with-const"],
   "new_stream_policies": ["always-new"],
   "parent_stream_policies": ["disjoint"],
@@ -28,17 +30,19 @@
   "prefetch": [false],
   "stream_attach": [false],
   "time_computation": [false],
-  "num_gpus": [1,2],
+  "num_gpus": [1],
   "block_size1d": {
     "B1": 64,
     "B1M": 32,
     "B5M": 1024,
+    "B6M": 32,
     "B11M": 256
   },
   "block_size2d": {
     "B1":  8,
     "B1M": 8,
     "B5M": 8,
+    "B6M": 8,
     "B11M": 8
   }
 }
