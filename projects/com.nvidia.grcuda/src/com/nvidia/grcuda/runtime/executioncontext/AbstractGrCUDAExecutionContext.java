@@ -96,7 +96,15 @@ public abstract class AbstractGrCUDAExecutionContext {
      */
     private final boolean isConstAware;
 
-    //TODO: doc
+    /**
+     * Total scheduling time measured in the context in ms. Total scheduling time is measured within the context,
+     * i.e. the time measured refers to the total time elapsed for device selection while the context exists.
+     * Note for benchmarks: Python benchmarks use one single context for every iteration of the computation,
+     * while Java benchmarks use a different context for every iteration of the computation
+     * (i.e. the context is cleaned up and re-created for every iteration).
+     * Logged scheduling time is the total time counting every iteration in Python benchmarks,
+     * while will be measured and logged for every different iteration in Java benchmarks.
+     */
     private float totalSchedulingTime = 0;
 
     public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {

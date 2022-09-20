@@ -154,8 +154,8 @@ public abstract class GrCUDAComputationalElement {
     }
 
     /**
-     * Store the scheduling time for this ComputationalElement (in milliseconds)
-     * //TODO: update doc
+     * Store the scheduling time for this ComputationalElement (in milliseconds), total scheduling
+     * time will be updated.
      * @param schedulingTimeMs the scheduling time of this ComputationalElement
      */
     public void setSchedulingTime(float schedulingTimeMs) {
