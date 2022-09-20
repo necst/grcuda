@@ -136,8 +136,7 @@ public class TestBenchmarks{
     //TODO: Proper refactoring should be done to generate the set of tests needed from the json file
  */
     private void iterateAllPossibleConfig(Config parsedConfig) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
-        String BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")+"/projects/resources/connection_graph/datasets/connection_8_v100.csv";
-
+        String BANDWIDTH_MATRIX;
         ArrayList<String> dp, nsp, psp, cdp;
         ArrayList<Integer> ng, block_sizes;
         Integer nb; // number of blocks
@@ -185,7 +184,7 @@ public class TestBenchmarks{
                             for(Boolean p : parsedConfig.prefetch ){
                                 for(Boolean s : parsedConfig.stream_attach){
                                     for(Boolean t : parsedConfig.time_computation){ // select the correct connection graph
-                                        if(this.currentGPU.equals(GPU.V100)){
+                                        /*if(this.currentGPU.equals(GPU.V100)){
                                             BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")
                                                     + "/projects/resources/connection_graph/datasets"
                                                     +"/connection_graph_" + num_gpu + "_v100.csv";
@@ -194,7 +193,8 @@ public class TestBenchmarks{
                                             BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")
                                                     + "/projects/resources/connection_graph/datasets"
                                                     +"/connection_graph_8_a100.csv";
-                                        }
+                                        }*/
+                                        BANDWIDTH_MATRIX= GRCUDA_HOME+"/projects/resources/connection_graph/datasets/connection_graph.csv";
                                         for(String dependency_policy : dp){
                                             for(String new_stream_policy : nsp){
                                                 for(String parent_stream_policy : psp){
