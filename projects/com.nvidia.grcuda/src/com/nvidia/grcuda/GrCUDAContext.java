@@ -236,7 +236,7 @@ public final class GrCUDAContext {
             GraphExport graphExport = new GraphExport(dag);
             graphExport.graphGenerator(grCUDAOptionMap.getExportDAGPath());
         }
-        GrCUDALogger.getLogger(GrCUDALogger.COMPUTATION_LOGGER).finer(() -> "Total scheduling time: " + this.grCUDAExecutionContext.getTotalSchedulingTime() + " ms");
+        GrCUDALogger.getLogger(GrCUDALogger.COMPUTATION_LOGGER).fine(() -> "Total scheduling time: " + this.grCUDAExecutionContext.getTotalSchedulingTime() + " ms");
         //System.out.format("Total scheduling time: %04f ms\n", this.grCUDAExecutionContext.getTotalSchedulingTime());
         this.grCUDAExecutionContext.cleanup();
     }
