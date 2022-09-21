@@ -29,12 +29,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package it.necst.grcuda.benchmark.bench.single_gpu;
+package it.necst.grcuda.benchmark.bench;
 
 import static org.junit.Assert.assertEquals;
-
 import org.graalvm.polyglot.Value;
-
 import it.necst.grcuda.benchmark.Benchmark;
 import it.necst.grcuda.benchmark.BenchmarkConfig;
 

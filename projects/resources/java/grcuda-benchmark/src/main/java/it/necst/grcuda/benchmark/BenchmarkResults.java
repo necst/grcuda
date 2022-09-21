@@ -64,7 +64,6 @@ public class BenchmarkResults {
         iterations.getLast().addPhase(phaseName, execTime);
     }
     public void saveToJsonFile() {
-        // TODO: export this object (and inner lists) to json + save File
         try {
             ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
             if(config.debug)

@@ -33,7 +33,6 @@ package it.necst.grcuda.benchmark;
 
 import java.util.ArrayList;
 import java.util.function.Consumer;
-
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 

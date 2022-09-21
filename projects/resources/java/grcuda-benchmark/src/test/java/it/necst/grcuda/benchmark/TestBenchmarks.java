@@ -21,7 +21,7 @@ import static org.junit.Assume.assumeTrue;
 
 
 public class TestBenchmarks{
-    private String GRCUDA_HOME = "/home/ubuntu/grcuda";
+    private String GRCUDA_HOME = System.getenv("GRCUDA_HOME");
     private String PATH;
     private GPU currentGPU;
     private String results_path;
@@ -133,7 +133,6 @@ public class TestBenchmarks{
 
     /*
     This method reflects the pattern of benchmark_wrapper.py present in the python suite.
-    //TODO: Proper refactoring should be done to generate the set of tests needed from the json file
  */
     private void iterateAllPossibleConfig(Config parsedConfig) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
         String BANDWIDTH_MATRIX;
@@ -142,10 +141,6 @@ public class TestBenchmarks{
         Integer nb; // number of blocks
         Integer blockSize1D, blockSize2D;
         int num_iter = parsedConfig.num_iter;
-        boolean time_phases = false; // TODO: add value to json and to the Config class
-        boolean debug = true;  // TODO: add value to json and to the Config class
-        boolean mock = true; // TODO: FOR NOW SIMULATE ONLY THE COMMAND
-        String output_date = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.ITALIAN).format(new Date());
 
         Benchmark benchToRun;
         for(String bench : parsedConfig.benchmarks){ // given bench X from the set of all the benchmarks iterate over the number of elements associated with that benchmark
@@ -183,23 +178,12 @@ public class TestBenchmarks{
                         for(String m : parsedConfig.memory_advise){
                             for(Boolean p : parsedConfig.prefetch ){
                                 for(Boolean s : parsedConfig.stream_attach){
-                                    for(Boolean t : parsedConfig.time_computation){ // select the correct connection graph
-                                        /*if(this.currentGPU.equals(GPU.V100)){
-                                            BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")
-                                                    + "/projects/resources/connection_graph/datasets"
-                                                    +"/connection_graph_" + num_gpu + "_v100.csv";
-                                        }
-                                        else if (this.currentGPU.equals(GPU.A100)) {
-                                            BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME")
-                                                    + "/projects/resources/connection_graph/datasets"
-                                                    +"/connection_graph_8_a100.csv";
-                                        }*/
+                                    for(Boolean t : parsedConfig.time_computation){
                                         BANDWIDTH_MATRIX= GRCUDA_HOME+"/projects/resources/connection_graph/datasets/connection_graph.csv";
                                         for(String dependency_policy : dp){
                                             for(String new_stream_policy : nsp){
                                                 for(String parent_stream_policy : psp){
                                                     for(String choose_device_policy : cdp){
-                                                        //TODO: replace BenchmarkConfig init with constructor call
                                                         BenchmarkConfig config = new BenchmarkConfig();
 
                                                         nb = parsedConfig.numBlocks.get(bench);
@@ -251,7 +235,7 @@ public class TestBenchmarks{
     private Benchmark createBench(BenchmarkConfig config) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         // Courtesy of https://stackoverflow.com/questions/7495785/java-how-to-instantiate-a-class-from-string
 
-        Class currBenchClass = Class.forName("it.necst.grcuda.benchmark.bench"+".single_gpu."+config.benchmarkName);
+        Class currBenchClass = Class.forName("it.necst.grcuda.benchmark.bench."+config.benchmarkName);
 
         Class[] types = {BenchmarkConfig.class};
         Constructor constructor = currBenchClass.getConstructor(types);

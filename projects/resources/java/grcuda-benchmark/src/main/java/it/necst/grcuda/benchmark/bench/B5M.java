@@ -29,7 +29,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package it.necst.grcuda.benchmark.bench.single_gpu;
+package it.necst.grcuda.benchmark.bench;
 
 import it.necst.grcuda.benchmark.Benchmark;
 import it.necst.grcuda.benchmark.BenchmarkConfig;
