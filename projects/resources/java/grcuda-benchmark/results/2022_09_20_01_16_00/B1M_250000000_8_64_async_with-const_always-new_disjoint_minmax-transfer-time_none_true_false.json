@@ -1,0 +1,489 @@
+{
+  "config" : {
+    "benchmarkName" : "B1M",
+    "setupId" : "",
+    "totIter" : 30,
+    "currentIter" : 0,
+    "randomSeed" : 42,
+    "size" : 250000000,
+    "blockSize1D" : 32,
+    "blockSize2D" : 8,
+    "numBlocks" : 64,
+    "randomInit" : false,
+    "reInit" : false,
+    "reAlloc" : false,
+    "cpuValidate" : false,
+    "executionPolicy" : "async",
+    "inputPrefetch" : true,
+    "retrieveNewStreamPolicy" : "always-new",
+    "retrieveParentStreamPolicy" : "disjoint",
+    "dependencyPolicy" : "with-const",
+    "deviceSelectionPolicy" : "minmax-transfer-time",
+    "forceStreamAttach" : false,
+    "enableComputationTimers" : false,
+    "numGpus" : 8,
+    "memAdvisePolicy" : "none",
+    "debug" : false,
+    "nvprof_profile" : false,
+    "gpuModel" : "Tesla V100-SXM2-16GB"
+  },
+  "iterations" : [ {
+    "iteration" : 0,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173108,
+    "computation_sec" : 0.3421952724456787,
+    "total_time_sec" : 22.057283401489258,
+    "overhead_sec" : 21.71508699655533,
+    "computation_sum_phases_sec" : 0.34219640493392944,
+    "phases" : [ {
+      "phaseName" : "alloc",
+      "executionTime_sec" : 0.327791303396225
+    }, {
+      "phaseName" : "init",
+      "executionTime_sec" : 11.74846076965332
+    }, {
+      "phaseName" : "reset",
+      "executionTime_sec" : 9.63882064819336
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.34219640493392944
+    } ]
+  }, {
+    "iteration" : 1,
+    "time_phases" : false,
+    "gpu_result" : -4.9347998511730875,
+    "computation_sec" : 0.24357011914253235,
+    "total_time_sec" : 10.300171852111816,
+    "overhead_sec" : 10.056600540876389,
+    "computation_sum_phases_sec" : 0.24357131123542786,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.056596755981445
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.24357131123542786
+    } ]
+  }, {
+    "iteration" : 2,
+    "time_phases" : false,
+    "gpu_result" : -4.9347998511731,
+    "computation_sec" : 0.181288942694664,
+    "total_time_sec" : 10.212212562561035,
+    "overhead_sec" : 10.03092211484909,
+    "computation_sum_phases_sec" : 0.18129044771194458,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.030920028686523
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18129044771194458
+    } ]
+  }, {
+    "iteration" : 3,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173095,
+    "computation_sec" : 0.18752743303775787,
+    "total_time_sec" : 10.240493774414062,
+    "overhead_sec" : 10.052964508533478,
+    "computation_sum_phases_sec" : 0.18752926588058472,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.052961349487305
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18752926588058472
+    } ]
+  }, {
+    "iteration" : 4,
+    "time_phases" : false,
+    "gpu_result" : -4.934800328010259,
+    "computation_sec" : 0.1829131543636322,
+    "total_time_sec" : 10.22911262512207,
+    "overhead_sec" : 10.046174302697182,
+    "computation_sum_phases_sec" : 0.1829383224248886,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.046171188354492
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.1829383224248886
+    } ]
+  }, {
+    "iteration" : 5,
+    "time_phases" : false,
+    "gpu_result" : -4.9347998511731035,
+    "computation_sec" : 0.18749552965164185,
+    "total_time_sec" : 10.449419021606445,
+    "overhead_sec" : 10.261922270059586,
+    "computation_sum_phases_sec" : 0.18749675154685974,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.261919021606445
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18749675154685974
+    } ]
+  }, {
+    "iteration" : 6,
+    "time_phases" : false,
+    "gpu_result" : -4.9347998511731,
+    "computation_sec" : 0.1811298429965973,
+    "total_time_sec" : 10.455984115600586,
+    "overhead_sec" : 10.274853244423866,
+    "computation_sum_phases_sec" : 0.18113087117671967,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.274849891662598
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18113087117671967
+    } ]
+  }, {
+    "iteration" : 7,
+    "time_phases" : false,
+    "gpu_result" : -4.9347998511731,
+    "computation_sec" : 0.1875849962234497,
+    "total_time_sec" : 10.606376647949219,
+    "overhead_sec" : 10.418790563941002,
+    "computation_sum_phases_sec" : 0.18758608400821686,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.418787956237793
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18758608400821686
+    } ]
+  }, {
+    "iteration" : 8,
+    "time_phases" : false,
+    "gpu_result" : -4.9348003280102635,
+    "computation_sec" : 0.1815759539604187,
+    "total_time_sec" : 10.551761627197266,
+    "overhead_sec" : 10.37018458545208,
+    "computation_sum_phases_sec" : 0.18157704174518585,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.37017822265625
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18157704174518585
+    } ]
+  }, {
+    "iteration" : 9,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173099,
+    "computation_sec" : 0.19312438368797302,
+    "total_time_sec" : 10.239460945129395,
+    "overhead_sec" : 10.046333283185959,
+    "computation_sum_phases_sec" : 0.19312766194343567,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.046304702758789
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.19312766194343567
+    } ]
+  }, {
+    "iteration" : 10,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173096,
+    "computation_sec" : 0.18194451928138733,
+    "total_time_sec" : 10.230268478393555,
+    "overhead_sec" : 10.048322781920433,
+    "computation_sum_phases_sec" : 0.18194569647312164,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.048317909240723
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18194569647312164
+    } ]
+  }, {
+    "iteration" : 11,
+    "time_phases" : false,
+    "gpu_result" : -4.9347998511731035,
+    "computation_sec" : 0.18853048980236053,
+    "total_time_sec" : 10.235095977783203,
+    "overhead_sec" : 10.04656434059143,
+    "computation_sum_phases_sec" : 0.18853163719177246,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.046561241149902
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18853163719177246
+    } ]
+  }, {
+    "iteration" : 12,
+    "time_phases" : false,
+    "gpu_result" : -4.934800328010265,
+    "computation_sec" : 0.18154315650463104,
+    "total_time_sec" : 10.216489791870117,
+    "overhead_sec" : 10.034945413470268,
+    "computation_sum_phases_sec" : 0.18154437839984894,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.034941673278809
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18154437839984894
+    } ]
+  }, {
+    "iteration" : 13,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173099,
+    "computation_sec" : 0.1966945081949234,
+    "total_time_sec" : 10.230108261108398,
+    "overhead_sec" : 10.033412680029869,
+    "computation_sum_phases_sec" : 0.19669558107852936,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.033409118652344
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.19669558107852936
+    } ]
+  }, {
+    "iteration" : 14,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173102,
+    "computation_sec" : 0.18102768063545227,
+    "total_time_sec" : 10.212235450744629,
+    "overhead_sec" : 10.03120642900467,
+    "computation_sum_phases_sec" : 0.18102902173995972,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.031203269958496
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18102902173995972
+    } ]
+  }, {
+    "iteration" : 15,
+    "time_phases" : false,
+    "gpu_result" : -4.934800328010264,
+    "computation_sec" : 0.18757231533527374,
+    "total_time_sec" : 10.21610164642334,
+    "overhead_sec" : 10.028528228402138,
+    "computation_sum_phases_sec" : 0.1875734180212021,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.028524398803711
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.1875734180212021
+    } ]
+  }, {
+    "iteration" : 16,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173101,
+    "computation_sec" : 0.18087592720985413,
+    "total_time_sec" : 10.214883804321289,
+    "overhead_sec" : 10.034006878733635,
+    "computation_sum_phases_sec" : 0.1808769255876541,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.034003257751465
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.1808769255876541
+    } ]
+  }, {
+    "iteration" : 17,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173101,
+    "computation_sec" : 0.18807575106620789,
+    "total_time_sec" : 10.227638244628906,
+    "overhead_sec" : 10.039561182260513,
+    "computation_sum_phases_sec" : 0.18807706236839294,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.039557456970215
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18807706236839294
+    } ]
+  }, {
+    "iteration" : 18,
+    "time_phases" : false,
+    "gpu_result" : -4.934800328010267,
+    "computation_sec" : 0.18148817121982574,
+    "total_time_sec" : 10.417082786560059,
+    "overhead_sec" : 10.235586866736412,
+    "computation_sum_phases_sec" : 0.18149591982364655,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.23558235168457
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18149591982364655
+    } ]
+  }, {
+    "iteration" : 19,
+    "time_phases" : false,
+    "gpu_result" : -4.934800328010262,
+    "computation_sec" : 0.18775790929794312,
+    "total_time_sec" : 10.782866477966309,
+    "overhead_sec" : 10.59510749578476,
+    "computation_sum_phases_sec" : 0.18775898218154907,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.595105171203613
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18775898218154907
+    } ]
+  }, {
+    "iteration" : 20,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173101,
+    "computation_sec" : 0.1811010241508484,
+    "total_time_sec" : 11.04013729095459,
+    "overhead_sec" : 10.85903486609459,
+    "computation_sum_phases_sec" : 0.1811024248600006,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.859031677246094
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.1811024248600006
+    } ]
+  }, {
+    "iteration" : 21,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173102,
+    "computation_sec" : 0.1870187222957611,
+    "total_time_sec" : 10.916221618652344,
+    "overhead_sec" : 10.729201391339302,
+    "computation_sum_phases_sec" : 0.1870202273130417,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.72919750213623
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.1870202273130417
+    } ]
+  }, {
+    "iteration" : 22,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173103,
+    "computation_sec" : 0.18155433237552643,
+    "total_time_sec" : 11.03076171875,
+    "overhead_sec" : 10.8492062240839,
+    "computation_sum_phases_sec" : 0.18155549466609955,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.849202156066895
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18155549466609955
+    } ]
+  }, {
+    "iteration" : 23,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173092,
+    "computation_sec" : 0.1880410611629486,
+    "total_time_sec" : 10.745702743530273,
+    "overhead_sec" : 10.557660326361656,
+    "computation_sum_phases_sec" : 0.18804241716861725,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.557640075683594
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18804241716861725
+    } ]
+  }, {
+    "iteration" : 24,
+    "time_phases" : false,
+    "gpu_result" : -4.9348003280102635,
+    "computation_sec" : 0.18240274488925934,
+    "total_time_sec" : 10.6640625,
+    "overhead_sec" : 10.481656298041344,
+    "computation_sum_phases_sec" : 0.1824062019586563,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.481640815734863
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.1824062019586563
+    } ]
+  }, {
+    "iteration" : 25,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173105,
+    "computation_sec" : 0.1874045729637146,
+    "total_time_sec" : 10.658517837524414,
+    "overhead_sec" : 10.471112087368965,
+    "computation_sum_phases_sec" : 0.1874057501554489,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.471109390258789
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.1874057501554489
+    } ]
+  }, {
+    "iteration" : 26,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173105,
+    "computation_sec" : 0.18117466568946838,
+    "total_time_sec" : 10.647767066955566,
+    "overhead_sec" : 10.46659106016159,
+    "computation_sum_phases_sec" : 0.18117600679397583,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.46658706665039
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18117600679397583
+    } ]
+  }, {
+    "iteration" : 27,
+    "time_phases" : false,
+    "gpu_result" : -4.934800328010258,
+    "computation_sec" : 0.1876061111688614,
+    "total_time_sec" : 10.656991958618164,
+    "overhead_sec" : 10.469384804368019,
+    "computation_sum_phases_sec" : 0.18760715425014496,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.469381332397461
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18760715425014496
+    } ]
+  }, {
+    "iteration" : 28,
+    "time_phases" : false,
+    "gpu_result" : -4.934799851173098,
+    "computation_sec" : 0.18139763176441193,
+    "total_time_sec" : 10.645317077636719,
+    "overhead_sec" : 10.46391835808754,
+    "computation_sum_phases_sec" : 0.18139871954917908,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.463913917541504
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18139871954917908
+    } ]
+  }, {
+    "iteration" : 29,
+    "time_phases" : false,
+    "gpu_result" : -4.934800328010256,
+    "computation_sec" : 0.18740102648735046,
+    "total_time_sec" : 10.654712677001953,
+    "overhead_sec" : 10.467310667037964,
+    "computation_sum_phases_sec" : 0.18740200996398926,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 10.467307090759277
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.18740200996398926
+    } ]
+  } ],
+  "filteredPhases" : [ "alloc", "reset", "init" ],
+  "cpu_result" : 0.0
+}
