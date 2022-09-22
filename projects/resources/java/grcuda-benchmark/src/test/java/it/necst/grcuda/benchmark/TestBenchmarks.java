@@ -21,7 +21,7 @@ import static org.junit.Assume.assumeTrue;
 
 
 public class TestBenchmarks{
-    private String GRCUDA_HOME = System.getenv("GRCUDA_HOME");
+    private String GRCUDA_HOME = "/home/ubuntu/grcuda"; //System.getenv("GRCUDA_HOME");
     private String PATH;
     private GPU currentGPU;
     private String results_path;
