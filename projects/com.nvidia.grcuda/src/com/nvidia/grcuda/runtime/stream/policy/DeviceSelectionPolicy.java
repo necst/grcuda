@@ -26,7 +26,7 @@ public abstract class DeviceSelectionPolicy {
 
     /**
      * Select the device where the computation will be executed.
-     * By default call {@link DeviceSelectionPolicy#retrieve(ExecutionDAG.DAGVertex, List)} on all devices,
+     * By default, call {@link DeviceSelectionPolicy#retrieve(ExecutionDAG.DAGVertex, List)} on all devices,
      * but it can be overridden to provide optimized behavior for the case when no restriction on specific devices is needed;
      * @param vertex the computation for which we want to select the device
      * @return the chosen device for the computation

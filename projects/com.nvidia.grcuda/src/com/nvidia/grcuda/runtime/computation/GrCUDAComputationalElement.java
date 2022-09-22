@@ -43,6 +43,7 @@ import com.nvidia.grcuda.runtime.stream.DefaultStream;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -114,6 +115,9 @@ public abstract class GrCUDAComputationalElement {
      */
     private float executionTimeMs = 0;
 
+    //TODO: doc
+    private float schedulingTimeMs;
+
     /**
      * Constructor that takes an argument set initializer to build the set of arguments used in the dependency computation
      * @param grCUDAExecutionContext execution context in which this computational element will be scheduled
@@ -146,7 +150,19 @@ public abstract class GrCUDAComputationalElement {
     public void setExecutionTime(float executionTimeMs) {
         this.executionTimeMs = executionTimeMs;
         this.executionTimeMeasured = true;
-        LOGGER.fine(() -> "computation (" + this + "), execution time: " + executionTimeMs + " ms");
+        LOGGER.finer(() -> "computation (" + this + "), execution time: " + executionTimeMs + " ms");
+    }
+
+    /**
+     * Store the scheduling time for this ComputationalElement (in milliseconds), total scheduling
+     * time will be updated.
+     * @param schedulingTimeMs the scheduling time of this ComputationalElement
+     */
+    public void setSchedulingTime(float schedulingTimeMs) {
+        this.schedulingTimeMs = schedulingTimeMs;
+        LOGGER.finer(() -> "computation (" + this + "), scheduling time: " + schedulingTimeMs+ " ms");
+        //System.out.format("computation ( %s ), scheduling time: %04f ms\n", this, schedulingTimeMs);
+        this.grCUDAExecutionContext.setTotalSchedulingTime(schedulingTimeMs);
     }
 
     public float getExecutionTime() {

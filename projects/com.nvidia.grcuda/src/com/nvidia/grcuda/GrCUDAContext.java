@@ -225,7 +225,8 @@ public final class GrCUDAContext {
 
     /**
      * Cleanup the GrCUDA context at the end of the execution. If ExportDAG option is enabled,
-     * scheduling DAG will be dumped before the cleanup.
+     * scheduling DAG will be dumped before the cleanup. If COMPUTATION_LOGGER is enabled, total scheduling
+     * time will be logged.
      */
     public void cleanup() {
         if (grCUDAOptionMap.getExportDAGPath().equals("true")){
@@ -235,6 +236,8 @@ public final class GrCUDAContext {
             GraphExport graphExport = new GraphExport(dag);
             graphExport.graphGenerator(grCUDAOptionMap.getExportDAGPath());
         }
+        GrCUDALogger.getLogger(GrCUDALogger.COMPUTATION_LOGGER).fine(() -> "Total scheduling time: " + this.grCUDAExecutionContext.getTotalSchedulingTime() + " ms");
+        //System.out.format("Total scheduling time: %04f ms\n", this.grCUDAExecutionContext.getTotalSchedulingTime());
         this.grCUDAExecutionContext.cleanup();
     }
 
