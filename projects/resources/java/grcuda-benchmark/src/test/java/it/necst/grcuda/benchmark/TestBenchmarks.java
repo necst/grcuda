@@ -47,6 +47,7 @@ public class TestBenchmarks{
         File f = new File(BANDWIDTH_MATRIX_PATH);
         if(!f.exists() && !f.isDirectory()) {
             // we need to compute the interconnection bandwidth matrix
+            System.out.println("computing bandwidth matrix");
             ProcessBuilder builder = new ProcessBuilder();
             builder.directory(new File(GRCUDA_HOME+"/projects/resources/connection_graph"));
             builder.command("bash -c ./run.sh".split("\\s+"));
@@ -142,7 +143,6 @@ public class TestBenchmarks{
         Integer blockSize1D, blockSize2D;
         int num_iter = parsedConfig.num_iter;
 
-        Benchmark benchToRun;
         for(String bench : parsedConfig.benchmarks){ // given bench X from the set of all the benchmarks iterate over the number of elements associated with that benchmark
             ArrayList<Integer> sizes = parsedConfig.num_elem.get(bench);
             if(sizes == null) continue; //skip everything if no sizes are specified for the current bench
@@ -216,6 +216,7 @@ public class TestBenchmarks{
                                                         config.reInit = parsedConfig.reInit;
 
                                                         System.out.println(config);
+                                                        Benchmark benchToRun;
                                                         benchToRun = createBench(config);
                                                         benchToRun.run();
                                                     }
