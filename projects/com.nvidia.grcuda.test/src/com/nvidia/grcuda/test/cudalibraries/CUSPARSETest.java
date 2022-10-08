@@ -137,7 +137,7 @@ public class CUSPARSETest {
             rowPtr.setArrayElement(numElements, numElements);
 
             Value dnVec = polyglot.eval("grcuda", "DenseVector").execute(dnVecData, isComplex);
-            Value outVec  = polyglot.eval("grcuda", "DenseVector").execute(outVecData, isComplex);
+            Value outVec = polyglot.eval("grcuda", "DenseVector").execute(outVecData, isComplex);
 
             Value csrMatrix = polyglot.eval("grcuda", "SparseMatrixCSR").execute(colIdx, rowPtr, nnzVec, numElements, numElements, isComplex);
 
