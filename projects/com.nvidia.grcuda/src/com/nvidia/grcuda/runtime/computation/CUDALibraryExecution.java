@@ -30,18 +30,17 @@
  */
 package com.nvidia.grcuda.runtime.computation;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.nvidia.grcuda.GrCUDALogger;
 import com.nvidia.grcuda.functions.Function;
+import static com.nvidia.grcuda.functions.Function.INTEROP;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.LibrarySetStreamFunction;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.nvidia.grcuda.functions.Function.INTEROP;
 
 /**
  * Computational element that wraps calls to CUDA libraries such as cuBLAS or cuML.

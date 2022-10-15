@@ -30,13 +30,6 @@
  */
 package com.nvidia.grcuda.runtime.stream;
 
-import com.nvidia.grcuda.CUDAEvent;
-import com.nvidia.grcuda.GrCUDALogger;
-import com.nvidia.grcuda.runtime.CUDARuntime;
-import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
-import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
-import com.oracle.truffle.api.TruffleLogger;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +42,13 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.nvidia.grcuda.CUDAEvent;
+import com.nvidia.grcuda.GrCUDALogger;
+import com.nvidia.grcuda.runtime.CUDARuntime;
+import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
+import com.oracle.truffle.api.TruffleLogger;
 
 public class GrCUDAStreamManager {
 

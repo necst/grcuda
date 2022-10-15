@@ -30,19 +30,19 @@
  */
 package com.nvidia.grcuda.runtime.computation;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
 import com.nvidia.grcuda.CUDAEvent;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
-import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyComputation;
+import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitecturePolicy;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.GrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Basic class that represents GrCUDA computations,

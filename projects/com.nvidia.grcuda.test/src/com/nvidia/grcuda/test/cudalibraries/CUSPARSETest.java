@@ -37,7 +37,6 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
@@ -224,9 +223,9 @@ public class CUSPARSETest {
 
             Value csrMatrixA = polyglot.eval("grcuda", "SparseMatrixCSR").execute(colIdxA, rowPtrA, nnzVecA, numElements, numElements, isComplex);
             Value csrMatrixB = polyglot.eval("grcuda", "SparseMatrixCSR").execute(colIdxB, rowPtrB, nnzVecB, numElements, numElements, isComplex);
-            Value csrMatrixC = polyglot.eval("grcuda", "SparseMatrixCSR").execute(numElements, numElements, isComplex, emptyType);
+            //Value csrMatrixC = polyglot.eval("grcuda", "SparseMatrixCSR").execute(numElements, numElements, isComplex, emptyType);
 
-            csrMatrixA.getMember("SpGEMM").execute(alpha, beta, csrMatrixB, csrMatrixC);
+            csrMatrixA.getMember("SpGEMM").execute(alpha, beta, csrMatrixB);
             Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
             sync.execute();
 

@@ -30,11 +30,6 @@
  */
 package com.nvidia.grcuda.runtime.executioncontext;
 
-import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
-import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
-import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
-import com.oracle.truffle.api.interop.TruffleObject;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,6 +40,11 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
+import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
+import com.nvidia.grcuda.runtime.computation.dependency.DependencyPolicyEnum;
+import com.oracle.truffle.api.interop.TruffleObject;
 
 /**
  * Directed Acyclic Graph (DAG) that represents the execution flow of GrCUDA kernels and other

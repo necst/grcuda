@@ -30,9 +30,9 @@
  */
 package com.nvidia.grcuda.runtime.computation;
 
-import com.nvidia.grcuda.Type;
-
 import java.util.Objects;
+
+import com.nvidia.grcuda.Type;
 
 /**
  * Defines a {@link GrCUDAComputationalElement} argument representing the elements of a NFI signature.

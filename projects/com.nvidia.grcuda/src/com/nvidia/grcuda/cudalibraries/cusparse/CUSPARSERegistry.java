@@ -33,9 +33,6 @@
  */
 package com.nvidia.grcuda.cudalibraries.cusparse;
 
-import static com.nvidia.grcuda.functions.Function.INTEROP;
-import static com.nvidia.grcuda.functions.Function.expectLong;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,14 +46,14 @@ import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.cudalibraries.CUDALibraryFunction;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxy;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyAxpby;
-import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyHandle;
-import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyNoHandle;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyGemvi;
-import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpGEMM;
+import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyNoHandle;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV;
 import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpVV;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
+import static com.nvidia.grcuda.functions.Function.INTEROP;
+import static com.nvidia.grcuda.functions.Function.expectLong;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
 import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;

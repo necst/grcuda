@@ -33,23 +33,15 @@
  */
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
-import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
-import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
-import static com.nvidia.grcuda.functions.Function.INTEROP;
-import static com.nvidia.grcuda.functions.Function.expectInt;
-
 import com.nvidia.grcuda.Type;
-import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
+import static com.nvidia.grcuda.functions.Function.INTEROP;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
-import com.nvidia.grcuda.runtime.array.DenseVector;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
-import com.nvidia.grcuda.runtime.array.SparseMatrix;
 import com.nvidia.grcuda.runtime.array.SparseMatrixCSR;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
-import org.graalvm.polyglot.PolyglotException;
 
 public class CUSPARSEProxySpGEMM extends CUSPARSEProxy {
 
@@ -80,8 +72,7 @@ public class CUSPARSEProxySpGEMM extends CUSPARSEProxy {
         DeviceArray buffer2 = new DeviceArray(getContext().getGrCUDAExecutionContext(), 1000, Type.SINT8);
 
         INTEROP.execute(cusparseSpGEMM_createDescrFunctionNFI, spgemmDescr.getAddress());
-        cudaDeviceSynchronize();
-        try {
+        //try {
 
         INTEROP.execute(
                 cusparseSpGEMM_workEstimationFunctionNFI,
@@ -99,23 +90,7 @@ public class CUSPARSEProxySpGEMM extends CUSPARSEProxy {
                 bufferSize.getAddress(),
                 buffer1
         );
-        /*   INTEROP.execute(
-                    cusparseSpGEMM_workEstimationFunctionNFI,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
-            );*/
-        } catch (UnsupportedTypeException e) {
+        /*} catch (UnsupportedTypeException e) {
             e.printStackTrace();
             for (Object o : e.getSuppliedValues()) {
                 System.out.print(o);
@@ -128,8 +103,7 @@ public class CUSPARSEProxySpGEMM extends CUSPARSEProxy {
             System.out.println(matC.getSpMatDescr().getValue());
             System.out.println(spgemmDescr.getValue());
 
-        }
-        cudaDeviceSynchronize();
+        }*/
 
         INTEROP.execute(
                     cusparseSpGEMM_computeFunctionNFI,
@@ -148,7 +122,6 @@ public class CUSPARSEProxySpGEMM extends CUSPARSEProxy {
                     buffer2
             );
 
-        cudaDeviceSynchronize();
         System.out.println("-----------------------------------------------------------------------------------");
 
         args[0] = 0;

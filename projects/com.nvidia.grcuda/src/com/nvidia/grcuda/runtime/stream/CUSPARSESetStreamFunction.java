@@ -1,8 +1,7 @@
 package com.nvidia.grcuda.runtime.stream;
 
-import static com.nvidia.grcuda.functions.Function.INTEROP;
-
 import com.nvidia.grcuda.functions.Function;
+import static com.nvidia.grcuda.functions.Function.INTEROP;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;

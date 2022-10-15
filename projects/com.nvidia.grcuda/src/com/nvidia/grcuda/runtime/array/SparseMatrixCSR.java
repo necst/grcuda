@@ -35,15 +35,13 @@
  */
 package com.nvidia.grcuda.runtime.array;
 
-import com.nvidia.grcuda.Type;
-import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
-import com.nvidia.grcuda.runtime.Device;
-import com.nvidia.grcuda.runtime.UnsafeHelper;
 import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Value;
 
 import com.nvidia.grcuda.MemberSet;
+import com.nvidia.grcuda.Type;
+import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
+import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
@@ -289,8 +287,6 @@ public class SparseMatrixCSR extends SparseMatrix {
             Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
             Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
 
-            long start = System.nanoTime();
-
             cusparseSpMV.execute(
                 CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
                 alpha,
@@ -300,10 +296,6 @@ public class SparseMatrixCSR extends SparseMatrix {
                 beta,
                 outVec,
                 CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal());
-
-            long end = System.nanoTime();
-
-            System.out.println("TOOK: " + (float)(end - start) / 1000000.f + "ms");
 
             return outVec;
         }
@@ -338,7 +330,6 @@ public class SparseMatrixCSR extends SparseMatrix {
                     CUSPARSERegistry.CUSPARSEIndexType.CUSPARSE_INDEX_32I,
                     matB.getRows(), matB.getCols(), isComplex);
 
-
             try (
                 UnsafeHelper.Integer64Object descr = UnsafeHelper.createInteger64Object();
                 UnsafeHelper.Integer64Object bufferSize1 = UnsafeHelper.createInteger64Object();
@@ -355,15 +346,18 @@ public class SparseMatrixCSR extends SparseMatrix {
                 Value destroy = polyglot.eval("grcuda", "SPARSE::cusparseSpGEMM_destroyDescr");
                 Value setPointers = polyglot.eval("grcuda", "SPARSE::cusparseCsrSetPointers");
                 Value getSize = polyglot.eval("grcuda", "SPARSE::cusparseSpMatGetSize");
+                Value synch = polyglot.eval("grcuda", "cudaDeviceSynchronize");
+                Value array = polyglot.eval("grcuda", "DeviceArray");
 
-                long start = System.nanoTime();
+                //long start = System.nanoTime();
 
                 create.execute(descr.getAddress());
 
                 work.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
                         matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), 0);
 
-                DeviceArray buffer1 = new DeviceArray(getValues().grCUDAExecutionContext, bufferSize1.getValue(), Type.SINT8);
+                //DeviceArray buffer1 = new DeviceArray(getValues().grCUDAExecutionContext, bufferSize1.getValue(), Type.SINT8);
+                Object buffer1 = array.execute("char", bufferSize1.getValue());
 
                 work.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
                         matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), buffer1);
@@ -371,7 +365,8 @@ public class SparseMatrixCSR extends SparseMatrix {
                 compute.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
                         matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), 0);
 
-                DeviceArray buffer2 = new DeviceArray(getValues().grCUDAExecutionContext, bufferSize2.getValue(), Type.SINT8);
+                //DeviceArray buffer2 = new DeviceArray(getValues().grCUDAExecutionContext, bufferSize2.getValue(), Type.SINT8);
+                Object buffer2 = array.execute("char", bufferSize2.getValue());
 
                 compute.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
                         matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), buffer2);
@@ -391,9 +386,9 @@ public class SparseMatrixCSR extends SparseMatrix {
 
                 destroy.execute(descr.getValue());
 
-                long end = System.nanoTime();
+                //long end = System.nanoTime();
 
-                System.out.println("TOOK: " + (float)(end - start) / 1000000.f + "ms");
+                //System.out.println("TOOK: " + (float)(end - start) / 1000000.f + "ms");
 
             } catch (Exception e) {
                 e.printStackTrace();
