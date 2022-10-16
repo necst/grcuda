@@ -35,7 +35,6 @@ package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
 import static com.nvidia.grcuda.functions.Function.INTEROP;
 import static com.nvidia.grcuda.functions.Function.expectInt;
-
 import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
 import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
 
@@ -101,7 +100,8 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
             DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, alpha.getElementType());
 
-            cudaDeviceSynchronize();
+            // FIXME: getting the runtime from an argument is not very clean, the proxy should maybe hold a direct reference of the runtime;
+            alpha.getGrCUDAExecutionContext().getCudaRuntime().cudaDeviceSynchronize();
 
             // format new arguments
             args[0] = opA.ordinal();

@@ -111,7 +111,8 @@ public class CUSPARSEProxyGemvi extends CUSPARSEProxy {
 
             DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, alpha.getElementType());
 
-            cudaDeviceSynchronize();
+            // FIXME: getting the runtime from an argument is not very clean, the proxy should maybe hold a direct reference of the runtime;
+            alpha.getGrCUDAExecutionContext().getCudaRuntime().cudaDeviceSynchronize();
 
             args[0] = transA.ordinal();
             args[1] = rows;

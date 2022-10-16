@@ -24,7 +24,7 @@
 * Set TensorRT support to experimental
   * TensorRT is currently not supported on CUDA 11.4, making it impossible to use along a recent version of cuML
   * **Known limitation:** due to this incompatibility, TensorRT is currently not available on the async scheduler
-  
+
 # 2021-09-30, Release 1
 
 ## API Changes

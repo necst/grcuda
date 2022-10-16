@@ -40,6 +40,7 @@ import static com.nvidia.grcuda.functions.Function.checkArgumentLength;
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDAInternalException;
+import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.GrCUDAOptions;
 import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
@@ -101,7 +102,6 @@ public class CUSPARSEProxy {
     }
 
     // we need to create a new context
-
     public static void setContext(GrCUDAContext context) {
         CUSPARSEProxy.context = context;
     }
@@ -112,7 +112,7 @@ public class CUSPARSEProxy {
 
         assert (context != null);
 
-        String libraryPath = context.getOption(GrCUDAOptions.CuSPARSELibrary);
+        String libraryPath = context.getOptions().getCuSPARSELibrary(); //getOption(GrCUDAOptions.CuSPARSELibrary);
 
         cusparseSetStreamFunctionNFI = CUSPARSE_CUSPARSESETSTREAM.makeFunction(context.getCUDARuntime(), libraryPath, CUSPARSERegistry.DEFAULT_LIBRARY_HINT);
         cusparseCreateCooFunctionNFI = CUSPARSE_CUSPARSECREATECOO.makeFunction(context.getCUDARuntime(), libraryPath, CUSPARSERegistry.DEFAULT_LIBRARY_HINT);

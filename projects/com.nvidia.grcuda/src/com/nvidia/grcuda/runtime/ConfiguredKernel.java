@@ -53,7 +53,7 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 
 @ExportLibrary(InteropLibrary.class)
-public class ConfiguredKernel implements TruffleObject {
+public class ConfiguredKernel extends ProfiledComputation implements TruffleObject {
 
     private final Kernel kernel;
 
@@ -88,7 +88,7 @@ public class ConfiguredKernel implements TruffleObject {
             throws UnsupportedTypeException, ArityException {
         if (args.length != kernel.getKernelParameters().length) {
             CompilerDirectives.transferToInterpreter();
-            throw ArityException.create(kernel.getKernelParameters().length, args.length);
+            throw ArityException.create(kernel.getKernelParameters().length, kernel.getKernelParameters().length, args.length);
         }
         KernelArguments kernelArgs = new KernelArguments(args, this.kernel.getKernelParameters());
         for (int paramIdx = 0; paramIdx < kernel.getKernelParameters().length; paramIdx++) {

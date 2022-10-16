@@ -1,7 +1,8 @@
 package com.nvidia.grcuda.runtime.stream;
 
-import com.nvidia.grcuda.functions.Function;
 import static com.nvidia.grcuda.functions.Function.INTEROP;
+
+import com.nvidia.grcuda.functions.Function;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -10,7 +11,7 @@ import com.oracle.truffle.api.interop.UnsupportedTypeException;
  * Class of functions to avoid managing streams in the CUSPARSE library
  */
 
-public class CUSPARSESetStreamFunction extends LibrarySetStreamFunction {
+public class CUSPARSESetStreamFunction extends LibrarySetStream {
 
     private final long handle;
 

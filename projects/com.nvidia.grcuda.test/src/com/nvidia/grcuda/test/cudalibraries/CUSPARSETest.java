@@ -39,6 +39,19 @@ import java.util.Collection;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import static org.junit.Assert.assertEquals;
+import static com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV.CUSPARSESpMVMatrixType;
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import com.oracle.truffle.api.TruffleLogger;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -53,7 +66,7 @@ public class CUSPARSETest {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
-                        {ExecutionPolicyEnum.SYNC.getName(), ExecutionPolicyEnum.ASYNC.getName()},
+                        {ExecutionPolicyEnum.SYNC.toString(), ExecutionPolicyEnum.ASYNC.toString()},
                         {true, false},
                         {'S', 'D'}
         }));

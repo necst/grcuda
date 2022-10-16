@@ -136,6 +136,7 @@ public class SparseVector implements TruffleObject {
         Context polyglot = Context.getCurrent();
         Value cusparseCreateSpVecFunction = polyglot.eval("grcuda", "SPARSE::cusparseCreateSpVec");
 
+
         Value resultSpVec = cusparseCreateSpVecFunction.execute(
                 spVecDescr.getAddress(),
                 N,

@@ -33,6 +33,9 @@
  */
 package com.nvidia.grcuda.cudalibraries.cusparse;
 
+import static com.nvidia.grcuda.functions.Function.INTEROP;
+import static com.nvidia.grcuda.functions.Function.expectLong;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -58,7 +61,16 @@ import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
 import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.runtime.stream.CUSPARSESetStreamFunction;
-import com.nvidia.grcuda.runtime.stream.LibrarySetStreamFunction;
+import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxyGemvi;
+import com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy.CUSPARSEProxySpMV;
+import com.nvidia.grcuda.functions.ExternalFunctionFactory;
+import com.nvidia.grcuda.functions.Function;
+import com.nvidia.grcuda.runtime.UnsafeHelper;
+import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
+import com.nvidia.grcuda.runtime.computation.ComputationArgument;
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
+import com.nvidia.grcuda.runtime.stream.CUSPARSESetStreamFunction;
+import com.nvidia.grcuda.runtime.stream.LibrarySetStream;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
@@ -79,7 +91,7 @@ public class CUSPARSERegistry {
     private final GrCUDAContext context;
     private final String libraryPath;
 
-    private LibrarySetStreamFunction cusparseLibrarySetStreamFunction;
+    private LibrarySetStream cusparseLibrarySetStream;
 
     @CompilationFinal private TruffleObject cusparseCreateFunction;
     @CompilationFinal private TruffleObject cusparseDestroyFunction;
@@ -195,7 +207,7 @@ public class CUSPARSERegistry {
     public CUSPARSERegistry(GrCUDAContext context) {
         this.context = context;
         // created field in GrCUDAOptions
-        libraryPath = context.getOption(GrCUDAOptions.CuSPARSELibrary);
+        libraryPath = context.getOptions().getCuSPARSELibrary();
     }
 
     public void ensureInitialized() {
@@ -276,7 +288,7 @@ public class CUSPARSERegistry {
             }
         }
 
-        cusparseLibrarySetStreamFunction = new CUSPARSESetStreamFunction((Function) cusparseSetStreamFunctionNFI, cusparseHandle);
+        cusparseLibrarySetStream = new CUSPARSESetStreamFunction((Function) cusparseSetStreamFunctionNFI, cusparseHandle);
 
     }
 
@@ -301,6 +313,31 @@ public class CUSPARSERegistry {
                 private Function nfiFunction;
 
                 @Override
+                public List<ComputationArgumentWithValue> createComputationArgumentWithValueList(Object[] args, Long libraryHandle) {
+                    final int nInputArgs = this.computationArguments.size() - (libraryHandle == null ? 0 : 1);
+                    List<ComputationArgumentWithValue> argumentsWithValue = new ArrayList<>();
+
+                    int i = 0;
+                    if (libraryHandle != null) {
+                        argumentsWithValue.add(new ComputationArgumentWithValue(this.computationArguments.get(i++), libraryHandle));
+                    }
+
+                    // Set the other arguments;
+                    int j;
+                    for (j = 0; j < nInputArgs; ++j) {
+                        argumentsWithValue.add(new ComputationArgumentWithValue(this.computationArguments.get(i++), args[j]));
+                    }
+                    // Add extra arguments at the end: they are used to track input DeviceArrays;
+                    int numExtraArrays = args.length - nInputArgs;
+                    for (int k = 0; k < numExtraArrays; k++) {
+                        argumentsWithValue.add(new ComputationArgumentWithValue(
+                                "cusparse_extra_array_" + k, Type.NFI_POINTER, ComputationArgument.Kind.POINTER_INOUT,
+                                args[j++]));
+                    }
+                    return argumentsWithValue;
+                }
+
+                @Override
                 @TruffleBoundary
                 protected Object call(Object[] arguments) {
                     ensureInitialized();
@@ -310,24 +347,23 @@ public class CUSPARSERegistry {
                             CompilerDirectives.transferToInterpreterAndInvalidate();
                             nfiFunction = proxy.getExternalFunctionFactory().makeFunction(context.getCUDARuntime(), libraryPath, DEFAULT_LIBRARY_HINT);
                         }
-
+                        // This list of arguments might have extra arguments: the DeviceArrays that can cause dependencies but are not directly used by the cuSPARSE function,
+                        //   as these DeviceArrays might be wrapped using cuSparseMatrices/Vectors/Buffers.
+                        // We still need to pass these DeviceArrays to the GrCUDAComputationalElement so we track dependencies correctly,
+                        // but they are removed from the final list of arguments passed to the cuSPARSE library;
                         Object[] formattedArguments = proxy.formatArguments(arguments, cusparseHandle);
-
-
                         List<ComputationArgumentWithValue> computationArgumentsWithValue;
                         if (proxy.requiresHandle()) {
                             computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, cusparseHandle);
                         } else {
                             computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, null);
                         }
-
-                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStreamFunction,
-                                        computationArgumentsWithValue).schedule();
+                        int extraArraysToTrack = computationArgumentsWithValue.size() - this.computationArguments.size();  // Both lists also contain the handle;
+                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStream,
+                                computationArgumentsWithValue, extraArraysToTrack).schedule();
 
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
-
                         return result;
-
                     } catch (InteropException e) {
                         throw new GrCUDAInternalException(e);
                     }

@@ -347,48 +347,43 @@ public class SparseMatrixCSR extends SparseMatrix {
                 Value setPointers = polyglot.eval("grcuda", "SPARSE::cusparseCsrSetPointers");
                 Value getSize = polyglot.eval("grcuda", "SPARSE::cusparseSpMatGetSize");
                 Value synch = polyglot.eval("grcuda", "cudaDeviceSynchronize");
+                Value cu = polyglot.eval("grcuda", "CU");
                 Value array = polyglot.eval("grcuda", "DeviceArray");
 
-                //long start = System.nanoTime();
+                Object dummyArray = array.execute("char", 1);
 
-                create.execute(descr.getAddress());
-
-                work.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
-                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), 0);
-
-                //DeviceArray buffer1 = new DeviceArray(getValues().grCUDAExecutionContext, bufferSize1.getValue(), Type.SINT8);
-                Object buffer1 = array.execute("char", bufferSize1.getValue());
+                create.execute(descr.getAddress(), dummyArray);
 
                 work.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
-                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), buffer1);
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), 0, dummyArray);
+
+                Value buffer1 = cu.invokeMember("DeviceArray", "char", bufferSize1.getValue());
+
+                work.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), buffer1, dummyArray);
 
                 compute.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
-                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), 0);
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), 0, dummyArray);
 
-                //DeviceArray buffer2 = new DeviceArray(getValues().grCUDAExecutionContext, bufferSize2.getValue(), Type.SINT8);
-                Object buffer2 = array.execute("char", bufferSize2.getValue());
+                Value buffer2 = cu.invokeMember("DeviceArray", "char", bufferSize2.getValue());
 
                 compute.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
-                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), buffer2);
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), buffer2, dummyArray);
 
-                getSize.execute(matC.getSpMatDescr().getValue(), numRows.getAddress(), numCols.getAddress(), numNnz.getAddress());
+                getSize.execute(matC.getSpMatDescr().getValue(), numRows.getAddress(), numCols.getAddress(), numNnz.getAddress(), dummyArray);
 
                 DeviceArray newColumns = new DeviceArray(getValues().grCUDAExecutionContext, numNnz.getValue(), Type.FLOAT);
                 DeviceArray newValues = new DeviceArray(getValues().grCUDAExecutionContext, numNnz.getValue(), Type.FLOAT);
 
-                setPointers.execute(matC.getSpMatDescr().getValue(), matC.getCsrRowOffsets(), newColumns, newValues);
+                setPointers.execute(matC.getSpMatDescr().getValue(), matC.getCsrRowOffsets(), newColumns, newValues, dummyArray);
 
                 matC.setValues(newValues);
                 matC.setCsrColInd(newColumns);
 
                 copy.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
-                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue());
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), dummyArray);
 
-                destroy.execute(descr.getValue());
-
-                //long end = System.nanoTime();
-
-                //System.out.println("TOOK: " + (float)(end - start) / 1000000.f + "ms");
+                destroy.execute(descr.getValue(), dummyArray);
 
             } catch (Exception e) {
                 e.printStackTrace();
