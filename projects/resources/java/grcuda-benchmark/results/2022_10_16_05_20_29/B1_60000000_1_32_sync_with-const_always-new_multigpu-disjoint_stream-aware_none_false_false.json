@@ -1,0 +1,69 @@
+{
+  "config" : {
+    "benchmarkName" : "B1",
+    "setupId" : "",
+    "totIter" : 2,
+    "currentIter" : 0,
+    "randomSeed" : 42,
+    "size" : 60000000,
+    "blockSize1D" : 32,
+    "blockSize2D" : 8,
+    "numBlocks" : 32,
+    "randomInit" : false,
+    "reInit" : false,
+    "reAlloc" : false,
+    "cpuValidate" : false,
+    "executionPolicy" : "sync",
+    "inputPrefetch" : false,
+    "retrieveNewStreamPolicy" : "always-new",
+    "retrieveParentStreamPolicy" : "multigpu-disjoint",
+    "dependencyPolicy" : "with-const",
+    "deviceSelectionPolicy" : "stream-aware",
+    "forceStreamAttach" : false,
+    "enableComputationTimers" : false,
+    "numGpus" : 1,
+    "memAdvisePolicy" : "none",
+    "debug" : true,
+    "nvprof_profile" : false,
+    "gpuModel" : "GeForce GTX 1660 SUPER"
+  },
+  "iterations" : [ {
+    "iteration" : 0,
+    "time_phases" : false,
+    "gpu_result" : -4.934798240661621,
+    "computation_sec" : 0.4273689389228821,
+    "total_time_sec" : 20.234725952148438,
+    "overhead_sec" : 19.807117879390717,
+    "computation_sum_phases_sec" : 0.42760807275772095,
+    "phases" : [ {
+      "phaseName" : "alloc",
+      "executionTime_sec" : 0.3014693856239319
+    }, {
+      "phaseName" : "init",
+      "executionTime_sec" : 10.014281272888184
+    }, {
+      "phaseName" : "reset",
+      "executionTime_sec" : 9.475425720214844
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.42760807275772095
+    } ]
+  }, {
+    "iteration" : 1,
+    "time_phases" : false,
+    "gpu_result" : -4.934798240661621,
+    "computation_sec" : 0.24716722965240479,
+    "total_time_sec" : 10.078226089477539,
+    "overhead_sec" : 9.830904021859169,
+    "computation_sum_phases_sec" : 0.24732206761837006,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 9.830742835998535
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.24732206761837006
+    } ]
+  } ],
+  "filteredPhases" : [ "alloc", "reset", "init" ],
+  "cpu_result" : 0.0
+}

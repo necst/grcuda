@@ -1,0 +1,69 @@
+{
+  "config" : {
+    "benchmarkName" : "B1",
+    "setupId" : "",
+    "totIter" : 2,
+    "currentIter" : 0,
+    "randomSeed" : 42,
+    "size" : 80000000,
+    "blockSize1D" : 32,
+    "blockSize2D" : 8,
+    "numBlocks" : 32,
+    "randomInit" : false,
+    "reInit" : false,
+    "reAlloc" : false,
+    "cpuValidate" : false,
+    "executionPolicy" : "sync",
+    "inputPrefetch" : false,
+    "retrieveNewStreamPolicy" : "always-new",
+    "retrieveParentStreamPolicy" : "disjoint",
+    "dependencyPolicy" : "with-const",
+    "deviceSelectionPolicy" : "round-robin",
+    "forceStreamAttach" : false,
+    "enableComputationTimers" : false,
+    "numGpus" : 1,
+    "memAdvisePolicy" : "none",
+    "debug" : true,
+    "nvprof_profile" : false,
+    "gpuModel" : "GeForce GTX 1660 SUPER"
+  },
+  "iterations" : [ {
+    "iteration" : 0,
+    "time_phases" : false,
+    "gpu_result" : -4.934798240661621,
+    "computation_sec" : 0.4440053105354309,
+    "total_time_sec" : 27.260601043701172,
+    "overhead_sec" : 26.81639975309372,
+    "computation_sum_phases_sec" : 0.4442012906074524,
+    "phases" : [ {
+      "phaseName" : "alloc",
+      "executionTime_sec" : 0.40074336528778076
+    }, {
+      "phaseName" : "init",
+      "executionTime_sec" : 13.5697603225708
+    }, {
+      "phaseName" : "reset",
+      "executionTime_sec" : 12.845535278320312
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.4442012906074524
+    } ]
+  }, {
+    "iteration" : 1,
+    "time_phases" : false,
+    "gpu_result" : -4.934798240661621,
+    "computation_sec" : 0.3516380488872528,
+    "total_time_sec" : 12.946657180786133,
+    "overhead_sec" : 12.594867318868637,
+    "computation_sum_phases_sec" : 0.3517898619174957,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 12.594615936279297
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.3517898619174957
+    } ]
+  } ],
+  "filteredPhases" : [ "alloc", "reset", "init" ],
+  "cpu_result" : 0.0
+}

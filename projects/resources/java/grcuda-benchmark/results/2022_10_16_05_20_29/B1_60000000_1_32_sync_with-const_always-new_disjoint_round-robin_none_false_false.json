@@ -1,0 +1,69 @@
+{
+  "config" : {
+    "benchmarkName" : "B1",
+    "setupId" : "",
+    "totIter" : 2,
+    "currentIter" : 0,
+    "randomSeed" : 42,
+    "size" : 60000000,
+    "blockSize1D" : 32,
+    "blockSize2D" : 8,
+    "numBlocks" : 32,
+    "randomInit" : false,
+    "reInit" : false,
+    "reAlloc" : false,
+    "cpuValidate" : false,
+    "executionPolicy" : "sync",
+    "inputPrefetch" : false,
+    "retrieveNewStreamPolicy" : "always-new",
+    "retrieveParentStreamPolicy" : "disjoint",
+    "dependencyPolicy" : "with-const",
+    "deviceSelectionPolicy" : "round-robin",
+    "forceStreamAttach" : false,
+    "enableComputationTimers" : false,
+    "numGpus" : 1,
+    "memAdvisePolicy" : "none",
+    "debug" : true,
+    "nvprof_profile" : false,
+    "gpuModel" : "GeForce GTX 1660 SUPER"
+  },
+  "iterations" : [ {
+    "iteration" : 0,
+    "time_phases" : false,
+    "gpu_result" : -4.934798240661621,
+    "computation_sec" : 1.5530545711517334,
+    "total_time_sec" : 30.263994216918945,
+    "overhead_sec" : 28.685202956199646,
+    "computation_sum_phases_sec" : 1.5787912607192993,
+    "phases" : [ {
+      "phaseName" : "alloc",
+      "executionTime_sec" : 2.7825543880462646
+    }, {
+      "phaseName" : "init",
+      "executionTime_sec" : 10.000075340270996
+    }, {
+      "phaseName" : "reset",
+      "executionTime_sec" : 15.010263442993164
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 1.5787912607192993
+    } ]
+  }, {
+    "iteration" : 1,
+    "time_phases" : false,
+    "gpu_result" : -4.934798240661621,
+    "computation_sec" : 0.24584037065505981,
+    "total_time_sec" : 9.614165306091309,
+    "overhead_sec" : 9.368150636553764,
+    "computation_sum_phases_sec" : 0.24601466953754425,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 9.368005752563477
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.24601466953754425
+    } ]
+  } ],
+  "filteredPhases" : [ "alloc", "reset", "init" ],
+  "cpu_result" : 0.0
+}

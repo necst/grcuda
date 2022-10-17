@@ -352,6 +352,10 @@ public class SparseMatrixCSR extends SparseMatrix {
 
                 Object dummyArray = array.execute("char", 1);
 
+                int numGPU = getValues().grCUDAExecutionContext.getCudaRuntime().getNumberOfAvailableGPUs();
+                System.out.println("NUMBER OF GPU: " + numGPU);
+
+
                 create.execute(descr.getAddress(), dummyArray);
 
                 work.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
