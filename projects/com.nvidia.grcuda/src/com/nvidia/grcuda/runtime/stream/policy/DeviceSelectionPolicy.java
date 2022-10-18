@@ -5,7 +5,9 @@ import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * When using multiple GPUs, selecting the stream where a computation is executed implies
@@ -47,7 +49,8 @@ public abstract class DeviceSelectionPolicy {
         } else if (devices.size() == 0) {
             throw new GrCUDAException("the list of devices where the computation can be executed is empty");
         } else {
-            return this.retrieveImpl(vertex, devices);
+            List<Device> sortedDevices = devices.stream().sorted(Comparator.comparingInt(Device::getDeviceId)).collect(Collectors.toList());
+            return this.retrieveImpl(vertex, sortedDevices);
         }
     }
 

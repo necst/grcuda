@@ -13,15 +13,15 @@ public class SingleDeviceSelectionPolicy extends DeviceSelectionPolicy {
     public SingleDeviceSelectionPolicy(GrCUDADevicesManager devicesManager) {
         super(devicesManager);
     }
-
+    /*
     @Override
     public Device retrieve(ExecutionDAG.DAGVertex vertex) {
         return devicesManager.getCurrentGPU();
-    }
+    }*/
 
     @Override
     Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
         // There's only one device available, anyway;
-        return this.retrieve(vertex);
+        return devicesManager.getCurrentGPU();
     }
 }

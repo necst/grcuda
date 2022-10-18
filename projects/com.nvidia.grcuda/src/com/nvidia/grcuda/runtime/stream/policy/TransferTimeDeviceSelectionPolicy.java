@@ -189,11 +189,11 @@ public abstract class TransferTimeDeviceSelectionPolicy extends MinimizeTransfer
         }
         return deviceWithMinimumTransferTime;
     }
-
+    /*
     @Override
     public Device retrieve(ExecutionDAG.DAGVertex vertex) {
         return this.retrieveImpl(vertex, devicesManager.getUsableDevices());
-    }
+    }*/
 
     @Override
     Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
