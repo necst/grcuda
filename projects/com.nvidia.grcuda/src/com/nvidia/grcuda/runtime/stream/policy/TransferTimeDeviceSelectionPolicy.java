@@ -24,7 +24,7 @@ import java.util.Set;
  * The speed of each GPU-GPU and CPU-GPU link is assumed to be stored in a file located in "$GRCUDA_HOME/grcuda_data/datasets/connection_graph/connection_graph.csv".
  * This file is generated as "cd $GRCUDA_HOME/projects/resources/cuda", "make connection_graph", "bin/connection_graph";
  */
-public abstract class TransferTimeDeviceSelectionPolicy extends MinimizeTransferSizeDeviceSelectionPolicy {
+public abstract class TransferTimeDeviceSelectionPolicy extends DeviceSelectionPolicy {
 
     /**
      * This functional tells how the transfer bandwidth for some array and device is computed.
@@ -35,11 +35,25 @@ public abstract class TransferTimeDeviceSelectionPolicy extends MinimizeTransfer
      * Starting value of the reduction. E.g. it can be 0 if using max or mean, +inf if using min, etc.
      */
     private final double startValue;
+    /**
+     * Some policies can use a threshold that specifies how much data (in percentage) must be available
+     * on a device so that the device can be considered for execution.
+     * A low threshold favors exploitation (using the same device for most computations),
+     * while a high threshold favors exploration (distribute the computations on different devices
+     * even if some device would have slightly lower synchronization time);
+     */
+    protected final double dataThreshold;
+    /**
+     * Fallback policy in case no GPU has any up-tp-date data. We assume that for any GPU, transferring all the data
+     * from the CPU would have the same cost, so we use this policy as tie-breaker;
+     */
+    RoundRobinDeviceSelectionPolicy roundRobin = new RoundRobinDeviceSelectionPolicy(devicesManager);
 
     private final double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUsToUse() + 1][devicesManager.getNumberOfGPUsToUse() + 1];
 
     public TransferTimeDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath, java.util.function.BiFunction<Double, Double, Double> reduction, double startValue) {
-        super(devicesManager, dataThreshold);
+        super(devicesManager);
+        this.dataThreshold = dataThreshold;
         this.reduction = reduction;
         this.startValue = startValue;
 
@@ -85,6 +99,28 @@ public abstract class TransferTimeDeviceSelectionPolicy extends MinimizeTransfer
                 this.linkBandwidth[j][i] = averageBandwidth;
             }
         }
+    }
+
+    /**
+     * For each input array of the computation, compute if the array is available on other devices and does not need to be
+     * transferred. We track the total size, in bytes, that is already present on each device;
+     * @param vertex the input computation
+     * @param alreadyPresentDataSize the array where we store the size, in bytes, of data that is already present on each device.
+     *                               The array must be zero-initialized and have size equal to the number of usable GPUs
+     * @return if any data is present on any GPU. If false, we can use a fallback policy instead
+     */
+    boolean computeDataSizeOnDevices(ExecutionDAG.DAGVertex vertex, long[] alreadyPresentDataSize) {
+        List<AbstractArray> arguments = vertex.getComputation().getArrayArguments();
+        boolean isAnyDataPresentOnGPUs = false;  // True if there's at least a GPU with some data already available;
+        for (AbstractArray a : arguments) {
+            for (int location : a.getArrayUpToDateLocations()) {
+                if (location != CPUDevice.CPU_DEVICE_ID) {
+                    alreadyPresentDataSize[location] += a.getSizeBytes();
+                    isAnyDataPresentOnGPUs = true;
+                }
+            }
+        }
+        return isAnyDataPresentOnGPUs;
     }
 
     /**
