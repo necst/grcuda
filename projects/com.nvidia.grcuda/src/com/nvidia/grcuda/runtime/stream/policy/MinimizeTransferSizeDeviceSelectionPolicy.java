@@ -121,31 +121,15 @@ public class MinimizeTransferSizeDeviceSelectionPolicy extends DeviceSelectionPo
         }
         return deviceWithMaximumAvailableData;
     }
-    /*
-    @Override
-    public Device retrieve(ExecutionDAG.DAGVertex vertex) {
-        // Array that tracks the size, in bytes, of data that is already present on each device;
-        long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse()];
-        // Compute the amount of data on each device, and if any device has any data at all;
-        boolean isAnyDataPresentOnGPUs = computeDataSizeOnDevices(vertex, alreadyPresentDataSize);
-        // If not device has at least X% of data available, it's not worth optimizing data locality (exploration preferred to exploitation);
-        if (isAnyDataPresentOnGPUs && findIfAnyDeviceHasEnoughData(alreadyPresentDataSize, vertex, devicesManager.getUsableDevices())) {
-            // Find device with maximum available data;
-            return selectDeviceWithMostData(devicesManager.getUsableDevices(), alreadyPresentDataSize);
-        } else {
-            // No data is present on any GPU: select the device with round-robin;
-            return roundRobin.retrieve(vertex);
-        }
-    }*/
 
     @Override
     Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
         // Array that tracks the size, in bytes, of data that is already present on each device;
         long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse()];
         // Compute the amount of data on each device, and if any device has any data at all;
-        boolean isAnyDataPresentOnGPUs = computeDataSizeOnDevices(vertex, alreadyPresentDataSize);
+        computeDataSizeOnDevices(vertex, alreadyPresentDataSize);
         // If not device has at least X% of data available, it's not worth optimizing data locality (exploration preferred to exploitation);
-        if (isAnyDataPresentOnGPUs && findIfAnyDeviceHasEnoughData(alreadyPresentDataSize, vertex, devices)) {
+        if (findIfAnyDeviceHasEnoughData(alreadyPresentDataSize, vertex, devices)) {
             // Find device with maximum available data;
             return selectDeviceWithMostData(devices, alreadyPresentDataSize);
         } else {

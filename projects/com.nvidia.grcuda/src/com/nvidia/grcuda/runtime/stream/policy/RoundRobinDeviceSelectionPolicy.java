@@ -26,20 +26,10 @@ public class RoundRobinDeviceSelectionPolicy extends DeviceSelectionPolicy {
     public int getInternalState() {
         return nextDevice;
     }
-    /*
-    @Override
-    public Device retrieve(ExecutionDAG.DAGVertex vertex) {
-        Device device = this.devicesManager.getDevice(nextDevice);
-        increaseNextDevice(nextDevice);
-        return device;
-    }*/
 
     @Override
     Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
-        // Sort the devices by ID;
-        //List<Device> sortedDevices = devices.stream().sorted(Comparator.comparingInt(Device::getDeviceId)).collect(Collectors.toList());
         // Keep increasing the internal state, but make sure that the retrieved device is among the ones in the input list;
-        //Device device = sortedDevices.get(nextDevice % devices.size());
         Device device = devices.get(nextDevice % devices.size());
         increaseNextDevice(nextDevice);
         return device;

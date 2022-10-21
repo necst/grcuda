@@ -225,11 +225,6 @@ public abstract class TransferTimeDeviceSelectionPolicy extends DeviceSelectionP
         }
         return deviceWithMinimumTransferTime;
     }
-    /*
-    @Override
-    public Device retrieve(ExecutionDAG.DAGVertex vertex) {
-        return this.retrieveImpl(vertex, devicesManager.getUsableDevices());
-    }*/
 
     @Override
     Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
@@ -247,7 +242,7 @@ public abstract class TransferTimeDeviceSelectionPolicy extends DeviceSelectionP
             devicesWithEnoughData = findDevicesWithEnoughData(alreadyPresentDataSize, vertex, devices);
         }
         // If no device has at least X% of data available, it's not worth optimizing data locality (exploration preferred to exploitation);
-        if (isAnyDataPresentOnGPUs && !devicesWithEnoughData.isEmpty()) {
+        if (!devicesWithEnoughData.isEmpty()) {
             // The best device is the one with minimum transfer time;
             return findDeviceWithLowestTransferTime(devicesWithEnoughData, argumentTransferTime);
         } else {

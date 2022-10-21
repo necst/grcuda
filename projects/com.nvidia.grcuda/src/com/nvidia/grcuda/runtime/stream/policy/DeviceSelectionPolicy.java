@@ -49,6 +49,7 @@ public abstract class DeviceSelectionPolicy {
         } else if (devices.size() == 0) {
             throw new GrCUDAException("the list of devices where the computation can be executed is empty");
         } else {
+            // Sort the devices by ID;
             List<Device> sortedDevices = devices.stream().sorted(Comparator.comparingInt(Device::getDeviceId)).collect(Collectors.toList());
             return this.retrieveImpl(vertex, sortedDevices);
         }
