@@ -35,6 +35,9 @@
  */
 package com.nvidia.grcuda.runtime.array;
 
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
+
 import com.nvidia.grcuda.MemberSet;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
@@ -51,8 +54,6 @@ import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
 
 @ExportLibrary(InteropLibrary.class)
 public class SparseMatrixCOO extends SparseMatrix {

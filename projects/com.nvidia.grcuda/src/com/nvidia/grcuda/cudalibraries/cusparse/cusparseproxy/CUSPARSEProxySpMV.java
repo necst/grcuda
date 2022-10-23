@@ -33,13 +33,13 @@
  */
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
+import com.nvidia.grcuda.Type;
+import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
+import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
+import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
+import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import static com.nvidia.grcuda.functions.Function.INTEROP;
 import static com.nvidia.grcuda.functions.Function.expectInt;
-import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
-import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
-
-import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
-import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.array.DenseVector;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
@@ -84,7 +84,6 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             CUDADataType valueType = sparseMatrix.getDataType();
             UnsafeHelper.Integer64Object matDescr = sparseMatrix.getSpMatDescr();
 
-
             // create buffer
             Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunctionNFI, handle, opA.ordinal(), alpha,
                     matDescr.getValue(), vecX.getDnVecDescr().getValue(), beta,
@@ -95,13 +94,13 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             if (bufferSize.getValue() == 0) {
                 numElements = 1;
             } else {
-                numElements = (long) bufferSize.getValue() / 4;
+                numElements = bufferSize.getValue();
             }
 
-            DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, alpha.getElementType());
+            DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, Type.UINT8);
 
             // FIXME: getting the runtime from an argument is not very clean, the proxy should maybe hold a direct reference of the runtime;
-            alpha.getGrCUDAExecutionContext().getCudaRuntime().cudaDeviceSynchronize();
+            //alpha.getGrCUDAExecutionContext().getCudaRuntime().cudaDeviceSynchronize();
 
             // format new arguments
             args[0] = opA.ordinal();

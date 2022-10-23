@@ -30,20 +30,6 @@
  */
 package com.nvidia.grcuda.runtime.stream;
 
-import com.nvidia.grcuda.CUDAEvent;
-import com.nvidia.grcuda.GrCUDALogger;
-import com.nvidia.grcuda.GrCUDAOptionMap;
-import com.nvidia.grcuda.runtime.CUDARuntime;
-import com.nvidia.grcuda.runtime.Device;
-import com.nvidia.grcuda.runtime.DeviceList;
-import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
-import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
-import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.policy.GrCUDAStreamPolicy;
-import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
-import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
-import com.oracle.truffle.api.TruffleLogger;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,9 +43,16 @@ import java.util.stream.Collectors;
 
 import com.nvidia.grcuda.CUDAEvent;
 import com.nvidia.grcuda.GrCUDALogger;
+import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.runtime.CUDARuntime;
+import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.DeviceList;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
+import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.GrCUDAStreamPolicy;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.oracle.truffle.api.TruffleLogger;
 
 public class GrCUDAStreamManager {
@@ -124,6 +117,7 @@ public class GrCUDAStreamManager {
         if (vertex.getComputation().canUseStream()) {
             // Else, obtain the stream (and the GPU device) for this computation from the stream policy manager;
             CUDAStream stream = this.streamPolicy.retrieveStream(vertex);
+            System.out.println(stream);
             // Set the stream;
             vertex.getComputation().setStream(stream);
             // Update the computation counter;
