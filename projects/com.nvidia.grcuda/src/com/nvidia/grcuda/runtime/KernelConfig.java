@@ -69,6 +69,30 @@ public final class KernelConfig {
     public Dim3 getBlockSize() {
         return blockSize;
     }
+    
+    public int getGridSizeX() {
+        return this.gridSize.getX();
+    }
+
+    public int getGridSizeY() {
+        return this.gridSize.getY();
+    }
+
+    public int getGridSizeZ() {
+        return this.gridSize.getZ();
+    }
+
+    public int getBlockSizeX() {
+        return this.blockSize.getX();
+    }
+
+    public int getBlockSizeY() {
+        return this.blockSize.getY();
+    }
+
+    public int getBlockSizeZ() {
+        return this.blockSize.getZ();
+    }
 
     public int getDynamicSharedMemoryBytes() {
         return dynamicSharedMemoryBytes;
