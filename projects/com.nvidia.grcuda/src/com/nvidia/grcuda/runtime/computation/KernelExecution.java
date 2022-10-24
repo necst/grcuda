@@ -40,14 +40,20 @@ import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.io.PrintWriter;
+import java.io.FileWriter;
 
 /**
  * Class used to track the single execution of a {@link ConfiguredKernel}.
  * The execution will be provided to the {@link AsyncGrCUDAExecutionContext} and scheduled accordingly.
  */
+
+
 public class KernelExecution extends GrCUDAComputationalElement {
 
     private final Kernel kernel;
@@ -72,6 +78,15 @@ public class KernelExecution extends GrCUDAComputationalElement {
         this.configuredKernel.addExecutionTime(this.config.getStream().getStreamDeviceId(), executionTimeMs);
         // Always store the execution time in the ComputationalElement as well;
         super.setExecutionTime(executionTimeMs);
+        //save information on .csv
+        //TODO: add this.args.getOriginalArgs() (but only sizes)
+        //TODO: change file name
+        List<String[]> kernelInformations = new ArrayList<>();
+        kernelInformations.add(new String[]
+                { this.kernel.getKernelName(), Integer.toString(this.config.getGridSizeX()), Integer.toString(this.config.getGridSizeX()),
+                Integer.toString(this.config.getGridSizeZ()), Integer.toString(this.config.getBlockSizeX()), Integer.toString(this.config.getBlockSizeY()),
+                Integer.toString(this.config.getBlockSizeZ()), Float.toString(executionTimeMs)});
+        this.givenDataArray_whenConvertToCSV_thenOutputCreated(kernelInformations, "/home/users/francesco.taroni/grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/computation/RegisteredKernels.csv");
     }
 
     @Override
@@ -151,6 +166,32 @@ public class KernelExecution extends GrCUDAComputationalElement {
                     .filter(ComputationArgument::isArray).collect(Collectors.toList());
         }
     }
+
+    // Useful methods for writing .csv files
+    private String convertToCSV(String[] data) {
+        return Stream.of(data)
+                .map(this::escapeSpecialCharacters)
+                .collect(Collectors.joining(","));
+    }
+    private String escapeSpecialCharacters(String data) {
+        String escapedData = data.replaceAll("\\R", " ");
+        if (data.contains(",") || data.contains("\"") || data.contains("'")) {
+            data = data.replace("\"", "\"\"");
+            escapedData = "\"" + data + "\"";
+        }
+        return escapedData;
+    }
+    private void givenDataArray_whenConvertToCSV_thenOutputCreated(List<String[]> dataLines, String fileName){
+        try{
+            FileWriter csvOutputFile = new FileWriter(fileName, true);
+            PrintWriter pw = new PrintWriter(csvOutputFile);
+            dataLines.stream()
+                    .map(this::convertToCSV)
+                    .forEach(pw::write);
+            pw.write("\n");
+            pw.close();
+        } catch(Exception  e){
+            e.getStackTrace();
+        }
+    }
 }
-
-
