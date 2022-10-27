@@ -47,13 +47,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.io.PrintWriter;
 import java.io.FileWriter;
+import java.io.File;
 
 /**
  * Class used to track the single execution of a {@link ConfiguredKernel}.
  * The execution will be provided to the {@link AsyncGrCUDAExecutionContext} and scheduled accordingly.
  */
-
-
 public class KernelExecution extends GrCUDAComputationalElement {
 
     private final Kernel kernel;
@@ -63,8 +62,8 @@ public class KernelExecution extends GrCUDAComputationalElement {
 
     public KernelExecution(ConfiguredKernel configuredKernel, KernelArguments args) {
         super(
-            configuredKernel.getKernel().getGrCUDAExecutionContext(),
-            new KernelExecutionInitializer(args)
+                configuredKernel.getKernel().getGrCUDAExecutionContext(),
+                new KernelExecutionInitializer(args)
         );
         this.configuredKernel = configuredKernel;
         this.kernel = configuredKernel.getKernel();
@@ -78,15 +77,29 @@ public class KernelExecution extends GrCUDAComputationalElement {
         this.configuredKernel.addExecutionTime(this.config.getStream().getStreamDeviceId(), executionTimeMs);
         // Always store the execution time in the ComputationalElement as well;
         super.setExecutionTime(executionTimeMs);
-        //save information on .csv
+        // Save information on .csv
         //TODO: add this.args.getOriginalArgs() (but only sizes)
-        //TODO: change file name
         List<String[]> kernelInformations = new ArrayList<>();
+        File f = new File("RegisteredKernels.csv");
+
+        String end = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/computation/RegisteredKernels.csv";
+        String path = "";
+        for (String dir : f.getAbsolutePath().split("/")) {
+            if (dir.equals("grcuda")) {
+                path += end;
+                break;
+            }
+            path += (dir + "/");
+        }
+
+        System.out.println("TEST -> " + path);
+
         kernelInformations.add(new String[]
-                { this.kernel.getKernelName(), Integer.toString(this.config.getGridSizeX()), Integer.toString(this.config.getGridSizeX()),
-                Integer.toString(this.config.getGridSizeZ()), Integer.toString(this.config.getBlockSizeX()), Integer.toString(this.config.getBlockSizeY()),
-                Integer.toString(this.config.getBlockSizeZ()), Float.toString(executionTimeMs)});
-        this.givenDataArray_whenConvertToCSV_thenOutputCreated(kernelInformations, "/home/users/francesco.taroni/grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/computation/RegisteredKernels.csv");
+                {this.kernel.getKernelName(), Integer.toString(this.config.getGridSizeX()),
+                        Integer.toString(this.config.getGridSizeX()), Integer.toString(this.config.getGridSizeZ()),
+                        Integer.toString(this.config.getBlockSizeX()), Integer.toString(this.config.getBlockSizeY()),
+                        Integer.toString(this.config.getBlockSizeZ()), Float.toString(executionTimeMs)});
+        this.givenDataArrayWhenConvertToCSVThenOutputCreated(kernelInformations, path);
     }
 
     @Override
@@ -101,6 +114,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
 
     /**
      * Setting the stream must be done inside the {@link KernelConfig};
+     *
      * @param stream the stream where this computation will be executed
      */
     @Override
@@ -112,6 +126,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
     /**
      * Retrieve the stream stored in the {@link KernelConfig} if it has been manually specified by the user,
      * otherwise return the one automatically chosen by the {@link com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager};
+     *
      * @return the stream where this computation will be executed
      */
     @Override
@@ -120,10 +135,14 @@ public class KernelExecution extends GrCUDAComputationalElement {
     }
 
     @Override
-    public boolean useManuallySpecifiedStream() { return config.useCustomStream(); }
+    public boolean useManuallySpecifiedStream() {
+        return config.useCustomStream();
+    }
 
     @Override
-    public boolean canUseStream() { return true; }
+    public boolean canUseStream() {
+        return true;
+    }
 
     @Override
     public void associateArraysToStreamImpl() {
@@ -173,6 +192,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
                 .map(this::escapeSpecialCharacters)
                 .collect(Collectors.joining(","));
     }
+
     private String escapeSpecialCharacters(String data) {
         String escapedData = data.replaceAll("\\R", " ");
         if (data.contains(",") || data.contains("\"") || data.contains("'")) {
@@ -181,8 +201,9 @@ public class KernelExecution extends GrCUDAComputationalElement {
         }
         return escapedData;
     }
-    private void givenDataArray_whenConvertToCSV_thenOutputCreated(List<String[]> dataLines, String fileName){
-        try{
+
+    private void givenDataArrayWhenConvertToCSVThenOutputCreated(List<String[]> dataLines, String fileName) {
+        try {
             FileWriter csvOutputFile = new FileWriter(fileName, true);
             PrintWriter pw = new PrintWriter(csvOutputFile);
             dataLines.stream()
@@ -190,7 +211,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
                     .forEach(pw::write);
             pw.write("\n");
             pw.close();
-        } catch(Exception  e){
+        } catch (Exception e) {
             e.getStackTrace();
         }
     }
