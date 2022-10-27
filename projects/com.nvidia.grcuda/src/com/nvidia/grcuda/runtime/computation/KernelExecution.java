@@ -78,8 +78,9 @@ public class KernelExecution extends GrCUDAComputationalElement {
         // Always store the execution time in the ComputationalElement as well;
         super.setExecutionTime(executionTimeMs);
         // Save information on .csv
-        //TODO: add this.args.getOriginalArgs() (but only sizes)
         List<String[]> kernelInformations = new ArrayList<>();
+        List<Long> deviceArraySize;
+        List<Integer> integerValue;
         File f = new File("RegisteredKernels.csv");
 
         String end = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/computation/RegisteredKernels.csv";
@@ -91,14 +92,29 @@ public class KernelExecution extends GrCUDAComputationalElement {
             }
             path += (dir + "/");
         }
-
-        System.out.println("TEST -> " + path);
-
+        //Get lengths of arrays
+        deviceArraySize = this.args.getKernelDeviceArraySize();
+        String deviceArraySizeForFile="[";
+        for(long i : deviceArraySize){
+            deviceArraySizeForFile += Long.toString(i);
+            deviceArraySizeForFile += ";";
+        }
+        deviceArraySizeForFile += "]";
+        //Get values of constants (int)
+        integerValue = this.args.getKernelIntegerValue();
+        String integerValueForFile="[";
+        for(int i : integerValue){
+            integerValueForFile += Integer.toString(i);
+            integerValueForFile += ";";
+        }
+        integerValueForFile += "]";
+        //List with name, grid dimensions, block dimensions, time, lengths of arrays, values of constants (int)
         kernelInformations.add(new String[]
                 {this.kernel.getKernelName(), Integer.toString(this.config.getGridSizeX()),
-                        Integer.toString(this.config.getGridSizeX()), Integer.toString(this.config.getGridSizeZ()),
+                        Integer.toString(this.config.getGridSizeY()), Integer.toString(this.config.getGridSizeZ()),
                         Integer.toString(this.config.getBlockSizeX()), Integer.toString(this.config.getBlockSizeY()),
-                        Integer.toString(this.config.getBlockSizeZ()), Float.toString(executionTimeMs)});
+                        Integer.toString(this.config.getBlockSizeZ()), Float.toString(executionTimeMs),
+                        deviceArraySizeForFile, integerValueForFile});
         this.givenDataArrayWhenConvertToCSVThenOutputCreated(kernelInformations, path);
     }
 
@@ -186,7 +202,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
         }
     }
 
-    // Useful methods for writing .csv files
+    // Useful methods for writing .csv files without external libraries
     private String convertToCSV(String[] data) {
         return Stream.of(data)
                 .map(this::escapeSpecialCharacters)

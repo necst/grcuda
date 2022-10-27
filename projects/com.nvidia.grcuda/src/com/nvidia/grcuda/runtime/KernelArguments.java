@@ -30,6 +30,7 @@
  */
 package com.nvidia.grcuda.runtime;
 
+import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.computation.ComputationArgument;
 import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 
@@ -78,6 +79,28 @@ public final class KernelArguments implements Closeable {
 
     public List<ComputationArgumentWithValue> getKernelArgumentWithValues() {
         return kernelArgumentWithValues;
+    }
+
+    public List<Long> getKernelDeviceArraySize(){
+        List<Long> l = new ArrayList<>();
+        for(Object c : originalArgs){
+            if(c.getClass() == DeviceArray.class){
+                DeviceArray d = (DeviceArray) c;
+                l.add(d.getArraySize());
+            }
+        }
+        return l;
+    }
+
+    public List<Integer> getKernelIntegerValue(){
+        List<Integer> l = new ArrayList<>();
+        for(Object c : originalArgs){
+            if(c.getClass() == Integer.class){
+                Integer d = (Integer) c;
+                l.add(d);
+            }
+        }
+        return l;
     }
 
     @Override
