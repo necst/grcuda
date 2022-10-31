@@ -35,6 +35,8 @@
  */
 package com.nvidia.grcuda.runtime.array;
 
+import java.util.Set;
+
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.MultiDimDeviceArrayViewReadExecution;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.MultiDimDeviceArrayViewWriteExecution;
@@ -50,8 +52,6 @@ import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
-
-import java.util.Set;
 
 @ExportLibrary(InteropLibrary.class)
 public class MultiDimDeviceArrayView extends AbstractArray implements TruffleObject {

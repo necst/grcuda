@@ -1,10 +1,11 @@
 package com.nvidia.grcuda.runtime.array;
 
+import org.graalvm.polyglot.Context;
+
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.interop.TruffleObject;
-import org.graalvm.polyglot.Context;
 
 public class DenseVector implements TruffleObject {
     private final long numElements;

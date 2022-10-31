@@ -37,11 +37,10 @@ package com.nvidia.grcuda.runtime.array;
 
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.Type;
-import com.nvidia.grcuda.runtime.Device;
-import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayReadExecution;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayWriteExecution;
+import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Cached.Shared;

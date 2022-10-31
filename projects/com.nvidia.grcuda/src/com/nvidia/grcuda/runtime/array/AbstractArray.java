@@ -30,6 +30,9 @@
  */
 package com.nvidia.grcuda.runtime.array;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.MemberSet;
 import com.nvidia.grcuda.NoneValue;
@@ -55,9 +58,6 @@ import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Simple wrapper around each class that represents device arrays in GrCUDA.

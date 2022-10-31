@@ -33,27 +33,21 @@
  */
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
-import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.checkCUSPARSEReturnCode;
-import static com.nvidia.grcuda.functions.Function.INTEROP;
-import static com.nvidia.grcuda.functions.Function.checkArgumentLength;
-
 import com.nvidia.grcuda.GrCUDAContext;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.GrCUDAInternalException;
-import com.nvidia.grcuda.GrCUDAOptionMap;
-import com.nvidia.grcuda.GrCUDAOptions;
-import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
-import com.nvidia.grcuda.functions.CUDAFunction;
+import static com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.checkCUSPARSEReturnCode;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import com.nvidia.grcuda.functions.Function;
+import static com.nvidia.grcuda.functions.Function.INTEROP;
+import static com.nvidia.grcuda.functions.Function.checkArgumentLength;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.InteropException;
 import com.oracle.truffle.api.interop.TruffleObject;
-import com.oracle.truffle.api.interop.UnknownIdentifierException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
@@ -62,7 +56,7 @@ public class CUSPARSEProxy {
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseSetStreamFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseCreateCooFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseCreateCsrFunctionNFI;
-    @CompilerDirectives.CompilationFinal private TruffleObject cusparseCreateDnVecFunctionNFI;
+    @CompilerDirectives.CompilationFinal protected TruffleObject cusparseCreateDnVecFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseCreateDnMatFunctionNFI;
     @CompilerDirectives.CompilationFinal protected TruffleObject cusparseSpMV_bufferSizeFunctionNFI;
     @CompilerDirectives.CompilationFinal private TruffleObject cusparseSpVV_bufferSizeFunctionNFI;

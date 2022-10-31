@@ -35,11 +35,12 @@
  */
 package com.nvidia.grcuda.runtime;
 
-import com.nvidia.grcuda.runtime.computation.ComputationArgument;
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.MultiDimDeviceArray;
+import com.nvidia.grcuda.runtime.array.MultiDimDeviceArrayView;
+import com.nvidia.grcuda.runtime.computation.ComputationArgument;
 import com.nvidia.grcuda.runtime.computation.KernelExecution;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -109,6 +110,15 @@ public class ConfiguredKernel extends ProfiledComputation implements TruffleObje
                         MultiDimDeviceArray deviceArray = (MultiDimDeviceArray) arg;
                         if (!param.isSynonymousWithPointerTo(deviceArray.getElementType())) {
                             throw new GrCUDAException("multi-dimensional device array of " +
+                                    deviceArray.getElementType() + " cannot be used as pointer argument " + paramType);
+                        }
+                        UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();
+                        pointer.setValueOfPointer(deviceArray.getPointer());
+                        kernelArgs.setArgument(paramIdx, pointer);
+                    } else if (arg instanceof MultiDimDeviceArrayView) {
+                        MultiDimDeviceArrayView deviceArray = (MultiDimDeviceArrayView) arg;
+                        if (!param.isSynonymousWithPointerTo(deviceArray.getElementType())) {
+                            throw new GrCUDAException("multi-dimensional device array view of " +
                                     deviceArray.getElementType() + " cannot be used as pointer argument " + paramType);
                         }
                         UnsafeHelper.PointerObject pointer = UnsafeHelper.createPointerObject();

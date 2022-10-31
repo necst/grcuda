@@ -254,7 +254,13 @@ public class SparseMatrixCOO extends SparseMatrix {
 
             Context polyglot = Context.getCurrent();
             Object alpha = arguments[0];
+            if (alpha instanceof Integer) {
+                alpha = Float.valueOf((Integer)alpha);
+            }
             Object beta = arguments[1];
+            if (beta instanceof Integer) {
+                beta = Float.valueOf((Integer)beta);
+            }
 
             Object dnVec = arguments[2];
             Object outVec = arguments[3];

@@ -1,15 +1,5 @@
 package com.nvidia.grcuda.runtime.stream.policy;
 
-import com.nvidia.grcuda.GrCUDAException;
-import com.nvidia.grcuda.GrCUDALogger;
-import com.nvidia.grcuda.runtime.CPUDevice;
-import com.nvidia.grcuda.runtime.CUDARuntime;
-import com.nvidia.grcuda.runtime.Device;
-import com.nvidia.grcuda.runtime.array.AbstractArray;
-import com.nvidia.grcuda.runtime.stream.CUDAStream;
-import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
-import com.oracle.truffle.api.TruffleLogger;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -23,6 +13,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import com.nvidia.grcuda.GrCUDAException;
+import com.nvidia.grcuda.GrCUDALogger;
+import com.nvidia.grcuda.runtime.CPUDevice;
+import com.nvidia.grcuda.runtime.CUDARuntime;
+import com.nvidia.grcuda.runtime.Device;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
+import com.nvidia.grcuda.runtime.stream.CUDAStream;
+import com.oracle.truffle.api.TruffleLogger;
 
 public class GrCUDAStreamPolicy {
 

@@ -39,9 +39,8 @@ import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
 import static com.nvidia.grcuda.functions.Function.INTEROP;
-import static com.nvidia.grcuda.functions.Function.expectInt;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
-import com.nvidia.grcuda.runtime.array.DenseVector;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.SparseMatrix;
 import com.oracle.truffle.api.interop.ArityException;
@@ -55,7 +54,7 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
         SPMV_MATRIX_TYPE_CSR
     }
 
-    private final int nArgsRaw = 9; // args for library function
+    private final int nArgsRaw = 10; // args for library function
 
     public CUSPARSEProxySpMV(ExternalFunctionFactory externalFunctionFactory) {
         super(externalFunctionFactory);
@@ -71,23 +70,57 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
             UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
 
-            CUSPARSERegistry.CUSPARSEOperation opA = CUSPARSERegistry.CUSPARSEOperation.values()[expectInt(rawArgs[0])];
-            DeviceArray alpha = (DeviceArray) rawArgs[1];
+            CUSPARSERegistry.CUSPARSEOperation opA = CUSPARSERegistry.CUSPARSEOperation.values()[(int)rawArgs[0]];
+            //Object alpha = (Object) rawArgs[1];
+            Float alphaVal = (Float) rawArgs[1];
             SparseMatrix sparseMatrix = (SparseMatrix) rawArgs[2];
-            DenseVector vecX = (DenseVector) rawArgs[3];
-            CUDADataType valueTypeVec = CUDADataType.values()[expectInt(rawArgs[4])];
-            DeviceArray beta = (DeviceArray) rawArgs[5];
-            DenseVector vecY = (DenseVector) rawArgs[6];
-            CUSPARSESpMVAlg alg = CUSPARSESpMVAlg.values()[expectInt(rawArgs[7])];
+            AbstractArray vecXData = (AbstractArray) rawArgs[3];
+            //DenseVector vecX = (DenseVector) rawArgs[3];
+            CUDADataType valueTypeVec = CUDADataType.values()[(int)rawArgs[4]];
+            //Object beta = (Object) rawArgs[5];
+            Float betaVal = (Float) rawArgs[5];
+            AbstractArray vecYData = (AbstractArray) rawArgs[6];
+            //DenseVector vecY = (DenseVector) rawArgs[6];
+            CUSPARSESpMVAlg alg = CUSPARSESpMVAlg.values()[(int)rawArgs[7]];
 
             final long cols = sparseMatrix.getRows();
             CUDADataType valueType = sparseMatrix.getDataType();
             UnsafeHelper.Integer64Object matDescr = sparseMatrix.getSpMatDescr();
 
+            final boolean isComplex = sparseMatrix.getIsComplex();
+            
+            UnsafeHelper.Integer64Object vecXDesc = UnsafeHelper.createInteger64Object();
+            UnsafeHelper.Integer64Object vecYDesc = UnsafeHelper.createInteger64Object();
+
+            UnsafeHelper.Float32Object alpha = UnsafeHelper.createFloat32Object();
+            UnsafeHelper.Float32Object beta = UnsafeHelper.createFloat32Object();
+            //Value alpha = (Value) new DeviceArray(sparseMatrix.getValues().getGrCUDAExecutionContext(), 1, Type.FLOAT);
+            //Value beta = (Value) new DeviceArray(sparseMatrix.getValues().getGrCUDAExecutionContext(), 1, Type.FLOAT);
+
+            alpha.setValue(alphaVal.floatValue());
+            beta.setValue(betaVal.floatValue());
+            //alpha.setArrayElement(0, 1);
+            //beta.setArrayElement(0, 0);
+            INTEROP.execute(cusparseCreateDnVecFunctionNFI,
+                                vecXDesc.getAddress(),
+                                vecXData.getArraySize(),
+                                vecXData,
+                                CUSPARSERegistry.CUDADataType.fromGrCUDAType(vecXData.getElementType(), isComplex).ordinal());
+
+            INTEROP.execute(cusparseCreateDnVecFunctionNFI,
+                                vecYDesc.getAddress(),
+                                vecYData.getArraySize(),
+                                vecYData,
+                                CUSPARSERegistry.CUDADataType.fromGrCUDAType(vecYData.getElementType(), isComplex).ordinal());
+
             // create buffer
-            Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunctionNFI, handle, opA.ordinal(), alpha,
-                    matDescr.getValue(), vecX.getDnVecDescr().getValue(), beta,
-                    vecY.getDnVecDescr().getValue(), valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
+            Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunctionNFI, handle, opA.ordinal(), 
+                    alpha.getAddress(),
+                    matDescr.getValue(),
+                    vecXDesc.getValue(),
+                    beta.getAddress(),
+                    vecYDesc.getValue(),
+                    valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
 
             long numElements;
 
@@ -97,22 +130,21 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
                 numElements = bufferSize.getValue();
             }
 
-            DeviceArray buffer = new DeviceArray(alpha.getGrCUDAExecutionContext(), numElements, Type.UINT8);
-
-            // FIXME: getting the runtime from an argument is not very clean, the proxy should maybe hold a direct reference of the runtime;
-            //alpha.getGrCUDAExecutionContext().getCudaRuntime().cudaDeviceSynchronize();
+            DeviceArray buffer = new DeviceArray(sparseMatrix.getValues().getGrCUDAExecutionContext(), numElements, Type.UINT8);
 
             // format new arguments
             args[0] = opA.ordinal();
-            args[1] = alpha;
+            args[1] = alpha.getAddress();
             args[2] = matDescr.getValue();
-            args[3] = vecX.getDnVecDescr().getValue();
-            args[4] = beta;
-            args[5] = vecY.getDnVecDescr().getValue();
+            args[3] = vecXDesc.getValue();
+            args[4] = beta.getAddress();
+            args[5] = vecYDesc.getValue();
             args[6] = valueType.ordinal();
             args[7] = alg.ordinal();
             args[8] = buffer;
-
+            //additional arguments for dependency tracking
+            args[9] = vecYData;
+            
             return args;
         }
     }
