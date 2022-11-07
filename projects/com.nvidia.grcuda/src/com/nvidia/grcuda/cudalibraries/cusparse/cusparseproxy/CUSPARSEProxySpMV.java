@@ -71,16 +71,12 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             UnsafeHelper.Integer64Object bufferSize = UnsafeHelper.createInteger64Object();
 
             CUSPARSERegistry.CUSPARSEOperation opA = CUSPARSERegistry.CUSPARSEOperation.values()[(int)rawArgs[0]];
-            //Object alpha = (Object) rawArgs[1];
             Float alphaVal = (Float) rawArgs[1];
             SparseMatrix sparseMatrix = (SparseMatrix) rawArgs[2];
             AbstractArray vecXData = (AbstractArray) rawArgs[3];
-            //DenseVector vecX = (DenseVector) rawArgs[3];
             CUDADataType valueTypeVec = CUDADataType.values()[(int)rawArgs[4]];
-            //Object beta = (Object) rawArgs[5];
             Float betaVal = (Float) rawArgs[5];
             AbstractArray vecYData = (AbstractArray) rawArgs[6];
-            //DenseVector vecY = (DenseVector) rawArgs[6];
             CUSPARSESpMVAlg alg = CUSPARSESpMVAlg.values()[(int)rawArgs[7]];
 
             final long cols = sparseMatrix.getRows();
@@ -94,13 +90,9 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
 
             UnsafeHelper.Float32Object alpha = UnsafeHelper.createFloat32Object();
             UnsafeHelper.Float32Object beta = UnsafeHelper.createFloat32Object();
-            //Value alpha = (Value) new DeviceArray(sparseMatrix.getValues().getGrCUDAExecutionContext(), 1, Type.FLOAT);
-            //Value beta = (Value) new DeviceArray(sparseMatrix.getValues().getGrCUDAExecutionContext(), 1, Type.FLOAT);
 
             alpha.setValue(alphaVal.floatValue());
             beta.setValue(betaVal.floatValue());
-            //alpha.setArrayElement(0, 1);
-            //beta.setArrayElement(0, 0);
             INTEROP.execute(cusparseCreateDnVecFunctionNFI,
                                 vecXDesc.getAddress(),
                                 vecXData.getArraySize(),

@@ -42,12 +42,6 @@ import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.nvidia.grcuda.functions.Function.INTEROP;
-
 /**
  * Computational element that wraps calls to CUDA libraries such as cuBLAS or cuML.
  */

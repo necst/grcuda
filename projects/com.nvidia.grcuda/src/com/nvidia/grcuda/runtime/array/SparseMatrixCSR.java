@@ -317,8 +317,8 @@ public class SparseMatrixCSR extends SparseMatrix {
             }
 
             Context polyglot = Context.getCurrent();
-            DeviceArray alpha = (DeviceArray) arguments[0];
-            DeviceArray beta = (DeviceArray) arguments[1];
+            float alphaVal = Float.valueOf((Integer)arguments[0]);
+            float betaVal = Float.valueOf((Integer)arguments[1]);
 
             SparseMatrixCSR matB = (SparseMatrixCSR) arguments[2];
             SparseMatrixCSR matC;
@@ -337,7 +337,10 @@ public class SparseMatrixCSR extends SparseMatrix {
 
                 UnsafeHelper.Integer64Object numRows = UnsafeHelper.createInteger64Object();
                 UnsafeHelper.Integer64Object numCols = UnsafeHelper.createInteger64Object();
-                UnsafeHelper.Integer64Object numNnz = UnsafeHelper.createInteger64Object()
+                UnsafeHelper.Integer64Object numNnz = UnsafeHelper.createInteger64Object();
+
+                UnsafeHelper.Float32Object alpha = UnsafeHelper.createFloat32Object();
+                UnsafeHelper.Float32Object beta = UnsafeHelper.createFloat32Object()
             ) {
                 Value create = polyglot.eval("grcuda", "SPARSE::cusparseSpGEMM_createDescr");
                 Value work = polyglot.eval("grcuda", "SPARSE::cusparseSpGEMM_workEstimation");
@@ -346,48 +349,51 @@ public class SparseMatrixCSR extends SparseMatrix {
                 Value destroy = polyglot.eval("grcuda", "SPARSE::cusparseSpGEMM_destroyDescr");
                 Value setPointers = polyglot.eval("grcuda", "SPARSE::cusparseCsrSetPointers");
                 Value getSize = polyglot.eval("grcuda", "SPARSE::cusparseSpMatGetSize");
-                Value synch = polyglot.eval("grcuda", "cudaDeviceSynchronize");
-                Value cu = polyglot.eval("grcuda", "CU");
-                Value array = polyglot.eval("grcuda", "DeviceArray");
 
-                Object dummyArray = array.execute("char", 1);
+                alpha.setValue(alphaVal);
+                beta.setValue(betaVal);
 
-                int numGPU = getValues().grCUDAExecutionContext.getCudaRuntime().getNumberOfAvailableGPUs();
-                System.out.println("NUMBER OF GPU: " + numGPU);
+                create.execute(descr.getAddress());
 
+                work.execute(0, 0, alpha.getAddress(), SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta.getAddress(),
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), 0);
 
-                create.execute(descr.getAddress(), dummyArray);
+                DeviceArray buffer1 = new DeviceArray(getValues().getGrCUDAExecutionContext(), bufferSize1.getValue(), Type.UINT8);
 
-                work.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
-                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), 0, dummyArray);
+                work.execute(0, 0, alpha.getAddress(), SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta.getAddress(),
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), buffer1);
 
-                Value buffer1 = cu.invokeMember("DeviceArray", "char", bufferSize1.getValue());
+                compute.execute(0, 0, alpha.getAddress(), SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta.getAddress(),
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), 0);
 
-                work.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
-                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize1.getAddress(), buffer1, dummyArray);
+                DeviceArray buffer2 = new DeviceArray(getValues().getGrCUDAExecutionContext(), bufferSize2.getValue(), Type.UINT8);
 
-                compute.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
-                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), 0, dummyArray);
+                compute.execute(0, 0, alpha.getAddress(), SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta.getAddress(),
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), buffer2);
 
-                Value buffer2 = cu.invokeMember("DeviceArray", "char", bufferSize2.getValue());
-
-                compute.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
-                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), bufferSize2.getAddress(), buffer2, dummyArray);
-
-                getSize.execute(matC.getSpMatDescr().getValue(), numRows.getAddress(), numCols.getAddress(), numNnz.getAddress(), dummyArray);
+                getSize.execute(matC.getSpMatDescr().getValue(), numRows.getAddress(), numCols.getAddress(), numNnz.getAddress());
 
                 DeviceArray newColumns = new DeviceArray(getValues().grCUDAExecutionContext, numNnz.getValue(), Type.FLOAT);
                 DeviceArray newValues = new DeviceArray(getValues().grCUDAExecutionContext, numNnz.getValue(), Type.FLOAT);
 
-                setPointers.execute(matC.getSpMatDescr().getValue(), matC.getCsrRowOffsets(), newColumns, newValues, dummyArray);
+                setPointers.execute(matC.getSpMatDescr().getValue(), matC.getCsrRowOffsets(), newColumns, newValues);
 
+                //System.out.println(matC.getCsrRowOffsets());
+
+                if (matC.getValues() != null)
+                    matC.getValues().freeMemory();
+                if (matC.getCsrColInd() != null)
+                    matC.getCsrColInd().freeMemory();
                 matC.setValues(newValues);
                 matC.setCsrColInd(newColumns);
 
-                copy.execute(0, 0, alpha, SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta,
-                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue(), dummyArray);
+                copy.execute(0, 0, alpha.getAddress(), SparseMatrixCSR.this.getSpMatDescr().getValue(), matB.getSpMatDescr().getValue(), beta.getAddress(),
+                        matC.getSpMatDescr().getValue(), dataType.ordinal(), 0, descr.getValue());
 
-                destroy.execute(descr.getValue(), dummyArray);
+                destroy.execute(descr.getValue());
+
+                buffer1.freeMemory();
+                buffer2.freeMemory();
 
             } catch (Exception e) {
                 e.printStackTrace();

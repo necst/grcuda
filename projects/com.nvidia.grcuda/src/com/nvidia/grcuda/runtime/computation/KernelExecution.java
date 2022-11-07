@@ -30,19 +30,19 @@
  */
 package com.nvidia.grcuda.runtime.computation;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.nvidia.grcuda.NoneValue;
-import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.ConfiguredKernel;
 import com.nvidia.grcuda.runtime.Kernel;
 import com.nvidia.grcuda.runtime.KernelArguments;
 import com.nvidia.grcuda.runtime.KernelConfig;
+import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Class used to track the single execution of a {@link ConfiguredKernel}.
