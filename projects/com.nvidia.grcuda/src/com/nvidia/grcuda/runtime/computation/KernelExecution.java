@@ -81,6 +81,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
         List<String[]> kernelInformations = new ArrayList<>();
         List<Long> deviceArraySize;
         List<Integer> integerValue;
+        List<String> signature;
         File f = new File("RegisteredKernels.csv");
 
         String end = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/computation/RegisteredKernels.csv";
@@ -108,9 +109,17 @@ public class KernelExecution extends GrCUDAComputationalElement {
             integerValueForFile += ";";
         }
         integerValueForFile += "]";
+        //Get signature
+        signature = this.args.getKernelSignature();
+        String signatureForFile="[";
+        for(String i : signature){
+            signatureForFile += i;
+            signatureForFile += ";";
+        }
+        signatureForFile += "]";
         //List with name, grid dimensions, block dimensions, time, lengths of arrays, values of constants (int)
         kernelInformations.add(new String[]
-                {this.kernel.getKernelName(), Integer.toString(this.config.getGridSizeX()),
+                {this.kernel.getKernelName(), signatureForFile, Integer.toString(this.config.getGridSizeX()),
                         Integer.toString(this.config.getGridSizeY()), Integer.toString(this.config.getGridSizeZ()),
                         Integer.toString(this.config.getBlockSizeX()), Integer.toString(this.config.getBlockSizeY()),
                         Integer.toString(this.config.getBlockSizeZ()), Float.toString(executionTimeMs),

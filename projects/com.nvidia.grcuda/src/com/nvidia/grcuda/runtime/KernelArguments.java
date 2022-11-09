@@ -103,6 +103,14 @@ public final class KernelArguments implements Closeable {
         return l;
     }
 
+    public List<String> getKernelSignature(){
+        List<String> l = new ArrayList<>();
+        for(Object c : originalArgs){
+            l.add(c.getClass().toString());
+        }
+        return l;
+    }
+
     @Override
     public String toString() {
         return "KernelArgs=" + Arrays.toString(originalArgs);
