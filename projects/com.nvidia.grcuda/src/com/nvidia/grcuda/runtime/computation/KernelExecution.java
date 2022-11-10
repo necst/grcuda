@@ -53,6 +53,10 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
  * Class used to track the single execution of a {@link ConfiguredKernel}.
  * The execution will be provided to the {@link AsyncGrCUDAExecutionContext} and scheduled accordingly.
@@ -133,7 +137,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
 
         // Find the location where to save the data
         File f = new File("");
-        String end = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/data/" + hashtext + ".csv";
+        String end = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/data/";
         String path = "";
         for (String dir : f.getAbsolutePath().split("/")) {
             if (dir.equals("grcuda")) {
@@ -142,6 +146,12 @@ public class KernelExecution extends GrCUDAComputationalElement {
             }
             path += (dir + "/");
         }
+
+        Path p = Paths.get(path);
+        if (!Files.isDirectory(p)) {
+            new File(path).mkdirs();
+        }
+        path += (hashtext + ".csv");
 
         //List with name, grid dimensions, block dimensions, time, lengths of arrays, values of constants (int)
         kernelInformations.add(new String[]
