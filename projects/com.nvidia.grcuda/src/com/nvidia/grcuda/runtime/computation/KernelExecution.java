@@ -49,6 +49,10 @@ import java.io.PrintWriter;
 import java.io.FileWriter;
 import java.io.File;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 /**
  * Class used to track the single execution of a {@link ConfiguredKernel}.
  * The execution will be provided to the {@link AsyncGrCUDAExecutionContext} and scheduled accordingly.
@@ -77,14 +81,59 @@ public class KernelExecution extends GrCUDAComputationalElement {
         this.configuredKernel.addExecutionTime(this.config.getStream().getStreamDeviceId(), executionTimeMs);
         // Always store the execution time in the ComputationalElement as well;
         super.setExecutionTime(executionTimeMs);
-        // Save information on .csv
+        // Save information on .csv;
         List<String[]> kernelInformations = new ArrayList<>();
         List<Long> deviceArraySize;
         List<Integer> integerValue;
         List<String> signature;
-        File f = new File("RegisteredKernels.csv");
 
-        String end = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/computation/RegisteredKernels.csv";
+        //Get lengths of arrays
+        deviceArraySize = this.args.getKernelDeviceArraySize();
+        String deviceArraySizeForFile = "[";
+        for (long i : deviceArraySize) {
+            deviceArraySizeForFile += Long.toString(i);
+            deviceArraySizeForFile += ";";
+        }
+        deviceArraySizeForFile += "]";
+
+        //Get values of constants (int)
+        integerValue = this.args.getKernelIntegerValue();
+        String integerValueForFile = "[";
+        for (int i : integerValue) {
+            integerValueForFile += Integer.toString(i);
+            integerValueForFile += ";";
+        }
+        integerValueForFile += "]";
+
+        //Get signature
+        signature = this.args.getKernelSignature();
+        signature = signature.stream().map(x -> (x.split("\\.")[x.split("\\.").length - 1])).collect(Collectors.toList());
+        String signatureForHash = " (";
+        for (int i = 0; i < signature.size(); i++) {
+            signatureForHash += signature.get(i);
+            if (i < signature.size() - 1) signatureForHash += ", ";
+        }
+        signatureForHash += ")";
+
+        // Get Kernel_ID
+        String hashtext;
+        String id = "";
+        try {
+            id = this.kernel.getKernelName() + signatureForHash;
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] messageDigest = md.digest(id.getBytes());
+            BigInteger no = new BigInteger(1, messageDigest);
+            hashtext = no.toString(16);
+            while (hashtext.length() < 32) {
+                hashtext = "0" + hashtext;
+            }
+        } catch (NoSuchAlgorithmException e) {
+            hashtext = this.kernel.getKernelName();
+        }
+
+        // Find the location where to save the data
+        File f = new File("");
+        String end = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/data/" + hashtext + ".csv";
         String path = "";
         for (String dir : f.getAbsolutePath().split("/")) {
             if (dir.equals("grcuda")) {
@@ -93,33 +142,10 @@ public class KernelExecution extends GrCUDAComputationalElement {
             }
             path += (dir + "/");
         }
-        //Get lengths of arrays
-        deviceArraySize = this.args.getKernelDeviceArraySize();
-        String deviceArraySizeForFile="[";
-        for(long i : deviceArraySize){
-            deviceArraySizeForFile += Long.toString(i);
-            deviceArraySizeForFile += ";";
-        }
-        deviceArraySizeForFile += "]";
-        //Get values of constants (int)
-        integerValue = this.args.getKernelIntegerValue();
-        String integerValueForFile="[";
-        for(int i : integerValue){
-            integerValueForFile += Integer.toString(i);
-            integerValueForFile += ";";
-        }
-        integerValueForFile += "]";
-        //Get signature
-        signature = this.args.getKernelSignature();
-        String signatureForFile="[";
-        for(String i : signature){
-            signatureForFile += i;
-            signatureForFile += ";";
-        }
-        signatureForFile += "]";
+
         //List with name, grid dimensions, block dimensions, time, lengths of arrays, values of constants (int)
         kernelInformations.add(new String[]
-                {this.kernel.getKernelName(), signatureForFile, Integer.toString(this.config.getGridSizeX()),
+                {hashtext, id, Integer.toString(this.config.getGridSizeX()),
                         Integer.toString(this.config.getGridSizeY()), Integer.toString(this.config.getGridSizeZ()),
                         Integer.toString(this.config.getBlockSizeX()), Integer.toString(this.config.getBlockSizeY()),
                         Integer.toString(this.config.getBlockSizeZ()), Float.toString(executionTimeMs),
