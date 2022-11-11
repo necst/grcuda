@@ -90,11 +90,11 @@ public class TestBenchmarks{
     }
 
     @Test
-    public void runAll_gtx960_multi() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
+    public void runAll_train_gtx960() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
         assumeTrue(this.currentGPU.equals(GPU.GTX960));
 
         // get the configuration for the selected GPU into a Config class
-        String CONFIG_PATH = PATH + "/config_GTX960.json";
+        String CONFIG_PATH = PATH + "/config_train_GTX960.json";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
         Config parsedConfig = gson.fromJson(reader, Config.class);
@@ -252,7 +252,7 @@ enum GPU {
     GTX1660_SUPER("GeForce GTX 1660 SUPER"),
     A100("NVIDIA A100-SXM4-40GB"),
     V100("Tesla V100-SXM2-16GB"),
-    GTX960("GeForce GTX 960");
+    GTX960("NVIDIA GeForce GTX 960");
 
     public final String name;
 
