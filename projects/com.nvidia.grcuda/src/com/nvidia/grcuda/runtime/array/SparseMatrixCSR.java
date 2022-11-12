@@ -35,9 +35,6 @@
  */
 package com.nvidia.grcuda.runtime.array;
 
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
-
 import com.nvidia.grcuda.MemberSet;
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
@@ -56,6 +53,8 @@ import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.profiles.ValueProfile;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 
 @ExportLibrary(InteropLibrary.class)
 public class SparseMatrixCSR extends SparseMatrix {
@@ -93,7 +92,7 @@ public class SparseMatrixCSR extends SparseMatrix {
                            long rows, long cols, boolean isComplex) {
         super(grCUDAExecutionContext, csrValues, rows, cols, dataType, isComplex);
         if (csrValues == null) {
-            this.csrRowOffsets = new DeviceArray(grCUDAExecutionContext, rows+1, Type.UINT32);
+            this.csrRowOffsets = new DeviceArray(grCUDAExecutionContext, rows+1, Type.SINT32);
             this.csrColInd = null;
         } else {
             this.csrRowOffsets = (DeviceArray) csrRowOffsets;
@@ -373,7 +372,7 @@ public class SparseMatrixCSR extends SparseMatrix {
 
                 getSize.execute(matC.getSpMatDescr().getValue(), numRows.getAddress(), numCols.getAddress(), numNnz.getAddress());
 
-                DeviceArray newColumns = new DeviceArray(getValues().grCUDAExecutionContext, numNnz.getValue(), Type.FLOAT);
+                DeviceArray newColumns = new DeviceArray(getValues().grCUDAExecutionContext, numNnz.getValue(), Type.SINT32);
                 DeviceArray newValues = new DeviceArray(getValues().grCUDAExecutionContext, numNnz.getValue(), Type.FLOAT);
 
                 setPointers.execute(matC.getSpMatDescr().getValue(), matC.getCsrRowOffsets(), newColumns, newValues);
