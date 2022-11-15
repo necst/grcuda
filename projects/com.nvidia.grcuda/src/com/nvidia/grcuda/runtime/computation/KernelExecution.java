@@ -79,89 +79,17 @@ public class KernelExecution extends GrCUDAComputationalElement {
         this.args = args;
     }
 
-    @Override
-    public void setExecutionTime(float executionTimeMs) {
+    // @Override
+    public void setExecutionTime(float executionTimeMs, boolean train) {
         // Store the execution time inside the ProfiledComputation storage;
         this.configuredKernel.addExecutionTime(this.config.getStream().getStreamDeviceId(), executionTimeMs);
         // Always store the execution time in the ComputationalElement as well;
-        super.setExecutionTime(executionTimeMs);
-        // Save information on .csv;
-        List<String[]> kernelInformations = new ArrayList<>();
-        List<Long> deviceArraySize;
-        List<Integer> integerValue;
-        List<String> signature;
+        super.setExecutionTime(executionTimeMs, false);
 
-        //Get lengths of arrays
-        deviceArraySize = this.args.getKernelDeviceArraySize();
-        String deviceArraySizeForFile = "[";
-        for (long i : deviceArraySize) {
-            deviceArraySizeForFile += Long.toString(i);
-            deviceArraySizeForFile += ";";
-        }
-        deviceArraySizeForFile += "]";
-
-        //Get values of constants (int)
-        integerValue = this.args.getKernelIntegerValue();
-        String integerValueForFile = "[";
-        for (int i : integerValue) {
-            integerValueForFile += Integer.toString(i);
-            integerValueForFile += ";";
-        }
-        integerValueForFile += "]";
-
-        //Get signature
-        signature = this.args.getKernelSignature();
-        signature = signature.stream().map(x -> (x.split("\\.")[x.split("\\.").length - 1])).collect(Collectors.toList());
-        String signatureForHash = " (";
-        for (int i = 0; i < signature.size(); i++) {
-            signatureForHash += signature.get(i);
-            if (i < signature.size() - 1) signatureForHash += ", ";
-        }
-        signatureForHash += ")";
-
-        // Get Kernel_ID
-        String hashtext;
-        String id = "";
-        try {
-            id = this.kernel.getKernelName() + signatureForHash;
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] messageDigest = md.digest(id.getBytes());
-            BigInteger no = new BigInteger(1, messageDigest);
-            hashtext = no.toString(16);
-            while (hashtext.length() < 32) {
-                hashtext = "0" + hashtext;
-            }
-        } catch (NoSuchAlgorithmException e) {
-            hashtext = this.kernel.getKernelName();
-        }
-
-        // Find the location where to save the data
-        File f = new File("");
-        String end = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/data/";
-        String path = "";
-        for (String dir : f.getAbsolutePath().split("/")) {
-            if (dir.equals("grcuda")) {
-                path += end;
-                break;
-            }
-            path += (dir + "/");
-        }
-
-        Path p = Paths.get(path);
-        if (!Files.isDirectory(p)) {
-            new File(path).mkdirs();
-        }
-        path += (hashtext + ".csv");
-
-        //List with name, grid dimensions, block dimensions, time, lengths of arrays, values of constants (int)
-        kernelInformations.add(new String[]
-                {hashtext, id, Integer.toString(this.config.getGridSizeX()),
-                        Integer.toString(this.config.getGridSizeY()), Integer.toString(this.config.getGridSizeZ()),
-                        Integer.toString(this.config.getBlockSizeX()), Integer.toString(this.config.getBlockSizeY()),
-                        Integer.toString(this.config.getBlockSizeZ()), Float.toString(executionTimeMs),
-                        deviceArraySizeForFile, integerValueForFile});
-        this.givenDataArrayWhenConvertToCSVThenOutputCreated(kernelInformations, path);
+        if (train) (new KernelExecutionObserver(config, kernel, args)).update(executionTimeMs);
     }
+
+
 
     @Override
     public Object execute() {
@@ -244,36 +172,6 @@ public class KernelExecution extends GrCUDAComputationalElement {
             //   There should be a semantic to manually specify scalar dependencies? For now we have to skip them;
             return this.args.getKernelArgumentWithValues().stream()
                     .filter(ComputationArgument::isArray).collect(Collectors.toList());
-        }
-    }
-
-    // Useful methods for writing .csv files without external libraries
-    private String convertToCSV(String[] data) {
-        return Stream.of(data)
-                .map(this::escapeSpecialCharacters)
-                .collect(Collectors.joining(","));
-    }
-
-    private String escapeSpecialCharacters(String data) {
-        String escapedData = data.replaceAll("\\R", " ");
-        if (data.contains(",") || data.contains("\"") || data.contains("'")) {
-            data = data.replace("\"", "\"\"");
-            escapedData = "\"" + data + "\"";
-        }
-        return escapedData;
-    }
-
-    private void givenDataArrayWhenConvertToCSVThenOutputCreated(List<String[]> dataLines, String fileName) {
-        try {
-            FileWriter csvOutputFile = new FileWriter(fileName, true);
-            PrintWriter pw = new PrintWriter(csvOutputFile);
-            dataLines.stream()
-                    .map(this::convertToCSV)
-                    .forEach(pw::write);
-            pw.write("\n");
-            pw.close();
-        } catch (Exception e) {
-            e.getStackTrace();
         }
     }
 }

@@ -75,6 +75,12 @@ public final class GrCUDAOptions {
     @Option(category = OptionCategory.USER, help = "Log the execution time of GrCUDA computations using timers.", stability = OptionStability.STABLE) //
     public static final OptionKey<Boolean> EnableComputationTimers = new OptionKey<>(GrCUDAOptionMap.DEFAULT_ENABLE_COMPUTATION_TIMERS);
 
+    @Option(category = OptionCategory.USER, help = "Store the training execution time of GrCUDA computations.", stability = OptionStability.EXPERIMENTAL) //
+    public static final OptionKey<Boolean> EnableTrainingComputation = new OptionKey<>(GrCUDAOptionMap.DEFAULT_ENABLE_TRAIN_COMPUTATION_TIMES);
+
+    @Option(category = OptionCategory.USER, help = "Update the models with new execution time of GrCUDA computations.", stability = OptionStability.EXPERIMENTAL) //
+    public static final OptionKey<Boolean> EnableUpdateModel = new OptionKey<>(GrCUDAOptionMap.DEFAULT_ENABLE_UPDATE_MODELS);
+
     @Option(category = OptionCategory.USER, help = "Choose the scheduling policy of GrCUDA computations.", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> ExecutionPolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_EXECUTION_POLICY.toString());
 

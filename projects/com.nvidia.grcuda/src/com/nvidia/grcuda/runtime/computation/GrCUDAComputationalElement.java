@@ -143,7 +143,7 @@ public abstract class GrCUDAComputationalElement {
      * Store the execution time for this ComputationalElement (in milliseconds)
      * @param executionTimeMs the execution time of this ComputationalElement
      */
-    public void setExecutionTime(float executionTimeMs) {
+    public void setExecutionTime(float executionTimeMs, boolean train) {
         this.executionTimeMs = executionTimeMs;
         this.executionTimeMeasured = true;
         LOGGER.fine(() -> "computation (" + this + "), execution time: " + executionTimeMs + " ms");

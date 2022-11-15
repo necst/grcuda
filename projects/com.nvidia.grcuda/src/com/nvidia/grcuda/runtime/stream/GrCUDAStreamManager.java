@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 public class GrCUDAStreamManager {
 
     private static final TruffleLogger STREAM_LOGGER = GrCUDALogger.getLogger(GrCUDALogger.STREAM_LOGGER);
-    
+
     /**
      * Reference to the CUDA runtime that manages the streams;
      */
@@ -67,6 +67,8 @@ public class GrCUDAStreamManager {
      * Logging of kernel execution times option
      */
     protected final Boolean isTimeComputation;
+
+    protected final Boolean isTrainEnable;
     /**
      * Track the active computations each stream has, excluding the default stream;
      */
@@ -76,15 +78,16 @@ public class GrCUDAStreamManager {
      * Handle for all the policies to assign streams and devices to a new computation that can run on CUDA stream;
      */
     private final GrCUDAStreamPolicy streamPolicy;
-    
+
     public GrCUDAStreamManager(CUDARuntime runtime, GrCUDAOptionMap options) {
         this(runtime,
-             options.getRetrieveNewStreamPolicy(),
-             options.getRetrieveParentStreamPolicy(),
-             options.getDeviceSelectionPolicy(),
-             options.isTimeComputation(),
-             options.getBandwidthMatrix(),
-             options.getDataThreshold());
+                options.getRetrieveNewStreamPolicy(),
+                options.getRetrieveParentStreamPolicy(),
+                options.getDeviceSelectionPolicy(),
+                options.isTimeComputation(),
+                options.isTrainEnable(),
+                options.getBandwidthMatrix(),
+                options.getDataThreshold());
     }
 
     public GrCUDAStreamManager(
@@ -93,23 +96,27 @@ public class GrCUDAStreamManager {
             RetrieveParentStreamPolicyEnum retrieveParentStreamPolicyEnum,
             DeviceSelectionPolicyEnum deviceSelectionPolicyEnum,
             boolean isTimeComputation,
+            boolean isTrainEnable,
             String bandwidthMatrixPath,
             double dataThreshold) {
-        this(runtime, isTimeComputation, new GrCUDAStreamPolicy(runtime, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum, bandwidthMatrixPath, dataThreshold));
+        this(runtime, isTimeComputation, isTrainEnable, new GrCUDAStreamPolicy(runtime, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum, bandwidthMatrixPath, dataThreshold));
     }
 
     public GrCUDAStreamManager(
             CUDARuntime runtime,
             boolean isTimeComputation,
+            boolean isTrainEnable,
             GrCUDAStreamPolicy streamPolicy) {
         this.runtime = runtime;
         this.isTimeComputation = isTimeComputation;
+        this.isTrainEnable = isTrainEnable;
         this.streamPolicy = streamPolicy;
     }
 
     /**
      * Assign a {@link CUDAStream} to the input computation, based on its dependencies and on the available streams.
      * This function has no effect if the stream was manually specified by the user;
+     *
      * @param vertex an input computation for which we want to assign a stream
      */
     public void assignStream(ExecutionDAG.DAGVertex vertex) {
@@ -134,11 +141,12 @@ public class GrCUDAStreamManager {
      * Associate a new {@link CUDAEvent} to this computation, if the computation is done on a {@link CUDAStream}.
      * The event is created and recorded on the stream where the computation is running,
      * and can be used to time the execution of the computation;
+     *
      * @param vertex an input computation for which we want to assign an event
      */
     public void assignEventStart(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
-        if (isTimeComputation && vertex.getComputation().canUseStream()) {
+        if ((isTimeComputation || isTrainEnable) && vertex.getComputation().canUseStream()) {
             // cudaEventRecord is sensitive to the ctx of the device that is currently set, so we call cudaSetDevice;
             runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
             CUDAEvent event = runtime.cudaEventCreate();
@@ -151,6 +159,7 @@ public class GrCUDAStreamManager {
      * Associate a new {@link CUDAEvent} to this computation, if the computation is done on a {@link CUDAStream}.
      * The event is created and recorded on the stream where the computation is running,
      * and can be used for precise synchronization of children computation;
+     *
      * @param vertex an input computation for which we want to assign an event
      */
     public void assignEventStop(ExecutionDAG.DAGVertex vertex) {
@@ -193,6 +202,7 @@ public class GrCUDAStreamManager {
 
     /**
      * Obtain the set of CUDAStreams that have to be synchronized;
+     *
      * @param computationsToSync a set of computations to sync
      * @return the set of CUDAStreams that have to be synchronized
      */
@@ -203,6 +213,7 @@ public class GrCUDAStreamManager {
     /**
      * If a computation can be scheduled on a stream, use {@link CUDAEvent} to synchronize parent computations
      * without blocking the CPU host
+     *
      * @param vertex a computation whose parent's streams must be synchronized
      */
     protected void syncStreamsUsingEvents(ExecutionDAG.DAGVertex vertex) {
@@ -231,8 +242,9 @@ public class GrCUDAStreamManager {
      * Synchronization is done in 2 parts:
      * 1. Synchronize the streams where each parent computation is executed;
      * 2. All computations currently active on the synchronized streams are finished, and so are their parents.
-     *   In this phase, check if any parent is executed on a stream different from the ones we synchronized, and store these streams.
-     *   Also set the streams that have no active computation as free
+     * In this phase, check if any parent is executed on a stream different from the ones we synchronized, and store these streams.
+     * Also set the streams that have no active computation as free
+     *
      * @param vertex the vertex whose parents should be synchronized
      */
     protected void syncParentStreamsImpl(ExecutionDAG.DAGVertex vertex) {
@@ -261,11 +273,11 @@ public class GrCUDAStreamManager {
     protected void setComputationFinishedInner(GrCUDAComputationalElement computation) {
         computation.setComputationFinished();
         if (computation.getEventStop().isPresent()) {
-            if (isTimeComputation && computation.getEventStart().isPresent()) {
+            if ((isTimeComputation || isTrainEnable) && computation.getEventStart().isPresent()) {
                 // Switch to the device where the computation has been done, otherwise we cannot call the cudaEventElapsedTime API;
                 runtime.cudaSetDevice(computation.getStream().getStreamDeviceId());
                 float timeMilliseconds = runtime.cudaEventElapsedTime(computation.getEventStart().get(), computation.getEventStop().get());
-                computation.setExecutionTime(timeMilliseconds);
+                computation.setExecutionTime(timeMilliseconds, (isTrainEnable) ? true : false);
                 // Destroy the start event associated to this computation:
                 runtime.cudaEventDestroy(computation.getEventStart().get());
             }
@@ -312,6 +324,7 @@ public class GrCUDAStreamManager {
 
     /**
      * Check if a given stream is free to use, and has no active computations on it;
+     *
      * @param stream a CUDAStream
      * @return if the stream has no active computations on it
      */
@@ -354,9 +367,12 @@ public class GrCUDAStreamManager {
     /**
      * Check if any computation is currently marked as active, and is running on a stream.
      * If so, scheduling of new computations is likely to require synchronizations of some sort;
+     *
      * @return if any computation is considered active on a stream
      */
-    public boolean isAnyComputationActive() { return !this.activeComputationsPerStream.isEmpty(); }
+    public boolean isAnyComputationActive() {
+        return !this.activeComputationsPerStream.isEmpty();
+    }
 
     protected void addActiveComputation(ExecutionDAG.DAGVertex vertex) {
         CUDAStream stream = vertex.getComputation().getStream();
@@ -373,7 +389,7 @@ public class GrCUDAStreamManager {
      */
     protected void resetActiveComputationState() {
         activeComputationsPerStream.keySet().forEach(s ->
-            activeComputationsPerStream.get(s).forEach(v -> v.getComputation().setComputationFinished())
+                activeComputationsPerStream.get(s).forEach(v -> v.getComputation().setComputationFinished())
         );
         // Streams don't have any active computation;
         activeComputationsPerStream.clear();

@@ -61,7 +61,7 @@ public class GrCUDAStreamManagerMock extends GrCUDAStreamManager {
                             int numberOfAvailableGPUs,
                             int numberOfGPUsToUse) {
         // Possibly use a number of GPUs lower than the number of available GPUs;
-        super(runtime, false, new GrCUDAStreamPolicyMock(retrieveStreamPolicy, parentStreamPolicy, deviceSelectionPolicyEnum, bandwidthMatrixPath, numberOfAvailableGPUs, numberOfGPUsToUse));
+        super(runtime, false, false, new GrCUDAStreamPolicyMock(retrieveStreamPolicy, parentStreamPolicy, deviceSelectionPolicyEnum, bandwidthMatrixPath, numberOfAvailableGPUs, numberOfGPUsToUse));
         // Reset the number of streams;
         numUserAllocatedStreams = 0;
     }
