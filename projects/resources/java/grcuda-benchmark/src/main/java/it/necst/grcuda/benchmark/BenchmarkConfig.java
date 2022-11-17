@@ -63,6 +63,7 @@ public class BenchmarkConfig {
     public String deviceSelectionPolicy;
     public boolean forceStreamAttach;
     public boolean enableComputationTimers;
+    public boolean enableTrainingComputation;
     public int numGpus;
     public String memAdvisePolicy;
     @JsonIgnore public String bandwidthMatrix;
@@ -97,6 +98,7 @@ public class BenchmarkConfig {
                 ", deviceSelectionPolicy='" + deviceSelectionPolicy + '\'' +
                 ", forceStreamAttach=" + forceStreamAttach +
                 ", enableComputationTimers=" + enableComputationTimers +
+                ", enableTrainingComputation=" + enableTrainingComputation +
                 ", numGpus=" + numGpus +
                 ", memAdvisePolicy='" + memAdvisePolicy + '\'' +
                 ", bandwidthMatrix='" + bandwidthMatrix + '\'' +

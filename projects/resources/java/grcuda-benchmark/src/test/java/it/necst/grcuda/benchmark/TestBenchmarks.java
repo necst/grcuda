@@ -179,45 +179,48 @@ public class TestBenchmarks{
                             for(Boolean p : parsedConfig.prefetch ){
                                 for(Boolean s : parsedConfig.stream_attach){
                                     for(Boolean t : parsedConfig.time_computation){
-                                        BANDWIDTH_MATRIX= GRCUDA_HOME+"/projects/resources/connection_graph/datasets/connection_graph.csv";
-                                        for(String dependency_policy : dp){
-                                            for(String new_stream_policy : nsp){
-                                                for(String parent_stream_policy : psp){
-                                                    for(String choose_device_policy : cdp){
-                                                        BenchmarkConfig config = new BenchmarkConfig();
+                                        for(Boolean tr : parsedConfig.train_computation) {
+                                            BANDWIDTH_MATRIX = GRCUDA_HOME + "/projects/resources/connection_graph/datasets/connection_graph.csv";
+                                            for (String dependency_policy : dp) {
+                                                for (String new_stream_policy : nsp) {
+                                                    for (String parent_stream_policy : psp) {
+                                                        for (String choose_device_policy : cdp) {
+                                                            BenchmarkConfig config = new BenchmarkConfig();
 
-                                                        nb = parsedConfig.numBlocks.get(bench);
-                                                        if(nb != null) config.numBlocks = nb;
+                                                            nb = parsedConfig.numBlocks.get(bench);
+                                                            if (nb != null) config.numBlocks = nb;
 
-                                                        blockSize1D = parsedConfig.block_size1d.get(bench);
-                                                        if(blockSize1D != null) config.blockSize1D = blockSize1D;
+                                                            blockSize1D = parsedConfig.block_size1d.get(bench);
+                                                            if (blockSize1D != null) config.blockSize1D = blockSize1D;
 
-                                                        blockSize2D = parsedConfig.block_size2d.get(bench);
-                                                        if(blockSize2D != null) config.blockSize2D = blockSize2D;
+                                                            blockSize2D = parsedConfig.block_size2d.get(bench);
+                                                            if (blockSize2D != null) config.blockSize2D = blockSize2D;
 
-                                                        config.debug = parsedConfig.debug;
-                                                        config.benchmarkName = bench;
-                                                        config.size = curr_size;
-                                                        config.numGpus = num_gpu;
-                                                        config.executionPolicy = policy;
-                                                        config.dependencyPolicy = dependency_policy;
-                                                        config.retrieveNewStreamPolicy = new_stream_policy;
-                                                        config.retrieveParentStreamPolicy = parent_stream_policy;
-                                                        config.deviceSelectionPolicy = choose_device_policy;
-                                                        config.inputPrefetch = p;
-                                                        config.totIter = num_iter;
-                                                        config.forceStreamAttach = s;
-                                                        config.memAdvisePolicy = m;
-                                                        config.bandwidthMatrix = BANDWIDTH_MATRIX;
-                                                        config.enableComputationTimers =t;
-                                                        config.nvprof_profile = parsedConfig.nvprof_profile;
-                                                        config.gpuModel = this.currentGPU.name;
-                                                        config.results_path = this.results_path;
-                                                        config.reInit = parsedConfig.reInit;
+                                                            config.debug = parsedConfig.debug;
+                                                            config.benchmarkName = bench;
+                                                            config.size = curr_size;
+                                                            config.numGpus = num_gpu;
+                                                            config.executionPolicy = policy;
+                                                            config.dependencyPolicy = dependency_policy;
+                                                            config.retrieveNewStreamPolicy = new_stream_policy;
+                                                            config.retrieveParentStreamPolicy = parent_stream_policy;
+                                                            config.deviceSelectionPolicy = choose_device_policy;
+                                                            config.inputPrefetch = p;
+                                                            config.totIter = num_iter;
+                                                            config.forceStreamAttach = s;
+                                                            config.memAdvisePolicy = m;
+                                                            config.bandwidthMatrix = BANDWIDTH_MATRIX;
+                                                            config.enableComputationTimers = t;
+                                                            config.enableTrainingComputation = tr;
+                                                            config.nvprof_profile = parsedConfig.nvprof_profile;
+                                                            config.gpuModel = this.currentGPU.name;
+                                                            config.results_path = this.results_path;
+                                                            config.reInit = parsedConfig.reInit;
 
-                                                        System.out.println(config);
-                                                        benchToRun = createBench(config);
-                                                        benchToRun.run();
+                                                            System.out.println(config);
+                                                            benchToRun = createBench(config);
+                                                            benchToRun.run();
+                                                        }
                                                     }
                                                 }
                                             }
@@ -293,6 +296,7 @@ class Config {
     ArrayList<Boolean> prefetch;
     ArrayList<Boolean> stream_attach;
     ArrayList<Boolean> time_computation;
+    ArrayList<Boolean> train_computation;
 
     ArrayList<Integer> num_gpus;
 
@@ -319,6 +323,7 @@ class Config {
                 ", prefetch=" + prefetch +
                 ", stream_attach=" + stream_attach +
                 ", time_computation=" + time_computation +
+                ", train_computation=" + train_computation +
                 ", num_gpus=" + num_gpus +
                 ", num_elem=" + num_elem +
                 ", numBlocks=" + numBlocks +
