@@ -76,6 +76,8 @@ public class KernelExecutionObserver {
         List<String[]> kernelInformations = new ArrayList<>();
         List<Long> deviceArraySize;
         List<Integer> integerValue;
+        List<Float> floatValue;
+        List<Double> doubleValue;
         List<String> signature;
 
         //Get lengths of arrays
@@ -87,7 +89,7 @@ public class KernelExecutionObserver {
         }
         deviceArraySizeForFile += "]";
 
-        //Get values of constants (int)
+        //Get values of 'int' variables
         integerValue = this.args.getKernelIntegerValue();
         String integerValueForFile = "[";
         for (int i : integerValue) {
@@ -95,6 +97,24 @@ public class KernelExecutionObserver {
             integerValueForFile += ";";
         }
         integerValueForFile += "]";
+
+        //Get values of 'float' variables
+        floatValue = this.args.getKernelFloatValue();
+        String floatValueForFile = "[";
+        for (float i : floatValue) {
+            floatValueForFile += Float.toString(i);
+            floatValueForFile += ";";
+        }
+        floatValueForFile += "]";
+
+        //Get values of 'double' variables
+        doubleValue = this.args.getKernelDoubleValue();
+        String doubleValueForFile = "[";
+        for (double i : doubleValue) {
+            doubleValueForFile += Double.toString(i);
+            doubleValueForFile += ";";
+        }
+        doubleValueForFile += "]";
 
         //Get signature
         signature = this.args.getKernelSignature();
@@ -140,13 +160,13 @@ public class KernelExecutionObserver {
         }
         path += (hashtext + ".csv");
 
-        //List with name, grid dimensions, block dimensions, time, lengths of arrays, values of constants (int)
+        //List with name, grid dimensions, block dimensions, time, lengths of arrays, values of variables (int, float, double)
         kernelInformations.add(new String[]
                 {id, Integer.toString(this.config.getGridSizeX()),
                         Integer.toString(this.config.getGridSizeY()), Integer.toString(this.config.getGridSizeZ()),
                         Integer.toString(this.config.getBlockSizeX()), Integer.toString(this.config.getBlockSizeY()),
                         Integer.toString(this.config.getBlockSizeZ()), Float.toString(time),
-                        deviceArraySizeForFile, integerValueForFile});
+                        deviceArraySizeForFile, integerValueForFile, floatValueForFile, doubleValueForFile});
         this.givenDataArrayWhenConvertToCSVThenOutputCreated(kernelInformations, path);
     }
 

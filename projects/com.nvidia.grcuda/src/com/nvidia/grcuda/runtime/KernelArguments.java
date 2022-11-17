@@ -103,6 +103,28 @@ public final class KernelArguments implements Closeable {
         return l;
     }
 
+    public List<Float> getKernelFloatValue(){
+        List<Float> l = new ArrayList<>();
+        for(Object c : originalArgs){
+            if(c.getClass() == Float.class){
+                Float d = (Float) c;
+                l.add(d);
+            }
+        }
+        return l;
+    }
+
+    public List<Double> getKernelDoubleValue(){
+        List<Double> l = new ArrayList<>();
+        for(Object c : originalArgs){
+            if(c.getClass() == Double.class){
+                Double d = (Double) c;
+                l.add(d);
+            }
+        }
+        return l;
+    }
+
     public List<String> getKernelSignature(){
         List<String> l = new ArrayList<>();
         for(Object c : originalArgs){
