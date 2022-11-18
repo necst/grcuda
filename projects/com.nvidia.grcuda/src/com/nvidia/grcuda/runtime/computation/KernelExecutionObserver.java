@@ -74,6 +74,7 @@ public class KernelExecutionObserver {
     public void update(float time) {
         // Save information on .csv;
         List<String[]> kernelInformations = new ArrayList<>();
+        List<String[]> head = new ArrayList<>();
         List<Long> deviceArraySize;
         List<Integer> integerValue;
         List<Float> floatValue;
@@ -160,6 +161,14 @@ public class KernelExecutionObserver {
         }
         path += (hashtext + ".csv");
 
+        if (!Files.exists(Paths.get(path))) {
+            head.add(new String[]
+                    {"id", "GridSizeX", "GridSizeY", "GridSizeZ",
+                            "BlockSizeX", "BlockSizeY", "BlockSizeZ",
+                            "time", "deviceArraySize", "integerValue",
+                            "floatValue", "doubleValue"});
+            this.givenDataArrayWhenConvertToCSVThenOutputCreated(head, path);
+        }
         //List with name, grid dimensions, block dimensions, time, lengths of arrays, values of variables (int, float, double)
         kernelInformations.add(new String[]
                 {id, Integer.toString(this.config.getGridSizeX()),
