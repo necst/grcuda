@@ -75,47 +75,28 @@ public class KernelExecutionObserver {
         // Save information on .csv;
         List<String[]> kernelInformations = new ArrayList<>();
         List<String[]> head = new ArrayList<>();
-        List<Long> deviceArraySize;
-        List<Integer> integerValue;
-        List<Float> floatValue;
-        List<Double> doubleValue;
+        List<Number> values;
         List<String> signature;
 
-        //Get lengths of arrays
-        deviceArraySize = this.args.getKernelDeviceArraySize();
-        String deviceArraySizeForFile = "[";
-        for (long i : deviceArraySize) {
-            deviceArraySizeForFile += Long.toString(i);
-            deviceArraySizeForFile += ";";
+        //Get values of numeric variables
+        values = this.args.getKernelValues();
+        String valuesForFile = "[";
+        for (Number i : values) {
+            if(i instanceof Integer)
+                valuesForFile += Integer.toString((Integer) i);
+            else if(i instanceof Float)
+                valuesForFile += Float.toString((Float) i);
+            else if(i instanceof Double)
+                valuesForFile += Double.toString((Double) i);
+            else if(i instanceof Long)
+                valuesForFile += Long.toString((Long) i);
+            else if(i instanceof Short)
+                valuesForFile += Short.toString((Short) i);
+            else if(i instanceof Byte)
+                valuesForFile += Byte.toString((Byte) i);
+            valuesForFile += ";";
         }
-        deviceArraySizeForFile += "]";
-
-        //Get values of 'int' variables
-        integerValue = this.args.getKernelIntegerValue();
-        String integerValueForFile = "[";
-        for (int i : integerValue) {
-            integerValueForFile += Integer.toString(i);
-            integerValueForFile += ";";
-        }
-        integerValueForFile += "]";
-
-        //Get values of 'float' variables
-        floatValue = this.args.getKernelFloatValue();
-        String floatValueForFile = "[";
-        for (float i : floatValue) {
-            floatValueForFile += Float.toString(i);
-            floatValueForFile += ";";
-        }
-        floatValueForFile += "]";
-
-        //Get values of 'double' variables
-        doubleValue = this.args.getKernelDoubleValue();
-        String doubleValueForFile = "[";
-        for (double i : doubleValue) {
-            doubleValueForFile += Double.toString(i);
-            doubleValueForFile += ";";
-        }
-        doubleValueForFile += "]";
+        valuesForFile += "]";
 
         //Get signature
         signature = this.args.getKernelSignature();
@@ -163,19 +144,17 @@ public class KernelExecutionObserver {
 
         if (!Files.exists(Paths.get(path))) {
             head.add(new String[]
-                    {"id", "GridSizeX", "GridSizeY", "GridSizeZ",
+                    {"Id", "GridSizeX", "GridSizeY", "GridSizeZ",
                             "BlockSizeX", "BlockSizeY", "BlockSizeZ",
-                            "time", "deviceArraySize", "integerValue",
-                            "floatValue", "doubleValue"});
+                            "Time", "Values"});
             this.givenDataArrayWhenConvertToCSVThenOutputCreated(head, path);
         }
-        //List with name, grid dimensions, block dimensions, time, lengths of arrays, values of variables (int, float, double)
+        //List with name, grid dimensions, block dimensions, time, values of numeric variables (in the order of signature)
         kernelInformations.add(new String[]
                 {id, Integer.toString(this.config.getGridSizeX()),
                         Integer.toString(this.config.getGridSizeY()), Integer.toString(this.config.getGridSizeZ()),
                         Integer.toString(this.config.getBlockSizeX()), Integer.toString(this.config.getBlockSizeY()),
-                        Integer.toString(this.config.getBlockSizeZ()), Float.toString(time),
-                        deviceArraySizeForFile, integerValueForFile, floatValueForFile, doubleValueForFile});
+                        Integer.toString(this.config.getBlockSizeZ()), Float.toString(time), valuesForFile});
         this.givenDataArrayWhenConvertToCSVThenOutputCreated(kernelInformations, path);
     }
 

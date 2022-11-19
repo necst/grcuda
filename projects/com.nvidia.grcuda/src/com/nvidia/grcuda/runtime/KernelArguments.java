@@ -81,47 +81,12 @@ public final class KernelArguments implements Closeable {
         return kernelArgumentWithValues;
     }
 
-    public List<Long> getKernelDeviceArraySize(){
-        List<Long> l = new ArrayList<>();
-        for(Object c : originalArgs){
-            if(c.getClass() == DeviceArray.class){
-                DeviceArray d = (DeviceArray) c;
-                l.add(d.getArraySize());
-            }
-        }
-        return l;
-    }
-
-    public List<Integer> getKernelIntegerValue(){
-        List<Integer> l = new ArrayList<>();
-        for(Object c : originalArgs){
-            if(c.getClass() == Integer.class){
-                Integer d = (Integer) c;
-                l.add(d);
-            }
-        }
-        return l;
-    }
-
-    public List<Float> getKernelFloatValue(){
-        List<Float> l = new ArrayList<>();
-        for(Object c : originalArgs){
-            if(c.getClass() == Float.class){
-                Float d = (Float) c;
-                l.add(d);
-            }
-        }
-        return l;
-    }
-
-    public List<Double> getKernelDoubleValue(){
-        List<Double> l = new ArrayList<>();
-        for(Object c : originalArgs){
-            if(c.getClass() == Double.class){
-                Double d = (Double) c;
-                l.add(d);
-            }
-        }
+    //return a list of all numeric kernel Arguments
+    public List<Number> getKernelValues(){
+        List<Number> l = new ArrayList<>();
+        for(Object c : originalArgs)
+            if(Number.class.isAssignableFrom(c.getClass()))
+                l.add((Number) c);
         return l;
     }
 
