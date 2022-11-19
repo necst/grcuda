@@ -82,11 +82,11 @@ public final class KernelArguments implements Closeable {
     }
 
     //return a list of all numeric kernel Arguments
-    public List<Number> getKernelValues(){
-        List<Number> l = new ArrayList<>();
+    public List<Object> getKernelValues(){
+        List<Object> l = new ArrayList<>();
         for(Object c : originalArgs)
             if(Number.class.isAssignableFrom(c.getClass()))
-                l.add((Number) c);
+                l.add(c);
         return l;
     }
 

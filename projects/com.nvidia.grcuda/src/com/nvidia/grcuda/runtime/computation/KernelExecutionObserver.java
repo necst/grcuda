@@ -75,25 +75,14 @@ public class KernelExecutionObserver {
         // Save information on .csv;
         List<String[]> kernelInformations = new ArrayList<>();
         List<String[]> head = new ArrayList<>();
-        List<Number> values;
+        List<Object> values;
         List<String> signature;
 
         //Get values of numeric variables
         values = this.args.getKernelValues();
         String valuesForFile = "[";
-        for (Number i : values) {
-            if(i instanceof Integer)
-                valuesForFile += Integer.toString((Integer) i);
-            else if(i instanceof Float)
-                valuesForFile += Float.toString((Float) i);
-            else if(i instanceof Double)
-                valuesForFile += Double.toString((Double) i);
-            else if(i instanceof Long)
-                valuesForFile += Long.toString((Long) i);
-            else if(i instanceof Short)
-                valuesForFile += Short.toString((Short) i);
-            else if(i instanceof Byte)
-                valuesForFile += Byte.toString((Byte) i);
+        for (Object i : values) {
+            valuesForFile += i.toString();
             valuesForFile += ";";
         }
         valuesForFile += "]";
