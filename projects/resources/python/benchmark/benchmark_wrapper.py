@@ -344,7 +344,6 @@ def execute_grcuda_benchmark(benchmark, size, num_gpus, block_sizes, exec_policy
     b1d_size = " ".join([str(b['block_size_1d']) for b in block_sizes])
     b2d_size = " ".join([str(b['block_size_2d']) for b in block_sizes])
 
-    # TODO: add the "--grcuda.EnableTrainingComputation"
     benchmark_cmd = GRAALPYTHON_CMD.format(HEAP_SIZE, exec_policy, dependency_policy, new_stream_policy,
                                            num_gpus, parent_stream_policy, choose_device_policy, memory_advise, prefetch, bandwidth_matrix,
                                            "--grcuda.ForceStreamAttach" if stream_attach else "", 
