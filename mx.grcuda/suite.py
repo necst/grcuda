@@ -82,78 +82,12 @@ suite = {
     # --------------------------------------------------------------------------------------------------------------
     "libraries": {
         "pmml4s_2.13" : {
-            "urls" : ["https://repo1.maven.org/maven2/org/pmml4s/pmml4s_2.13/0.9.17/pmml4s_2.13-0.9.17-sources.jar"],
             "maven" : {
                 "groupId" : "org.pmml4s",
                 "artifactId" : "pmml4s_2.13",
                 "version" : "0.9.17",
             },
-            "sha1": "sha1=911867c618c821fc9b2af3d741eb20e5034bc897",
-            "license" : ["Apache 2.0"],
-            "dep": ["scala-library", "scala-xml_2.13", "commons-text", "spray-json_2.13", "commons-math3"]
-        },
-        "scala-xml_2.13" : {
-            "urls" : ["https://repo1.maven.org/maven2/org/scala-lang/modules/scala-xml_2.13/2.1.0/scala-xml_2.13-2.1.0-sources.jar"],
-            "maven" : {
-                "groupId" : "org.scala-lang.modules",
-                "artifactId" : "scala-xml_2.13",
-                "version" : "2.1.0",
-            },
-            "sha1": "sha1=0fd264db1c7415552a8d2cb28ec65bcc922fc298",
-            "license" : ["Apache 2.0"],
-            "dep": ["scala-library"]
-        },
-        "scala-library" : {
-            "urls" : ["https://repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.10/scala-library-2.13.10-sources.jar"],
-            "maven" : {
-                "groupId" : "org.scala-lang",
-                "artifactId" : "pmml4s_2.13",
-                "version" : "2.13.10",
-            },
-            "sha1": "sha1=68e791105b904f26ee2eaa8c17e740c8076e36eb",
-            "license" : ["Apache 2.0"]
-        },
-        "commons-text" : {
-            "urls" : ["https://repo1.maven.org/maven2/org/apache/commons/commons-text/1.10.0/commons-text-1.10.0-sources.jar"],
-            "maven" : {
-                "groupId" : "org.apache.commons",
-                "artifactId" : "commons-text",
-                "version" : "1.10.0",
-            },
-            "sha1": "sha1=e8f5b9b64ff9aeaa2739f2eb4cfd6c48834a5df2",
-            "license" : ["Apache 2.0"],
-            "dep": ["commons-lang3"]
-        },
-        "commons-lang3" : {
-            "urls" : ["https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0-sources.jar"],
-            "maven" : {
-                "groupId" : "org.apache.commons",
-                "artifactId" : "commons-lang3",
-                "version" : "3.12.0",
-            },
-            "sha1": "sha1=5437944fa6d2c64e754c13f83ef0a315101f68fc",
-            "license" : ["Apache 2.0"]
-        },
-        "commons-math3" : {
-            "urls" : ["https://repo1.maven.org/maven2/org/apache/commons/commons-math3/3.6.1/commons-math3-3.6.1-sources.jar"],
-            "maven" : {
-                "groupId" : "org.apache.commons",
-                "artifactId" : "commons-math3",
-                "version" : "3.6.1",
-            },
-            "sha1": "sha1=8fab23986ea8886af34818daf32a718e81dc98ba",
-            "license" : ["Apache 2.0"]
-        },
-        "spray-json_2.13" : {
-            "urls" : ["https://repo1.maven.org/maven2/io/spray/spray-json_2.13/1.3.6/spray-json_2.13-1.3.6-sources.jar"],
-            "maven" : {
-                "groupId" : "io.spray",
-                "artifactId" : "spray-json_2.13",
-                "version" : "1.3.6",
-            },
-            "sha1": "sha1=6fb79573827c6d82ddf4882f76fdfdb542674cdc",
-            "license" : ["Apache 2.0"],
-            "dep": ["scala-library"]
+            "sha1": "5ed6220264b215e9c740bfb2027ef03e5d500bcf",
         },
     },
 
@@ -192,6 +126,7 @@ suite = {
                 "truffle:TRUFFLE_API",
                 "sdk:GRAAL_SDK",
                 "truffle:ANTLR4",
+                "pmml4s_2.13",
             ],
             "buildDependencies": ["com.nvidia.grcuda.parser.antlr"],
             "checkstyleVersion": "8.8",
@@ -203,6 +138,7 @@ suite = {
                 "com.nvidia.grcuda",
                 "mx:JUNIT",
                 "truffle:TRUFFLE_TEST",
+                "pmml4s_2.13",
             ],
             "checkstyle": "com.nvidia.grcuda",
             "javaCompliance": "8+",
