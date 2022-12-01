@@ -56,6 +56,7 @@ import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.GraphExport;
 import com.nvidia.grcuda.runtime.executioncontext.SyncGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.stream.trainingmodel.RetrainModel;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.TruffleLanguage.Env;
@@ -235,7 +236,11 @@ public final class GrCUDAContext {
             GraphExport graphExport = new GraphExport(dag);
             graphExport.graphGenerator(grCUDAOptionMap.getExportDAGPath());
         }
-        this.grCUDAExecutionContext.cleanup();
+        if (grCUDAOptionMap.isUpdateModelEnable()) {
+            RetrainModel modelUpdate = new RetrainModel();
+            modelUpdate.retrainModels();
+            this.grCUDAExecutionContext.cleanup();
+        }
     }
 
 }
