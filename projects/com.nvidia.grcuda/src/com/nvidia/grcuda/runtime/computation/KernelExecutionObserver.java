@@ -30,18 +30,12 @@
  */
 package com.nvidia.grcuda.runtime.computation;
 
-import com.nvidia.grcuda.NoneValue;
-import com.nvidia.grcuda.runtime.array.AbstractArray;
-import com.nvidia.grcuda.runtime.ConfiguredKernel;
+
 import com.nvidia.grcuda.runtime.Kernel;
 import com.nvidia.grcuda.runtime.KernelArguments;
 import com.nvidia.grcuda.runtime.KernelConfig;
-import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
-import com.nvidia.grcuda.runtime.stream.CUDAStream;
-import com.nvidia.grcuda.runtime.stream.DefaultStream;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -73,21 +67,20 @@ public class KernelExecutionObserver {
 
     public void update(float time) {
         // Save information on .csv;
-        List<String[]> kernelInformations = new ArrayList<>();
-        List<String[]> head = new ArrayList<>();
         List<Object> values;
         List<String> signature;
-
+        List<String> sizes = new ArrayList<>();
+        int count=1;
         //Get values of numeric variables
         values = this.args.getKernelValues();
-        String valuesForFile = "[";
-        for (Object i : values) {
-            valuesForFile += i.toString();
-            valuesForFile += ";";
+        String[] line = new String[values.size()+1];
+        line[0] = Float.toString(time);
+        for(Object i:values){
+            line[count] = i.toString();
+            count++;
         }
-        valuesForFile += "]";
 
-        //Get signature
+        //Get signature, grid size and block size
         signature = this.args.getKernelSignature();
         signature = signature.stream().map(x -> (x.split("\\.")[x.split("\\.").length - 1])).collect(Collectors.toList());
         String signatureForHash = " (";
@@ -97,21 +90,19 @@ public class KernelExecutionObserver {
         }
         signatureForHash += ")";
 
-        // Get Kernel_ID
-        String hashtext;
-        String id = "";
-        try {
-            id = this.kernel.getKernelName() + signatureForHash;
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] messageDigest = md.digest(id.getBytes());
-            BigInteger no = new BigInteger(1, messageDigest);
-            hashtext = no.toString(16);
-            while (hashtext.length() < 32) {
-                hashtext = "0" + hashtext;
-            }
-        } catch (NoSuchAlgorithmException e) {
-            hashtext = this.kernel.getKernelName();
+        sizes.add(Integer.toString(this.config.getGridSizeX()));
+        sizes.add(Integer.toString(this.config.getGridSizeY()));
+        sizes.add(Integer.toString(this.config.getGridSizeZ()));
+        sizes.add(Integer.toString(this.config.getBlockSizeX()));
+        sizes.add(Integer.toString(this.config.getBlockSizeY()));
+        sizes.add(Integer.toString(this.config.getBlockSizeZ()));
+        sizes = sizes.stream().map(x -> (x.split("\\.")[x.split("\\.").length - 1])).collect(Collectors.toList());
+        signatureForHash += " (";
+        for (int i = 0; i < sizes.size(); i++) {
+            signatureForHash += sizes.get(i);
+            if (i < sizes.size() - 1) signatureForHash += ", ";
         }
+        signatureForHash += ")";
 
         // Find the location where to save the data
         File f = new File("");
@@ -125,26 +116,46 @@ public class KernelExecutionObserver {
             path += (dir + "/");
         }
 
+        // Get Kernel_ID
+        String hashtext;
+        String id="";
+        try {
+            id = this.kernel.getKernelName() + signatureForHash;
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] messageDigest = md.digest(id.getBytes());
+            BigInteger no = new BigInteger(1, messageDigest);
+            hashtext = no.toString(16);
+            while (hashtext.length() < 32) {
+                hashtext = "0" + hashtext;
+            }
+            //save kernel id and hashtext for developing, TODO: delete
+            if (!Files.exists(Paths.get(path + "names.csv"))) {
+                this.printLineToCsv(new String[]{"id","hashtext"}, path + "names.csv");
+            }
+            this.printLineToCsv(new String[]{id, hashtext}, path + "names.csv");
+
+        } catch (NoSuchAlgorithmException e) {
+            hashtext = this.kernel.getKernelName();
+        }
+
         Path p = Paths.get(path);
         if (!Files.isDirectory(p)) {
             new File(path).mkdirs();
         }
         path += (hashtext + ".csv");
 
+        //If file doesn't exist add head
         if (!Files.exists(Paths.get(path))) {
-            head.add(new String[]
-                    {"Id", "GridSizeX", "GridSizeY", "GridSizeZ",
-                            "BlockSizeX", "BlockSizeY", "BlockSizeZ",
-                            "Time", "Values"});
-            this.givenDataArrayWhenConvertToCSVThenOutputCreated(head, path);
+            String[] head = new String[values.size()+1];
+            head[0] = "Time";
+            for(int i=0; i<values.size();i++){
+                head[i+1] = Integer.toString(i);
+            }
+            this.printLineToCsv(head, path);
         }
-        //List with name, grid dimensions, block dimensions, time, values of numeric variables (in the order of signature)
-        kernelInformations.add(new String[]
-                {id, Integer.toString(this.config.getGridSizeX()),
-                        Integer.toString(this.config.getGridSizeY()), Integer.toString(this.config.getGridSizeZ()),
-                        Integer.toString(this.config.getBlockSizeX()), Integer.toString(this.config.getBlockSizeY()),
-                        Integer.toString(this.config.getBlockSizeZ()), Float.toString(time), valuesForFile});
-        this.givenDataArrayWhenConvertToCSVThenOutputCreated(kernelInformations, path);
+        //Add line with time, values of numeric variables (in the order of signature)
+        this.printLineToCsv(line, path);
+
     }
 
     // Useful methods for writing .csv files without external libraries
@@ -163,13 +174,11 @@ public class KernelExecutionObserver {
         return escapedData;
     }
 
-    private void givenDataArrayWhenConvertToCSVThenOutputCreated(List<String[]> dataLines, String fileName) {
+    private void printLineToCsv(String[] line, String fileName) {
         try {
             FileWriter csvOutputFile = new FileWriter(fileName, true);
             PrintWriter pw = new PrintWriter(csvOutputFile);
-            dataLines.stream()
-                    .map(this::convertToCSV)
-                    .forEach(pw::write);
+            pw.write(convertToCSV(line));
             pw.write("\n");
             pw.close();
         } catch (Exception e) {
