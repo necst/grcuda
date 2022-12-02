@@ -63,7 +63,10 @@ import com.oracle.truffle.api.TruffleLanguage.Env;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.nodes.Node;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -87,6 +90,7 @@ public final class GrCUDAContext {
     private final ArrayList<Runnable> disposables = new ArrayList<>();
     private final AtomicInteger moduleId = new AtomicInteger(0);
     private volatile boolean cudaInitialized = false;
+    private RetrainModel modelManager;
 
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
     private final ConcurrentHashMap<Class<?>, CallTarget> uncachedMapCallTargets = new ConcurrentHashMap<>();
@@ -162,6 +166,54 @@ public final class GrCUDAContext {
             new CUSPARSERegistry(this).registerCUSPARSEFunctions(sparse);
         }
         this.rootNamespace = namespace;
+
+        if (grCUDAOptionMap.isTrainModelsEnable()) {
+            modelManager = new RetrainModel();
+        }
+    }
+
+    private HashMap<String, Long> getSizeDataMap(){
+        // TODO: Assumption that if the dir exist there is a file inside
+        HashMap<String, Long> map = new HashMap<>();
+        File f = new File("$GRCUDA_HOME/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/data");
+        if(f.exists() && f.isDirectory()) {
+            File inDirFile[] = f.listFiles();
+            for (File tmpFile : inDirFile) {
+                map.put(tmpFile.getName(), tmpFile.length());
+            }
+        } else {
+            map = null;
+        }
+        return map;
+    }
+
+    private ArrayList<String> getKernelHashes(){
+        // TODO: Assumption that if the dir exist there is a file inside
+        // Find the location where to save the data
+        File fTemp = new File("");
+        String end = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/data/";
+        String path = "";
+        for (String dir : fTemp.getAbsolutePath().split("/")) {
+            if (dir.equals("grcuda")) {
+                path += end;
+                break;
+            }
+            path += (dir + "/");
+        }
+
+        ArrayList<String> list = new ArrayList<>();
+        File f = new File(path);
+        if(f.exists() && f.isDirectory()) {
+            File inDirFile[] = f.listFiles();
+            for (File tmpFile : inDirFile) {
+                if (!tmpFile.getName().equals("names.csv")) {
+                    list.add(tmpFile.getName().replace(".csv", ""));
+                }
+            }
+        } else {
+            list = null;
+        }
+        return list;
     }
 
 //    public static GrCUDAContext get(Node node) {
@@ -236,9 +288,8 @@ public final class GrCUDAContext {
             GraphExport graphExport = new GraphExport(dag);
             graphExport.graphGenerator(grCUDAOptionMap.getExportDAGPath());
         }
-        if (grCUDAOptionMap.isUpdateModelEnable()) {
-            RetrainModel modelUpdate = new RetrainModel();
-            modelUpdate.retrainModels();
+        if (grCUDAOptionMap.isTrainModelsEnable()) {
+            this.modelManager.retrainModel(getKernelHashes());
             this.grCUDAExecutionContext.cleanup();
         }
     }

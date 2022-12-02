@@ -64,6 +64,7 @@ public class BenchmarkConfig {
     public boolean forceStreamAttach;
     public boolean enableComputationTimers;
     public boolean enableTrainingComputation;
+    public boolean enableTrainModels;
     public int numGpus;
     public String memAdvisePolicy;
     @JsonIgnore public String bandwidthMatrix;
@@ -99,6 +100,7 @@ public class BenchmarkConfig {
                 ", forceStreamAttach=" + forceStreamAttach +
                 ", enableComputationTimers=" + enableComputationTimers +
                 ", enableTrainingComputation=" + enableTrainingComputation +
+                ", enableTrainModels=" + enableTrainModels +
                 ", numGpus=" + numGpus +
                 ", memAdvisePolicy='" + memAdvisePolicy + '\'' +
                 ", bandwidthMatrix='" + bandwidthMatrix + '\'' +

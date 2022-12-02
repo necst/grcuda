@@ -137,7 +137,6 @@ public class KernelExecutionObserver {
         } catch (NoSuchAlgorithmException e) {
             hashtext = this.kernel.getKernelName();
         }
-
         Path p = Paths.get(path);
         if (!Files.isDirectory(p)) {
             new File(path).mkdirs();

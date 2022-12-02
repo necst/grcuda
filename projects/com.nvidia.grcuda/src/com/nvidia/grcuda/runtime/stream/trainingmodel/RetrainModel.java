@@ -37,30 +37,41 @@
 package com.nvidia.grcuda.runtime.stream.trainingmodel;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
 
 public class RetrainModel {
     // Check for system.platform, replace python for Windows
-    final String CMD = "python3 main.py";
+    String CMD = "cd $GRCUDA_HOME/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/ && python3 main.py";
 
     public RetrainModel() {
     }
 
-    public void retrainModels() {
-        try {
-            // TODO: fix requirements
-            ProcessBuilder builtCmd = new ProcessBuilder("bash", "-c", "cd $GRCUDA_HOME/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/ && yum install -r requirements.txt && python3 main.py");
-            builtCmd.redirectErrorStream(true);
-            Process p = builtCmd.start();
+    public void retrainModel(ArrayList<String> kernels) {
+        if(kernels!=null){
+            try {
+                // TODO: fix requirements
+                // CMD for requirements: pip3 install -r requirements.txt
+                String kernelsString = "";
+                for (String k : kernels) kernelsString += (" " + k);
+                CMD += kernelsString;
+                ProcessBuilder builtCmd = new ProcessBuilder("bash", "-c", CMD);
+                builtCmd.redirectErrorStream(true);
+                Process p = builtCmd.start();
 
-            // Print output code
-            BufferedReader output_reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String output = "";
-            while ((output = output_reader.readLine()) != null) {
-                System.out.println(output);
+                // Print output code
+                BufferedReader output_reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String output = "";
+                while ((output = output_reader.readLine()) != null) {
+                    System.out.println(output);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        } else {
+            System.out.println("Training models impossible: no data...");
         }
     }
 }

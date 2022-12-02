@@ -167,6 +167,7 @@ public abstract class Benchmark {
                 .option("grcuda.ForceStreamAttach", String.valueOf(config.forceStreamAttach))
                 .option("grcuda.EnableComputationTimers", String.valueOf(config.enableComputationTimers))
                 .option("grcuda.EnableTrainingComputation", String.valueOf(config.enableTrainingComputation))
+                .option("grcuda.EnableTrainModels", String.valueOf(config.enableTrainModels))
                 .option("grcuda.MemAdvisePolicy", config.memAdvisePolicy)
                 .option("grcuda.NumberOfGPUs", String.valueOf(config.numGpus))
                 .option("grcuda.BandwidthMatrix", config.bandwidthMatrix)

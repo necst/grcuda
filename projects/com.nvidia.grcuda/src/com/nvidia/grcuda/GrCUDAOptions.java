@@ -79,7 +79,7 @@ public final class GrCUDAOptions {
     public static final OptionKey<Boolean> EnableTrainingComputation = new OptionKey<>(GrCUDAOptionMap.DEFAULT_ENABLE_TRAIN_COMPUTATION_TIMES);
 
     @Option(category = OptionCategory.USER, help = "Update the models with new execution time of GrCUDA computations.", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<Boolean> EnableUpdateModel = new OptionKey<>(GrCUDAOptionMap.DEFAULT_ENABLE_UPDATE_MODELS);
+    public static final OptionKey<Boolean> EnableTrainModels = new OptionKey<>(GrCUDAOptionMap.DEFAULT_ENABLE_TRAIN_MODELS);
 
     @Option(category = OptionCategory.USER, help = "Choose the scheduling policy of GrCUDA computations.", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<String> ExecutionPolicy = new OptionKey<>(GrCUDAOptionMap.DEFAULT_EXECUTION_POLICY.toString());

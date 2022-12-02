@@ -81,7 +81,7 @@ public class GrCUDAOptionMap implements TruffleObject {
     public static final boolean DEFAULT_TENSORRT_ENABLED = false;
     public static final boolean DEFAULT_ENABLE_COMPUTATION_TIMERS = false;
     public static final boolean DEFAULT_ENABLE_TRAIN_COMPUTATION_TIMES = false;
-    public static final boolean DEFAULT_ENABLE_UPDATE_MODELS = false;
+    public static final boolean DEFAULT_ENABLE_TRAIN_MODELS = false;
     public static final Integer DEFAULT_NUMBER_OF_GPUs = 1;
     public static final String DEFAULT_BANDWIDTH_MATRIX = System.getenv("GRCUDA_HOME") + File.separatorChar +
             "projects" + File.separatorChar + "resources" + File.separatorChar +
@@ -241,7 +241,7 @@ public class GrCUDAOptionMap implements TruffleObject {
 
     public Boolean isTrainEnable() { return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.EnableTrainingComputation); }
 
-    public Boolean isUpdateModelEnable() { return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.EnableUpdateModel); }
+    public Boolean isTrainModelsEnable() { return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.EnableTrainModels); }
 
     public Boolean isTensorRTEnabled(){
         return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.TensorRTEnabled);
