@@ -36,6 +36,7 @@ import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.DeviceList;
+import com.nvidia.grcuda.runtime.GPUDeviceProperties;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.prefetch.AsyncArrayPrefetcher;
 import com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager;
@@ -80,6 +81,10 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
     public Object registerExecution(GrCUDAComputationalElement computation) throws UnsupportedTypeException {
         // Add the new computation to the DAG
         ExecutionDAG.DAGVertex vertex = dag.append(computation);
+
+        if (computation.getKernelArgumentsSize() < streamManager.getAllocatedDeviceMemory() + getDevice(getCurrentGPU()).getTotalDeviceMemory()){
+            // agire qui
+        }
 
         // Compute the stream where the computation will be done, if the computation can be performed asynchronously;
         streamManager.assignStream(vertex);

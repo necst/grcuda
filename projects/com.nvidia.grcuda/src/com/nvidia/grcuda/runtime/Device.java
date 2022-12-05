@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 
@@ -68,6 +69,7 @@ public class Device extends AbstractDevice implements TruffleObject {
     private static final String IS_CURRENT = "isCurrent";
     private static final String SET_CURRENT = "setCurrent";
     private static final MemberSet PUBLIC_MEMBERS = new MemberSet(ID, PROPERTIES, IS_CURRENT, SET_CURRENT);
+    private Optional<Long> totalDeviceMemory = Optional.empty();
     private final GPUDeviceProperties properties;
     private final CUDARuntime runtime;
 
@@ -150,6 +152,27 @@ public class Device extends AbstractDevice implements TruffleObject {
 
     public int getDeviceId() {
         return deviceId;
+    }
+
+    /**
+     * Retrieve total memory in bytes of this device. Using Optional in order to execute the call to CUDA runtime only one time.
+     * @return total bytes in memory.
+     */
+    public long getTotalDeviceMemory() {
+        if (!totalDeviceMemory.isPresent()) {
+            int currentDevice = runtime.getCurrentGPU();
+            try {
+                if (currentDevice != deviceId) {
+                    runtime.cudaSetDevice(deviceId);
+                }
+                totalDeviceMemory = Optional.of(runtime.cudaMemGetInfo().getTotalBytes());
+            } finally {
+                if (currentDevice != deviceId) {
+                    runtime.cudaSetDevice(currentDevice);
+                }
+            }
+        }
+        return totalDeviceMemory.get();
     }
 
     /**

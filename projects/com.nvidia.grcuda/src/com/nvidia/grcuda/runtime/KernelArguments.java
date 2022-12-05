@@ -30,11 +30,13 @@
  */
 package com.nvidia.grcuda.runtime;
 
+import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.computation.ComputationArgument;
 import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.instrument.Instrumentation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -78,6 +80,21 @@ public final class KernelArguments implements Closeable {
 
     public List<ComputationArgumentWithValue> getKernelArgumentWithValues() {
         return kernelArgumentWithValues;
+    }
+
+    /**
+     * Calculate the total size in bytes of the arguments that are {@link DeviceArray}
+     * @return total size in bytes
+     */
+    public long getTotalKernelDeviceArraySize(){
+        long totalSize = 0;
+        for(Object c : originalArgs){
+            if(c.getClass() == DeviceArray.class){
+                DeviceArray d = (DeviceArray) c;
+                totalSize += d.getSizeBytes();
+            }
+        }
+        return totalSize;
     }
 
     @Override

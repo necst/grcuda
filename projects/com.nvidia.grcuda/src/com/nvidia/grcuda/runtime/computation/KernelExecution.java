@@ -58,7 +58,8 @@ public class KernelExecution extends GrCUDAComputationalElement {
     public KernelExecution(ConfiguredKernel configuredKernel, KernelArguments args) {
         super(
             configuredKernel.getKernel().getGrCUDAExecutionContext(),
-            new KernelExecutionInitializer(args)
+            new KernelExecutionInitializer(args),
+            args.getTotalKernelDeviceArraySize()
         );
         this.configuredKernel = configuredKernel;
         this.kernel = configuredKernel.getKernel();

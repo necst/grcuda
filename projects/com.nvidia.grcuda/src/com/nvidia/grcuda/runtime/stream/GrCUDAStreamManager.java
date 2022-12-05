@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class GrCUDAStreamManager {
@@ -95,7 +96,8 @@ public class GrCUDAStreamManager {
             boolean isTimeComputation,
             String bandwidthMatrixPath,
             double dataThreshold) {
-        this(runtime, isTimeComputation, new GrCUDAStreamPolicy(runtime, retrieveNewStreamPolicyEnum, retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum, bandwidthMatrixPath, dataThreshold));
+        this(runtime, isTimeComputation, new GrCUDAStreamPolicy(runtime, retrieveNewStreamPolicyEnum,
+                retrieveParentStreamPolicyEnum, deviceSelectionPolicyEnum, bandwidthMatrixPath, dataThreshold));
     }
 
     public GrCUDAStreamManager(
@@ -391,6 +393,20 @@ public class GrCUDAStreamManager {
 
     public GrCUDAStreamPolicy getStreamPolicy() {
         return streamPolicy;
+    }
+
+    /**
+     * Calculate memory, in bytes, allocated in the device by summing the arguments size of the executing kernels.
+     * @return the bytes allocated for {@link com.nvidia.grcuda.runtime.array.DeviceArray} used by kernels in execution.
+     */
+    // TODO only working with single GPU. To extend for multi GPU, it is needed to check the stream owner device.
+    public long getAllocatedDeviceMemory() {
+        final long[] result = {0};
+
+        activeComputationsPerStream.forEach((cudaStream, vertexSet) ->
+                vertexSet.forEach(vertex -> result[0] += vertex.getComputation().getKernelArgumentsSize()));
+
+        return result[0];
     }
 
     /**

@@ -43,6 +43,7 @@ import com.nvidia.grcuda.runtime.stream.DefaultStream;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
+import java.lang.instrument.Instrumentation;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -96,7 +97,7 @@ public abstract class GrCUDAComputationalElement {
     /**
      * Specify if this computational element represents a computation executed on the CPU,
      * such as an array access (read or write) on an {@link com.nvidia.grcuda.runtime.array.AbstractArray}.
-     * CPU computations are assumed synchronous. By default it returns false;
+     * CPU computations are assumed synchronous. By default, it returns false;
      */
     protected boolean isComputationDoneByCPU = false;
 
@@ -115,6 +116,11 @@ public abstract class GrCUDAComputationalElement {
     private float executionTimeMs = 0;
 
     /**
+     * If the computational element is a kernel, represents the total size in bytes of the arguments that are Device Arrays, otherwise remains zero.
+     */
+    private long kernelArgumentsSize = 0;
+
+    /**
      * Constructor that takes an argument set initializer to build the set of arguments used in the dependency computation
      * @param grCUDAExecutionContext execution context in which this computational element will be scheduled
      * @param initializer the initializer used to build the internal set of arguments considered in the dependency computation
@@ -124,6 +130,19 @@ public abstract class GrCUDAComputationalElement {
         // Initialize by making a copy of the original set;
         this.grCUDAExecutionContext = grCUDAExecutionContext;
         this.dependencyComputation = grCUDAExecutionContext.getDependencyBuilder().initialize(this.argumentsThatCanCreateDependencies);
+    }
+
+    /**
+     * Constructor that takes the total size of arguments other than the argument set initializer to build the set of arguments used
+     * in the dependency computation, this constructor is used only by {@link KernelExecution} objects.
+     * @param grCUDAExecutionContext execution context in which this computational element will be scheduled
+     * @param initializer the initializer used to build the internal set of arguments considered in the dependency computation
+     */
+    public GrCUDAComputationalElement(AbstractGrCUDAExecutionContext grCUDAExecutionContext, InitializeDependencyList initializer, long kernelArgumentsSize) {
+        this.argumentsThatCanCreateDependencies = initializer.initialize();
+        this.grCUDAExecutionContext = grCUDAExecutionContext;
+        this.dependencyComputation = grCUDAExecutionContext.getDependencyBuilder().initialize(this.argumentsThatCanCreateDependencies);
+        this.kernelArgumentsSize = kernelArgumentsSize;
     }
 
     /**
@@ -207,6 +226,8 @@ public abstract class GrCUDAComputationalElement {
     public void setComputationStarted() {
         this.computationStarted = true;
     }
+
+    public long getKernelArgumentsSize() { return kernelArgumentsSize; }
 
     public Optional<CUDAEvent> getEventStop() {
         if (eventStop != null) {
