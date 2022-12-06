@@ -87,14 +87,11 @@ public final class KernelArguments implements Closeable {
      * @return total size in bytes
      */
     public long getTotalKernelDeviceArraySize(){
-        long totalSize = 0;
-        for(Object c : originalArgs){
-            if(c.getClass() == DeviceArray.class){
-                DeviceArray d = (DeviceArray) c;
-                totalSize += d.getSizeBytes();
-            }
-        }
-        return totalSize;
+
+        return Arrays.stream(originalArgs)
+                .filter(o -> o.getClass() == DeviceArray.class)
+                .mapToLong(o -> ((DeviceArray) o).getSizeBytes()).sum();
+
     }
 
     @Override
