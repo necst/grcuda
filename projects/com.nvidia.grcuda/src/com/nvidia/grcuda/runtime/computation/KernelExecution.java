@@ -40,22 +40,11 @@ import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
 
-import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.io.PrintWriter;
-import java.io.FileWriter;
-import java.io.File;
 
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * Class used to track the single execution of a {@link ConfiguredKernel}.
@@ -87,6 +76,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
         super.setExecutionTime(executionTimeMs, false);
 
         if (train) (new KernelExecutionObserver(config, kernel, args)).update(executionTimeMs);
+        if (train) (new KernelExecutionObserver(config, kernel, args)).testModel(executionTimeMs);
     }
 
 
