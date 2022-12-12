@@ -82,8 +82,8 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         // Add the new computation to the DAG
         ExecutionDAG.DAGVertex vertex = dag.append(computation);
 
-        if (computation.getKernelArgumentsSize() < streamManager.getAllocatedDeviceMemory() + getDevice(getCurrentGPU()).getTotalDeviceMemory()){
-            // agire qui
+        if (computation.getKernelArgumentsSize() > getDevice(getCurrentGPU()).getTotalDeviceMemory() - streamManager.getAllocatedDeviceMemory()){
+            System.out.println("kernel argument size: "+computation.getKernelArgumentsSize()+", allocated device memory: "+streamManager.getAllocatedDeviceMemory()+" out of "+getDevice(getCurrentGPU()).getTotalDeviceMemory());
         }
 
         // Compute the stream where the computation will be done, if the computation can be performed asynchronously;

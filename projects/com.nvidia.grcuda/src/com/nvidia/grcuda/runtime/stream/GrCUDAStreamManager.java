@@ -403,8 +403,9 @@ public class GrCUDAStreamManager {
     public long getAllocatedDeviceMemory() {
         final long[] result = {0};
 
-        activeComputationsPerStream.forEach((cudaStream, vertexSet) ->
-                vertexSet.forEach(vertex -> result[0] += vertex.getComputation().getKernelArgumentsSize()));
+        activeComputationsPerStream
+                .forEach((cudaStream, vertexSet) -> vertexSet
+                        .forEach(vertex -> result[0] += vertex.getComputation().getKernelArgumentsSize()));
 
         return result[0];
     }
