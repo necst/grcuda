@@ -34,6 +34,8 @@ package com.nvidia.grcuda.runtime.computation;
 import com.nvidia.grcuda.runtime.Kernel;
 import com.nvidia.grcuda.runtime.KernelArguments;
 import com.nvidia.grcuda.runtime.KernelConfig;
+import com.nvidia.grcuda.runtime.stream.Utilities;
+import com.nvidia.grcuda.runtime.stream.trainingmodel.TrainModel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -77,13 +79,13 @@ public class KernelExecutionObserver {
     // Save information on .csv;
     public void update(float time) {
         List<Object> values;
-        int count=1;
+        int count = 1;
 
         //Get values of numeric variables
         values = this.args.getKernelValues();
-        String[] line = new String[values.size()+1];
+        String[] line = new String[values.size() + 1];
         line[0] = Float.toString(time);
-        for(Object i:values){
+        for (Object i : values) {
             line[count] = i.toString();
             count++;
         }
@@ -99,7 +101,7 @@ public class KernelExecutionObserver {
 
         // Save kernel id and hashtext for developing, TODO: delete
         if (!Files.exists(Paths.get(path + "names.csv"))) {
-            this.printLineToCsv(new String[]{"id","hashtext"}, path + "names.csv");
+            this.printLineToCsv(new String[]{"id", "hashtext"}, path + "names.csv");
         }
         this.printLineToCsv(new String[]{id, hashtext}, path + "names.csv");
 
@@ -112,10 +114,10 @@ public class KernelExecutionObserver {
 
         //If file doesn't exist add head
         if (!Files.exists(Paths.get(path))) {
-            String[] head = new String[values.size()+1];
+            String[] head = new String[values.size() + 1];
             head[0] = "Time";
-            for(int i=0; i<values.size();i++){
-                head[i+1] = Integer.toString(i);
+            for (int i = 0; i < values.size(); i++) {
+                head[i + 1] = Integer.toString(i);
             }
             this.printLineToCsv(head, path);
         }
@@ -125,10 +127,10 @@ public class KernelExecutionObserver {
     }
 
     //TEST accuracy of models
-    public void testModel(float time){
+    public void testModel(float time) {
         List<Object> values;
         Map<String, Double> map = new HashMap<String, Double>();
-        int count=0;
+        int count = 0;
 
         // Find the location where the model is
         String path = absolutePath("grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/trainedmodels/");
@@ -144,20 +146,51 @@ public class KernelExecutionObserver {
             Model model = Model.fromFile(path);
             //Get values of numeric variables and create map
             values = this.args.getKernelValues();
-            for(Object i:values){
+            for (Object i : values) {
                 map.put(Integer.toString(count), Double.parseDouble(i.toString()));
                 count++;
             }
             // Test model
             double predicted = getRegressionValue(map, model);
             System.out.println("Predicted: " + predicted + "  \t" + "Actual: " + time);
-        }
-        else{
+        } else {
             System.out.println(path);
             System.out.println("Model doesn't exist");
         }
+    }
 
+    public void printPrediction(float time) {
+        ArrayList<Double> values = new ArrayList<>();
+        TrainModel trainModel;
 
+        // Find the location where the model is
+        String path = Utilities.getPath() + "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/trainedmodels/";
+        
+        // Get Kernel_ID
+        String id = this.kernel.getKernelName() + signatureForHash();
+        
+        // Hash
+        String hashSiganture = hash(id);
+
+        // Complete path
+        path += (hashSiganture + ".model");
+        
+        // Get model
+        if (Files.exists(Paths.get(path))) {
+            trainModel = new TrainModel(hashSiganture);
+
+            //Get values of numeric variables and create map
+            for (Object i : this.args.getKernelValues()) {
+                values.add(Double.parseDouble(i.toString()));
+            }
+
+            // Test model
+            double predicted = trainModel.predictionTime(values);
+            System.out.println("Predicted: " + predicted + "  \t" + "Actual: " + time);
+        } else {
+            System.out.println(path);
+            System.out.println("Model doesn't exist");
+        }
     }
 
     public Double getRegressionValue(Map<String, Double> values, Model model) {
@@ -212,7 +245,7 @@ public class KernelExecutionObserver {
         return path;
     }
 
-    String hash(String id){
+    String hash(String id) {
         String hashtext = "";
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");

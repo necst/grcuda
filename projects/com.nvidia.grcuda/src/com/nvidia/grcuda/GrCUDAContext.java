@@ -56,7 +56,8 @@ import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.GraphExport;
 import com.nvidia.grcuda.runtime.executioncontext.SyncGrCUDAExecutionContext;
-import com.nvidia.grcuda.runtime.stream.trainingmodel.RetrainModel;
+import com.nvidia.grcuda.runtime.stream.Utilities;
+import com.nvidia.grcuda.runtime.stream.trainingmodel.TrainModel;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.TruffleLanguage.Env;
@@ -69,6 +70,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Context for the GrCUDA language holds reference to CUDA runtime, a function registry and device
@@ -90,7 +94,7 @@ public final class GrCUDAContext {
     private final ArrayList<Runnable> disposables = new ArrayList<>();
     private final AtomicInteger moduleId = new AtomicInteger(0);
     private volatile boolean cudaInitialized = false;
-    private RetrainModel modelManager;
+    private TrainModel modelManager;
 
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
     private final ConcurrentHashMap<Class<?>, CallTarget> uncachedMapCallTargets = new ConcurrentHashMap<>();
@@ -103,7 +107,7 @@ public final class GrCUDAContext {
         // Retrieve the execution policy;
         ExecutionPolicyEnum executionPolicy = grCUDAOptionMap.getExecutionPolicy();
 
-        // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it. 
+        // FIXME: TensorRT is currently incompatible with the async scheduler. TensorRT is supported in CUDA 11.4, and we cannot test it.
         //  Once Nvidia adds support for it, we want to remove this limitation;
         if (grCUDAOptionMap.isTensorRTEnabled() && (executionPolicy == ExecutionPolicyEnum.ASYNC)) {
             LOGGER.warning("TensorRT and the asynchronous scheduler are not compatible. Switching to the synchronous scheduler.");
@@ -166,10 +170,6 @@ public final class GrCUDAContext {
             new CUSPARSERegistry(this).registerCUSPARSEFunctions(sparse);
         }
         this.rootNamespace = namespace;
-
-        if (grCUDAOptionMap.isTrainModelsEnable()) {
-            modelManager = new RetrainModel();
-        }
     }
 
     private HashMap<String, Long> getSizeDataMap(){
@@ -288,10 +288,18 @@ public final class GrCUDAContext {
             GraphExport graphExport = new GraphExport(dag);
             graphExport.graphGenerator(grCUDAOptionMap.getExportDAGPath());
         }
-        if (grCUDAOptionMap.isTrainModelsEnable()) {
-            this.modelManager.retrainModel(getKernelHashes());
-            this.grCUDAExecutionContext.cleanup();
-        }
-    }
 
+        if (grCUDAOptionMap.isTrainModelsEnable()) {
+            String grcudaToStream = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/";
+            String path = Utilities.getPath();
+
+            Utilities.createDir(grcudaToStream, "data/");
+
+            for (String kernel : getKernelHashes()) {
+                TrainModel trainModel = new TrainModel(kernel, 0);
+            }
+        }
+        this.grCUDAExecutionContext.cleanup();
+    }
 }
+

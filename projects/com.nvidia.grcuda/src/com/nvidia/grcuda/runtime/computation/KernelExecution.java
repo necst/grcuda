@@ -76,7 +76,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
         super.setExecutionTime(executionTimeMs, false);
 
         if (train) (new KernelExecutionObserver(config, kernel, args)).update(executionTimeMs);
-        if (train) (new KernelExecutionObserver(config, kernel, args)).testModel(executionTimeMs);
+        if (train) (new KernelExecutionObserver(config, kernel, args)).printPrediction(executionTimeMs);
     }
 
 
