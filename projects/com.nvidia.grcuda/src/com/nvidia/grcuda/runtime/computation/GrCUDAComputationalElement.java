@@ -116,9 +116,9 @@ public abstract class GrCUDAComputationalElement {
     private float executionTimeMs = 0;
 
     /**
-     * If the computational element is a kernel, represents the total size in bytes of the arguments that are Device Arrays, otherwise remains zero.
+     * If the computational element is a kernel, represents the total size in bytes of the arguments that are Device Arrays, otherwise remains -1.
      */
-    private long kernelArgumentsSize = 0;
+    private long kernelArgumentsSize = -1;
 
     /**
      * Constructor that takes an argument set initializer to build the set of arguments used in the dependency computation
@@ -228,6 +228,10 @@ public abstract class GrCUDAComputationalElement {
     }
 
     public long getKernelArgumentsSize() { return kernelArgumentsSize; }
+
+    public AbstractGrCUDAExecutionContext getGrCUDAExecutionContext() {
+        return grCUDAExecutionContext;
+    }
 
     public Optional<CUDAEvent> getEventStop() {
         if (eventStop != null) {

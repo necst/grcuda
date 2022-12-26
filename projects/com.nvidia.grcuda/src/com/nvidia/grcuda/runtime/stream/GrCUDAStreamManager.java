@@ -36,6 +36,7 @@ import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.DeviceList;
+import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
@@ -43,6 +44,7 @@ import com.nvidia.grcuda.runtime.stream.policy.GrCUDAStreamPolicy;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.oracle.truffle.api.TruffleLogger;
+import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -50,6 +52,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -310,6 +313,14 @@ public class GrCUDAStreamManager {
                 }
             }
         }
+
+        try {
+            vertex.getComputation().getGrCUDAExecutionContext().tryExecuteQueueHead();
+        } catch (UnsupportedTypeException e) {
+            e.printStackTrace();
+            System.err.println("Unsupported Type Exception");
+        }
+
     }
 
     /**
@@ -399,7 +410,7 @@ public class GrCUDAStreamManager {
      * Calculate memory, in bytes, allocated in the device by summing the arguments size of the executing kernels.
      * @return the bytes allocated for {@link com.nvidia.grcuda.runtime.array.DeviceArray} used by kernels in execution.
      */
-    // TODO only working with single GPU. To extend for multi GPU, it is needed to check the stream owner device.
+    // TODO working only for single GPU. To extend for multi GPU, it is needed to check the stream owner device.
     public long getAllocatedDeviceMemory() {
         final long[] result = {0};
 

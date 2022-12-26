@@ -85,6 +85,10 @@ public class SyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
     }
 
     @Override
+    public void tryExecuteQueueHead() throws UnsupportedTypeException {
+    }
+
+    @Override
     public DeviceList getDeviceList() {
         // Create a new device list object when requested;
         return new DeviceList(cudaRuntime);
