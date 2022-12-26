@@ -70,13 +70,24 @@ public class KernelExecution extends GrCUDAComputationalElement {
 
     // @Override
     public void setExecutionTime(float executionTimeMs, boolean train) {
+        double predictedTime;
         // Store the execution time inside the ProfiledComputation storage;
         this.configuredKernel.addExecutionTime(this.config.getStream().getStreamDeviceId(), executionTimeMs);
         // Always store the execution time in the ComputationalElement as well;
         super.setExecutionTime(executionTimeMs, false);
 
         if (train) (new KernelExecutionObserver(config, kernel, args)).update(executionTimeMs);
-        if (train) (new KernelExecutionObserver(config, kernel, args)).printPrediction(executionTimeMs);
+
+        //here model created with java
+        //if (train) (new KernelExecutionObserver(config, kernel, args)).printPrediction(executionTimeMs);
+
+        //here model created whit python
+        if (train)
+        {
+            predictedTime = (new KernelExecutionObserver(config, kernel, args)).testModel();
+            System.out.println("Predicted: " + predictedTime + "\t\tActual: " + executionTimeMs);
+        }
+
     }
 
 

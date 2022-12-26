@@ -57,7 +57,8 @@ import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.GraphExport;
 import com.nvidia.grcuda.runtime.executioncontext.SyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.stream.Utilities;
-import com.nvidia.grcuda.runtime.stream.trainingmodel.TrainModel;
+//import com.nvidia.grcuda.runtime.stream.trainingmodel.TrainModel;
+import com.nvidia.grcuda.runtime.stream.trainingmodel.RetrainModel;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.TruffleLanguage.Env;
@@ -94,7 +95,8 @@ public final class GrCUDAContext {
     private final ArrayList<Runnable> disposables = new ArrayList<>();
     private final AtomicInteger moduleId = new AtomicInteger(0);
     private volatile boolean cudaInitialized = false;
-    private TrainModel modelManager;
+    //private TrainModel modelManager;
+    //private RetrainModel modelManager;
 
     // this is used to look up pre-existing call targets for "map" operations, see MapArrayNode
     private final ConcurrentHashMap<Class<?>, CallTarget> uncachedMapCallTargets = new ConcurrentHashMap<>();
@@ -289,7 +291,8 @@ public final class GrCUDAContext {
             graphExport.graphGenerator(grCUDAOptionMap.getExportDAGPath());
         }
 
-        if (grCUDAOptionMap.isTrainModelsEnable()) {
+        //create models with weka
+        /*if (grCUDAOptionMap.isTrainModelsEnable()) {
             String grcudaToStream = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/";
             String path = Utilities.getPath();
 
@@ -298,7 +301,17 @@ public final class GrCUDAContext {
             for (String kernel : getKernelHashes()) {
                 TrainModel trainModel = new TrainModel(kernel, 0);
             }
+        }*/
+
+        //create models with python
+        if (grCUDAOptionMap.isTrainModelsEnable()){
+            String grcudaToStream = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/";
+            String path = Utilities.getPath();
+            Utilities.createDir(grcudaToStream, "trainedmodels/");
+
+            (new RetrainModel()).retrainModel(getKernelHashes());
         }
+
         this.grCUDAExecutionContext.cleanup();
     }
 }

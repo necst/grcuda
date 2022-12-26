@@ -35,7 +35,7 @@ import com.nvidia.grcuda.runtime.Kernel;
 import com.nvidia.grcuda.runtime.KernelArguments;
 import com.nvidia.grcuda.runtime.KernelConfig;
 import com.nvidia.grcuda.runtime.stream.Utilities;
-import com.nvidia.grcuda.runtime.stream.trainingmodel.TrainModel;
+//import com.nvidia.grcuda.runtime.stream.trainingmodel.TrainModel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,12 +55,7 @@ import java.security.NoSuchAlgorithmException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-// import jdk.tools.jlink.internal.Main;
 import org.pmml4s.model.Model;
-// import org.pmml4s.model.Model$;
-// import org.pmml4s.model.ModelClass;
-// import org.pmml4s.model.ModelClass$;
 
 /**
  * Class used to store data about the single execution of a {@link KernelExecution}.
@@ -127,7 +122,7 @@ public class KernelExecutionObserver {
     }
 
     //TEST accuracy of models
-    public void testModel(float time) {
+    public double testModel() {
         List<Object> values;
         Map<String, Double> map = new HashMap<String, Double>();
         int count = 0;
@@ -141,7 +136,6 @@ public class KernelExecutionObserver {
         // Complete path
         path += (hashtext + ".pmml");
         // Get model
-        System.out.println("1 " + path);
         if (Files.exists(Paths.get(path))) {
             Model model = Model.fromFile(path);
             //Get values of numeric variables and create map
@@ -152,14 +146,15 @@ public class KernelExecutionObserver {
             }
             // Test model
             double predicted = getRegressionValue(map, model);
-            System.out.println("Predicted: " + predicted + "  \t" + "Actual: " + time);
+            return predicted;
         } else {
             System.out.println(path);
             System.out.println("Model doesn't exist");
+            return -1;
         }
     }
 
-    public void printPrediction(float time) {
+    /*public void printPrediction(float time) {
         ArrayList<Double> values = new ArrayList<>();
         TrainModel trainModel;
 
@@ -191,7 +186,7 @@ public class KernelExecutionObserver {
             System.out.println(path);
             System.out.println("Model doesn't exist");
         }
-    }
+    }*/
 
     public Double getRegressionValue(Map<String, Double> values, Model model) {
         Object[] valuesMap = Arrays.stream(model.inputNames())
