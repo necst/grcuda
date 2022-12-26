@@ -15,6 +15,7 @@ import com.nvidia.grcuda.test.util.mock.DeviceMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDADevicesManagerMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAStreamPolicyMock;
 import com.nvidia.grcuda.test.util.mock.OptionValuesMockBuilder;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -24,6 +25,7 @@ import java.util.HashSet;
 
 import static org.junit.Assert.assertEquals;
 
+@Ignore
 public class GrCUDAStreamPolicyMockTest {
 
     private static AsyncGrCUDAExecutionContextMock createContext(int numberOfGPUs, DeviceSelectionPolicyEnum deviceSelectionPolicy) {

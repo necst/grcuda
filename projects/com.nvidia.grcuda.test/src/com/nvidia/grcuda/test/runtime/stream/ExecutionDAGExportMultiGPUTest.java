@@ -10,6 +10,7 @@ import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
 import com.nvidia.grcuda.test.util.GrCUDATestUtil;
 import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -30,6 +31,7 @@ import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.manyIndepe
 import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.manyKernelsMockComputation;
 import static org.junit.Assert.assertEquals;
 
+@Ignore
 @RunWith(Parameterized.class)
 public class ExecutionDAGExportMultiGPUTest{
 

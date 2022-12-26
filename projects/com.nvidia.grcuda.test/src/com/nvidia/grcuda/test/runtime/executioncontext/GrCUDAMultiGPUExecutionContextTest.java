@@ -6,6 +6,7 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -16,6 +17,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assume.assumeTrue;
 
+@Ignore
 @RunWith(Parameterized.class)
 public class GrCUDAMultiGPUExecutionContextTest {
 
@@ -80,6 +82,7 @@ public class GrCUDAMultiGPUExecutionContextTest {
      * Execute 2 independent kernels, 2 times in a row, manually specifying the GPU for them;
      */
     @Test
+    @Ignore
     public void dependency2KernelsManualGPUChoiceTest() {
         int numOfGPUs = 2;
         try (Context context = GrCUDATestUtil.createContextFromOptions(this.options, numOfGPUs)) {

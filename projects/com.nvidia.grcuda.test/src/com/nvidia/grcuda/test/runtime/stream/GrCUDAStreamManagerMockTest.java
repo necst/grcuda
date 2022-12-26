@@ -40,6 +40,7 @@ import com.nvidia.grcuda.test.util.mock.GrCUDAStreamManagerMock;
 import com.nvidia.grcuda.test.util.mock.KernelExecutionMock;
 import com.nvidia.grcuda.test.util.mock.SyncExecutionMock;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -51,6 +52,7 @@ import java.util.Collections;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
+@Ignore
 @RunWith(Parameterized.class)
 public class GrCUDAStreamManagerMockTest {
     /**

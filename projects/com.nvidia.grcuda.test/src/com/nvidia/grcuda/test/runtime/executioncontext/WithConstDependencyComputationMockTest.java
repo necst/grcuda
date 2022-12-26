@@ -41,6 +41,7 @@ import com.nvidia.grcuda.test.util.mock.GrCUDAExecutionContextMockBuilder;
 import com.nvidia.grcuda.test.util.mock.KernelExecutionMock;
 import com.nvidia.grcuda.test.util.mock.SyncExecutionMock;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -52,6 +53,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+@Ignore
 public class WithConstDependencyComputationMockTest {
 
     @Test

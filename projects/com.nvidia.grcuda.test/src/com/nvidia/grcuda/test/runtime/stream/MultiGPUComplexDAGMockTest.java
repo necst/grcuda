@@ -11,6 +11,7 @@ import com.nvidia.grcuda.test.util.mock.AsyncGrCUDAExecutionContextMock;
 import com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock;
 import com.nvidia.grcuda.test.util.mock.OptionValuesMockBuilder;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -32,6 +33,7 @@ import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.vecMultiGP
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 
+@Ignore
 @RunWith(Parameterized.class)
 public class MultiGPUComplexDAGMockTest {
 
