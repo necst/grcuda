@@ -159,8 +159,13 @@ public class Device extends AbstractDevice implements TruffleObject {
      * @return total bytes in memory.
      */
     public long getTotalDeviceMemory() {
+        int currentDevice;
         if (!totalDeviceMemory.isPresent()) {
-            int currentDevice = runtime.getCurrentGPU();
+            try {
+                currentDevice = runtime.getCurrentGPU();
+            } catch (NullPointerException e){
+                currentDevice = 0;
+            }
             try {
                 if (currentDevice != deviceId) {
                     runtime.cudaSetDevice(deviceId);
