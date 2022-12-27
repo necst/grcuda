@@ -86,7 +86,8 @@ public class KernelExecutionObserver {
         }
 
         // Find the location where to save the data
-        String path = absolutePath("grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/data/");
+        String grcudaToStream = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/";
+        Utilities.createDir(grcudaToStream, "trainedmodels");
 
         // Get Kernel_ID
         String id = this.kernel.getKernelName() + signatureForHash();
@@ -95,17 +96,13 @@ public class KernelExecutionObserver {
         String hashtext = hash(id);
 
         // Save kernel id and hashtext for developing, TODO: delete
-        if (!Files.exists(Paths.get(path + "names.csv"))) {
-            this.printLineToCsv(new String[]{"id", "hashtext"}, path + "names.csv");
+        if (!Files.exists(Paths.get(Utilities.getPath() + grcudaToStream + "trainedModels" + "names.csv"))) {
+            this.printLineToCsv(new String[]{"id", "hashtext"}, Utilities.getPath() + grcudaToStream + "trainedModels" + "names.csv");
         }
-        this.printLineToCsv(new String[]{id, hashtext}, path + "names.csv");
+        this.printLineToCsv(new String[]{id, hashtext}, Utilities.getPath() + grcudaToStream + "trainedModels" + "names.csv");
 
         // Complete path
-        Path p = Paths.get(path);
-        if (!Files.isDirectory(p)) {
-            new File(path).mkdirs();
-        }
-        path += (hashtext + ".csv");
+        String path = Utilities.getPath() + grcudaToStream + "trainedModels" + (hashtext + ".csv");
 
         //If file doesn't exist add head
         if (!Files.exists(Paths.get(path))) {
@@ -121,14 +118,14 @@ public class KernelExecutionObserver {
 
     }
 
-    //TEST accuracy of models
-    public double testModel() {
+    //TEST accuracy of models and SAVE times
+    public void testModelAndSaveTimes(float actual) {
         List<Object> values;
         Map<String, Double> map = new HashMap<String, Double>();
         int count = 0;
 
         // Find the location where the model is
-        String path = absolutePath("grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/trainedmodels/");
+        String path = Utilities.getPath() + "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/trainedmodels/";
         // Get Kernel_ID
         String id = this.kernel.getKernelName() + signatureForHash();
         // Hash
@@ -145,12 +142,12 @@ public class KernelExecutionObserver {
                 count++;
             }
             // Test model
-            double predicted = getRegressionValue(map, model);
-            return predicted;
+            float predicted = getRegressionValue(map, model);
+            // Save times
+            this.saveTimes(actual, predicted);
         } else {
             System.out.println(path);
             System.out.println("Model doesn't exist");
-            return -1;
         }
     }
 
@@ -188,13 +185,14 @@ public class KernelExecutionObserver {
         }
     }*/
 
-    public Double getRegressionValue(Map<String, Double> values, Model model) {
+    public float getRegressionValue(Map<String, Double> values, Model model) {
         Object[] valuesMap = Arrays.stream(model.inputNames())
                 .map(values::get)
                 .toArray();
 
-        Object[] result = model.predict(valuesMap);
-        return (Double) result[0];
+        Object[] results =  model.predict(valuesMap);
+        Double result = (Double) results[0];
+        return result.floatValue();
     }
 
     //Return signature, grid and block sizes for hash
@@ -227,19 +225,6 @@ public class KernelExecutionObserver {
         return signatureForHash;
     }
 
-    String absolutePath(String end) {
-        File f = new File("");
-        String path = "";
-        for (String dir : f.getAbsolutePath().split("/")) {
-            if (dir.equals("grcuda")) {
-                path += end;
-                break;
-            }
-            path += (dir + "/");
-        }
-        return path;
-    }
-
     String hash(String id) {
         String hashtext = "";
         try {
@@ -254,6 +239,31 @@ public class KernelExecutionObserver {
             hashtext = this.kernel.getKernelName();
         }
         return hashtext;
+    }
+
+    private void saveTimes(float actual, float predicted) {
+        String[] times = {Float.toString(actual), Float.toString(predicted)};
+        // Find the location where to save the data
+        String grcudaToTrainingmodel = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/";
+        Utilities.createDir(grcudaToTrainingmodel, "times/");
+
+        // Get Kernel_ID
+        String id = this.kernel.getKernelName() + signatureForHash();
+
+        // Hash
+        String hashtext = hash(id);
+
+        // Complete path
+        String path = Utilities.getPath() +  grcudaToTrainingmodel + "times/" +(hashtext + ".csv");
+
+        //If file doesn't exist add head
+        if (!Files.exists(Paths.get(path))) {
+            String[] head = {"Actual","Predicted"};
+            this.printLineToCsv(head, path);
+        }
+        //Add line with times
+        this.printLineToCsv(times, path);
+
     }
 
     // Useful methods for writing .csv files without external libraries

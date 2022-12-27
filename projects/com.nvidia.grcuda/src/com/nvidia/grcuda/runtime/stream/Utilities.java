@@ -53,7 +53,7 @@ public class Utilities {
         String finalPath = Utilities.getPath() + path + nameDir;
         Path p = Paths.get(finalPath);
             if (!Files.isDirectory(p)) {
-                new File(path).mkdirs();
+                new File(finalPath).mkdirs();
             }
     }
 }
