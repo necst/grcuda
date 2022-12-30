@@ -56,6 +56,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.pmml4s.model.Model;
+import java.lang.System;
 
 /**
  * Class used to store data about the single execution of a {@link KernelExecution}.
@@ -87,7 +88,7 @@ public class KernelExecutionObserver {
 
         // Find the location where to save the data
         String grcudaToStream = "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/";
-        Utilities.createDir(grcudaToStream, "trainedmodels");
+        Utilities.createDir(grcudaToStream, "data/");
 
         // Get Kernel_ID
         String id = this.kernel.getKernelName() + signatureForHash();
@@ -96,13 +97,13 @@ public class KernelExecutionObserver {
         String hashtext = hash(id);
 
         // Save kernel id and hashtext for developing, TODO: delete
-        if (!Files.exists(Paths.get(Utilities.getPath() + grcudaToStream + "trainedModels" + "names.csv"))) {
-            this.printLineToCsv(new String[]{"id", "hashtext"}, Utilities.getPath() + grcudaToStream + "trainedModels" + "names.csv");
+        if (!Files.exists(Paths.get(Utilities.getPath() + grcudaToStream + "data/" + "names.csv"))) {
+            this.printLineToCsv(new String[]{"id", "hashtext"}, Utilities.getPath() + grcudaToStream + "data/" + "names.csv");
         }
-        this.printLineToCsv(new String[]{id, hashtext}, Utilities.getPath() + grcudaToStream + "trainedModels" + "names.csv");
+        this.printLineToCsv(new String[]{id, hashtext}, Utilities.getPath() + grcudaToStream + "data/" + "names.csv");
 
         // Complete path
-        String path = Utilities.getPath() + grcudaToStream + "trainedModels" + (hashtext + ".csv");
+        String path = Utilities.getPath() + grcudaToStream + "data/" + (hashtext + ".csv");
 
         //If file doesn't exist add head
         if (!Files.exists(Paths.get(path))) {
@@ -120,29 +121,42 @@ public class KernelExecutionObserver {
 
     //TEST accuracy of models and SAVE times
     public void testModelAndSaveTimes(float actual) {
+        long timeForLoadAndPredictionStart, timeForLoadAndPredictionEnd;
+        timeForLoadAndPredictionStart = System.nanoTime();
         List<Object> values;
         Map<String, Double> map = new HashMap<String, Double>();
         int count = 0;
 
-        // Find the location where the model is
-        String path = Utilities.getPath() + "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/trainedmodels/";
-        // Get Kernel_ID
-        String id = this.kernel.getKernelName() + signatureForHash();
-        // Hash
-        String hashtext = hash(id);
+        // Hash kernel id
+        String hashtext = hash(this.kernel.getKernelName() + signatureForHash());
         // Complete path
-        path += (hashtext + ".pmml");
-        // Get model
+        String path = Utilities.getPath() + "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/trainedmodels/" + hashtext + ".pmml";
         if (Files.exists(Paths.get(path))) {
+            // Get model
             Model model = Model.fromFile(path);
+
             //Get values of numeric variables and create map
             values = this.args.getKernelValues();
             for (Object i : values) {
                 map.put(Integer.toString(count), Double.parseDouble(i.toString()));
                 count++;
             }
+
             // Test model
             float predicted = getRegressionValue(map, model);
+
+            //Save time for loading and predicting
+            timeForLoadAndPredictionEnd = System.nanoTime();
+            try {
+                FileWriter txtOutputFile = new FileWriter(Utilities.getPath() + "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/TimesForLoadingAndPrediction.txt", true);
+                PrintWriter pw = new PrintWriter(txtOutputFile);
+                pw.write(Long.toString(timeForLoadAndPredictionEnd - timeForLoadAndPredictionStart));
+                pw.write("\n");
+                pw.close();
+            } catch (Exception e) {
+                e.getStackTrace();
+            }
+
             // Save times
             this.saveTimes(actual, predicted);
         } else {

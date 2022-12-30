@@ -27,7 +27,7 @@ if __name__ == "__main__":
             df = df.groupby([x for x in df.columns if x != "Time"], as_index=False).agg({'Time':'median'})
             y = df.pop("Time")
             #creating model
-            pipeline = PMMLPipeline([ ('regressor', RandomForestRegressor(random_state=42, n_estimators=300)) ]) #random forest regressor
+            pipeline = PMMLPipeline([ ('regressor', RandomForestRegressor(random_state=42, n_estimators=64, max_depth = 5)) ]) #random forest regressor
             pipeline.fit(df, y) #fitting the model
             #saving model
             if not os.path.exists("trainedmodels/"):
