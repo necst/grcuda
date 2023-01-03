@@ -86,7 +86,7 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         // Compute the stream where the computation will be done, if the computation can be performed asynchronously;
         if(streamManager.assignStream(vertex)) {
 
-            return finalizeExecution(vertex);
+            return finalizeExecution(vertex, false);
 
         } else {
 
@@ -97,7 +97,7 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
     }
 
     @Override
-    public void tryExecuteQueueHead() throws UnsupportedTypeException {
+    public boolean tryExecuteQueueHead() throws UnsupportedTypeException {
         // Check if enough memory has been released and try to execute queue head
         if (streamManager.getQueue().peek() != null){ // Queue is not empty
 
@@ -107,13 +107,15 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
 
                 streamManager.activateComputation(head);
 
-                finalizeExecution(head);
+                finalizeExecution(head, true);
 
+                return true;
             }
         }
+        return false;
     }
 
-    public Object finalizeExecution(ExecutionDAG.DAGVertex vertex) throws UnsupportedTypeException {
+    public Object finalizeExecution(ExecutionDAG.DAGVertex vertex, boolean isHead) throws UnsupportedTypeException {
 
         // Prefetching;
         arrayPrefetcher.prefetchToGpu(vertex);
@@ -126,7 +128,13 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
 
         GrCUDALogger.getLogger(GrCUDALogger.EXECUTIONCONTEXT_LOGGER).finest(() -> "-- running " + vertex.getComputation());
 
-        tryExecuteQueueHead();
+        if (!isHead) {
+            boolean dequeue;
+
+            do {
+                dequeue = tryExecuteQueueHead();
+            } while (dequeue);
+        }
 
         return result;
     }

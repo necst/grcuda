@@ -136,7 +136,7 @@ public abstract class AbstractGrCUDAExecutionContext {
         return dag;
     }
 
-    abstract public void tryExecuteQueueHead() throws UnsupportedTypeException;
+    abstract public boolean tryExecuteQueueHead() throws UnsupportedTypeException;
 
     public CUDARuntime getCudaRuntime() {
         return cudaRuntime;

@@ -85,7 +85,7 @@ public class SyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
     }
 
     @Override
-    public void tryExecuteQueueHead() throws UnsupportedTypeException {
+    public boolean tryExecuteQueueHead() throws UnsupportedTypeException { return true;
     }
 
     @Override
