@@ -173,6 +173,10 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         // Associate a CUDA event to the starting phase of the computation in order to get the Elapsed time from start to the end
         streamManager.assignEventStart(vertex);
 
-        return vertex.getComputation().execute();
+        Object result = vertex.getComputation().execute();
+
+        tryExecuteQueueHead();
+
+        return result;
     }
 }

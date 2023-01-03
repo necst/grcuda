@@ -355,13 +355,6 @@ public class GrCUDAStreamManager {
             }
         }
 
-        try {
-            vertex.getComputation().getGrCUDAExecutionContext().tryExecuteQueueHead();
-        } catch (UnsupportedTypeException e) {
-            e.printStackTrace();
-            System.err.println("Unsupported Type Exception");
-        }
-
     }
 
     /**
