@@ -108,13 +108,13 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
 
                 finalizeExecution(head);
 
+                streamManager.getQueue().remove();
+
             }
         }
     }
 
     public Object finalizeExecution(ExecutionDAG.DAGVertex vertex) throws UnsupportedTypeException {
-
-        streamManager.getQueue().remove();
 
         // Prefetching;
         arrayPrefetcher.prefetchToGpu(vertex);
