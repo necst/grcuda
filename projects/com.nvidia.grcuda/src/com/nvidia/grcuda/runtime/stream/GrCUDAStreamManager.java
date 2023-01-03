@@ -235,6 +235,7 @@ public class GrCUDAStreamManager {
                 }
             }
         }
+        System.out.println("io da qui ci passo eh");
         if (!isHead) {
             try {
                 vertex.getComputation().getGrCUDAExecutionContext().tryExecuteQueueHead();
