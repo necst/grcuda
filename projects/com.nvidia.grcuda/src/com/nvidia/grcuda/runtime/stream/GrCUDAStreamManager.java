@@ -162,6 +162,7 @@ public class GrCUDAStreamManager {
     }
 
     public boolean isMemoryOversubscriptionEnabled(GrCUDAComputationalElement computation){
+        System.out.println("the total device memory is " + getDevice(0).getTotalDeviceMemory());
         return computation.getKernelArgumentsSize() > getDevice(0).getTotalDeviceMemory() - getAllocatedDeviceMemory();
     }
 
@@ -236,13 +237,6 @@ public class GrCUDAStreamManager {
             }
         }
         System.out.println("io da qui ci passo eh");
-        if (!isHead) {
-            try {
-                vertex.getComputation().getGrCUDAExecutionContext().tryExecuteQueueHead();
-            } catch (UnsupportedTypeException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     /**

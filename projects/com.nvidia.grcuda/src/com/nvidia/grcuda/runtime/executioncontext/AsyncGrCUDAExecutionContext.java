@@ -83,8 +83,10 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         // Add the new computation to the DAG
         ExecutionDAG.DAGVertex vertex = dag.append(computation);
 
+        boolean activated = streamManager.assignStream(vertex);
+
         // Compute the stream where the computation will be done, if the computation can be performed asynchronously;
-        if(streamManager.assignStream(vertex)) {
+        if(activated) {
 
             return finalizeExecution(vertex, false);
 
@@ -133,13 +135,13 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
 
         GrCUDALogger.getLogger(GrCUDALogger.EXECUTIONCONTEXT_LOGGER).finest(() -> "-- running " + vertex.getComputation());
 
-//        if (!isHead) {
-//            boolean dequeue;
-//
-//            do {
-//                dequeue = tryExecuteQueueHead();
-//            } while (dequeue);
-//        }
+        if (!isHead) {
+            boolean dequeue;
+
+            do {
+                dequeue = tryExecuteQueueHead();
+            } while (dequeue);
+        }
 
         return result;
     }
