@@ -126,6 +126,8 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
 
         GrCUDALogger.getLogger(GrCUDALogger.EXECUTIONCONTEXT_LOGGER).finest(() -> "-- running " + vertex.getComputation());
 
+        tryExecuteQueueHead();
+
         return result;
     }
 
@@ -173,10 +175,6 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         // Associate a CUDA event to the starting phase of the computation in order to get the Elapsed time from start to the end
         streamManager.assignEventStart(vertex);
 
-        Object result = vertex.getComputation().execute();
-
-        tryExecuteQueueHead();
-
-        return result;
+        return vertex.getComputation().execute();
     }
 }
