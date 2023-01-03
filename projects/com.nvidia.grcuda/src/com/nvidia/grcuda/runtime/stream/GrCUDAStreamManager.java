@@ -36,7 +36,6 @@ import com.nvidia.grcuda.GrCUDAOptionMap;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.DeviceList;
-import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
@@ -51,12 +50,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class GrCUDAStreamManager {
@@ -80,6 +78,17 @@ public class GrCUDAStreamManager {
      * Handle for all the policies to assign streams and devices to a new computation that can run on CUDA stream;
      */
     private final GrCUDAStreamPolicy streamPolicy;
+
+    /**
+     * True if there are more than one Device in the Devices List, so context is supporting
+     * Multi-GPU execution;
+     */
+    private final boolean isMultiGPU;
+
+    /**
+     * the awesome queue
+     */
+    private final LinkedList<ExecutionDAG.DAGVertex> queue = new LinkedList<>();
     
     public GrCUDAStreamManager(CUDARuntime runtime, GrCUDAOptionMap options) {
         this(runtime,
@@ -110,6 +119,7 @@ public class GrCUDAStreamManager {
         this.runtime = runtime;
         this.isTimeComputation = isTimeComputation;
         this.streamPolicy = streamPolicy;
+        this.isMultiGPU = runtime.isMultiGPUEnabled();
     }
 
     /**
@@ -117,22 +127,53 @@ public class GrCUDAStreamManager {
      * This function has no effect if the stream was manually specified by the user;
      * @param vertex an input computation for which we want to assign a stream
      */
-    public void assignStream(ExecutionDAG.DAGVertex vertex) {
+    public boolean assignStream(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
         if (vertex.getComputation().canUseStream()) {
             // Else, obtain the stream (and the GPU device) for this computation from the stream policy manager;
             CUDAStream stream = this.streamPolicy.retrieveStream(vertex);
             // Set the stream;
             vertex.getComputation().setStream(stream);
-            // Update the computation counter;
-            addActiveComputation(vertex);
-            // Associate all the arrays in the computation to the selected stream,
-            //   to enable CPU accesses on managed memory arrays currently not being used by the GPU.
-            // This is required as on pre-Pascal GPUs all unified memory pages are locked by the GPU while code is running on the GPU,
-            //   even if the GPU is not using some of the pages. Enabling memory-stream association allows the CPU to
-            //   access memory not being currently used by a kernel;
-            vertex.getComputation().associateArraysToStream();
+
+            if (!isMultiGPU){
+                // TODO Add OFL
+                // Check if the computation execution leads to memory oversubscription
+                // Note: Getting allocated device memory from stream manager introduces overhead because it's computed at runtime,
+                // while kernel argument size and total device memory are computed once
+                if (!isMemoryOversubscriptionEnabled(vertex.getComputation())){
+                    // Add computation to the active computations list
+                    activateComputation(vertex);
+                    return true;
+                }
+                else {
+                    // Add the element in the Execution Queue
+                    queue.add(vertex);
+                    return false;
+                }
+            }
+            else {
+                // Add computation to the active computations list
+                activateComputation(vertex);
+                return true;
+            }
+
         }
+        return true;
+    }
+
+    public boolean isMemoryOversubscriptionEnabled(GrCUDAComputationalElement computation){
+        return computation.getKernelArgumentsSize() > getDevice(0).getTotalDeviceMemory() - getAllocatedDeviceMemory();
+    }
+
+    public void activateComputation(ExecutionDAG.DAGVertex vertex){
+        // Update the computation counter;
+        addActiveComputation(vertex);
+        // Associate all the arrays in the computation to the selected stream,
+        //   to enable CPU accesses on managed memory arrays currently not being used by the GPU.
+        // This is required as on pre-Pascal GPUs all unified memory pages are locked by the GPU while code is running on the GPU,
+        //   even if the GPU is not using some pages. Enabling memory-stream association allows the CPU to
+        //   access memory not being currently used by a kernel;
+        vertex.getComputation().associateArraysToStream();
     }
 
     /**
@@ -404,6 +445,10 @@ public class GrCUDAStreamManager {
 
     public GrCUDAStreamPolicy getStreamPolicy() {
         return streamPolicy;
+    }
+
+    public LinkedList<ExecutionDAG.DAGVertex> getQueue() {
+        return queue;
     }
 
     /**

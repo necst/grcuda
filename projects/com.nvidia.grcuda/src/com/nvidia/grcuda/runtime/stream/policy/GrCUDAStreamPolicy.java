@@ -254,10 +254,10 @@ public class GrCUDAStreamPolicy {
     }
 
     /**
-     * If a vertex has more than one children, each children is independent (otherwise the dependency would be added
-     * from one children to the other, and not from the actual parent).
+     * If a vertex has more than one child, each child is independent (otherwise the dependency would be added
+     * from one child to the other, and not from the actual parent).
      * As such, children can be executed on different streams. In practice, this situation happens when children
-     * depends on disjoint arguments subsets of the parent kernel, e.g. K1(X,Y), K2(X), K3(Y).
+     * depend on disjoint arguments subsets of the parent kernel, e.g. K1(X,Y), K2(X), K3(Y).
      * This policy re-uses the parent(s) stream(s) when possible,
      * and computes other streams using the current {@link RetrieveNewStreamPolicy};
      */

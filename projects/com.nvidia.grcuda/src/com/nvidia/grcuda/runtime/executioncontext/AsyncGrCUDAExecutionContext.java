@@ -55,12 +55,6 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
      */
     private final GrCUDAStreamManager streamManager;
 
-    /**
-     * True if there are more than one Device in the Devices List, so context is supporting
-     * Multi-GPU execution;
-     */
-    private final boolean isMultiGPU;
-
     public AsyncGrCUDAExecutionContext(GrCUDAContext context, TruffleLanguage.Env env) {
         this(new CUDARuntime(context, env), context.getOptions());
     }
@@ -72,7 +66,6 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
     public AsyncGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options, GrCUDAStreamManager streamManager) {
         super(cudaRuntime, options);
         this.streamManager = streamManager;
-        this.isMultiGPU = getDeviceList().getDevices().size() > 1;
         // Compute if we should use a prefetcher;
         if (options.isInputPrefetch() && this.cudaRuntime.isArchitectureIsPascalOrNewer()) {
             arrayPrefetcher = new AsyncArrayPrefetcher(this.cudaRuntime);
@@ -90,28 +83,38 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         // Add the new computation to the DAG
         ExecutionDAG.DAGVertex vertex = dag.append(computation);
 
-        if (!isMultiGPU){
-            // TODO Add OFL
-            // Check if the computation execution leads to memory oversubscription
-            // Note: Getting allocated device memory from stream manager introduces overhead because it's computed at runtime,
-            // while kernel argument size and total device memory are computed once
-            if (!isMemoryOversubscriptionEnabled(computation)){
-                return finalizeExecution(vertex);
-            }
-            else {
-                // Add the element in the Execution Queue
-                queue.getExecutionQueue().add(vertex);
-                return NoneValue.get();
-            }
-        }
-        else {
+        // Compute the stream where the computation will be done, if the computation can be performed asynchronously;
+        if(streamManager.assignStream(vertex)) {
+
             return finalizeExecution(vertex);
+
+        } else {
+
+            return NoneValue.get();
+
         }
 
     }
 
+    @Override
+    public void tryExecuteQueueHead() throws UnsupportedTypeException {
+        // Check if enough memory has been released and try to execute queue head
+        if (!streamManager.getQueue().isEmpty()){ // Queue is not empty
+            ExecutionDAG.DAGVertex head = streamManager.getQueue().peek();
+            assert head != null;
+            if (!streamManager.isMemoryOversubscriptionEnabled(head.getComputation())){ // Memory oversubscription is not enabled
+
+                streamManager.activateComputation(head);
+
+                finalizeExecution(head);
+
+            }
+        }
+    }
+
     public Object finalizeExecution(ExecutionDAG.DAGVertex vertex) throws UnsupportedTypeException {
-        streamManager.assignStream(vertex);
+
+        streamManager.getQueue().remove();
 
         // Prefetching;
         arrayPrefetcher.prefetchToGpu(vertex);
@@ -125,23 +128,6 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         GrCUDALogger.getLogger(GrCUDALogger.EXECUTIONCONTEXT_LOGGER).finest(() -> "-- running " + vertex.getComputation());
 
         return result;
-    }
-
-    public boolean isMemoryOversubscriptionEnabled(GrCUDAComputationalElement computation){
-        return computation.getKernelArgumentsSize() > getDevice(getCurrentGPU()).getTotalDeviceMemory() - streamManager.getAllocatedDeviceMemory();
-    }
-
-    @Override
-    public void tryExecuteQueueHead() throws UnsupportedTypeException {
-        // Check if enough memory has been released and try to execute queue head
-        if (!queue.getExecutionQueue().isEmpty()){ // Queue is not empty
-            ExecutionDAG.DAGVertex head = queue.getExecutionQueue().peek();
-            assert head != null;
-            if (!isMemoryOversubscriptionEnabled(head.getComputation())){ // Memory oversubscription is not enabled
-                finalizeExecution(head);
-                queue.getExecutionQueue().remove();
-            }
-        }
     }
 
     @Override

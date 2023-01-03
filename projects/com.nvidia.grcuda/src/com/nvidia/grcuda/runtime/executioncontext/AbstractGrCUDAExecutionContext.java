@@ -96,11 +96,6 @@ public abstract class AbstractGrCUDAExecutionContext {
      */
     private final boolean isConstAware;
 
-    /**
-     * Reference to the kernel executions queue for Single GPU context with memory oversubscription;
-     */
-    protected final GrCUDAExecutionQueue queue;
-
     public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {
         this.cudaRuntime = cudaRuntime;
         // Compute the dependency policy to use;
@@ -121,7 +116,6 @@ public abstract class AbstractGrCUDAExecutionContext {
         arrayPrefetcher = new NoneArrayPrefetcher(this.cudaRuntime);
         // Initialize the DAG;
         this.dag = new ExecutionDAG(options.getDependencyPolicy());
-        this.queue = new GrCUDAExecutionQueue();
     }
     /**
      * Register this computation for future execution by the {@link AbstractGrCUDAExecutionContext},
@@ -140,10 +134,6 @@ public abstract class AbstractGrCUDAExecutionContext {
 
     public ExecutionDAG getDag() {
         return dag;
-    }
-
-    public GrCUDAExecutionQueue getQueue() {
-        return queue;
     }
 
     abstract public void tryExecuteQueueHead() throws UnsupportedTypeException;
