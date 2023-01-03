@@ -121,20 +121,20 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         arrayPrefetcher.prefetchToGpu(vertex);
 
         // Start the computation;
-        Object result = executeComputation(vertex);
+        Object result = executeComputation(vertex, isHead);
 
         // Associate a CUDA event to this computation, if performed asynchronously;
         streamManager.assignEventStop(vertex);
 
         GrCUDALogger.getLogger(GrCUDALogger.EXECUTIONCONTEXT_LOGGER).finest(() -> "-- running " + vertex.getComputation());
 
-        if (!isHead) {
-            boolean dequeue;
-
-            do {
-                dequeue = tryExecuteQueueHead();
-            } while (dequeue);
-        }
+//        if (!isHead) {
+//            boolean dequeue;
+//
+//            do {
+//                dequeue = tryExecuteQueueHead();
+//            } while (dequeue);
+//        }
 
         return result;
     }
@@ -170,9 +170,9 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         streamManager.cleanup();
     }
 
-    private Object executeComputation(ExecutionDAG.DAGVertex vertex) throws UnsupportedTypeException {
+    private Object executeComputation(ExecutionDAG.DAGVertex vertex, boolean isHead) throws UnsupportedTypeException {
         // Before starting this computation, ensure that all its parents have finished their computation;
-        streamManager.syncParentStreams(vertex);
+        streamManager.syncParentStreams(vertex, isHead);
 
         // Perform the computation;
         vertex.getComputation().setComputationStarted();

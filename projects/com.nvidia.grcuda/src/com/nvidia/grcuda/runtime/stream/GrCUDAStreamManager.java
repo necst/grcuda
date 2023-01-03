@@ -208,7 +208,7 @@ public class GrCUDAStreamManager {
         }
     }
 
-    public void syncParentStreams(ExecutionDAG.DAGVertex vertex) {
+    public void syncParentStreams(ExecutionDAG.DAGVertex vertex, boolean isHead) {
         // If the vertex can be executed on a CUDA stream, use CUDA events,
         //   otherwise use stream/device synchronization to block the host until synchronization is done;
         if (vertex.getComputation().canUseStream()) {
@@ -232,6 +232,13 @@ public class GrCUDAStreamManager {
                     }
                 } else {
                     syncParentStreamsImpl(vertex);
+                }
+            }
+            if (!isHead) {
+                try {
+                    vertex.getComputation().getGrCUDAExecutionContext().tryExecuteQueueHead();
+                } catch (UnsupportedTypeException e) {
+                    e.printStackTrace();
                 }
             }
         }
