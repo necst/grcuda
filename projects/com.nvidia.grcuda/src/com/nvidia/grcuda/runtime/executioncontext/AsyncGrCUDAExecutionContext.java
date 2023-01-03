@@ -98,10 +98,15 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
 
     @Override
     public boolean tryExecuteQueueHead() throws UnsupportedTypeException {
+        System.out.println("ci stiamo almeno provando?");
         // Check if enough memory has been released and try to execute queue head
         if (streamManager.getQueue().peek() != null){ // Queue is not empty
 
+            System.out.println("si ci stiamo provando");
+
             if (!streamManager.isMemoryOversubscriptionEnabled(streamManager.getQueue().peek().getComputation())){ // Memory oversubscription is not enabled
+
+                System.out.println("non c'è più oversubscription, provo a eseguire i kernel mancanti");
 
                 ExecutionDAG.DAGVertex head = streamManager.getQueue().remove();
 
