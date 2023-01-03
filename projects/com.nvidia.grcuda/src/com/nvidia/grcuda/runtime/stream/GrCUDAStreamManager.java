@@ -234,12 +234,12 @@ public class GrCUDAStreamManager {
                     syncParentStreamsImpl(vertex);
                 }
             }
-            if (!isHead) {
-                try {
-                    vertex.getComputation().getGrCUDAExecutionContext().tryExecuteQueueHead();
-                } catch (UnsupportedTypeException e) {
-                    e.printStackTrace();
-                }
+        }
+        if (!isHead) {
+            try {
+                vertex.getComputation().getGrCUDAExecutionContext().tryExecuteQueueHead();
+            } catch (UnsupportedTypeException e) {
+                e.printStackTrace();
             }
         }
     }
