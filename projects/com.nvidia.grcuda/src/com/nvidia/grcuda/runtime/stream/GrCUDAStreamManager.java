@@ -163,6 +163,9 @@ public class GrCUDAStreamManager {
 
     public boolean isMemoryOversubscriptionEnabled(GrCUDAComputationalElement computation){
         System.out.println("the total device memory is " + getDevice(0).getTotalDeviceMemory());
+        System.out.println("the kernel argument size is " + computation.getKernelArgumentsSize());
+        System.out.println("the allocated device memory is " + getAllocatedDeviceMemory());
+        System.out.println("remaining space: " + (getDevice(0).getTotalDeviceMemory() - getAllocatedDeviceMemory()));
         return computation.getKernelArgumentsSize() > getDevice(0).getTotalDeviceMemory() - getAllocatedDeviceMemory();
     }
 
