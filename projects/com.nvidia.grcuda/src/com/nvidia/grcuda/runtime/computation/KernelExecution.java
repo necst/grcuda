@@ -82,11 +82,9 @@ public class KernelExecution extends GrCUDAComputationalElement {
         //if (train) (new KernelExecutionObserver(config, kernel, args)).printPrediction(executionTimeMs);
 
         //here model created whit python
-        if (train) (new KernelExecutionObserver(config, kernel, args)).testModelAndSaveTimes(executionTimeMs);
+        if (false) (new KernelExecutionObserver(config, kernel, args)).testModelAndSaveTimes(executionTimeMs);
 
     }
-
-
 
     @Override
     public Object execute() {

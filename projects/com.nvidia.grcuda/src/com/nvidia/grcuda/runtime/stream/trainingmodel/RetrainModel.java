@@ -45,6 +45,9 @@ import java.util.Map;
 public class RetrainModel {
     // Check for system.platform, replace python for Windows
     String CMD = "cd $GRCUDA_HOME/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/ && python3 main.py";
+    // Cmd with venv attivstion
+    // String CMD = "cd $GRCUDA_HOME/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/ && source ~/venv/bin/activate && python3 main.py";
+
 
     public RetrainModel() {
     }
