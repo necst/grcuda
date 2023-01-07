@@ -318,9 +318,7 @@ public class CUSPARSERegistry {
                     // Add extra arguments at the end: they are used to track input DeviceArrays;
                     int numExtraArrays = args.length - nInputArgs;
                     for (int k = 0; k < numExtraArrays; k++) {
-                        argumentsWithValue.add(new ComputationArgumentWithValue(
-                                "cusparse_extra_array_" + k, Type.NFI_POINTER, ComputationArgument.Kind.POINTER_INOUT,
-                                args[j++]));
+                        argumentsWithValue.add((ComputationArgumentWithValue) args[j++]);
                     }
                     return argumentsWithValue;
                 }
@@ -410,8 +408,8 @@ public class CUSPARSERegistry {
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATE = new ExternalFunctionFactory("cusparseCreate", "cusparseCreate", "(pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSEDESTROY = new ExternalFunctionFactory("cusparseDestroy", "cusparseDestroy", "(sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
-    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV = new ExternalFunctionFactory("cusparseSpMV", "cusparseSpMV", "(sint64, sint32, pointer, sint64, " +
-            "sint64, pointer, sint64, sint32, sint32, pointer): sint32");
+    private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPMV = new ExternalFunctionFactory("cusparseSpMV", "cusparseSpMV", "(sint64, sint32, sint64, sint64, " +
+            "sint64, sint64, sint64, sint32, sint32, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESPVV = new ExternalFunctionFactory("cusparseSpVV", "cusparseSpVV", "(sint64, sint32, sint64, " +
             "sint64, pointer, sint32, pointer): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSEAXPBY = new ExternalFunctionFactory("cusparseAxpby", "cusparseAxpby", "(sint64, pointer, sint64, " +

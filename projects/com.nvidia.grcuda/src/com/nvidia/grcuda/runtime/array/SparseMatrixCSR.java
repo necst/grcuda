@@ -73,6 +73,9 @@ public class SparseMatrixCSR extends SparseMatrix {
     protected static final String COL_INDICES = "colIndices";
     protected static final String SPMV = "SpMV";
     protected static final String SPGEMM = "SpGEMM";
+    protected static final String TRACE = "trace";
+
+    final ValueProfile profile = ValueProfile.createClassProfile();
 
     /**
      * Column and row-cumulative indices of nnz elements.
@@ -130,6 +133,46 @@ public class SparseMatrixCSR extends SparseMatrix {
 
     public void setCsrColInd(DeviceArray csrColInd) {
         this.csrColInd = csrColInd;
+    }
+
+    private int binarySearch(DeviceArray array, int start, int end, int target) {
+        try {
+            while (start <= end) {
+                int mid = (start + end) / 2;
+                if ((Integer)array.readArrayElement(mid, profile) == target){
+                    return mid;
+                }
+                if ((Integer)array.readArrayElement(mid, profile) < target) {
+                    start = mid + 1;
+                } else {
+                    end = mid - 1;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    
+        return -1;
+    }
+    
+    private Float trace() {
+        float sum = 0;
+    
+        try {
+            for (int i = 0; i < csrRowOffsets.getArraySize() - 1; ++i) {
+                Object start = csrRowOffsets.readArrayElement(i, profile);
+                Object end = csrRowOffsets.readArrayElement(i+1, profile);
+                
+                int index = binarySearch(csrColInd, (Integer)start, (Integer)end, i);
+                if (index >= 0) {
+                    sum += (Float)getValues().readArrayElement(index, profile);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    
+        return Float.valueOf(sum);
     }
 
     @ExportMessage
@@ -201,7 +244,7 @@ public class SparseMatrixCSR extends SparseMatrix {
     boolean isMemberReadable(String memberName,
                              @Cached.Shared("memberName") @Cached("createIdentityProfile()") ValueProfile memberProfile) {
         String name = memberProfile.profile(memberName);
-        return FREE.equals(name) || SPMV.equals(name) || SPGEMM.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || ROW_CUMULATIVE.equals(name) || COL_INDICES.equals(name);
+        return FREE.equals(name) || SPMV.equals(name) || SPGEMM.equals(name) || IS_MEMORY_FREED.equals(name) || VALUES.equals(name) || ROW_CUMULATIVE.equals(name) || COL_INDICES.equals(name) || TRACE.equals(name);
     }
 
     @ExportMessage
@@ -239,11 +282,13 @@ public class SparseMatrixCSR extends SparseMatrix {
             return getCsrRowOffsets();
         }
 
+        if (TRACE.equals(memberName)) {
+            return trace();
+        }
+
         CompilerDirectives.transferToInterpreter();
         throw UnknownIdentifierException.create(memberName);
     }
-
-
 
 
     @ExportMessage

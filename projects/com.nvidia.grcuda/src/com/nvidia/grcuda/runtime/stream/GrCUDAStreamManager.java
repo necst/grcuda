@@ -157,6 +157,7 @@ public class GrCUDAStreamManager {
     public void assignEventStop(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
         if (vertex.getComputation().canUseStream()) {
+            runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
             CUDAEvent event = runtime.cudaEventCreate();
             runtime.cudaEventRecord(event, vertex.getComputation().getStream());
             vertex.getComputation().setEventStop(event);
@@ -215,6 +216,7 @@ public class GrCUDAStreamManager {
                 // Synchronize on the events associated to the parents;
                 if (parent.getEventStop().isPresent()) {
                     CUDAEvent event = parent.getEventStop().get();
+                    runtime.cudaSetDevice(vertex.getComputation().getStream().getStreamDeviceId());
                     runtime.cudaStreamWaitEvent(vertex.getComputation().getStream(), event);
 
                     STREAM_LOGGER.finest(() -> "\t* wait event on stream; stream to sync=" + stream.getStreamNumber()
@@ -241,7 +243,7 @@ public class GrCUDAStreamManager {
         Set<CUDAStream> streamsToSync = getParentStreams(vertex.getParentComputations());
         // Synchronize streams;
         streamsToSync.forEach(s -> {
-            STREAM_LOGGER.finest(() -> "--\tsync stream=" + s.getStreamNumber() + " by " + vertex.getComputation());
+            System.out.println("--\tsync stream=" + s.getStreamNumber() + " by " + vertex.getComputation());
             syncStream(s);
         });
 

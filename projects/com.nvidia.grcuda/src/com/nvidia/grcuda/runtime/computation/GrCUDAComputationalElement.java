@@ -51,6 +51,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 import static com.nvidia.grcuda.GrCUDALogger.COMPUTATION_LOGGER;
 
@@ -329,7 +330,7 @@ public abstract class GrCUDAComputationalElement {
         // If for whatever reason we have a argumentsThatCanCreateDependencies that does not contain all the input arrays,
         // we need to store the original input list in this class as well, and apply the filter below to that list.
         return this.argumentsThatCanCreateDependencies.stream()
-                .filter(ComputationArgument::isArray)
+                .filter(a -> a.isArray() && (a.getArgumentValue() instanceof AbstractArray))
                 .map(a -> (AbstractArray) a.getArgumentValue())
                 .collect(Collectors.toList());
     }

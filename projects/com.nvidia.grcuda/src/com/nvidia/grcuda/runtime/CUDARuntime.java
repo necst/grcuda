@@ -651,7 +651,6 @@ public final class CUDARuntime {
             // Make sure that the stream is on the right device, otherwise we cannot record the event;
             assert stream.getStreamDeviceId() == getCurrentGPU();
 
-            System.out.println("Recording on stream=" + stream);
             Object callable = CUDARuntimeFunction.CUDA_EVENTRECORD.getSymbol(this);
             Object result = INTEROP.execute(callable, event.getRawPointer(), stream.getRawPointer());
             checkCUDAReturnCode(result, "cudaEventRecord");

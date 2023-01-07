@@ -139,6 +139,8 @@ public class GrCUDAStreamPolicy {
      * @return the stream on which we execute the computation
      */
     public CUDAStream retrieveStream(ExecutionDAG.DAGVertex vertex) {
+        //return retrieveNewStream(vertex);
+        ///*
         if (vertex.isStart()) {
             // If the computation doesn't have parents, provide a new stream to it.
             // When using multiple GPUs, also select the device;
@@ -148,7 +150,7 @@ public class GrCUDAStreamPolicy {
             // When using multiple GPUs, we might want to select the device as well,
             // if multiple suitable parent streams are available;
             return retrieveParentStream(vertex);
-        }
+        }//*/
     }
     
     CUDAStream retrieveNewStream(ExecutionDAG.DAGVertex vertex) {

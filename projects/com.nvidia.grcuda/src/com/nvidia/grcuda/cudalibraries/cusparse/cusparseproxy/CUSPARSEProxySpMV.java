@@ -33,16 +33,19 @@
  */
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
+import static com.nvidia.grcuda.functions.Function.INTEROP;
+
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
-import static com.nvidia.grcuda.functions.Function.INTEROP;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
 import com.nvidia.grcuda.runtime.array.SparseMatrix;
+import com.nvidia.grcuda.runtime.computation.ComputationArgument;
+import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.oracle.truffle.api.interop.ArityException;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -54,7 +57,7 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
         SPMV_MATRIX_TYPE_CSR
     }
 
-    private final int nArgsRaw = 10; // args for library function
+    private final int nArgsRaw = 11; // args for library function
 
     public CUSPARSEProxySpMV(ExternalFunctionFactory externalFunctionFactory) {
         super(externalFunctionFactory);
@@ -104,7 +107,7 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
                                 vecYData.getArraySize(),
                                 vecYData,
                                 CUSPARSERegistry.CUDADataType.fromGrCUDAType(vecYData.getElementType(), isComplex).ordinal());
-
+            /*
             // create buffer
             Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunctionNFI, handle, opA.ordinal(), 
                     alpha.getAddress(),
@@ -114,6 +117,8 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
                     vecYDesc.getValue(),
                     valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
 
+            //sparseMatrix.getValues().getGrCUDAExecutionContext().getCudaRuntime().cudaDeviceSynchronize();
+
             long numElements;
 
             if (bufferSize.getValue() == 0) {
@@ -122,8 +127,9 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
                 numElements = bufferSize.getValue();
             }
 
+            System.out.println(numElements);
             DeviceArray buffer = new DeviceArray(sparseMatrix.getValues().getGrCUDAExecutionContext(), numElements, Type.UINT8);
-
+*/
             // format new arguments
             args[0] = opA.ordinal();
             args[1] = alpha.getAddress();
@@ -133,9 +139,14 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             args[5] = vecYDesc.getValue();
             args[6] = valueType.ordinal();
             args[7] = alg.ordinal();
-            args[8] = buffer;
+            args[8] = Long.valueOf(0);
             //additional arguments for dependency tracking
-            args[9] = vecYData;
+            args[9] = new ComputationArgumentWithValue(
+                    "input_tracker", Type.NFI_POINTER, ComputationArgument.Kind.POINTER_IN,
+                    vecXData);
+            args[10] = new ComputationArgumentWithValue(
+                    "output_tracker", Type.NFI_POINTER, ComputationArgument.Kind.POINTER_INOUT,
+                    vecYData);
             
             return args;
         }

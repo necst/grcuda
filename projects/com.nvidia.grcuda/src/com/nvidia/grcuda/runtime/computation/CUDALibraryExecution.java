@@ -80,6 +80,7 @@ public class CUDALibraryExecution extends GrCUDAComputationalElement {
         // Execution happens on the default stream;
         Object result = null;
         try {
+            grCUDAExecutionContext.getCudaRuntime().cudaSetDevice(this.getStream().getStreamDeviceId());
             this.setStreamFunctionNFI.setStream(this.getStream());
             result = INTEROP.execute(this.nfiFunction, this.argsWithHandle);
         } catch (ArityException | UnsupportedMessageException e) {

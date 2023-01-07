@@ -79,12 +79,15 @@ public class CUDAStream extends GPUPointer {
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (o == null || getClass() != o.getClass())
+        if (o == null || getClass() != o.getClass()) {
+            System.out.println(getClass() + " " + o.getClass());
             return false;
-        if (!super.equals(o))
+        }
+        if (!super.equals(o)) {
             return false;
+        }
         CUDAStream that = (CUDAStream) o;
-        return streamNumber == that.streamNumber && this.getRawPointer() == that.getRawPointer();
+        return streamNumber == that.streamNumber && deviceId == that.deviceId && this.getRawPointer() == that.getRawPointer();
     }
 
     @Override
