@@ -27,7 +27,7 @@ public class SparseMatrixCSRFunction extends Function {
     @Override
     public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
         if (arguments.length != NUM_ARGUMENTS && arguments.length != NUM_ARGUMENTS_NULL) {
-            throw ArityException.create(NUM_ARGUMENTS, arguments.length);
+            throw ArityException.create(NUM_ARGUMENTS, NUM_ARGUMENTS, arguments.length);
         }
 
         if (arguments.length == NUM_ARGUMENTS) {

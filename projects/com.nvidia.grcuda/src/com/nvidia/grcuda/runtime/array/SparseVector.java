@@ -374,7 +374,7 @@ public class SparseVector implements TruffleObject {
             checkFreeVector();
             if (arguments.length != 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw ArityException.create(0, arguments.length);
+                throw ArityException.create(0, 0, arguments.length);
             }
             freeMemory();
             return NoneValue.get();
@@ -394,7 +394,7 @@ public class SparseVector implements TruffleObject {
             checkFreeVector();
             if (arguments.length != NUM_ARGS) {
                 CompilerDirectives.transferToInterpreter();
-                throw ArityException.create(NUM_ARGS, arguments.length);
+                throw ArityException.create(NUM_ARGS, NUM_ARGS, arguments.length);
             }
             DenseVector vecY = (DenseVector) arguments[0];
             DeviceArray result = (DeviceArray) arguments[1];
@@ -422,7 +422,7 @@ public class SparseVector implements TruffleObject {
             checkFreeVector();
             if (arguments.length != NUM_ARGS) {
                 CompilerDirectives.transferToInterpreter();
-                throw ArityException.create(NUM_ARGS, arguments.length);
+                throw ArityException.create(NUM_ARGS, NUM_ARGS, arguments.length);
             }
             DeviceArray alpha = (DeviceArray) arguments[0];
             DeviceArray beta = (DeviceArray) arguments[1];
@@ -447,7 +447,7 @@ public class SparseVector implements TruffleObject {
             checkFreeVector();
             if (arguments.length != NUM_ARGS) {
                 CompilerDirectives.transferToInterpreter();
-                throw ArityException.create(NUM_ARGS, arguments.length);
+                throw ArityException.create(NUM_ARGS, NUM_ARGS, arguments.length);
             }
             int row = expectInt(arguments[0]);
             int col = expectInt(arguments[1]);

@@ -33,13 +33,12 @@
  */
 package com.nvidia.grcuda.cudalibraries.cusparse.cusparseproxy;
 
-import static com.nvidia.grcuda.functions.Function.INTEROP;
-
 import com.nvidia.grcuda.Type;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUDADataType;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry.CUSPARSESpMVAlg;
 import com.nvidia.grcuda.functions.ExternalFunctionFactory;
+import static com.nvidia.grcuda.functions.Function.INTEROP;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.array.DeviceArray;
@@ -81,7 +80,7 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             Float betaVal = (Float) rawArgs[5];
             AbstractArray vecYData = (AbstractArray) rawArgs[6];
             CUSPARSESpMVAlg alg = CUSPARSESpMVAlg.values()[(int)rawArgs[7]];
-            List<MemoryObject> memoryTracker = (List<MemoryObject>) rawArgs[8];
+            //List<Closeable> memoryTracker = ((Value) rawArgs[8]).as(List.class);
 
             final long cols = sparseMatrix.getRows();
             CUDADataType valueType = sparseMatrix.getDataType();
@@ -95,10 +94,12 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             UnsafeHelper.Float32Object alpha = UnsafeHelper.createFloat32Object();
             UnsafeHelper.Float32Object beta = UnsafeHelper.createFloat32Object();
 
+            /*
             memoryTracker.add(vecXDesc);
             memoryTracker.add(vecYDesc);
             memoryTracker.add(alpha);
             memoryTracker.add(beta);
+            */
 
             alpha.setValue(alphaVal.floatValue());
             beta.setValue(betaVal.floatValue());

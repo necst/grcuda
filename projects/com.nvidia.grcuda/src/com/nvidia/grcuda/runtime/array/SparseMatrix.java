@@ -1,5 +1,10 @@
 package com.nvidia.grcuda.runtime.array;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+
 import com.nvidia.grcuda.GrCUDAException;
 import com.nvidia.grcuda.NoneValue;
 import com.nvidia.grcuda.cudalibraries.cusparse.CUSPARSERegistry;
@@ -26,7 +31,7 @@ public abstract class SparseMatrix implements TruffleObject {
     protected final UnsafeHelper.Integer64Object spMatDescr;
 
     // contains all unsafe objects that need to be eventually freed
-    protected final List<MemoryObject> memoryTracker;
+    protected final List<Closeable> memoryTracker;
 
     protected SparseMatrix(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray values, long rows, long cols, CUSPARSERegistry.CUDADataType dataType, boolean isComplex) {
         this.grCUDAExecutionContext = grCUDAExecutionContext;
@@ -88,8 +93,12 @@ public abstract class SparseMatrix implements TruffleObject {
 
     protected void freeMemory() {
         spMatDescr.close();
-        for (MemoryObject o : memoryTracker) {
-            o.close();
+        for (Closeable o : memoryTracker) {
+            try {
+                o.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         memoryTracker.clear();
     }
@@ -107,7 +116,7 @@ public abstract class SparseMatrix implements TruffleObject {
             checkFreeMatrix();
             if (arguments.length != 0) {
                 CompilerDirectives.transferToInterpreter();
-                throw ArityException.create(0, arguments.length);
+                throw ArityException.create(0, 0, arguments.length);
             }
             freeMemory();
             return NoneValue.get();

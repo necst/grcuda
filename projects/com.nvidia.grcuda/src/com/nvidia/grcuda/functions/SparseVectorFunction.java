@@ -26,7 +26,7 @@ public class SparseVectorFunction extends Function {
     @Override
     public Object call(Object[] arguments) throws ArityException, UnsupportedTypeException {
         if (arguments.length != NUM_ARGUMENTS) {
-            throw ArityException.create(NUM_ARGUMENTS, arguments.length);
+            throw ArityException.create(NUM_ARGUMENTS, NUM_ARGUMENTS, arguments.length);
         }
 
         if(isDeviceArrayConstructor(arguments)){

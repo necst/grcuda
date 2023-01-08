@@ -245,7 +245,7 @@ public class SparseMatrixCOO extends SparseMatrix {
             checkFreeMatrix();
             if (arguments.length != 4) {
                 CompilerDirectives.transferToInterpreter();
-                throw ArityException.create(4, arguments.length);
+                throw ArityException.create(4, 4, arguments.length);
             }
 
             Context polyglot = Context.getCurrent();

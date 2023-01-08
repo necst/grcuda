@@ -54,9 +54,8 @@ import com.nvidia.grcuda.functions.Function;
 import static com.nvidia.grcuda.functions.Function.INTEROP;
 import static com.nvidia.grcuda.functions.Function.expectLong;
 import com.nvidia.grcuda.runtime.UnsafeHelper;
-import com.nvidia.grcuda.runtime.computation.CUDALibraryExecution;
-import com.nvidia.grcuda.runtime.computation.ComputationArgument;
 import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
+import com.nvidia.grcuda.runtime.computation.FunctionExecution;
 import com.nvidia.grcuda.runtime.stream.CUSPARSESetStreamFunction;
 import com.nvidia.grcuda.runtime.stream.LibrarySetStream;
 import com.oracle.truffle.api.CompilerAsserts;
@@ -345,7 +344,13 @@ public class CUSPARSERegistry {
                             computationArgumentsWithValue = this.createComputationArgumentWithValueList(formattedArguments, null);
                         }
                         int extraArraysToTrack = computationArgumentsWithValue.size() - this.computationArguments.size();  // Both lists also contain the handle;
-                        Object result = new CUDALibraryExecution(context.getGrCUDAExecutionContext(), nfiFunction, cusparseLibrarySetStream,
+                        Function fun = new Function(getName()) {
+                            @Override
+                            protected Object call(Object[] arguments) throws ArityException, UnsupportedTypeException, UnsupportedMessageException {
+                                return INTEROP.execute(nfiFunction, arguments);
+                            }
+                        };
+                        Object result = new FunctionExecution(context.getGrCUDAExecutionContext(), fun, cusparseLibrarySetStream,
                                 computationArgumentsWithValue, extraArraysToTrack).schedule();
 
                         checkCUSPARSEReturnCode(result, nfiFunction.getName());
