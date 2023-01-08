@@ -474,6 +474,10 @@ public class CUSPARSEProxy {
         }
     }
 
+    public Object[] executePreliminaries(Object[] arguments) throws UnsupportedTypeException, UnsupportedMessageException, ArityException {
+        return arguments;
+    }
+
 
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSESETSTREAM = new ExternalFunctionFactory("cusparseSetStream", "cusparseSetStream", "(sint64, sint64): sint32");
     private static final ExternalFunctionFactory CUSPARSE_CUSPARSECREATECOO = new ExternalFunctionFactory("cusparseCreateCoo", "cusparseCreateCoo", "(pointer, sint64, " +

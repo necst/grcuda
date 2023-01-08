@@ -103,6 +103,10 @@ public abstract class SparseMatrix implements TruffleObject {
         memoryTracker.clear();
     }
 
+    public void track(Closeable c) {
+        memoryTracker.add(c);
+    }
+
     @ExportLibrary(InteropLibrary.class)
     final class SparseMatrixFreeFunction implements TruffleObject {
         @ExportMessage

@@ -347,6 +347,7 @@ public class CUSPARSERegistry {
                         Function fun = new Function(getName()) {
                             @Override
                             protected Object call(Object[] arguments) throws ArityException, UnsupportedTypeException, UnsupportedMessageException {
+                                arguments = proxy.executePreliminaries(arguments);
                                 return INTEROP.execute(nfiFunction, arguments);
                             }
                         };
