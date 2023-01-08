@@ -77,7 +77,6 @@ public class SparseMatrixCOO extends SparseMatrix {
     private final DeviceArray cooRowInd;
     private final DeviceArray cooColInd;
 
-
     protected static final MemberSet MEMBERS = new MemberSet(FREE, SPMV, IS_MEMORY_FREED, VALUES, ROW_INDICES, COL_INDICES);
 
     public SparseMatrixCOO(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray cooRowInd, DeviceArray cooColInd, DeviceArray cooValues, long rows, long cols, boolean isComplex) {
@@ -151,9 +150,6 @@ public class SparseMatrixCOO extends SparseMatrix {
     public void freeMemory() {
         checkFreeMatrix();
         super.freeMemory();
-        cooRowInd.freeMemory();
-        cooColInd.freeMemory();
-        matrixFreed = true;
     }
 
     @ExportMessage
@@ -275,7 +271,8 @@ public class SparseMatrixCOO extends SparseMatrix {
                     dataType.ordinal(),
                     beta,
                     outVec,
-                    CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal());
+                    CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
+                    memoryTracker);
 
             return outVec;
         }

@@ -329,7 +329,6 @@ public class SparseMatrixCSR extends SparseMatrix {
             Object outVec = arguments[3];
 
             Value cusparseSpMV = polyglot.eval("grcuda", "SPARSE::cusparseSpMV");
-            Value sync = polyglot.eval("grcuda", "cudaDeviceSynchronize");
 
             cusparseSpMV.execute(
                 CUSPARSERegistry.CUSPARSEOperation.CUSPARSE_OPERATION_NON_TRANSPOSE.ordinal(),
@@ -339,7 +338,8 @@ public class SparseMatrixCSR extends SparseMatrix {
                 dataType.ordinal(),
                 beta,
                 outVec,
-                CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal());
+                CUSPARSERegistry.CUSPARSESpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT.ordinal(),
+                memoryTracker);
 
             return outVec;
         }
@@ -421,8 +421,6 @@ public class SparseMatrixCSR extends SparseMatrix {
                 DeviceArray newValues = new DeviceArray(getValues().grCUDAExecutionContext, numNnz.getValue(), Type.FLOAT);
 
                 setPointers.execute(matC.getSpMatDescr().getValue(), matC.getCsrRowOffsets(), newColumns, newValues);
-
-                //System.out.println(matC.getCsrRowOffsets());
 
                 if (matC.getValues() != null)
                     matC.getValues().freeMemory();

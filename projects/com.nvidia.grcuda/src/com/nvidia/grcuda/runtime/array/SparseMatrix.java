@@ -13,38 +13,37 @@ import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 
 public abstract class SparseMatrix implements TruffleObject {
-    /**
-     * Row and column dimensions
-     */
+    private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
     protected final long rows;
     protected final long cols;
-    protected long numElements;
     protected final boolean isComplex;
+    protected boolean matrixFreed;
+    protected CUSPARSERegistry.CUDADataType dataType;
 
     private DeviceArray values;
+    protected long numElements;
 
-    protected CUSPARSERegistry.CUDADataType dataType;
     protected final UnsafeHelper.Integer64Object spMatDescr;
 
-    protected boolean matrixFreed;
+    // contains all unsafe objects that need to be eventually freed
+    protected final List<MemoryObject> memoryTracker;
 
-    private final AbstractGrCUDAExecutionContext grCUDAExecutionContext;
-
-    protected SparseMatrix(AbstractGrCUDAExecutionContext grCUDAExecutionContext, Object values, long rows, long cols, CUSPARSERegistry.CUDADataType dataType, boolean isComplex) {
+    protected SparseMatrix(AbstractGrCUDAExecutionContext grCUDAExecutionContext, DeviceArray values, long rows, long cols, CUSPARSERegistry.CUDADataType dataType, boolean isComplex) {
         this.grCUDAExecutionContext = grCUDAExecutionContext;
         this.rows = rows;
         this.cols = cols;
         this.isComplex = isComplex;
         this.dataType = dataType;
+        this.values = values;
         if (values == null) {
-            this.values = null;
             numElements = 0;
         } else {
-            this.values = (DeviceArray) values;
             numElements = isComplex ? this.values.getArraySize() / 2 : this.values.getArraySize();
         }
 
         spMatDescr = UnsafeHelper.createInteger64Object();
+        matrixFreed = false;
+        memoryTracker = new LinkedList<>();
     }
 
     protected AbstractGrCUDAExecutionContext getGrCUDAExecutionContext() {
@@ -88,8 +87,11 @@ public abstract class SparseMatrix implements TruffleObject {
     }
 
     protected void freeMemory() {
-        values.freeMemory();
         spMatDescr.close();
+        for (MemoryObject o : memoryTracker) {
+            o.close();
+        }
+        memoryTracker.clear();
     }
 
     @ExportLibrary(InteropLibrary.class)

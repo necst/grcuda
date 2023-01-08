@@ -81,55 +81,58 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             Float betaVal = (Float) rawArgs[5];
             AbstractArray vecYData = (AbstractArray) rawArgs[6];
             CUSPARSESpMVAlg alg = CUSPARSESpMVAlg.values()[(int)rawArgs[7]];
+            List<MemoryObject> memoryTracker = (List<MemoryObject>) rawArgs[8];
 
             final long cols = sparseMatrix.getRows();
             CUDADataType valueType = sparseMatrix.getDataType();
             UnsafeHelper.Integer64Object matDescr = sparseMatrix.getSpMatDescr();
 
             final boolean isComplex = sparseMatrix.getIsComplex();
-            
+
             UnsafeHelper.Integer64Object vecXDesc = UnsafeHelper.createInteger64Object();
             UnsafeHelper.Integer64Object vecYDesc = UnsafeHelper.createInteger64Object();
 
             UnsafeHelper.Float32Object alpha = UnsafeHelper.createFloat32Object();
             UnsafeHelper.Float32Object beta = UnsafeHelper.createFloat32Object();
 
+            memoryTracker.add(vecXDesc);
+            memoryTracker.add(vecYDesc);
+            memoryTracker.add(alpha);
+            memoryTracker.add(beta);
+
             alpha.setValue(alphaVal.floatValue());
             beta.setValue(betaVal.floatValue());
             INTEROP.execute(cusparseCreateDnVecFunctionNFI,
-                                vecXDesc.getAddress(),
-                                vecXData.getArraySize(),
-                                vecXData,
-                                CUSPARSERegistry.CUDADataType.fromGrCUDAType(vecXData.getElementType(), isComplex).ordinal());
+                    vecXDesc.getAddress(),
+                    vecXData.getArraySize(),
+                    vecXData,
+                    CUSPARSERegistry.CUDADataType.fromGrCUDAType(vecXData.getElementType(), isComplex).ordinal());
 
             INTEROP.execute(cusparseCreateDnVecFunctionNFI,
-                                vecYDesc.getAddress(),
-                                vecYData.getArraySize(),
-                                vecYData,
-                                CUSPARSERegistry.CUDADataType.fromGrCUDAType(vecYData.getElementType(), isComplex).ordinal());
-            /*
+                    vecYDesc.getAddress(),
+                    vecYData.getArraySize(),
+                    vecYData,
+                    CUSPARSERegistry.CUDADataType.fromGrCUDAType(vecYData.getElementType(), isComplex).ordinal());
+
             // create buffer
-            Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunctionNFI, handle, opA.ordinal(), 
+            Object resultBufferSize = INTEROP.execute(cusparseSpMV_bufferSizeFunctionNFI,
+                    handle,
+                    opA.ordinal(), 
                     alpha.getAddress(),
                     matDescr.getValue(),
                     vecXDesc.getValue(),
                     beta.getAddress(),
                     vecYDesc.getValue(),
-                    valueType.ordinal(), alg.ordinal(), bufferSize.getAddress());
+                    valueType.ordinal(),
+                    alg.ordinal(),
+                    bufferSize.getAddress());
 
-            //sparseMatrix.getValues().getGrCUDAExecutionContext().getCudaRuntime().cudaDeviceSynchronize();
 
-            long numElements;
+            // if the result of the function is zero then buffer is a null pointer
+            Object buffer = bufferSize.getValue() == 0 ?
+                    Long.valueOf(0L) :
+                    new DeviceArray(sparseMatrix.getValues().getGrCUDAExecutionContext(), bufferSize.getValue(), Type.UINT8);
 
-            if (bufferSize.getValue() == 0) {
-                numElements = 1;
-            } else {
-                numElements = bufferSize.getValue();
-            }
-
-            System.out.println(numElements);
-            DeviceArray buffer = new DeviceArray(sparseMatrix.getValues().getGrCUDAExecutionContext(), numElements, Type.UINT8);
-*/
             // format new arguments
             args[0] = opA.ordinal();
             args[1] = alpha.getAddress();
@@ -139,7 +142,7 @@ public class CUSPARSEProxySpMV extends CUSPARSEProxy {
             args[5] = vecYDesc.getValue();
             args[6] = valueType.ordinal();
             args[7] = alg.ordinal();
-            args[8] = Long.valueOf(0);
+            args[8] = buffer;
             //additional arguments for dependency tracking
             args[9] = new ComputationArgumentWithValue(
                     "input_tracker", Type.NFI_POINTER, ComputationArgument.Kind.POINTER_IN,
