@@ -146,6 +146,7 @@ public class B5M extends Benchmark {
         long end = System.nanoTime();
 
         benchmarkResults.setCurrentGpuResult(result[0]);
+        benchmarkResults.setCurrentGpuResultArray(result);
         benchmarkResults.setCurrentComputationSec((end-start)/1000000000F);
 
     }
@@ -156,8 +157,14 @@ public class B5M extends Benchmark {
         res = BS(this.x_tmp, R, V, T, global_K);
 
         benchmarkResults.setCurrentCpuResult(res[0]);
+        benchmarkResults.setCurrentCpuResultArray(res);
 
         assertEquals(benchmarkResults.currentGpuResult(), res[0], 1e-5);
+
+        for (int i = res.length - 250; i < res.length; i++){
+            assertEquals(benchmarkResults.currentGpuResultArray()[i], res[i], 1e-5);
+            System.out.println("gpu: " + benchmarkResults.currentGpuResultArray()[i] + ", cpu: " + res[i]);
+        }
     }
 
     private double[] CND(double[] X) {

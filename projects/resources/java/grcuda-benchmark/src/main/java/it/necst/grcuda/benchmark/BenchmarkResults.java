@@ -49,6 +49,7 @@ public class BenchmarkResults {
     public LinkedList<Iteration> iterations = new LinkedList<>();
     public ArrayList<String> filteredPhases = new ArrayList<>();
     public double cpu_result;
+    public double[] cpu_result_array;
 
     BenchmarkResults(BenchmarkConfig config){
         this.config = config;
@@ -95,9 +96,19 @@ public class BenchmarkResults {
     public void setCurrentGpuResult(double gpuResult){
         iterations.getLast().gpu_result = gpuResult;
     }
+
+    public void setCurrentGpuResultArray(double[] gpuResult){
+        iterations.getLast().gpu_result_array = gpuResult;
+    }
+
     public void setCurrentCpuResult(double cpuResult){
         this.cpu_result = cpuResult;
     }
+
+    public void setCurrentCpuResultArray(double[] cpuResult){
+        this.cpu_result_array = cpuResult;
+    }
+
     public void setCurrentComputationSec(double computationSec){iterations.getLast().computation_sec = computationSec;}
     public void setCurrentOverheadSec(double overheadSec){iterations.getLast().overhead_sec = overheadSec;}
     public void setCurrentTotalTime(double totalTime){
@@ -115,6 +126,11 @@ public class BenchmarkResults {
     public double currentGpuResult(){
         return iterations.getLast().gpu_result;
     }
+
+    public double[] currentGpuResultArray(){
+        return iterations.getLast().gpu_result_array;
+    }
+
     public double currentCpuResult(){
         return this.cpu_result;
     }
@@ -126,6 +142,9 @@ class Iteration{
     public int iteration;
     public boolean time_phases;
     public double gpu_result;
+
+    public double[] gpu_result_array = new double[250];
+    public double[] cpu_result_array = new double[250];
 
     public double computation_sec;
     public double total_time_sec;
