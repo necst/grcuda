@@ -74,7 +74,7 @@ public class B5M extends Benchmark {
 
     private Value bs_kernelFunction;
     private final Value[] x, y;
-    private double[] x_tmp;
+    private double[][] x_tmp;
     private static final float R = 0.08f;
     private static final float V = 0.3f;
     private static final float T = 1.0f;
@@ -95,12 +95,15 @@ public class B5M extends Benchmark {
     @Override
     public void initializeTest(int iteration) {
         // Initialization
-        this.x_tmp = new double[this.config.size];
+        this.x_tmp = new double[this.local_K][this.config.size];
 
         assert (!config.randomInit); // randomInit not supported yet
-
-        for (int i = 0; i < this.config.size; i++)
-            this.x_tmp[i] = global_K;
+        
+        for (int j = 0; j < this.local_K; j++) {
+            for (int i = 0; i < this.config.size; i++)
+                //this.x_tmp[i] = global_K;
+                this.x_tmp[j][i] = (int) Math.floor(Math.random() * (101));
+        }
     }
 
     @Override
@@ -123,7 +126,7 @@ public class B5M extends Benchmark {
         // Reset result
         for (int i = 0; i < local_K; i++) {
             for (int j = 0; j < this.config.size; j++) {
-                this.x[i].setArrayElement(j, this.x_tmp[j]);
+                this.x[i].setArrayElement(j, this.x_tmp[i][j]);
             }
         }
     }
@@ -140,7 +143,7 @@ public class B5M extends Benchmark {
         }
 
         for (int i = 0; i < local_K; i++){
-            result[i] = this.y[i].getArrayElement(0).asDouble();
+            result[i] = this.y[i].getArrayElement(1500).asDouble();
         }
 
         long end = System.nanoTime();
@@ -153,17 +156,15 @@ public class B5M extends Benchmark {
 
     @Override
     public void cpuValidation() {
-        double[] res;
-        res = BS(this.x_tmp, R, V, T, global_K);
-
-        benchmarkResults.setCurrentCpuResult(res[0]);
-        benchmarkResults.setCurrentCpuResultArray(res);
-
-        assertEquals(benchmarkResults.currentGpuResult(), res[0], 1e-5);
-
-        for (int i = res.length - 250; i < res.length; i++){
-            assertEquals(benchmarkResults.currentGpuResultArray()[i], res[i], 1e-5);
-            System.out.println("gpu: " + benchmarkResults.currentGpuResultArray()[i] + ", cpu: " + res[i]);
+        double[][] res = new double[local_K][];
+        
+        for (int i = 0; i < local_K; i++) {
+            res[i] = BS(this.x_tmp[i], R, V, T, global_K);
+        }
+        
+        for (int i = 0; i < this.local_K; i++){
+            assertEquals(benchmarkResults.currentGpuResultArray()[i], res[i][1500], 1e-5);
+            System.out.println("gpu: " + benchmarkResults.currentGpuResultArray()[i] + ", cpu: " + res[i][1500]);
         }
     }
 
