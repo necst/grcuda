@@ -105,7 +105,7 @@ public abstract class AbstractGrCUDAExecutionContext {
      * Logged scheduling time is the total time counting every iteration in Python benchmarks,
      * while will be measured and logged for every different iteration in Java benchmarks.
      */
-    private float totalSchedulingTime = 0;
+    private long totalSchedulingTime = 0;
 
     public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {
         this.cudaRuntime = cudaRuntime;
@@ -182,12 +182,12 @@ public abstract class AbstractGrCUDAExecutionContext {
         return this.cudaRuntime.getCurrentGPU();
     }
 
-    public float getTotalSchedulingTime() {
+    public long getTotalSchedulingTime() {
         return totalSchedulingTime;
     }
 
-    public void setTotalSchedulingTime(float totalSchedulingTime) {
-        this.totalSchedulingTime = this.totalSchedulingTime + totalSchedulingTime;
+    public void setTotalSchedulingTime(long timeNano) {
+        this.totalSchedulingTime += timeNano;
     }
 
     /**

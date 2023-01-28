@@ -157,7 +157,7 @@ public abstract class Benchmark {
                 //logging settings
                 .option("log.grcuda.com.nvidia.grcuda.level", "WARNING")
                 .option("log.grcuda.com.nvidia.grcuda.GrCUDAContext.level", "SEVERE")
-                .option("log.grcuda.com.nvidia.grcuda.runtime.level","FINE")
+                .option("log.grcuda.com.nvidia.grcuda.runtime.level","FINER")
                 // .option("log.file","/home/ubuntu/grcuda/projects/resources/java/grcuda-benchmark/scheduling_overhead.raw")
                 //GrCUDA env settings
                 .option("grcuda.ExecutionPolicy", config.executionPolicy)
