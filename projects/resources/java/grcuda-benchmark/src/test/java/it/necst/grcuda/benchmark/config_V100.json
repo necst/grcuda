@@ -1,5 +1,5 @@
 {
-  "num_iter": 5,
+  "num_iter": 10,
   "reInit": false,
   "randomInit": false,
   "cpuValidation": false,
@@ -7,13 +7,20 @@
   "debug": false,
   "nvprof_profile": false,
   "num_elem": {
-    "B1": [160000000, 250000000, 500000000, 800000000, 950000000],
-    "B1M": [160000000],
-    "B5M": [10000000],
-    "B6M": [1000000,1200000, 1400000, 1600000, 1800000],
-    "B11M": [20000, 30000, 40000, 50000, 60000]
+    "B1": [
+      16000000],
+    "B1M": [
+      160000000],
+    "B5M": [
+      10000000
+      ],
+    "B6M": [1000000],
+    "B11M": [20000]
   },
-  "benchmarks": ["B5M"],
+  "benchmarks": ["B1M",
+  "B5M",
+  "B6M",
+  "B11M"],
   "numBlocks": {
     "B1":  64,
     "B1M": 64,
@@ -23,14 +30,19 @@
   },
   "exec_policies" : ["async"],
   "dependency_policies": ["with-const"],
-  "new_stream_policies": ["reuse"],
+  "new_stream_policies": ["always-new"],
   "parent_stream_policies": ["multigpu-disjoint"],
-  "choose_device_policies": ["round-robin"],
+  "choose_device_policies": [
+    "round-robin",
+    "stream-aware",
+    "min-transfer-size",
+    "minmax-transfer-time"
+  ],
   "memory_advise": ["none"],
   "prefetch": [true],
   "stream_attach": [false],
   "time_computation": [false],
-  "num_gpus": [1],
+  "num_gpus": [1,2,4,8],
   "block_size1d": {
     "B1": 64,
     "B1M": 32,

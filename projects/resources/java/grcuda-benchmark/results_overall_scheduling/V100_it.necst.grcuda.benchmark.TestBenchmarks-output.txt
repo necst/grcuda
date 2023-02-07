@@ -1,0 +1,505 @@
+{
+  "num_iter": 10,
+  "heap_size": 470,
+  "reInit": false,
+  "randomInit": false,
+  "cpuValidation": false,
+  "debug": false,
+  "nvprof_profile": false,
+  "benchmarks": [
+    "B1M",
+    "B5M",
+    "B6M",
+    "B11M"
+  ],
+  "exec_policies": [
+    "async"
+  ],
+  "dependency_policies": [
+    "with-const"
+  ],
+  "new_stream_policies": [
+    "always-new"
+  ],
+  "parent_stream_policies": [
+    "multigpu-disjoint"
+  ],
+  "choose_device_policies": [
+    "round-robin",
+    "stream-aware",
+    "min-transfer-size",
+    "minmax-transfer-time"
+  ],
+  "memory_advise": [
+    "none"
+  ],
+  "prefetch": [
+    true
+  ],
+  "stream_attach": [
+    false
+  ],
+  "time_computation": [
+    false
+  ],
+  "num_gpus": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "num_elem": {
+    "B11M": [
+      20000
+    ],
+    "B6M": [
+      1000000
+    ],
+    "B5M": [
+      10000000
+    ],
+    "B1M": [
+      160000000
+    ],
+    "B1": [
+      16000000
+    ]
+  },
+  "numBlocks": {
+    "B11M": 64,
+    "B6M": 64,
+    "B5M": 64,
+    "B1M": 64,
+    "B1": 64
+  },
+  "block_size1d": {
+    "B11M": 256,
+    "B6M": 32,
+    "B5M": 1024,
+    "B1M": 32,
+    "B1": 64
+  },
+  "block_size2d": {
+    "B11M": 8,
+    "B6M": 8,
+    "B5M": 8,
+    "B1M": 8,
+    "B1": 8
+  }
+}
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=1, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 1/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 36724350 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 70104523 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 35921203 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 27855817 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 28050461 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 41643599 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 39792158 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 25888868 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 21929773 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 37643071 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 34232832 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 21294764 ns
+BenchmarkConfig{benchmarkName='B1M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=160000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 21169466 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=1, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 1/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 2645716 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 4834677 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 4352675 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 4057372 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 5482195 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 10445757 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 5249021 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 5126095 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 6211445 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 11683231 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 7203614 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 5329533 ns
+BenchmarkConfig{benchmarkName='B5M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=10000000, blockSize1D=1024, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 5422535 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=1, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 1/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 930239890 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 331199449 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 81213317 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 45944363 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 44699915 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 2237878846 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 50728541 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 322280167 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 65607110 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 407510689 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 38131324 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 278634064 ns
+BenchmarkConfig{benchmarkName='B6M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=1000000, blockSize1D=32, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 90557532 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=1, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 1/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 4668091 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 5217952 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 5087267 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 6593097 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=2, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 2/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 8027234 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 5913404 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 5235644 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 6127821 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=4, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 4/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 7588211 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='round-robin', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 5407778 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='stream-aware', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 4618556 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='min-transfer-size', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 5861307 ns
+BenchmarkConfig{benchmarkName='B11M', setupId='', totIter=10, currentIter=0, randomSeed=42, size=20000, blockSize1D=256, blockSize2D=8, timePhases=false, numBlocks=64, randomInit=false, reInit=false, reAlloc=false, cpuValidate=false, executionPolicy='async', inputPrefetch=true, retrieveNewStreamPolicy='always-new', retrieveParentStreamPolicy='multigpu-disjoint', dependencyPolicy='with-const', deviceSelectionPolicy='minmax-transfer-time', forceStreamAttach=false, enableComputationTimers=false, numGpus=8, memAdvisePolicy='none', bandwidthMatrix='/home/ubuntu/grcuda/projects/resources/connection_graph/datasets/connection_graph.csv'}
+[To redirect Truffle log output to a file use one of the following options:
+* '--log.file=<path>' if the option is passed using a guest language launcher.
+* '-Dpolyglot.log.file=<path>' if the option is passed using the host Java launcher.
+* Configure logging using the polyglot embedding API.]
+[grcuda::com.nvidia.grcuda.runtime] FINE: identified 8 GPUs available on this machine
+[grcuda::com.nvidia.grcuda.runtime] INFO: initialized GrCUDA to use 8/8 GPUs
+[grcuda::com.nvidia.grcuda.runtime.computation] FINE: Total scheduling time: 7116631 ns

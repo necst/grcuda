@@ -69,11 +69,11 @@ public abstract class RetrieveNewStreamPolicy {
      * @return the stream where the computation is executed
      */
     final CUDAStream retrieve(ExecutionDAG.DAGVertex vertex) {
-        long startTime = System.nanoTime();
+        //long startTime = System.nanoTime();
         Device device = this.deviceSelectionPolicy.retrieve(vertex);
         CUDAStream stream =  this.retrieveStreamFromDevice(device);
-        long elapsedTime = System.nanoTime() - startTime;
-        vertex.getComputation().setSchedulingTime(elapsedTime);
+        //long elapsedTime = System.nanoTime() - startTime;
+        //vertex.getComputation().setSchedulingTime(elapsedTime);
         return stream;
     }
 

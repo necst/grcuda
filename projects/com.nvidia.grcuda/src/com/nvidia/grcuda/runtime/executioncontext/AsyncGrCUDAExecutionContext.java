@@ -82,7 +82,11 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         ExecutionDAG.DAGVertex vertex = dag.append(computation);
 
         // Compute the stream where the computation will be done, if the computation can be performed asynchronously;
+
+        long overheadStart = System.nanoTime();
         streamManager.assignStream(vertex);
+        long overheadElapsed = System.nanoTime() - overheadStart;
+        this.setTotalSchedulingTime(overheadElapsed);
 
         // Prefetching;
         arrayPrefetcher.prefetchToGpu(vertex);
