@@ -114,7 +114,7 @@ public class GrCUDAStreamManager {
      */
     public void assignStream(ExecutionDAG.DAGVertex vertex) {
         // If the computation cannot use customized streams, return immediately;
-        if (vertex.getComputation().canUseStream()) {
+        if (vertex.getComputation().canUseStream()) {            
             // Else, obtain the stream (and the GPU device) for this computation from the stream policy manager;
             CUDAStream stream = this.streamPolicy.retrieveStream(vertex);
             // Set the stream;
