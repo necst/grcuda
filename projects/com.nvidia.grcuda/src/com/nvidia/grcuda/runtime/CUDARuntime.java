@@ -1005,7 +1005,7 @@ public final class CUDARuntime {
             @Override
             @TruffleBoundary
             public Object call(CUDARuntime cudaRuntime, Object[] args) throws UnsupportedMessageException, UnknownIdentifierException, UnsupportedTypeException, ArityException {
-                checkArgumentLength(args, 3);
+                checkArgumentLength(args, 4);
                 long destPointer = expectLong(args[0]);
                 long fromPointer = expectLong(args[1]);
                 long numBytesToCopy = expectPositiveLong(args[2]);
