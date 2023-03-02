@@ -88,8 +88,11 @@ public abstract class ArrayCopyFunctionExecution extends GrCUDAComputationalElem
     public void updateLocationOfArrays() {
         // FIXME: we should also consider the other array: if it is a DeviceArray its location is also updated;
         if (direction == DeviceArrayCopyFunction.CopyDirection.FROM_POINTER) {
-            // We are copying new data to the array, so reset its status to updated on CPU;
-            array.resetArrayUpToDateLocations(CPUDevice.CPU_DEVICE_ID);
+            // We are copying new data to the array, so reset its status to updated on CPU -> FIXME: this is not what actually happens
+            // Data is not copied to the CPU, but to the preferred location of the unified allocated memory,
+            // which seems to be by default equal to the current GPU at the time of allocation.
+            // This is not the correct fix, you must call copyFrom from and array creation with the same GPU for this fix to work correctly
+            array.resetArrayUpToDateLocations(this.grCUDAExecutionContext.getCurrentGPU());
         } else {
             // We are copying new data from the array (on the CPU) to somewhere else,
             // so the CPU must have updated data. It requires a sync if the context is not const-aware;
