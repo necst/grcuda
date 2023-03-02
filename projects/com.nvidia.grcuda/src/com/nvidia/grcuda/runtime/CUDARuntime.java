@@ -986,6 +986,43 @@ public final class CUDARuntime {
                 return NoneValue.get();
             }
         },
+        CUDA_HOSTREGISTER("cudaHostRegister", "(pointer, uint64, uint32): sint32") {
+            @Override
+            @TruffleBoundary
+            public Object call(CUDARuntime cudaRuntime, Object[] args) throws UnsupportedMessageException, UnknownIdentifierException, UnsupportedTypeException, ArityException {
+                checkArgumentLength(args, 2);
+                long memoryPointer = expectLong(args[0]);
+                long numBytes = expectPositiveLong(args[1]);
+                final long cudaHostRegisterDefault = 0x00; // #define cudaHostRegisterDefault 0x00
+                final long cudaHostRegisterReadOnly = 0x08; // #define cudaHostRegisterReadOnly 0x08
+                callSymbol(cudaRuntime, memoryPointer, numBytes, cudaHostRegisterDefault+cudaHostRegisterReadOnly);
+                return new GPUPointer(memoryPointer);
+            }
+        },
+        CUDA_HOSTUNREGISTER("cudaHostUnregister", "(pointer): sint32") {
+            @Override
+            @TruffleBoundary
+            public Object call(CUDARuntime cudaRuntime, Object[] args) throws UnsupportedMessageException, UnknownIdentifierException, UnsupportedTypeException, ArityException {
+                checkArgumentLength(args, 1);
+                long memoryPointer = expectLong(args[0]);
+                callSymbol(cudaRuntime, memoryPointer);
+                return new GPUPointer(memoryPointer);
+            }
+        },
+        CUDA_HOSTGETDEVICEPOINTER("cudaHostGetDevicePointer", "(pointer, pointer): sint32") {
+            @Override
+            @TruffleBoundary
+            public Object call(CUDARuntime cudaRuntime, Object[] args) throws UnsupportedMessageException, UnknownIdentifierException, UnsupportedTypeException, ArityException {
+                checkArgumentLength(args, 1);
+                long memoryPointer = expectLong(args[0]);
+                System.out.println(String.format("0x%08X", memoryPointer));
+                try (UnsafeHelper.PointerObject outPointer = UnsafeHelper.createPointerObject()) {
+                    callSymbol(cudaRuntime, outPointer.getAddress(), memoryPointer);
+                    long addressAllocatedMemory = outPointer.getValueOfPointer();
+                    return new GPUPointer(addressAllocatedMemory);
+                }
+            }
+        },
         CUDA_MEMCPY("cudaMemcpy", "(pointer, pointer, uint64, sint32): sint32") {
             @Override
             @TruffleBoundary
