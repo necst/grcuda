@@ -94,7 +94,7 @@ public class TestBenchmarks{
         assumeTrue(this.currentGPU.equals(GPU.GTX960));
 
         // get the configuration for the selected GPU into a Config class
-        String CONFIG_PATH = PATH + "/config_GTX960_collect_data.json";
+        String CONFIG_PATH = PATH + "/config_GTX960_train.json";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
         Config parsedConfig = gson.fromJson(reader, Config.class);
