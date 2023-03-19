@@ -81,17 +81,15 @@ suite = {
     #
     # --------------------------------------------------------------------------------------------------------------
     "libraries": {
-        # --------------------------------------------------------------------------------------------------------------
-        # pmml4s
         "pmml4s_2.13" : {
             "maven" : {
                 "groupId" : "org.pmml4s",
                 "artifactId" : "pmml4s_2.13",
                 "version" : "0.9.17",
             },
-            "sha1" : "5ed6220264b215e9c740bfb2027ef03e5d500bcf",
+            "sha1": "5ed6220264b215e9c740bfb2027ef03e5d500bcf",
             "license" : ["Apache 2.0"],
-            "dep" : ["scala-library", "scala-xml_2.13", "commons-text", "spray-json_2.13", "commons-math3"]
+            "dep": ["scala-library", "scala-xml_2.13", "commons-text", "spray-json_2.13", "commons-math3"]
         },
         "scala-xml_2.13" : {
             "maven" : {
@@ -99,9 +97,9 @@ suite = {
                 "artifactId" : "scala-xml_2.13",
                 "version" : "1.2.0",
             },
-            "sha1" : "f6abd60d28c189f05183b26c5363713d1d126b83",
+            "sha1": "f6abd60d28c189f05183b26c5363713d1d126b83",
             "license" : ["Apache 2.0"],
-            "dep" : ["scala-library"]
+            "dep": ["scala-library"]
         },
         "scala-library" : {
             "maven" : {
@@ -109,7 +107,7 @@ suite = {
                 "artifactId" : "scala-library",
                 "version" : "2.13.8",
             },
-            "sha1" : "5a865f03a794b27e6491740c4c419a19e4511a3d",
+            "sha1": "5a865f03a794b27e6491740c4c419a19e4511a3d",
             "license" : ["Apache 2.0"]
         },
         "commons-text" : {
@@ -118,9 +116,9 @@ suite = {
                 "artifactId" : "commons-text",
                 "version" : "1.6",
             },
-            "sha1" : "ba72cf0c40cf701e972fe7720ae844629f4ecca2",
+            "sha1": "ba72cf0c40cf701e972fe7720ae844629f4ecca2",
             "license" : ["Apache 2.0"],
-            "dep" : ["commons-lang3"]
+            "dep": ["commons-lang3"]
         },
         "commons-lang3" : {
             "maven" : {
@@ -128,7 +126,7 @@ suite = {
                 "artifactId" : "commons-lang3",
                 "version" : "3.8.1",
             },
-            "sha1" : "6505a72a097d9270f7a9e7bf42c4238283247755",
+            "sha1": "6505a72a097d9270f7a9e7bf42c4238283247755",
             "license" : ["Apache 2.0"]
         },
         "commons-math3" : {
@@ -137,7 +135,7 @@ suite = {
                 "artifactId" : "commons-math3",
                 "version" : "3.6.1",
             },
-            "sha1" : "e4ba98f1d4b3c80ec46392f25e094a6a2e58fcbf",
+            "sha1": "e4ba98f1d4b3c80ec46392f25e094a6a2e58fcbf",
             "license" : ["Apache 2.0"]
         },
         "spray-json_2.13" : {
@@ -146,43 +144,9 @@ suite = {
                 "artifactId" : "spray-json_2.13",
                 "version" : "1.3.5",
             },
-            "sha1" : "34b3a148e57870e30b797a636d0ae8eb1a1fcc99",
+            "sha1": "34b3a148e57870e30b797a636d0ae8eb1a1fcc99",
             "license" : ["Apache 2.0"],
-            "dep" : ["scala-library"]
-        },
-        # --------------------------------------------------------------------------------------------------------------
-        # weka
-        "weka-stable" : {
-            "maven" : {
-                "groupId" : "nz.ac.waikato.cms.weka",
-                "artifactId" : "weka-stable",
-                "version" : "3.6.14",
-            },
-            "sha1" : "a53dc19f1eb69bbf051a8e5496773461585a899d",
-            "license" : ["GNU"],
-            "dep" : ["java-cup"]
-        },
-
-        "java-cup" : {
-            "maven" : {
-                "groupId" : "net.sf.squirrel-sql.thirdparty-non-maven",
-                "artifactId" : "java-cup",
-                "version" : "0.11a",
-            },
-            "sha1" : "1de46cc85d147d9f91af59d4a0107091c8b112d6",
-            "license" : ["CUP"]
-        },
-
-        # --------------------------------------------------------------------------------------------------------------
-        # gson
-        "gson" : {
-            "maven" : {
-                "groupId" : "com.google.code.gson",
-                "artifactId" : "gson",
-                "version" : "2.10",
-            },
-            "sha1" : "dd9b193aef96e973d5a11ab13cd17430c2e4306b",
-            "license" : ["Apache 2.0"]
+            "dep": ["scala-library"]
         },
     },
 
@@ -228,9 +192,6 @@ suite = {
                 "commons-math3",
                 "commons-lang3",
                 "commons-text",
-                "weka-stable",
-                "java-cup",
-                "gson",
             ],
             "buildDependencies": ["com.nvidia.grcuda.parser.antlr"],
             "checkstyleVersion": "8.8",
@@ -242,6 +203,13 @@ suite = {
                 "com.nvidia.grcuda",
                 "mx:JUNIT",
                 "truffle:TRUFFLE_TEST",
+                "pmml4s_2.13",
+                "scala-library",
+                "scala-xml_2.13",
+                "spray-json_2.13",
+                "commons-math3",
+                "commons-lang3",
+                "commons-text",
             ],
             "checkstyle": "com.nvidia.grcuda",
             "javaCompliance": "8+",
@@ -259,14 +227,6 @@ suite = {
         "Apache 2.0": {
             "name": "Apache 2.0 License",
             "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
-        },
-        "CUP": {
-            "name": "CUP Parser Generator Copyright Notice, License, and Disclaimer",
-            "url": "http://www.smlnj.org//license.html",
-        },
-        "GNU": {
-            "name": "GNU Lesser General Public License",
-            "url": "http://www.gnu.org/licenses/lgpl.html"
         },
     },
 
