@@ -728,6 +728,7 @@ public class GrCUDAStreamPolicy {
             List<AbstractArray> arguments = computationalElement.getArrayArguments();
 
             System.out.println("PRED TIME: " + ((KernelExecution) computationalElement).getPredictionTime());
+            System.out.println("DEVICE: " + computationalElement.getStream().getStreamDeviceId());
 
             // True if there's at least a GPU with some data already available;
             boolean isAnyDataPresentOnGPUs = false;
