@@ -8,6 +8,8 @@ import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
+import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
+import com.nvidia.grcuda.runtime.computation.KernelExecution;
 import com.oracle.truffle.api.TruffleLogger;
 
 import java.io.BufferedReader;
@@ -722,10 +724,14 @@ public class GrCUDAStreamPolicy {
          * @return if any data is present on any GPU. If false, we can use a fallback policy instead
          */
         private boolean computeTransferTimes(ExecutionDAG.DAGVertex vertex, double[] argumentTransferTime) {
-            List<AbstractArray> arguments = vertex.getComputation().getArrayArguments();
+            GrCUDAComputationalElement computationalElement = vertex.getComputation();
+            List<AbstractArray> arguments = computationalElement.getArrayArguments();
+
+            System.out.println("PRED TIME: " + ((KernelExecution) computationalElement).getPredictionTime());
 
             // True if there's at least a GPU with some data already available;
             boolean isAnyDataPresentOnGPUs = false;
+            // TODO: esploro i backlinked nodes e calcolo tempo rimanente e calcolo (IN DAG ABBIAMO I PARENTS)
 
             // For each input array, consider how much time it takes to transfer it from every other device;
             for (AbstractArray a : arguments) {

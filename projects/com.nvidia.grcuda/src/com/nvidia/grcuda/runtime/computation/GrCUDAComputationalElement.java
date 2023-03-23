@@ -324,20 +324,10 @@ public abstract class GrCUDAComputationalElement {
         // making the filter below unnecessary.
         // If for whatever reason we have a argumentsThatCanCreateDependencies that does not contain all the input arrays,
         // we need to store the original input list in this class as well, and apply the filter below to that list.
-        System.out.println("TEST");
-        System.out.println("BEFORE (CAN):" + this.argumentsThatCanCreateDependencies.size());
-        System.out.println(getArgumentsThatCanCreateDependencies());
-
-        List<AbstractArray> tmp = this.argumentsThatCanCreateDependencies.stream()
+        return this.argumentsThatCanCreateDependencies.stream()
                 .filter(ComputationArgument::isArray)
                 .map(a -> (AbstractArray) a.getArgumentValue())
                 .collect(Collectors.toList());
-
-        System.out.println("AFTER: " + tmp.size());
-        System.out.println(tmp);
-        System.out.println("---------------------------------------");
-
-        return tmp;
     }
 
     /**

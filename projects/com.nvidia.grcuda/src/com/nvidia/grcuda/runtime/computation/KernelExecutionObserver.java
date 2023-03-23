@@ -55,7 +55,9 @@ import java.security.NoSuchAlgorithmException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import org.pmml4s.model.Model;
+
 import java.lang.System;
 
 /**
@@ -121,26 +123,31 @@ public class KernelExecutionObserver {
 
     //TEST accuracy of models and SAVE times
     public void testModelAndSaveTimes(float actual) {
-        long timeForLoadAndPredictionStart, timeForLoadAndPredictionEnd;
+        long timeForLoadAndPredictionStart, step1, step2, step3, step4, step5, timeForLoadAndPredictionEnd;
         timeForLoadAndPredictionStart = System.nanoTime();
         List<Object> values;
         Map<String, Double> map = new HashMap<String, Double>();
         int count = 0;
 
+        step1 = System.nanoTime();
         // Hash kernel id
         String hashtext = hash(this.kernel.getKernelName() + signatureForHash());
+
+        step2 = System.nanoTime();
         // Complete path
         String path = Utilities.getPath() + "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/trainedmodels/" + hashtext + ".pmml";
         if (Files.exists(Paths.get(path))) {
             // Get model
+            step3 = System.nanoTime();
             Model model = Model.fromFile(path);
-
+            step4 = System.nanoTime();
             //Get values of numeric variables and create map
             values = this.args.getKernelValues();
             for (Object i : values) {
                 map.put(Integer.toString(count), Double.parseDouble(i.toString()));
                 count++;
             }
+            step5 = System.nanoTime();
 
             // Test model
             float predicted = getRegressionValue(map, model);
@@ -150,7 +157,13 @@ public class KernelExecutionObserver {
             try {
                 FileWriter txtOutputFile = new FileWriter(Utilities.getPath() + "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/TimesForLoadingAndPrediction.txt", true);
                 PrintWriter pw = new PrintWriter(txtOutputFile);
-                pw.write(Long.toString(timeForLoadAndPredictionEnd - timeForLoadAndPredictionStart));
+                String str;
+                str = Long.toString(timeForLoadAndPredictionEnd - timeForLoadAndPredictionStart) + ", " +
+                        Long.toString(step2 - step1) + ", " +
+                        Long.toString(step4 - step3) + ", " +
+                        Long.toString(step5 - step4) + ", " +
+                        Long.toString(timeForLoadAndPredictionEnd - step5);
+                        pw.write(str);
                 pw.write("\n");
                 pw.close();
             } catch (Exception e) {
@@ -199,12 +212,41 @@ public class KernelExecutionObserver {
         }
     }*/
 
+    public float prediction() {
+        List<Object> values;
+        Map<String, Double> map = new HashMap<String, Double>();
+        int count = 0;
+        float predicted = 0;
+
+        // Hash kernel id
+        String hashtext = hash(this.kernel.getKernelName() + signatureForHash());
+        // Complete path
+        String path = Utilities.getPath() + "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/trainedmodels/" + hashtext + ".pmml";
+        if (Files.exists(Paths.get(path))) {
+            // Get model
+            Model model = Model.fromFile(path);
+            //Get values of numeric variables and create map
+            values = this.args.getKernelValues();
+            for (Object i : values) {
+                map.put(Integer.toString(count), Double.parseDouble(i.toString()));
+                count++;
+            }
+            // Make the prediction
+            predicted = getRegressionValue(map, model);
+
+        } else {
+            System.out.println("Model doesn't exist");
+        }
+
+        return predicted;
+    }
+
     public float getRegressionValue(Map<String, Double> values, Model model) {
         Object[] valuesMap = Arrays.stream(model.inputNames())
                 .map(values::get)
                 .toArray();
 
-        Object[] results =  model.predict(valuesMap);
+        Object[] results = model.predict(valuesMap);
         Double result = (Double) results[0];
         return result.floatValue();
     }
@@ -268,11 +310,11 @@ public class KernelExecutionObserver {
         String hashtext = hash(id);
 
         // Complete path
-        String path = Utilities.getPath() +  grcudaToTrainingmodel + "times/" +(hashtext + ".csv");
+        String path = Utilities.getPath() + grcudaToTrainingmodel + "times/" + (hashtext + ".csv");
 
         //If file doesn't exist add head
         if (!Files.exists(Paths.get(path))) {
-            String[] head = {"Actual","Predicted"};
+            String[] head = {"Actual", "Predicted"};
             this.printLineToCsv(head, path);
         }
         //Add line with times

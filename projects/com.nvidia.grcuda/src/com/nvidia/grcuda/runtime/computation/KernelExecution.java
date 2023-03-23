@@ -56,6 +56,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
     private final ConfiguredKernel configuredKernel;
     private final KernelConfig config;
     private final KernelArguments args;
+    private final float predictionTime;
 
     public KernelExecution(ConfiguredKernel configuredKernel, KernelArguments args) {
         super(
@@ -66,6 +67,7 @@ public class KernelExecution extends GrCUDAComputationalElement {
         this.kernel = configuredKernel.getKernel();
         this.config = configuredKernel.getConfig();
         this.args = args;
+        this.predictionTime = (new KernelExecutionObserver(config, kernel, args)).prediction();
     }
 
     // @Override
@@ -168,5 +170,9 @@ public class KernelExecution extends GrCUDAComputationalElement {
             return this.args.getKernelArgumentWithValues().stream()
                     .filter(ComputationArgument::isArray).collect(Collectors.toList());
         }
+    }
+
+    public float getPredictionTime() {
+        return this.predictionTime;
     }
 }
