@@ -1,0 +1,114 @@
+{
+  "config" : {
+    "benchmarkName" : "B1M",
+    "setupId" : "",
+    "totIter" : 5,
+    "currentIter" : 0,
+    "randomSeed" : 42,
+    "size" : 950000000,
+    "blockSize1D" : 32,
+    "blockSize2D" : 8,
+    "numBlocks" : 64,
+    "randomInit" : false,
+    "reInit" : false,
+    "reAlloc" : false,
+    "cpuValidate" : false,
+    "executionPolicy" : "async",
+    "inputPrefetch" : true,
+    "retrieveNewStreamPolicy" : "reuse",
+    "retrieveParentStreamPolicy" : "multigpu-disjoint",
+    "dependencyPolicy" : "with-const",
+    "deviceSelectionPolicy" : "minmax-transfer-time",
+    "forceStreamAttach" : false,
+    "enableComputationTimers" : false,
+    "numGpus" : 4,
+    "memAdvisePolicy" : "none",
+    "debug" : false,
+    "nvprof_profile" : false,
+    "gpuModel" : "Tesla V100-SXM2-16GB"
+  },
+  "iterations" : [ {
+    "iteration" : 0,
+    "time_phases" : false,
+    "gpu_result" : -4.934800195378662,
+    "computation_sec" : 1.2122039794921875,
+    "total_time_sec" : 85.40357971191406,
+    "overhead_sec" : 84.19136106967926,
+    "computation_sum_phases_sec" : 1.2122186422348022,
+    "phases" : [ {
+      "phaseName" : "alloc",
+      "executionTime_sec" : 0.3343299925327301
+    }, {
+      "phaseName" : "init",
+      "executionTime_sec" : 45.42130661010742
+    }, {
+      "phaseName" : "reset",
+      "executionTime_sec" : 38.43553924560547
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 1.2122186422348022
+    } ]
+  }, {
+    "iteration" : 1,
+    "time_phases" : false,
+    "gpu_result" : -4.9347992417043445,
+    "computation_sec" : 0.8567725419998169,
+    "total_time_sec" : 40.763179779052734,
+    "overhead_sec" : 39.90639686584473,
+    "computation_sum_phases_sec" : 0.8567829132080078,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 39.906307220458984
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.8567829132080078
+    } ]
+  }, {
+    "iteration" : 2,
+    "time_phases" : false,
+    "gpu_result" : -4.934799241704345,
+    "computation_sec" : 0.6891638040542603,
+    "total_time_sec" : 40.349456787109375,
+    "overhead_sec" : 39.66028207540512,
+    "computation_sum_phases_sec" : 0.6891747117042542,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 39.66016387939453
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.6891747117042542
+    } ]
+  }, {
+    "iteration" : 3,
+    "time_phases" : false,
+    "gpu_result" : -4.9347992417043445,
+    "computation_sec" : 0.6889240741729736,
+    "total_time_sec" : 40.38130569458008,
+    "overhead_sec" : 39.69237023591995,
+    "computation_sum_phases_sec" : 0.6889354586601257,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 39.69224548339844
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.6889354586601257
+    } ]
+  }, {
+    "iteration" : 4,
+    "time_phases" : false,
+    "gpu_result" : -4.934799241704345,
+    "computation_sec" : 0.6872984766960144,
+    "total_time_sec" : 40.37421798706055,
+    "overhead_sec" : 39.686907947063446,
+    "computation_sum_phases_sec" : 0.6873100399971008,
+    "phases" : [ {
+      "phaseName" : "reset",
+      "executionTime_sec" : 39.686790466308594
+    }, {
+      "phaseName" : "execution",
+      "executionTime_sec" : 0.6873100399971008
+    } ]
+  } ],
+  "filteredPhases" : [ "alloc", "reset", "init" ],
+  "cpu_result" : 0.0
+}
