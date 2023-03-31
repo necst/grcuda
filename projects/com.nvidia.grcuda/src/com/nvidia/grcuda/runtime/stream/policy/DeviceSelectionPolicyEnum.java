@@ -36,7 +36,9 @@ public enum DeviceSelectionPolicyEnum {
     STREAM_AWARE("stream-aware"),
     MIN_TRANSFER_SIZE("min-transfer-size"),
     MINMIN_TRANSFER_TIME("minmin-transfer-time"),
-    MINMAX_TRANSFER_TIME("minmax-transfer-time");
+    MINMAX_TRANSFER_TIME("minmax-transfer-time"),
+    MINMIN_HISTORY_DRIVEN("minmin-history-driven"),
+    MINMAX_HISTORY_DRIVEN("minmax-history-driven");
 
     private final String name;
 
