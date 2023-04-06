@@ -67,6 +67,7 @@ public class BenchmarkConfig {
     public boolean enableTrainModels;
     public int numGpus;
     public String memAdvisePolicy;
+    public String exportDAG;
     @JsonIgnore public String bandwidthMatrix;
     // Debug parameters
     public boolean debug;
@@ -104,6 +105,7 @@ public class BenchmarkConfig {
                 ", numGpus=" + numGpus +
                 ", memAdvisePolicy='" + memAdvisePolicy + '\'' +
                 ", bandwidthMatrix='" + bandwidthMatrix + '\'' +
+                ", exportDAG=" + exportDAG +
                 '}';
     }
 }

@@ -171,6 +171,7 @@ public abstract class Benchmark {
                 .option("grcuda.MemAdvisePolicy", config.memAdvisePolicy)
                 .option("grcuda.NumberOfGPUs", String.valueOf(config.numGpus))
                 .option("grcuda.BandwidthMatrix", config.bandwidthMatrix)
+                .option("grcuda.ExportDAG", config.exportDAG)
                 .build();
     }
 

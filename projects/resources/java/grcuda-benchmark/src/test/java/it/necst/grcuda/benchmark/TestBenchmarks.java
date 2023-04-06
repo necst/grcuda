@@ -141,6 +141,7 @@ public class TestBenchmarks{
         Integer nb; // number of blocks
         Integer blockSize1D, blockSize2D;
         int num_iter = parsedConfig.num_iter;
+        String exportDAG = parsedConfig.exportDAG;
 
         Benchmark benchToRun;
         for(String bench : parsedConfig.benchmarks){ // given bench X from the set of all the benchmarks iterate over the number of elements associated with that benchmark
@@ -216,6 +217,7 @@ public class TestBenchmarks{
                                                         config.gpuModel = this.currentGPU.name;
                                                         config.results_path = this.results_path;
                                                         config.reInit = parsedConfig.reInit;
+                                                        config.exportDAG = exportDAG;
 
                                                         System.out.println(config);
                                                         benchToRun = createBench(config);
@@ -305,6 +307,8 @@ class Config {
     HashMap<String, Integer> block_size1d;
     HashMap<String, Integer> block_size2d;
 
+    String exportDAG;
+
     @Override
     public String toString() {
         return "Config{" +
@@ -330,6 +334,7 @@ class Config {
                 ", numBlocks=" + numBlocks +
                 ", block_size1d=" + block_size1d +
                 ", block_size2d=" + block_size2d +
+                ", exportDAG=" + exportDAG +
                 '}';
     }
 }
