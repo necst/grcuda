@@ -215,17 +215,29 @@ public class KernelExecutionObserver {
     public float prediction() {
         List<Object> values;
         Map<String, Double> map = new HashMap<String, Double>();
+        HashMap<String, Model> models = this.kernel.getGrCUDAExecutionContext().getModels();
         int count = 0;
-        float predicted = 0;
+        float predicted = -1;
+        Model model = null;
 
         // Hash kernel id
         String hashtext = hash(this.kernel.getKernelName() + signatureForHash());
         // Complete path
-        String path = Utilities.getPath() + "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/trainedmodels/" + hashtext + ".pmml";
-        if (Files.exists(Paths.get(path))) {
-            // Get model
-            Model model = Model.fromFile(path);
-            //Get values of numeric variables and create map
+        if (models.containsKey(hashtext)) {
+            model = models.get(hashtext);
+        } else {
+            String path = Utilities.getPath() + "grcuda/projects/com.nvidia.grcuda/src/com/nvidia/grcuda/runtime/stream/trainingmodel/trainedmodels/" + hashtext + ".pmml";
+            if (Files.exists(Paths.get(path))) {
+                // Get model
+                model = Model.fromFile(path);
+                this.kernel.getGrCUDAExecutionContext().addModel(hashtext, model);
+            } else {
+                //TODO: trow exp
+                System.out.println("Model is not found.");
+            }
+        }
+
+        if (model != null) {
             values = this.args.getKernelValues();
             for (Object i : values) {
                 map.put(Integer.toString(count), Double.parseDouble(i.toString()));
@@ -233,9 +245,6 @@ public class KernelExecutionObserver {
             }
             // Make the prediction
             predicted = getRegressionValue(map, model);
-
-        } else {
-            System.out.println("Model doesn't exist");
         }
 
         return predicted;

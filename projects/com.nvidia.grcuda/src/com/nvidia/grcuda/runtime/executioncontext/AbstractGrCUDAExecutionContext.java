@@ -51,6 +51,10 @@ import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.HashMap;
+
+import org.pmml4s.model.Model;
+
 
 /**
  * Abstract class that defines how {@link GrCUDAComputationalElement} are registered and scheduled for execution.
@@ -95,6 +99,8 @@ public abstract class AbstractGrCUDAExecutionContext {
      * True if we consider that an argument can be "const" in the scheduling;
      */
     private final boolean isConstAware;
+
+    private final HashMap<String, Model> Models = new HashMap<>();
 
     public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {
         this.cudaRuntime = cudaRuntime;
@@ -194,4 +200,13 @@ public abstract class AbstractGrCUDAExecutionContext {
      * Delete internal structures that require manual cleanup operations;
      */
     public void cleanup() { }
+
+
+    public HashMap<String, Model> getModels() {
+        return this.Models;
+    }
+
+    public void addModel(String s, Model m) {
+        this.Models.put(s, m);
+    }
 }

@@ -196,6 +196,8 @@ public abstract class TransferTimeDeviceSelectionPolicy extends DeviceSelectionP
     private boolean computeTransferTimes(ExecutionDAG.DAGVertex vertex, double[] argumentTransferTime) {
         List<AbstractArray> arguments = vertex.getComputation().getArrayArguments();
 
+        System.out.println("#######################\n" + vertex + "\n###########################");
+
         // True if there's at least a GPU with some data already available;
         boolean isAnyDataPresentOnGPUs = false;
 

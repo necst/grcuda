@@ -217,7 +217,9 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
             }
         }
 
-        List<GrCUDAComputationalElement> parents = vertex.getParentVertices().stream().map(a -> a.getComputation()).collect(Collectors.toList());
+        //List<GrCUDAComputationalElement> parents = vertex.getParentVertices().stream().map(a -> a.getComputation()).collect(Collectors.toList());
+        List<GrCUDAComputationalElement> parents = vertex.getParentComputations();
+        System.out.println("Test: " + vertex + " :: " + parents.size() );
         float max = 0;
         float tmp;
         int device = -1;
