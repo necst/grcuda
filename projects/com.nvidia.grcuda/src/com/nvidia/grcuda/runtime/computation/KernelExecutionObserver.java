@@ -230,11 +230,12 @@ public class KernelExecutionObserver {
             if (Files.exists(Paths.get(path))) {
                 // Get model
                 model = Model.fromFile(path);
-                this.kernel.getGrCUDAExecutionContext().addModel(hashtext, model);
             } else {
                 //TODO: trow exp
-                System.out.println("Model is not found.");
+                System.out.println("Model is not found. ( " + this.kernel.getKernelName()  +" )");
             }
+
+            this.kernel.getGrCUDAExecutionContext().addModel(hashtext, model);
         }
 
         if (model != null) {

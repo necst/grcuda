@@ -100,7 +100,7 @@ public abstract class AbstractGrCUDAExecutionContext {
      */
     private final boolean isConstAware;
 
-    private final HashMap<String, Model> Models = new HashMap<>();
+    private final HashMap<String, Model> models = new HashMap<>();
 
     public AbstractGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {
         this.cudaRuntime = cudaRuntime;
@@ -203,10 +203,10 @@ public abstract class AbstractGrCUDAExecutionContext {
 
 
     public HashMap<String, Model> getModels() {
-        return this.Models;
+        return this.models;
     }
 
     public void addModel(String s, Model m) {
-        this.Models.put(s, m);
+        this.models.put(s, m);
     }
 }

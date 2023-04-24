@@ -219,7 +219,6 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
 
         //List<GrCUDAComputationalElement> parents = vertex.getParentVertices().stream().map(a -> a.getComputation()).collect(Collectors.toList());
         List<GrCUDAComputationalElement> parents = vertex.getParentComputations();
-        System.out.println("Test: " + vertex + " :: " + parents.size() );
         float max = 0;
         float tmp;
         int device = -1;
@@ -230,9 +229,10 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
                 device = el.getStream().getStreamDeviceId();
             }
         }
-
-        for (int i = 0; i < argumentTransferTime.length; i++) {
-            if (i!=device) argumentTransferTime[i] += max;
+        if (device != -1) {
+            for (int i = 0; i < argumentTransferTime.length; i++) {
+                if (i != device) argumentTransferTime[i] += max;
+            }
         }
 
         return isAnyDataPresentOnGPUs;

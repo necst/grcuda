@@ -94,7 +94,7 @@ public class TestBenchmarks{
         assumeTrue(this.currentGPU.equals(GPU.GTX960));
 
         // get the configuration for the selected GPU into a Config class
-        String CONFIG_PATH = PATH + "/config_GTX960_train.json";
+        String CONFIG_PATH = PATH + "/config_GTX960_test_policies.json";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
         Config parsedConfig = gson.fromJson(reader, Config.class);
@@ -141,7 +141,7 @@ public class TestBenchmarks{
         Integer nb; // number of blocks
         Integer blockSize1D, blockSize2D;
         int num_iter = parsedConfig.num_iter;
-        String exportDAG = parsedConfig.exportDAG;
+
 
         Benchmark benchToRun;
         for(String bench : parsedConfig.benchmarks){ // given bench X from the set of all the benchmarks iterate over the number of elements associated with that benchmark
@@ -217,7 +217,6 @@ public class TestBenchmarks{
                                                         config.gpuModel = this.currentGPU.name;
                                                         config.results_path = this.results_path;
                                                         config.reInit = parsedConfig.reInit;
-                                                        config.exportDAG = exportDAG;
 
                                                         System.out.println(config);
                                                         benchToRun = createBench(config);
@@ -307,8 +306,6 @@ class Config {
     HashMap<String, Integer> block_size1d;
     HashMap<String, Integer> block_size2d;
 
-    String exportDAG;
-
     @Override
     public String toString() {
         return "Config{" +
@@ -334,7 +331,6 @@ class Config {
                 ", numBlocks=" + numBlocks +
                 ", block_size1d=" + block_size1d +
                 ", block_size2d=" + block_size2d +
-                ", exportDAG=" + exportDAG +
                 '}';
     }
 }

@@ -181,13 +181,11 @@ public class GrCUDAStreamPolicy {
         if (vertex.isStart()) {
             // If the computation doesn't have parents, provide a new stream to it.
             // When using multiple GPUs, also select the device;
-            System.out.println("Flag - New stream");
             return retrieveNewStream(vertex);
         } else {
             // Else, compute the streams used by the parent computations.
             // When using multiple GPUs, we might want to select the device as well,
             // if multiple suitable parent streams are available;
-            System.out.println("Flag - Parent stream");
             return retrieveParentStream(vertex);
         }
     }
