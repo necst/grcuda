@@ -56,7 +56,6 @@ public class KernelExecution extends GrCUDAComputationalElement {
     private final ConfiguredKernel configuredKernel;
     private final KernelConfig config;
     private final KernelArguments args;
-    private float predictionTime;
 
     public KernelExecution(ConfiguredKernel configuredKernel, KernelArguments args) {
         super(
@@ -67,9 +66,22 @@ public class KernelExecution extends GrCUDAComputationalElement {
         this.kernel = configuredKernel.getKernel();
         this.config = configuredKernel.getConfig();
         this.args = args;
-        if (this.kernel.getGrCUDAExecutionContext().getCudaRuntime().getContext().getOptions().getDeviceSelectionPolicy().toString().contains("history-driven")) {
-            this.predictionTime = (new KernelExecutionObserver(config, kernel, args)).prediction();
-        }
+    }
+
+    public KernelExecution(ConfiguredKernel configuredKernel, Kernel kernel, KernelConfig config, KernelArguments args) {
+        super(
+                configuredKernel.getKernel().getGrCUDAExecutionContext(),
+                new KernelExecutionInitializer(args),
+                kernel,
+                config,
+                args
+        );
+        this.configuredKernel = configuredKernel;
+        this.kernel = kernel;
+        this.config = config;
+        this.args = args;
+
+        System.out.println("Check right constr in kernelk exec");
     }
 
     // @Override
@@ -80,13 +92,13 @@ public class KernelExecution extends GrCUDAComputationalElement {
         // Always store the execution time in the ComputationalElement as well;
         super.setExecutionTime(executionTimeMs, false);
 
-        if (train) (new KernelExecutionObserver(config, kernel, args)).update(executionTimeMs);
+        if (train) (new Predictor(config, kernel, args)).update(executionTimeMs);
 
         //here model created with java
-        //if (train) (new KernelExecutionObserver(config, kernel, args)).printPrediction(executionTimeMs);
+        //if (train) (new Predictor(config, kernel, args)).printPrediction(executionTimeMs);
 
         //here model created whit python
-        if (false) (new KernelExecutionObserver(config, kernel, args)).testModelAndSaveTimes(executionTimeMs);
+        //if (true) (new Predictor(config, kernel, args)).testModelAndSaveTimes(executionTimeMs);
 
     }
 
@@ -172,9 +184,5 @@ public class KernelExecution extends GrCUDAComputationalElement {
             return this.args.getKernelArgumentWithValues().stream()
                     .filter(ComputationArgument::isArray).collect(Collectors.toList());
         }
-    }
-
-    public float getPredictionTime() {
-        return this.predictionTime;
     }
 }

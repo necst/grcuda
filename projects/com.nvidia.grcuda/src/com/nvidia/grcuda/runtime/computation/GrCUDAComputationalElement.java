@@ -43,6 +43,10 @@ import com.nvidia.grcuda.runtime.stream.DefaultStream;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
+import com.nvidia.grcuda.runtime.Kernel;
+import com.nvidia.grcuda.runtime.KernelArguments;
+import com.nvidia.grcuda.runtime.KernelConfig;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -114,6 +118,8 @@ public abstract class GrCUDAComputationalElement {
      */
     private float executionTimeMs = 0;
 
+    private float predictionTime;
+
     /**
      * Constructor that takes an argument set initializer to build the set of arguments used in the dependency computation
      * @param grCUDAExecutionContext execution context in which this computational element will be scheduled
@@ -124,6 +130,14 @@ public abstract class GrCUDAComputationalElement {
         // Initialize by making a copy of the original set;
         this.grCUDAExecutionContext = grCUDAExecutionContext;
         this.dependencyComputation = grCUDAExecutionContext.getDependencyBuilder().initialize(this.argumentsThatCanCreateDependencies);
+    }
+
+    public GrCUDAComputationalElement(AbstractGrCUDAExecutionContext grCUDAExecutionContext, InitializeDependencyList initializer, Kernel kernelForPredictor, KernelConfig configForPredictor, KernelArguments argsForPredictor) {
+        this.argumentsThatCanCreateDependencies = initializer.initialize();
+        // Initialize by making a copy of the original set;
+        this.grCUDAExecutionContext = grCUDAExecutionContext;
+        this.dependencyComputation = grCUDAExecutionContext.getDependencyBuilder().initialize(this.argumentsThatCanCreateDependencies);
+        this.predictionTime = prediction(kernelForPredictor, configForPredictor, argsForPredictor);        
     }
 
     /**
@@ -361,6 +375,14 @@ public abstract class GrCUDAComputationalElement {
      */
     protected Optional<CUDAStream> additionalStreamDependencyImpl() {
         return Optional.empty();
+    }
+
+    public float prediction(Kernel kernel, KernelConfig config, KernelArguments args) {
+        return (new Predictor(config, kernel, args).prediction());
+    }
+
+    public float getPredictionTime() {
+        return this.predictionTime;
     }
 
     /**

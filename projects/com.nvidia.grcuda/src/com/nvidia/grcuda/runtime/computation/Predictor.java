@@ -63,12 +63,12 @@ import java.lang.System;
 /**
  * Class used to store data about the single execution of a {@link KernelExecution}.
  */
-public class KernelExecutionObserver {
+public class Predictor {
     private final KernelConfig config;
     private final Kernel kernel;
     private final KernelArguments args;
 
-    public KernelExecutionObserver(KernelConfig config, Kernel kernel, KernelArguments args) {
+    public Predictor(KernelConfig config, Kernel kernel, KernelArguments args) {
         this.config = config;
         this.kernel = kernel;
         this.args = args;
@@ -231,7 +231,7 @@ public class KernelExecutionObserver {
                 // Get model
                 model = Model.fromFile(path);
             } else {
-                //TODO: trow exp
+                //TODO: throw exp
                 System.out.println("Model is not found. ( " + this.kernel.getKernelName()  +" )");
             }
 

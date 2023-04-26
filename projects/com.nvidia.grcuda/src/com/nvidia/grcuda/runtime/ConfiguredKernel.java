@@ -238,7 +238,9 @@ public class ConfiguredKernel extends ProfiledComputation implements TruffleObje
         try (KernelArguments args = this.createKernelArguments(arguments, boolAccess, int8Access, int16Access,
                         int32Access, int64Access, doubleAccess)) {
             // If using a manually specified stream, do not schedule it automatically, but execute it immediately;
-            if (!config.useCustomStream()) {
+            if (!config.useCustomStream() && this.kernel.getGrCUDAExecutionContext().getCudaRuntime().getContext().getOptions().getDeviceSelectionPolicy().toString().contains("history-driven")) {
+                new KernelExecution(this, this.kernel, this.config, args).schedule();
+            } else if (!config.useCustomStream()) {
                 new KernelExecution(this, args).schedule();
             } else {
                 kernel.getGrCUDAExecutionContext().getCudaRuntime().cuLaunchKernel(kernel, config, args, config.getStream());

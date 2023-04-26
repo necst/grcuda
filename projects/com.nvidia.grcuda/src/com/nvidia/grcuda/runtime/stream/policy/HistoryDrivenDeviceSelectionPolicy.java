@@ -223,7 +223,7 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
         float tmp;
         int device = -1;
         for (GrCUDAComputationalElement el : parents) {
-            tmp = ((KernelExecution) el).getPredictionTime();
+            tmp = el.getPredictionTime();
             if (tmp >= max) {
                 max = tmp;
                 device = el.getStream().getStreamDeviceId();

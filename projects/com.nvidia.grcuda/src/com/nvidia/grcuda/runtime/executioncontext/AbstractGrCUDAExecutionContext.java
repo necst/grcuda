@@ -203,7 +203,7 @@ public abstract class AbstractGrCUDAExecutionContext {
 
 
     public HashMap<String, Model> getModels() {
-        return this.models;
+        return new HashMap<String, Model>(this.models);
     }
 
     public void addModel(String s, Model m) {
