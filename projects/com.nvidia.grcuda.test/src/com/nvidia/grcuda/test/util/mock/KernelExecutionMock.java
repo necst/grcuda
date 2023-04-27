@@ -64,6 +64,23 @@ public class KernelExecutionMock extends GrCUDAComputationalElement {
         this.durationMs = durationMs;
     }
 
+    public KernelExecutionMock(AbstractGrCUDAExecutionContext grCUDAExecutionContext, List<ComputationArgumentWithValue> args, float predTime) {
+        this(grCUDAExecutionContext, args, "kernel");
+        this.predictionTime = predTime;
+    }
+
+    public KernelExecutionMock(AbstractGrCUDAExecutionContext grCUDAExecutionContext, List<ComputationArgumentWithValue> args, String name, float predTime) {
+        this(grCUDAExecutionContext, args, name, 0);
+        this.predictionTime = predTime;
+    }
+
+    public KernelExecutionMock(AbstractGrCUDAExecutionContext grCUDAExecutionContext, List<ComputationArgumentWithValue> args, String name, int durationMs, float predTime) {
+        super(grCUDAExecutionContext, args);
+        this.name = name;
+        this.durationMs = durationMs;
+        this.predictionTime = predTime;
+    }
+
     public String getName() {
         return name;
     }

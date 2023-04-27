@@ -118,7 +118,7 @@ public abstract class GrCUDAComputationalElement {
      */
     private float executionTimeMs = 0;
 
-    private float predictionTime;
+    protected float predictionTime;
 
     /**
      * Constructor that takes an argument set initializer to build the set of arguments used in the dependency computation

@@ -192,6 +192,24 @@ public class GrCUDAComputationsMock {
     }
 
 
+
+    // (A) --\      /-> (D)
+    // (B) --> (C) --> (E)
+    public static List<GrCUDAComputationalElement> forkJoinMockComputationWithTime(AsyncGrCUDAExecutionContext context) {
+        DeviceArrayMock a1 = new DeviceArrayMock(10);
+        DeviceArrayMock a2 = new DeviceArrayMock(10);
+        float time1 = 1;
+        float time2 = 10000;
+        return Arrays.asList(
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(a1)), time1),
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(a2)), time2),
+                new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(a1), new ArgumentMock(a2)), time1),
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(a1)), time1),
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(a2)), time1)
+        );
+    }
+
+
     // K0 -> K4 -> K8 ---> K10
     // K1 -> K5 /     \--> K11
     // K2 -> K6 -> K9 -\-> K12
