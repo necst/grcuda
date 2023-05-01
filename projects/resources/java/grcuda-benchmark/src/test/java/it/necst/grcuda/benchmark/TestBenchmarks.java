@@ -94,7 +94,7 @@ public class TestBenchmarks{
         assumeTrue(this.currentGPU.equals(GPU.GTX960));
 
         // get the configuration for the selected GPU into a Config class
-        String CONFIG_PATH = PATH + "/config_GTX960_test_policies.json";
+        String CONFIG_PATH = PATH + "/config_GTX960_collect_data.json";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
         Config parsedConfig = gson.fromJson(reader, Config.class);
@@ -108,7 +108,7 @@ public class TestBenchmarks{
         assumeTrue(this.currentGPU.equals(GPU.V100));
 
         // get the configuration for the selected GPU into a Config class
-        String CONFIG_PATH = PATH + "/config_V100_test_policies.json";
+        String CONFIG_PATH = PATH + "/config_V100_collect_data.json";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
         Config parsedConfig = gson.fromJson(reader, Config.class);
@@ -122,7 +122,7 @@ public class TestBenchmarks{
         assumeTrue(this.currentGPU.equals(GPU.A100));
 
         // get the configuration for the selected GPU into a Config class
-        String CONFIG_PATH = PATH + "/config_A100_test_policies.json";
+        String CONFIG_PATH = PATH + "/config_A100_collect_data.json";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
         Config parsedConfig = gson.fromJson(reader, Config.class);

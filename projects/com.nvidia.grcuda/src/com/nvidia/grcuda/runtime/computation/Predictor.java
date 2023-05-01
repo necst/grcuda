@@ -31,6 +31,7 @@
 package com.nvidia.grcuda.runtime.computation;
 
 
+import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Kernel;
 import com.nvidia.grcuda.runtime.KernelArguments;
 import com.nvidia.grcuda.runtime.KernelConfig;
@@ -93,7 +94,7 @@ public class Predictor {
         Utilities.createDir(grcudaToStream, "data/");
 
         // Get Kernel_ID
-        String id = this.kernel.getKernelName() + signatureForHash();
+        String id = this.kernel.getKernelName() + signatureForHash() + getDevicesInfo();
 
         // Hash
         String hashtext = hash(id);
@@ -131,7 +132,7 @@ public class Predictor {
 
         step1 = System.nanoTime();
         // Hash kernel id
-        String hashtext = hash(this.kernel.getKernelName() + signatureForHash());
+        String hashtext = hash(this.kernel.getKernelName() + signatureForHash() + getDevicesInfo());
 
         step2 = System.nanoTime();
         // Complete path
@@ -221,7 +222,7 @@ public class Predictor {
         Model model = null;
 
         // Hash kernel id
-        String hashtext = hash(this.kernel.getKernelName() + signatureForHash());
+        String hashtext = hash(this.kernel.getKernelName() + signatureForHash() + getDevicesInfo());
         // Complete path
         if (models.containsKey(hashtext)) {
             model = models.get(hashtext);
@@ -259,6 +260,11 @@ public class Predictor {
         Object[] results = model.predict(valuesMap);
         Double result = (Double) results[0];
         return result.floatValue();
+    }
+
+    String getDevicesInfo() {
+        CUDARuntime cudaRuntime = this.kernel.getGrCUDAExecutionContext().getCudaRuntime();
+        return "NumOfGPUs=" + cudaRuntime.getNumberOfGPUsToUse() + "Prefetch=" + cudaRuntime.getContext().getOptions().isInputPrefetch();
     }
 
     //Return signature, grid and block sizes for hash
@@ -314,7 +320,7 @@ public class Predictor {
         Utilities.createDir(grcudaToTrainingmodel, "times/");
 
         // Get Kernel_ID
-        String id = this.kernel.getKernelName() + signatureForHash();
+        String id = this.kernel.getKernelName() + signatureForHash() + getDevicesInfo();
 
         // Hash
         String hashtext = hash(id);
