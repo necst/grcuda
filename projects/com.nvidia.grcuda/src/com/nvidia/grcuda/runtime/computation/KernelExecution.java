@@ -80,8 +80,6 @@ public class KernelExecution extends GrCUDAComputationalElement {
         this.kernel = kernel;
         this.config = config;
         this.args = args;
-
-        System.out.println("Check right constr in kernelk exec");
     }
 
     // @Override
