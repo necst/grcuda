@@ -192,11 +192,11 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
      * For each device, measure how long it takes to transfer the data that is required
      * to run the computation in vertex
      * @param vertex the computation that we want to run
-     * @param argumentTransferTime the array where we store the time, in seconds, to transfer the required data on each device
+     * @param argumentTime the array where we store the time, in seconds, to transfer the required data on each device
      *                             The array must be zero-initialized and have size equal to the number of usable GPUs
      * @return if any data is present on any GPU. If false, we can use a fallback policy instead
      */
-    private boolean computeMetrics(ExecutionDAG.DAGVertex vertex, double[] argumentTransferTime) {
+    private boolean computeMetrics(ExecutionDAG.DAGVertex vertex, double[] argumentTime) {
         GrCUDAComputationalElement computationalElement = vertex.getComputation();
         List<AbstractArray> arguments = computationalElement.getArrayArguments();
 
@@ -211,16 +211,24 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
             }
             // Check all available GPUs and compute the tentative transfer time for each of them.
             // to find the device where transfer time is minimum;
-            for (int i = 0; i < argumentTransferTime.length; i++) {
+            for (int i = 0; i < argumentTime.length; i++) {
                 // Add estimated transfer time;
-                argumentTransferTime[i] += a.getSizeBytes() / computeBandwidth(i, upToDateLocations);
+                argumentTime[i] += a.getSizeBytes() / computeBandwidth(i, upToDateLocations);
             }
         }
 
-        //List<GrCUDAComputationalElement> parents = vertex.getParentVertices().stream().map(a -> a.getComputation()).collect(Collectors.toList());
+        int device;
+        float prediction;
         List<GrCUDAComputationalElement> parents = vertex.getParentComputations();
-        for (GrCUDAComputationalElement el : parents) {    
-            argumentTransferTime[el.getStream().getStreamDeviceId()] = el.getPredictionTime();
+        double[] maxParentTimePerDevice = new double[argumentTime.length];
+        Arrays.fill(maxParentTimePerDevice, 0);
+        for (GrCUDAComputationalElement el : parents) { 
+            device = el.getStream().getStreamDeviceId();
+            prediction = el.getPredictionTime();
+            if (maxParentTimePerDevice[device] < prediction) maxParentTimePerDevice[device] = prediction;
+        }
+        for (int i = 0; i < argumentTime.length; i++) {
+            argumentTime[i] += maxParentTimePerDevice[i];
         }
 
         return isAnyDataPresentOnGPUs;
@@ -249,30 +257,30 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
     }
 
     /**
-     * Find the device with the lower synchronization time. It's just an argmin on "argumentTransferTime",
+     * Find the device with the lower synchronization time. It's just an argmin on "argumentTime",
      * returning the device whose ID correspond to the minimum's index
      * @param devices the list of devices to consider for the argmin
-     * @param argumentTransferTime the array where we store the time, in seconds, to transfer the required data on each device
+     * @param argumentTime the array where we store the time, in seconds, to transfer the required data on each device
      *                             The array must be zero-initialized and have size equal to the number of usable GPUs
      * @return the device with the most data
      */
-    private Device findDevice(List<Device> devices, double[] argumentTransferTime) {
+    private Device findDevice(List<Device> devices, double[] argumentTime) {
         // The best device is the one with minimum transfer time;
-        Device deviceWithMinimumTransferTime = devices.get(0);
+        Device deviceWithMinimumTime = devices.get(0);
         for (Device d : devices) {
-            if (argumentTransferTime[d.getDeviceId()] < argumentTransferTime[deviceWithMinimumTransferTime.getDeviceId()]) {
-                deviceWithMinimumTransferTime = d;
+            if (argumentTime[d.getDeviceId()] < argumentTime[deviceWithMinimumTime.getDeviceId()]) {
+                deviceWithMinimumTime = d;
             }
         }
-        return deviceWithMinimumTransferTime;
+        return deviceWithMinimumTime;
     }
 
     @Override
     Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
         // Estimated transfer time if the computation is scheduled on device i-th;
-        double[] argumentTransferTime = new double[devicesManager.getNumberOfGPUsToUse()];
+        double[] argumentTime = new double[devicesManager.getNumberOfGPUsToUse()];
         // Compute the synchronization time on each device, and if any device has any data at all;
-        boolean isAnyDataPresentOnGPUs = computeMetrics(vertex, argumentTransferTime);
+        boolean isAnyDataPresentOnGPUs = computeMetrics(vertex, argumentTime);
         List<Device> devicesWithEnoughData = new ArrayList<>();
         if (isAnyDataPresentOnGPUs) {  // Skip this step if no GPU has any data in it;
             // Array that tracks the size, in bytes, of data that is already present on each device;
@@ -285,7 +293,7 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
         // If no device has at least X% of data available, it's not worth optimizing data locality (exploration preferred to exploitation);
         if (!devicesWithEnoughData.isEmpty()) {
             // The best device is the one with minimum transfer time;
-            return findDevice(devicesWithEnoughData, argumentTransferTime);
+            return findDevice(devicesWithEnoughData, argumentTime);
         } else {
             // No data is present on any GPU: select the device with round-robin;
             return roundRobin.retrieve(vertex, devices);
