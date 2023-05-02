@@ -98,11 +98,11 @@ public class GrCUDAStreamPolicy {
             case MINMAX_TRANSFER_TIME:
                 this.deviceSelectionPolicy = new TransferTimeDeviceSelectionPolicy.MinMaxTransferTimeDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
                 break;
-            case MINMIN_HISTORY_DRIVEN:
-                this.deviceSelectionPolicy = new HistoryDrivenDeviceSelectionPolicy.MinMinHistoryDrivenDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
+            case MINMAX_SERIAL_HISTORY_DRIVEN:
+                this.deviceSelectionPolicy = new HistoryDrivenDeviceSelectionPolicy.MinMaxSerialHistoryDrivenDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
                 break;
-            case MINMAX_HISTORY_DRIVEN:
-                this.deviceSelectionPolicy = new HistoryDrivenDeviceSelectionPolicy.MinMaxHistoryDrivenDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
+            case MINMAX_PARALLEL_HISTORY_DRIVEN:
+                this.deviceSelectionPolicy = new HistoryDrivenDeviceSelectionPolicy.MinMaxParallelHistoryDrivenDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
                 break;
             default:
                 STREAM_LOGGER.finer("Disabled device selection policy, it is not necessary to use one as retrieveParentStreamPolicyEnum=" + retrieveParentStreamPolicyEnum);

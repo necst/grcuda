@@ -58,16 +58,12 @@ import java.util.stream.Collectors;
  * This file is generated as "cd $GRCUDA_HOME/projects/resources/cuda", "make connection_graph", "bin/connection_graph";
  */
 public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelectionPolicy {
-
-    /**
-     * This functional tells how the transfer bandwidth for some array and device is computed.
-     * It should be max, min, mean, etc.;
-     */
-    private final java.util.function.BiFunction<Double, Double, Double> reduction;
     /**
      * Starting value of the reduction. E.g. it can be 0 if using max or mean, +inf if using min, etc.
      */
-    private final double startValue;
+    private final double startValue = Double.POSITIVE_INFINITY;
+
+    private final boolean parallel;
     /**
      * Some policies can use a threshold that specifies how much data (in percentage) must be available
      * on a device so that the device can be considered for execution.
@@ -84,11 +80,11 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
 
     private final double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUsToUse() + 1][devicesManager.getNumberOfGPUsToUse() + 1];
 
-    public HistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath, java.util.function.BiFunction<Double, Double, Double> reduction, double startValue) {
+    public HistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath, boolean parallel) {
         super(devicesManager);
+
         this.dataThreshold = dataThreshold;
-        this.reduction = reduction;
-        this.startValue = startValue;
+        this.parallel = parallel;
 
         List<List<String>> records = new ArrayList<>();
         // Read each line in the CSV and store each line into a string array, splitting strings on ",";
@@ -182,7 +178,7 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
                 // The CPU bandwidth is stored in the last column;
                 int fromDevice = location != CPUDevice.CPU_DEVICE_ID ? location : linkBandwidth.length - 1;
                 // The matrix is symmetric, loading [targetDevice][fromDevice] is faster than [fromDevice][targetDevice];
-                bandwidth = reduction.apply(linkBandwidth[targetDevice][fromDevice], bandwidth);
+                bandwidth = Math.min(linkBandwidth[targetDevice][fromDevice], bandwidth);
             }
         }
         return bandwidth;
@@ -217,18 +213,25 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
             }
         }
 
-        int device;
-        float prediction;
+        
         List<GrCUDAComputationalElement> parents = vertex.getParentComputations();
-        double[] maxParentTimePerDevice = new double[argumentTime.length];
-        Arrays.fill(maxParentTimePerDevice, 0);
-        for (GrCUDAComputationalElement el : parents) { 
-            device = el.getStream().getStreamDeviceId();
-            prediction = el.getPredictionTime();
-            if (maxParentTimePerDevice[device] < prediction) maxParentTimePerDevice[device] = prediction;
-        }
-        for (int i = 0; i < argumentTime.length; i++) {
-            argumentTime[i] += maxParentTimePerDevice[i];
+        if (parallel) {
+            int device;
+            float prediction;
+            double[] maxParentTimePerDevice = new double[argumentTime.length];
+            Arrays.fill(maxParentTimePerDevice, 0);
+            for (GrCUDAComputationalElement el : parents) { 
+                device = el.getStream().getStreamDeviceId();
+                prediction = el.getPredictionTime();
+                if (maxParentTimePerDevice[device] < prediction) maxParentTimePerDevice[device] = prediction;
+            }
+            for (int i = 0; i < argumentTime.length; i++) {
+                argumentTime[i] += maxParentTimePerDevice[i];
+            }
+        } else {
+            for (GrCUDAComputationalElement el : parents) { 
+                argumentTime[el.getStream().getStreamDeviceId()] += el.getPredictionTime();
+            }
         }
 
         return isAnyDataPresentOnGPUs;
@@ -308,10 +311,10 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
  * Assume that data are transferred from the device that gives the best possible bandwidth.
  * In other words, find the minimum transfer time among all devices considering the minimum transfer time for each device;
  */
-public static class MinMinHistoryDrivenDeviceSelectionPolicy extends HistoryDrivenDeviceSelectionPolicy {
-    public MinMinHistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
+public static class MinMaxSerialHistoryDrivenDeviceSelectionPolicy extends HistoryDrivenDeviceSelectionPolicy {
+    public MinMaxSerialHistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
         // Use max, we pick the maximum bandwidth between two devices;
-        super(devicesManager, dataThreshold, bandwidthMatrixPath, Math::max, 0);
+        super(devicesManager, dataThreshold, bandwidthMatrixPath,false);
     }
 }
 
@@ -319,10 +322,9 @@ public static class MinMinHistoryDrivenDeviceSelectionPolicy extends HistoryDriv
  * Assume that data are transferred from the device that gives the worst possible bandwidth.
  * In other words, find the minimum transfer time among all devices considering the maximum transfer time for each device;
  */
-public static class MinMaxHistoryDrivenDeviceSelectionPolicy extends HistoryDrivenDeviceSelectionPolicy {
-    public MinMaxHistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
-        // Use min, we pick the minimum bandwidth between two devices;
-        super(devicesManager, dataThreshold, bandwidthMatrixPath, Math::min, Double.POSITIVE_INFINITY);
+public static class MinMaxParallelHistoryDrivenDeviceSelectionPolicy extends HistoryDrivenDeviceSelectionPolicy {
+    public MinMaxParallelHistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
+        super(devicesManager, dataThreshold, bandwidthMatrixPath, true);
     }
 }
 }

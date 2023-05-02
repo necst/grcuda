@@ -173,8 +173,8 @@ public class GrCUDAOptionMap implements TruffleObject {
         else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE.toString())) return DeviceSelectionPolicyEnum.MIN_TRANSFER_SIZE;
         else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.MINMIN_TRANSFER_TIME.toString())) return DeviceSelectionPolicyEnum.MINMIN_TRANSFER_TIME;
         else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.MINMAX_TRANSFER_TIME.toString())) return DeviceSelectionPolicyEnum.MINMAX_TRANSFER_TIME;
-        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.MINMIN_HISTORY_DRIVEN.toString())) return DeviceSelectionPolicyEnum.MINMIN_HISTORY_DRIVEN;
-        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.MINMAX_HISTORY_DRIVEN.toString())) return DeviceSelectionPolicyEnum.MINMAX_HISTORY_DRIVEN;
+        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.MINMAX_SERIAL_HISTORY_DRIVEN.toString())) return DeviceSelectionPolicyEnum.MINMAX_SERIAL_HISTORY_DRIVEN;
+        else if (Objects.equals(policyString, DeviceSelectionPolicyEnum.MINMAX_PARALLEL_HISTORY_DRIVEN.toString())) return DeviceSelectionPolicyEnum.MINMAX_PARALLEL_HISTORY_DRIVEN;
         else {
             LOGGER.warning("Warning: unknown device selection policy=" + policyString + "; using default=" + DEFAULT_DEVICE_SELECTION_POLICY);
             return DEFAULT_DEVICE_SELECTION_POLICY;

@@ -45,7 +45,7 @@ public class HistoryDrivenDAGMockTest {
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
                 .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
-                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MINMAX_HISTORY_DRIVEN)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MINMAX_PARALLEL_HISTORY_DRIVEN)
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
         executeMockComputationAndValidate(forkJoinMockComputationWithTime(context),
