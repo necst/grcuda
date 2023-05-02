@@ -28,8 +28,8 @@
         "new_stream_policies": ["always-new"],
         "parent_stream_policies": ["multigpu-disjoint"],
         "choose_device_policies": [
-                "minmax-transfer-time",
-                "minmax-history-driven"
+                "minmax-parallel-history-driven",
+                "minmax-serial-history-driven"
         ],
         "memory_advise": ["none"],
         "prefetch": [true],
@@ -37,7 +37,7 @@
         "time_computation": [false],
         "train_computation": false,
         "train_models" : false,
-        "num_gpus": [1, 2, 4, 8],
+        "num_gpus": [4],
         "block_size1d": {
                 "B1": 64,
                 "B1M": 32,
