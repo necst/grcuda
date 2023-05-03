@@ -1,0 +1,4019 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PMML xmlns="http://www.dmg.org/PMML-4_4" xmlns:data="http://jpmml.org/jpmml-model/InlineTable" version="4.4">
+	<Header>
+		<Application name="SkLearn2PMML package" version="0.90.0"/>
+		<Timestamp>2023-05-02T17:41:05Z</Timestamp>
+	</Header>
+	<MiningBuildTask>
+		<Extension name="repr">PMMLPipeline(steps=[('regressor', RandomForestRegressor(max_depth=5, n_estimators=64, random_state=42))])</Extension>
+	</MiningBuildTask>
+	<DataDictionary>
+		<DataField name="Time" optype="continuous" dataType="double"/>
+		<DataField name="0" optype="continuous" dataType="float"/>
+	</DataDictionary>
+	<MiningModel functionName="regression" algorithmName="sklearn.ensemble._forest.RandomForestRegressor">
+		<MiningSchema>
+			<MiningField name="Time" usageType="target"/>
+			<MiningField name="0"/>
+		</MiningSchema>
+		<LocalTransformations>
+			<DerivedField name="double(0)" optype="continuous" dataType="double">
+				<FieldRef field="0"/>
+			</DerivedField>
+		</LocalTransformations>
+		<Segmentation multipleModelMethod="average" missingPredictionTreatment="returnMissing">
+			<Segment id="1">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="8.462677333333334">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+							<Node score="8.89506909090909">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642657.5"/>
+								<Node score="6.671246222222222">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1174952.5"/>
+									<Node score="8.293376">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076943.5"/>
+										<Node score="6.4471827692307695">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073600.5"/>
+										</Node>
+									</Node>
+									<Node score="5.093632">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1116162.0"/>
+									</Node>
+								</Node>
+								<Node score="24.036351999999997">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183391.0"/>
+								</Node>
+								<Node score="7.71621922222222">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1380978.0"/>
+								</Node>
+							</Node>
+							<Node score="33.869823">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1675412.5"/>
+								<Node score="8.440832">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1666965.5"/>
+									<Node score="33.2544">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652880.5"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="10.515712">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1727359.5"/>
+								<Node score="9.085659428571429">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1702156.0"/>
+								</Node>
+							</Node>
+							<Node score="7.215103999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1732842.5"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1775956.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="2">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="35.775490000000005">
+						<True/>
+						<Node score="9.860437407407407">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="7.092565333333334">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+										<Node score="6.165504">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+										</Node>
+									</Node>
+								</Node>
+								<Node score="5.570280727272728">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+									<Node score="6.614357333333333">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078070.5"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1126124.0"/>
+								</Node>
+							</Node>
+							<Node score="25.199614999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1226134.0"/>
+							</Node>
+							<Node score="9.1251968">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641479.5"/>
+								<Node score="12.206335874999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1286786.5"/>
+								</Node>
+							</Node>
+							<Node score="33.513983499999995">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="3">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="8.431585882352941">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="21.284864000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1046574.0"/>
+							</Node>
+							<Node score="6.137343999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+								<Node score="5.60064">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+									<Node score="6.2392319999999994">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1074841.0"/>
+									</Node>
+								</Node>
+								<Node score="6.41536">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1102536.0"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+							</Node>
+							<Node score="10.346589000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1286786.5"/>
+							</Node>
+						</Node>
+						<Node score="33.2544">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+							<Node score="33.773567">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+							</Node>
+						</Node>
+						<Node score="7.327744">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1769676.0"/>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687209.5"/>
+								<Node score="8.171008">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								</Node>
+							</Node>
+							<Node score="9.645707636363635">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1745471.5"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="4">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="8.864182857142856">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="10.038717239130435">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1587682.0"/>
+								<Node score="6.5679739259259255">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+									<Node score="21.284864000000002">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+										<Node score="6.861824">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+										</Node>
+									</Node>
+									<Node score="5.542912">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1071475.0"/>
+									</Node>
+								</Node>
+								<Node score="24.30976">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+									<Node score="24.036351999999997">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183201.5"/>
+									</Node>
+								</Node>
+								<Node score="6.752487225806452">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1304325.5"/>
+								</Node>
+							</Node>
+							<Node score="32.535553">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1608104.0"/>
+							</Node>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687209.5"/>
+								<Node score="10.920755199999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683700.5"/>
+								</Node>
+							</Node>
+							<Node score="9.7449984">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1728638.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="10.018816000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="5">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="9.34749168852459">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="21.284864000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+								<Node score="7.558144000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									<Node score="6.165504">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="6.2064639999999995">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+								<Node score="4.909056">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1056469.5"/>
+									<Node score="5.8368">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1043087.0"/>
+									</Node>
+								</Node>
+								<Node score="7.091029333333334">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1088902.5"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+							</Node>
+							<Node score="8.064445195652173">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1313129.5"/>
+							</Node>
+						</Node>
+						<Node score="33.869823">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1675412.5"/>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+								<Node score="33.773567">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+								</Node>
+							</Node>
+							<Node score="6.134784">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1661858.0"/>
+							</Node>
+						</Node>
+						<Node score="11.212800000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="9.369965714285714">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+								<Node score="15.154176499999998">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687023.5"/>
+								</Node>
+							</Node>
+							<Node score="35.775490000000005">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="6">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="9.786255609756099">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1590179.5"/>
+							<Node score="6.133247999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+								<Node score="7.558144">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1037557.5"/>
+								</Node>
+								<Node score="7.065088">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1079844.0"/>
+									<Node score="5.820643555555555">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073577.5"/>
+									</Node>
+								</Node>
+								<Node score="5.1619839999999995">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101914.0"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+							</Node>
+							<Node score="6.7326976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1174952.5"/>
+								<Node score="9.532416">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1128833.5"/>
+								</Node>
+							</Node>
+							<Node score="24.104703999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+							</Node>
+						</Node>
+						<Node score="29.2763646">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687209.5"/>
+							<Node score="8.6114304">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1632214.0"/>
+								<Node score="32.535553">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1599168.5"/>
+								</Node>
+								<Node score="7.589888">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1608252.5"/>
+								</Node>
+							</Node>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652880.5"/>
+								<Node score="33.773567">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+								</Node>
+							</Node>
+							<Node score="8.440832">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1666965.5"/>
+							</Node>
+						</Node>
+						<Node score="10.358784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="7.327744">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1757091.5"/>
+								<Node score="8.941670399999998">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1746002.0"/>
+								</Node>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="10.018816000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1777358.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="7">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="9.260768526315792">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="21.284864000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1040322.0"/>
+								<Node score="7.558144">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+								</Node>
+							</Node>
+							<Node score="5.636096">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+								<Node score="4.909056">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1051284.0"/>
+								</Node>
+								<Node score="6.474581333333333">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076943.5"/>
+								</Node>
+							</Node>
+							<Node score="24.127488">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185897.0"/>
+								<Node score="10.227370500000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1171394.5"/>
+								</Node>
+							</Node>
+							<Node score="7.128103384615385">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1316475.0"/>
+							</Node>
+						</Node>
+						<Node score="33.869823">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1675412.5"/>
+							<Node score="8.440832">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1666965.5"/>
+								<Node score="33.2544">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+									<Node score="33.773567">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+									</Node>
+								</Node>
+								<Node score="6.134784">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1657319.5"/>
+								</Node>
+							</Node>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="9.0888192">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								</Node>
+							</Node>
+							<Node score="9.547776">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="8">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="8.782897975609757">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1638463.5"/>
+							<Node score="7.11057723076923">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+										<Node score="6.165504">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+										</Node>
+									</Node>
+								</Node>
+								<Node score="5.847844571428572">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1111876.0"/>
+									<Node score="5.218304">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1051284.0"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1126124.0"/>
+								</Node>
+							</Node>
+							<Node score="25.199614999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1229216.0"/>
+							</Node>
+							<Node score="20.305578666666666">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+								<Node score="8.91747957142857">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1313129.5"/>
+								</Node>
+							</Node>
+							<Node score="7.105024">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1370852.5"/>
+							</Node>
+						</Node>
+						<Node score="8.751718399999998">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1662192.5"/>
+							</Node>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="8.327372800000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								</Node>
+							</Node>
+							<Node score="9.6347136">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1738526.5"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+							<Node score="35.775490000000005">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1772529.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="9">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="10.358784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="7.6095658666666655">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1590179.5"/>
+								<Node score="6.523318857142857">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1174952.5"/>
+									<Node score="5.513728">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123225.5"/>
+										<Node score="6.385664">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076943.5"/>
+										</Node>
+									</Node>
+									<Node score="9.532416">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1134708.0"/>
+									</Node>
+								</Node>
+								<Node score="24.30976">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+									<Node score="24.036351999999997">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183201.5"/>
+									</Node>
+								</Node>
+								<Node score="11.493375818181816">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1286786.5"/>
+								</Node>
+							</Node>
+							<Node score="32.535553">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1595840.5"/>
+							</Node>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="11.563967937500001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								</Node>
+							</Node>
+							<Node score="9.014757052631577">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1757365.5"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+							<Node score="10.018816000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1773932.0"/>
+								<Node score="35.775490000000005">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+								</Node>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="10">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="15.903573666666668">
+						<True/>
+						<Node score="7.04512">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+							<Node score="21.284864000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+							</Node>
+							<Node score="6.365183999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123225.5"/>
+								<Node score="6.461849600000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+									<Node score="6.029141333333333">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1071475.0"/>
+									</Node>
+								</Node>
+								<Node score="5.507413333333334">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+								</Node>
+							</Node>
+							<Node score="9.532416">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1128833.5"/>
+							</Node>
+							<Node score="6.449493333333334">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1150861.0"/>
+							</Node>
+						</Node>
+						<Node score="27.032576000000002">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+							<Node score="6.81344">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1313129.5"/>
+								<Node score="26.809343">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1286786.5"/>
+									<Node score="10.711231999999999">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1285155.5"/>
+									</Node>
+								</Node>
+								<Node score="6.3444992">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1299106.5"/>
+								</Node>
+							</Node>
+							<Node score="26.734592">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1316120.5"/>
+							</Node>
+						</Node>
+						<Node score="7.404876799999999">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641479.5"/>
+							<Node score="6.074624">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1370852.5"/>
+								<Node score="7.441846857142857">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1344151.0"/>
+								</Node>
+							</Node>
+							<Node score="11.465874285714287">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+							</Node>
+						</Node>
+						<Node score="33.773567">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647102.5"/>
+						</Node>
+						<Node score="10.291005047619047">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="11">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="11.006765948717952">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="5.993727999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+								<Node score="7.558144">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1037557.5"/>
+									<Node score="6.165504">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+									</Node>
+								</Node>
+								<Node score="4.909056">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1051284.0"/>
+									<Node score="5.8368">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1043087.0"/>
+									</Node>
+								</Node>
+								<Node score="6.6455551999999996">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1127198.0"/>
+							</Node>
+							<Node score="8.040763057692308">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1501254.5"/>
+								<Node score="11.007151457142855">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1286786.5"/>
+								</Node>
+							</Node>
+							<Node score="30.852096999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1516426.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="10.018816000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="12">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="8.15730688">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642150.0"/>
+							<Node score="6.183253333333333">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+								<Node score="6.486016">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078411.5"/>
+									<Node score="5.88288">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073577.5"/>
+										<Node score="5.372928">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1051284.0"/>
+										</Node>
+									</Node>
+									<Node score="8.293376">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076044.0"/>
+									</Node>
+								</Node>
+								<Node score="4.321280000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1098955.5"/>
+									<Node score="5.416448">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1090222.0"/>
+									</Node>
+								</Node>
+								<Node score="5.623808">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100536.5"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+							</Node>
+							<Node score="29.271722333333333">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+								<Node score="8.803764676470589">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1389128.5"/>
+								</Node>
+							</Node>
+							<Node score="6.772736">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1484103.0"/>
+							</Node>
+						</Node>
+						<Node score="33.869823">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1675412.5"/>
+							<Node score="8.440832">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1666965.5"/>
+								<Node score="33.2544">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652880.5"/>
+								</Node>
+							</Node>
+						</Node>
+						<Node score="11.382784000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="8.8997888">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								</Node>
+							</Node>
+							<Node score="8.534919529411766">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1757365.5"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="13">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="8.830194983050847">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="21.284864000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1040322.0"/>
+							</Node>
+							<Node score="6.083583999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1111876.0"/>
+								<Node score="7.690922666666666">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+									<Node score="5.7460736">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073577.5"/>
+									</Node>
+								</Node>
+								<Node score="5.521066666666667">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100970.5"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+							</Node>
+							<Node score="10.787199958333334">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+							</Node>
+						</Node>
+						<Node score="33.2544">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+							<Node score="33.773567">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+							</Node>
+						</Node>
+						<Node score="11.044010666666665">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="11.583374111111109">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683700.5"/>
+								</Node>
+							</Node>
+							<Node score="8.675327999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1704303.5"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="14">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="9.355156210526316">
+						<True/>
+						<Node score="6.0672">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+							<Node score="7.558144000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1039502.5"/>
+								<Node score="6.165504000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+								</Node>
+							</Node>
+							<Node score="4.909056">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1051284.0"/>
+							</Node>
+							<Node score="6.682624000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1069679.5"/>
+								<Node score="6.052864">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1062721.5"/>
+								</Node>
+							</Node>
+							<Node score="5.578752000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1102407.0"/>
+							</Node>
+						</Node>
+						<Node score="23.120895">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+						</Node>
+						<Node score="11.44335375">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="16.5685247">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+								<Node score="8.8691029">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1277120.0"/>
+								</Node>
+							</Node>
+							<Node score="7.727736470588235">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+							</Node>
+						</Node>
+						<Node score="20.578815499999997">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1675412.5"/>
+							<Node score="33.42745566666667">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+							</Node>
+						</Node>
+						<Node score="15.248384499999998">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687023.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="15">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="15.367607142857144">
+						<True/>
+						<Node score="5.992886857142857">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1383646.5"/>
+							<Node score="6.84672">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1182464.0"/>
+								<Node score="6.0781226666666655">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1115078.5"/>
+									<Node score="7.389696000000001">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+										<Node score="5.9223040000000005">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073577.5"/>
+										</Node>
+									</Node>
+									<Node score="5.164851200000001">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100955.0"/>
+									</Node>
+								</Node>
+								<Node score="9.532416">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1128833.5"/>
+								</Node>
+								<Node score="6.424576">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1146534.5"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185897.0"/>
+							</Node>
+							<Node score="27.032576000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+								<Node score="9.263525558823531">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1316475.0"/>
+								</Node>
+							</Node>
+							<Node score="7.159295999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1324064.0"/>
+							</Node>
+						</Node>
+						<Node score="29.47584">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426662.0"/>
+							<Node score="6.19008">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1406779.5"/>
+								<Node score="28.863487">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1397610.5"/>
+								</Node>
+							</Node>
+						</Node>
+						<Node score="8.244096">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="32.535553">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1595840.5"/>
+								<Node score="8.684300238095238">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1587682.0"/>
+								</Node>
+							</Node>
+							<Node score="7.169408000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1634172.5"/>
+							</Node>
+						</Node>
+						<Node score="33.2544">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+							<Node score="33.773567">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+							</Node>
+						</Node>
+						<Node score="9.761093772727271">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="16">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="7.849642666666667">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758158.5"/>
+							<Node score="6.810563764705882">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+										<Node score="6.165504">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+										</Node>
+									</Node>
+								</Node>
+								<Node score="6.073408000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+									<Node score="5.372928">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1056469.5"/>
+									</Node>
+								</Node>
+								<Node score="10.839632807017546">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426328.0"/>
+								</Node>
+							</Node>
+							<Node score="30.852096999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1519228.0"/>
+							</Node>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="11.455022636363637">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1682728.5"/>
+								</Node>
+							</Node>
+							<Node score="9.464729599999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1728638.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="10.018816000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="17">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="10.210986722222223">
+						<True/>
+						<Node score="6.919167999999999">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+							<Node score="21.284864000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1040322.0"/>
+								<Node score="7.558144">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									<Node score="6.165504">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="5.727573333333333">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112103.0"/>
+								<Node score="6.269610666666668">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1079311.0"/>
+									<Node score="4.909056">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1060708.5"/>
+									</Node>
+								</Node>
+								<Node score="5.051392">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1098955.5"/>
+								</Node>
+							</Node>
+							<Node score="6.543104">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1166586.0"/>
+								<Node score="6.279167999999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1146534.5"/>
+								</Node>
+							</Node>
+							<Node score="6.94272">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1174215.0"/>
+							</Node>
+						</Node>
+						<Node score="24.30976">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+							<Node score="24.036351999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183201.5"/>
+							</Node>
+						</Node>
+						<Node score="6.608639999999999">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1218783.0"/>
+							<Node score="4.706304">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1207675.5"/>
+								<Node score="6.612553142857143">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1190466.5"/>
+								</Node>
+							</Node>
+							<Node score="10.560512">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1208900.0"/>
+							</Node>
+						</Node>
+						<Node score="25.199614999999998">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1239929.0"/>
+						</Node>
+						<Node score="7.114467555555556">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1313129.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="18">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="9.230827519999998">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758158.5"/>
+							<Node score="8.141477632352942">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1590179.5"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									</Node>
+								</Node>
+								<Node score="6.795662222222223">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+									<Node score="6.2078652631578946">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123225.5"/>
+									</Node>
+								</Node>
+								<Node score="25.199614999999998">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1226134.0"/>
+								</Node>
+							</Node>
+							<Node score="32.535553">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1599168.5"/>
+							</Node>
+							<Node score="7.124992000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641479.5"/>
+								<Node score="8.399725714285713">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1628014.0"/>
+								</Node>
+							</Node>
+							<Node score="33.773567">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652210.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="10.018816000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="19">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="11.004257137931036">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="6.4513024">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+								<Node score="6.260882285714286">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+									<Node score="7.690922666666666">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+										<Node score="6.25057476923077">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1071805.0"/>
+										</Node>
+									</Node>
+									<Node score="5.467428571428571">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+								</Node>
+								<Node score="9.532416">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1128833.5"/>
+								</Node>
+							</Node>
+							<Node score="24.036351999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183391.0"/>
+							</Node>
+							<Node score="8.304717320754715">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642657.5"/>
+								<Node score="10.943684923076923">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1324779.0"/>
+								</Node>
+							</Node>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="20">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="7.856713142857143">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1771462.5"/>
+							<Node score="8.464519264150944">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+								<Node score="7.76538576923077">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1182464.0"/>
+									<Node score="21.284864000000002">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+										<Node score="6.861824">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+										</Node>
+									</Node>
+									<Node score="5.950395733333333">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+									</Node>
+								</Node>
+								<Node score="24.30976">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+								</Node>
+								<Node score="10.359772655172414">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1315036.5"/>
+								</Node>
+							</Node>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+								<Node score="33.773567">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+								</Node>
+							</Node>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="8.73071709090909">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683700.5"/>
+								</Node>
+							</Node>
+							<Node score="8.9581568">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1753843.0"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="21">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="7.235136000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1281757.0"/>
+							<Node score="6.315008">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+								<Node score="5.546666666666667">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100536.5"/>
+									<Node score="5.8368">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1079311.0"/>
+										<Node score="6.1253632">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+										</Node>
+									</Node>
+									<Node score="5.3248">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1080971.0"/>
+									</Node>
+								</Node>
+								<Node score="6.41536">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1103029.0"/>
+								</Node>
+								<Node score="6.0672">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112103.0"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1126124.0"/>
+							</Node>
+							<Node score="24.036351999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183391.0"/>
+								<Node score="6.757961142857143">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+								</Node>
+							</Node>
+							<Node score="5.893248">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1207675.5"/>
+							</Node>
+						</Node>
+						<Node score="11.531247857142858">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+							<Node score="27.032576000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+								<Node score="5.878016000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1303277.0"/>
+									<Node score="26.809343">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1286786.5"/>
+									</Node>
+								</Node>
+								<Node score="26.784426666666665">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1316120.5"/>
+								</Node>
+							</Node>
+							<Node score="6.370934153846154">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1383819.0"/>
+								<Node score="6.94272">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1332078.0"/>
+								</Node>
+							</Node>
+							<Node score="22.0547068">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="10.018816000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="22">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="6.934869333333332">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1182464.0"/>
+							<Node score="6.315008">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123225.5"/>
+								<Node score="6.4256">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1075968.0"/>
+									<Node score="5.908821333333333">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1062721.5"/>
+										<Node score="6.165504000000001">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1031817.0"/>
+										</Node>
+									</Node>
+									<Node score="6.682624000000001">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1069702.5"/>
+									</Node>
+								</Node>
+								<Node score="5.5852373333333345">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100970.5"/>
+									<Node score="5.3248">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1080971.0"/>
+									</Node>
+								</Node>
+								<Node score="6.075391999999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112103.0"/>
+								</Node>
+							</Node>
+							<Node score="9.532416">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1128833.5"/>
+							</Node>
+							<Node score="6.672384">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1154180.5"/>
+								<Node score="6.3616">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1146534.5"/>
+								</Node>
+							</Node>
+							<Node score="7.297024">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1163833.5"/>
+							</Node>
+						</Node>
+						<Node score="29.47584">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+							<Node score="14.961780857142854">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1414248.5"/>
+								<Node score="24.30976">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1187109.5"/>
+								</Node>
+								<Node score="7.357759999999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1274265.5"/>
+								</Node>
+							</Node>
+						</Node>
+						<Node score="8.646260340909091">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758158.5"/>
+							<Node score="5.89312">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1484103.0"/>
+								<Node score="7.012165818181819">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1466955.5"/>
+								</Node>
+							</Node>
+							<Node score="14.127360249999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1519228.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1763087.5"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1778031.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="23">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.350122666666666">
+						<True/>
+						<Node score="9.749082411764705">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642657.5"/>
+							<Node score="7.677883733333332">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1277120.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+										<Node score="6.165504">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+										</Node>
+									</Node>
+								</Node>
+								<Node score="6.793609846153846">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1207675.5"/>
+									<Node score="5.978690782608696">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1115078.5"/>
+									</Node>
+								</Node>
+								<Node score="10.560512">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1208900.0"/>
+								</Node>
+							</Node>
+							<Node score="27.032576000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+								<Node score="9.484288000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1314568.0"/>
+									<Node score="19.931135666666666">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1286786.5"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="7.650624">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1386287.5"/>
+								<Node score="6.423551999999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1336114.5"/>
+								</Node>
+							</Node>
+							<Node score="28.863487">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1397610.5"/>
+							</Node>
+						</Node>
+						<Node score="34.743297999999996">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687023.5"/>
+							<Node score="7.543808">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								<Node score="33.2544">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652880.5"/>
+								</Node>
+								<Node score="9.199872">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683058.5"/>
+								</Node>
+							</Node>
+						</Node>
+						<Node score="7.838037333333332">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+							<Node score="9.76256">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1728638.0"/>
+								<Node score="9.3504">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1705848.5"/>
+								</Node>
+							</Node>
+							<Node score="7.215103999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1741214.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="10.018816000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="24">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="20.551339">
+						<True/>
+						<Node score="9.972044774999997">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642657.5"/>
+							<Node score="21.284864000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+								<Node score="7.558144">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									<Node score="6.165504">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="6.563703466666667">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+								<Node score="7.389696000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078411.5"/>
+									<Node score="6.132736">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073600.5"/>
+									</Node>
+								</Node>
+								<Node score="5.098496">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+								<Node score="24.036351999999997">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183201.5"/>
+								</Node>
+							</Node>
+							<Node score="8.212623339999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1389128.5"/>
+							</Node>
+						</Node>
+						<Node score="33.2544">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+						</Node>
+						<Node score="8.440832">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1666965.5"/>
+							<Node score="6.134784">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1657319.5"/>
+							</Node>
+						</Node>
+						<Node score="33.869823">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1676277.5"/>
+						</Node>
+						<Node score="11.550720142857141">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="25">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="11.31497240740741">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="7.518890666666666">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1218783.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+								</Node>
+								<Node score="7.350158222222223">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1169626.0"/>
+									<Node score="5.756416000000001">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123225.5"/>
+									</Node>
+								</Node>
+								<Node score="24.036351999999997">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183391.0"/>
+								</Node>
+							</Node>
+							<Node score="27.032576000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+								<Node score="6.538678857142857">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1304325.5"/>
+									<Node score="16.103277285714285">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1287246.5"/>
+									</Node>
+								</Node>
+								<Node score="18.9227008">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1316475.0"/>
+								</Node>
+							</Node>
+							<Node score="8.795136000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1508697.0"/>
+								<Node score="7.0331578181818175">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1414248.5"/>
+								</Node>
+							</Node>
+							<Node score="30.852096999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1519228.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="10.018816000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="26">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="7.728889435897435">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="6.930943999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1182464.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									</Node>
+								</Node>
+								<Node score="5.0957653333333335">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+									<Node score="6.181376">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1079311.0"/>
+									</Node>
+								</Node>
+								<Node score="6.470577230769232">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1166586.0"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+							</Node>
+							<Node score="6.715864615384616">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1378337.0"/>
+								<Node score="7.994514285714286">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1315036.5"/>
+								</Node>
+							</Node>
+							<Node score="21.3149692">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+							</Node>
+						</Node>
+						<Node score="33.869823">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1676277.5"/>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1657419.0"/>
+								<Node score="33.773567">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+								</Node>
+							</Node>
+						</Node>
+						<Node score="10.2907904">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1773932.0"/>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687023.5"/>
+								<Node score="9.6079872">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683700.5"/>
+								</Node>
+							</Node>
+							<Node score="9.124249599999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1757365.5"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="27">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="9.813401599999999">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="8.929870084745763">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641479.5"/>
+								<Node score="5.682176">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+									<Node score="21.284864000000002">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+										<Node score="6.861824">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+										</Node>
+									</Node>
+									<Node score="6.32192">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1131998.5"/>
+								</Node>
+								<Node score="11.6410745">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+								</Node>
+							</Node>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652880.5"/>
+								<Node score="33.773567">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+								</Node>
+							</Node>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="12.248795285714284">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								</Node>
+							</Node>
+							<Node score="9.144661333333334">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1704303.5"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1763087.5"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1778031.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="28">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="8.965631975">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1590179.5"/>
+							<Node score="21.284864000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+								<Node score="7.558144">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									<Node score="6.165504">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="5.613056">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+								<Node score="4.909056">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1060367.5"/>
+									<Node score="5.8368">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1043087.0"/>
+									</Node>
+								</Node>
+								<Node score="8.293376">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076943.5"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+							</Node>
+							<Node score="6.801115428571428">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+							</Node>
+						</Node>
+						<Node score="10.114457600000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="21.1553275">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1675412.5"/>
+								<Node score="8.818517333333334">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1638372.5"/>
+									<Node score="32.535553">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1604844.5"/>
+									</Node>
+								</Node>
+								<Node score="33.358233399999996">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652880.5"/>
+								</Node>
+							</Node>
+							<Node score="7.543808">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								<Node score="9.61171911111111">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683058.5"/>
+								</Node>
+							</Node>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="29">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="10.6494977">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1590179.5"/>
+							<Node score="6.133247999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									</Node>
+								</Node>
+								<Node score="5.4124544">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+									<Node score="5.989262222222222">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1079311.0"/>
+									</Node>
+								</Node>
+								<Node score="6.41536">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1102536.0"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+							</Node>
+							<Node score="15.55568615">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318786.5"/>
+								<Node score="7.613114181818182">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+								</Node>
+							</Node>
+							<Node score="7.069476571428572">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+							</Node>
+						</Node>
+						<Node score="32.535553">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1599168.5"/>
+						</Node>
+						<Node score="11.181909500000002">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="7.507967999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+								<Node score="8.195071999999998">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641473.5"/>
+								</Node>
+							</Node>
+							<Node score="27.334655499999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1676277.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="30">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.34304">
+						<True/>
+						<Node score="8.767658666666668">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+							<Node score="7.738803744680851">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1303277.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									</Node>
+								</Node>
+								<Node score="4.7200256000000005">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+									<Node score="5.996657777777778">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1090222.0"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+								</Node>
+							</Node>
+							<Node score="26.734592">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1315036.5"/>
+								<Node score="26.884096000000003">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1309889.0"/>
+								</Node>
+							</Node>
+							<Node score="27.032576000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318786.5"/>
+								<Node score="7.1495679999999995">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1316475.0"/>
+								</Node>
+							</Node>
+							<Node score="6.7528817777777785">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1397729.0"/>
+							</Node>
+						</Node>
+						<Node score="30.852096999999997">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1516426.0"/>
+						</Node>
+						<Node score="8.132561454545455">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="10.724352">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1521228.0"/>
+							</Node>
+							<Node score="7.235583999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1528597.0"/>
+							</Node>
+						</Node>
+						<Node score="33.869823">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1676277.5"/>
+							<Node score="21.1071995">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1666965.5"/>
+							</Node>
+						</Node>
+						<Node score="9.039104">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="31">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="7.192575999999999">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="8.762806809523811">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1386287.5"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1051759.5"/>
+									<Node score="6.165504">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1029052.0"/>
+									</Node>
+								</Node>
+								<Node score="5.555830153846154">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+									<Node score="6.562230857142858">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076943.5"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1131998.5"/>
+								</Node>
+							</Node>
+							<Node score="28.863487">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1397610.5"/>
+							</Node>
+							<Node score="30.852096999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1519228.0"/>
+								<Node score="8.336323764705883">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+								</Node>
+							</Node>
+							<Node score="8.4590592">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1601236.0"/>
+							</Node>
+						</Node>
+						<Node score="33.869823">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1675412.5"/>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652880.5"/>
+								<Node score="33.773567">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+								</Node>
+							</Node>
+							<Node score="8.440832">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1666965.5"/>
+							</Node>
+						</Node>
+						<Node score="7.800490666666668">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687023.5"/>
+								<Node score="8.806656">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								</Node>
+							</Node>
+							<Node score="9.407615999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1717733.0"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+							<Node score="35.775490000000005">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1772529.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="32">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="20.168022000000004">
+						<True/>
+						<Node score="5.942727111111111">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1304325.5"/>
+							<Node score="6.315008">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+								<Node score="6.486016">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078411.5"/>
+									<Node score="4.909056">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1056469.5"/>
+										<Node score="6.3782912000000005">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1043087.0"/>
+										</Node>
+									</Node>
+									<Node score="7.021056">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076044.0"/>
+									</Node>
+								</Node>
+								<Node score="5.5511040000000005">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1110554.0"/>
+									<Node score="5.3248">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1080971.0"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1126124.0"/>
+							</Node>
+							<Node score="6.949375999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1241141.0"/>
+								<Node score="6.490714352941176">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1207675.5"/>
+								</Node>
+							</Node>
+							<Node score="10.767798714285714">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1287246.5"/>
+							</Node>
+						</Node>
+						<Node score="27.032576000000002">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318786.5"/>
+							<Node score="26.884096000000003">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1308336.5"/>
+							</Node>
+							<Node score="16.94208">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1316475.0"/>
+								<Node score="6.961152">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1313129.5"/>
+								</Node>
+							</Node>
+						</Node>
+						<Node score="8.188363068965517">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1638372.5"/>
+							<Node score="7.893869714285714">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1383819.0"/>
+								<Node score="7.076863999999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1361987.0"/>
+								</Node>
+							</Node>
+							<Node score="17.52195628571429">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+							</Node>
+						</Node>
+						<Node score="33.2544">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+							<Node score="33.773567">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+							</Node>
+						</Node>
+						<Node score="10.1155475">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="33">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="10.33742638095238">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="7.520679724137931">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1276776.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="6.165504">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1029052.0"/>
+									</Node>
+								</Node>
+								<Node score="5.4788266666666665">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+									<Node score="6.583068444444445">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+								</Node>
+							</Node>
+							<Node score="25.510912">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1280518.5"/>
+							</Node>
+							<Node score="7.80144">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642150.0"/>
+								<Node score="11.592946473684211">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+								</Node>
+							</Node>
+							<Node score="23.1139324">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1675412.5"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+							<Node score="10.018816000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1773932.0"/>
+								<Node score="35.775490000000005">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+								</Node>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="34">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="35.775490000000005">
+						<True/>
+						<Node score="11.94863727272727">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+							<Node score="6.6060799999999995">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+										<Node score="6.165504000000001">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+										</Node>
+									</Node>
+								</Node>
+								<Node score="5.98990848">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123225.5"/>
+									<Node score="5.218304">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1051284.0"/>
+									</Node>
+								</Node>
+								<Node score="9.532416">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1128833.5"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+								<Node score="24.036351999999997">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183201.5"/>
+								</Node>
+							</Node>
+							<Node score="26.809343">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1286786.5"/>
+								<Node score="9.648511874999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1285155.5"/>
+								</Node>
+							</Node>
+							<Node score="7.287479547169811">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1590179.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="35">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="9.378364235294116">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758158.5"/>
+							<Node score="6.5900544000000005">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1389128.5"/>
+								<Node score="6.573641142857142">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+									<Node score="5.897557333333332">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1150861.0"/>
+										<Node score="6.861824">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1037557.5"/>
+										</Node>
+									</Node>
+									<Node score="7.297024">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1160275.5"/>
+									</Node>
+								</Node>
+								<Node score="24.036351999999997">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183391.0"/>
+								</Node>
+								<Node score="8.724834384615384">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1288982.0"/>
+								</Node>
+							</Node>
+							<Node score="29.47584">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+								<Node score="6.19008">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1406779.5"/>
+									<Node score="28.863487">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1397610.5"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="5.238784">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+								<Node score="6.867057777777777">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1506204.0"/>
+								</Node>
+							</Node>
+							<Node score="30.852096999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1519228.0"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+							<Node score="35.775490000000005">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1772529.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="36">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.364288">
+						<True/>
+						<Node score="9.641310698630143">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="6.674261333333333">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1182464.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1046574.0"/>
+									<Node score="6.165504">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1029052.0"/>
+									</Node>
+								</Node>
+								<Node score="5.344512">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+									<Node score="6.4444416">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+									</Node>
+								</Node>
+								<Node score="6.3318016">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1141734.0"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+							</Node>
+							<Node score="5.615908571428571">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1218792.5"/>
+								<Node score="6.638250666666667">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1190466.5"/>
+								</Node>
+							</Node>
+							<Node score="25.199614999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1239929.0"/>
+							</Node>
+						</Node>
+						<Node score="34.743297999999996">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+							<Node score="8.146944">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								<Node score="33.2544">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+									<Node score="33.773567">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+									</Node>
+								</Node>
+								<Node score="16.148479666666663">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1675412.5"/>
+								</Node>
+							</Node>
+						</Node>
+						<Node score="8.690688">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1756696.5"/>
+							<Node score="11.152896">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1721425.5"/>
+								<Node score="8.649142857142857">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1702708.5"/>
+								</Node>
+							</Node>
+							<Node score="7.215103999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1741214.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="10.018816000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="37">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.385536">
+						<True/>
+						<Node score="7.507967999999999">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="5.238784">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+								<Node score="27.032576000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+									<Node score="12.3294718">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1304325.5"/>
+										<Node score="7.414488915254237">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1276776.0"/>
+										</Node>
+									</Node>
+									<Node score="26.884096000000003">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1311327.5"/>
+									</Node>
+								</Node>
+								<Node score="7.347541333333333">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1466955.5"/>
+									<Node score="6.6300159999999995">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1361987.0"/>
+									</Node>
+								</Node>
+								<Node score="6.246058666666666">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1506204.0"/>
+								</Node>
+							</Node>
+							<Node score="32.535553">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1595840.5"/>
+								<Node score="7.3988096">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1580579.0"/>
+									<Node score="30.852096999999997">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1519228.0"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="5.665792">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1634172.5"/>
+								<Node score="8.263094857142857">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1624754.5"/>
+								</Node>
+							</Node>
+							<Node score="9.092096000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1638366.5"/>
+							</Node>
+						</Node>
+						<Node score="33.2544">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652880.5"/>
+							<Node score="33.773567">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+							</Node>
+						</Node>
+						<Node score="7.402154666666667">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="13.122218499999997">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683700.5"/>
+								</Node>
+							</Node>
+							<Node score="9.27261257142857">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1727359.5"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="10.018816000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="38">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="10.679572702702702">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="8.283258253731345">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1389128.5"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1040322.0"/>
+								</Node>
+								<Node score="5.819205818181818">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+									<Node score="6.439509333333334">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+								</Node>
+							</Node>
+							<Node score="29.47584">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+								<Node score="7.013376">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1414248.5"/>
+									<Node score="28.863487">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1397610.5"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="8.569941333333334">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1590179.5"/>
+								<Node score="7.041536">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1467707.0"/>
+								</Node>
+							</Node>
+							<Node score="32.535553">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1599168.5"/>
+							</Node>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="35.775490000000005">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1763087.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="39">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="6.289578666666666">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1218792.5"/>
+							<Node score="6.751232">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1182464.0"/>
+								<Node score="8.293376">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076943.5"/>
+									<Node score="5.735424">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073600.5"/>
+										<Node score="7.558144">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1039502.5"/>
+										</Node>
+									</Node>
+								</Node>
+								<Node score="4.321280000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100521.0"/>
+									<Node score="5.544448">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1090222.0"/>
+									</Node>
+								</Node>
+								<Node score="6.193408">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1150861.0"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+							</Node>
+							<Node score="4.343808">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1200619.0"/>
+								<Node score="6.6304">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1189204.5"/>
+								</Node>
+							</Node>
+							<Node score="10.560512">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1208900.0"/>
+							</Node>
+						</Node>
+						<Node score="10.666044176470587">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="25.199614999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1226134.0"/>
+							</Node>
+							<Node score="9.32160853333333">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+								<Node score="13.76614375">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1286786.5"/>
+								</Node>
+							</Node>
+							<Node score="33.6697336">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="40">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="7.743180799999999">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1380978.0"/>
+							<Node score="6.602239999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+								<Node score="6.133247999999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+									<Node score="7.088469333333333">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+										<Node score="6.517191111111112">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073600.5"/>
+										</Node>
+									</Node>
+									<Node score="5.239936000000001">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101914.0"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1126124.0"/>
+								</Node>
+								<Node score="8.167850666666666">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183391.0"/>
+								</Node>
+							</Node>
+							<Node score="25.199614999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1226134.0"/>
+							</Node>
+							<Node score="20.27434666666667">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+								<Node score="8.129050894736842">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1304325.5"/>
+								</Node>
+							</Node>
+							<Node score="6.9210112">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1361987.0"/>
+							</Node>
+						</Node>
+						<Node score="10.20780552">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="29.47584">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+								<Node score="11.53536">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1391169.5"/>
+								</Node>
+								<Node score="28.863487">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1405648.0"/>
+								</Node>
+							</Node>
+							<Node score="8.552448">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1501254.5"/>
+								<Node score="6.714595555555555">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1484103.0"/>
+								</Node>
+							</Node>
+							<Node score="17.532043727272725">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652880.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="41">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="8.955033599999998">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+							<Node score="6.914304">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+								<Node score="6.079488">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1115078.5"/>
+									<Node score="4.906496000000001">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+										<Node score="5.901498181818183">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1090222.0"/>
+										</Node>
+									</Node>
+									<Node score="6.41536">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1102536.0"/>
+									</Node>
+								</Node>
+								<Node score="9.532416">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1128833.5"/>
+								</Node>
+								<Node score="6.62528">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1144986.5"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185897.0"/>
+								<Node score="24.036351999999997">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183201.5"/>
+								</Node>
+							</Node>
+							<Node score="8.762861481927713">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								<Node score="6.248749176470588">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1244223.0"/>
+								</Node>
+							</Node>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+							<Node score="10.018816000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1773932.0"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="42">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="10.405101696428574">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="6.84672">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+								<Node score="6.181515636363636">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123225.5"/>
+									<Node score="7.088469333333333">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078411.5"/>
+										<Node score="5.905237333333333">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073600.5"/>
+										</Node>
+									</Node>
+									<Node score="5.5375872">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+									</Node>
+								</Node>
+								<Node score="9.532416">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1129907.5"/>
+								</Node>
+								<Node score="6.298624">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1141734.0"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1189015.0"/>
+								<Node score="24.036351999999997">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183201.5"/>
+								</Node>
+							</Node>
+							<Node score="6.865773714285715">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+								<Node score="4.343808">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1200619.0"/>
+								</Node>
+							</Node>
+							<Node score="25.199614999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1226134.0"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="43">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="9.956412235294113">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="6.424704">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1174835.0"/>
+								<Node score="6.23872">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123225.5"/>
+									<Node score="6.5646591999999995">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+										<Node score="6.052864">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1062721.5"/>
+										</Node>
+									</Node>
+									<Node score="5.255270400000001">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+									</Node>
+								</Node>
+								<Node score="9.532416">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1128833.5"/>
+								</Node>
+								<Node score="6.62528">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1132540.0"/>
+								</Node>
+							</Node>
+							<Node score="10.317869791044778">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1590179.5"/>
+								<Node score="24.30976">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+								</Node>
+								<Node score="7.091908923076923">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1218783.0"/>
+								</Node>
+							</Node>
+							<Node score="32.535553">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1595840.5"/>
+							</Node>
+							<Node score="15.669850470588234">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687209.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="44">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="20.139691333333335">
+						<True/>
+						<Node score="7.366528000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1414248.5"/>
+							<Node score="6.542506666666666">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+								<Node score="6.052864">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1066619.5"/>
+									<Node score="5.8368">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1043087.0"/>
+										<Node score="6.165504">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1031817.0"/>
+										</Node>
+									</Node>
+									<Node score="4.909056">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1051284.0"/>
+									</Node>
+								</Node>
+								<Node score="8.293376">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076044.0"/>
+								</Node>
+								<Node score="4.862464">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100521.0"/>
+								</Node>
+							</Node>
+							<Node score="26.809343">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1286786.5"/>
+								<Node score="10.388991888888889">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1285155.5"/>
+									<Node score="24.173056">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="3.8256639999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1346629.5"/>
+								<Node score="6.648905142857143">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1344151.0"/>
+								</Node>
+							</Node>
+							<Node score="6.742747428571429">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1361987.0"/>
+							</Node>
+						</Node>
+						<Node score="29.47584">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+						</Node>
+						<Node score="8.241803636363638">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642657.5"/>
+							<Node score="5.238784">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+								<Node score="7.104384">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1506204.0"/>
+								</Node>
+							</Node>
+							<Node score="30.852096999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1516426.0"/>
+							</Node>
+						</Node>
+						<Node score="33.869823">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1676277.5"/>
+							<Node score="15.943338666666667">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1666965.5"/>
+							</Node>
+						</Node>
+						<Node score="9.269602461538462">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="45">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="10.636768031249998">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="6.515484444444444">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1174952.5"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1040322.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									</Node>
+								</Node>
+								<Node score="5.753969777777779">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1114585.5"/>
+									<Node score="4.909056">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1051284.0"/>
+									</Node>
+								</Node>
+								<Node score="9.532416">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1129907.5"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1187109.5"/>
+								<Node score="24.036351999999997">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183201.5"/>
+								</Node>
+							</Node>
+							<Node score="9.198760301369866">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642657.5"/>
+								<Node score="5.385443555555556">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1218792.5"/>
+								</Node>
+							</Node>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="46">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="17.630720500000002">
+						<True/>
+						<Node score="8.499659000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1587682.0"/>
+							<Node score="6.606400000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1182464.0"/>
+								<Node score="5.623808">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100536.5"/>
+									<Node score="5.416448">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1090222.0"/>
+										<Node score="6.1374464">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078411.5"/>
+										</Node>
+									</Node>
+									<Node score="4.321280000000001">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1098955.5"/>
+									</Node>
+								</Node>
+								<Node score="6.169599999999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123225.5"/>
+									<Node score="6.41536">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1102536.0"/>
+									</Node>
+								</Node>
+								<Node score="9.532416">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1128833.5"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1187109.5"/>
+							</Node>
+							<Node score="26.1601275">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1287246.5"/>
+								<Node score="8.2129578">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1277120.0"/>
+								</Node>
+							</Node>
+							<Node score="7.041987764705882">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1383819.0"/>
+							</Node>
+						</Node>
+						<Node score="32.535553">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1595840.5"/>
+						</Node>
+						<Node score="7.507967999999999">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+							<Node score="5.665792">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1634172.5"/>
+								<Node score="7.936">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1619078.5"/>
+								</Node>
+							</Node>
+							<Node score="9.092096000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1638366.5"/>
+							</Node>
+						</Node>
+						<Node score="33.869823">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1677249.5"/>
+							<Node score="16.885077">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1666965.5"/>
+							</Node>
+						</Node>
+						<Node score="8.687346526315787">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="47">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="8.380416">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1587682.0"/>
+							<Node score="5.924706461538461">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									</Node>
+								</Node>
+								<Node score="7.690922666666666">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078411.5"/>
+									<Node score="5.7442304">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073600.5"/>
+									</Node>
+								</Node>
+								<Node score="4.947090285714286">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1098955.5"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185897.0"/>
+								<Node score="6.786730666666666">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1182464.0"/>
+									<Node score="23.120895">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1142397.0"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="21.912832">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+								<Node score="8.04220928">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1309118.5"/>
+								</Node>
+							</Node>
+							<Node score="6.889292799999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1513933.0"/>
+							</Node>
+						</Node>
+						<Node score="32.535553">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1595840.5"/>
+						</Node>
+						<Node score="7.411712">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="10.034898823529412">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+								</Node>
+							</Node>
+							<Node score="8.954424888888887">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1745471.5"/>
+							</Node>
+						</Node>
+						<Node score="10.018816000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1773932.0"/>
+							<Node score="35.775490000000005">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="48">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="7.619827809523809">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1414248.5"/>
+							<Node score="6.172876799999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+								<Node score="6.486016">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+									<Node score="6.301354666666666">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073600.5"/>
+										<Node score="5.53728">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1051284.0"/>
+										</Node>
+									</Node>
+									<Node score="8.293376">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076044.0"/>
+									</Node>
+								</Node>
+								<Node score="5.5511040000000005">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+									<Node score="5.8368">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1079844.0"/>
+									</Node>
+								</Node>
+								<Node score="6.41536">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1102536.0"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+							</Node>
+							<Node score="6.249314461538462">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1241195.5"/>
+								<Node score="8.754920727272728">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185897.0"/>
+								</Node>
+							</Node>
+							<Node score="10.294905857142856">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+							</Node>
+						</Node>
+						<Node score="29.47584">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426328.0"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="33.64377525">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+								<Node score="9.411936062499999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+								</Node>
+							</Node>
+							<Node score="8.756451555555556">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="49">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="8.693930666666667">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="6.763131586206897">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+								<Node score="27.032576000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318786.5"/>
+									<Node score="12.163975411764705">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1309118.5"/>
+										<Node score="7.462619428571427">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1172378.5"/>
+										</Node>
+									</Node>
+									<Node score="26.734592">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1316120.5"/>
+									</Node>
+								</Node>
+								<Node score="5.645312">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1336114.5"/>
+									<Node score="7.375872">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1324064.0"/>
+									</Node>
+								</Node>
+								<Node score="8.682154666666667">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1344151.0"/>
+								</Node>
+							</Node>
+							<Node score="30.852096999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1523795.0"/>
+							</Node>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687023.5"/>
+								<Node score="11.535911384615382">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683700.5"/>
+								</Node>
+							</Node>
+							<Node score="9.862212266666665">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1728638.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1772529.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="50">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="10.358784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="8.243810480769229">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+								<Node score="5.828056615384615">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1037557.5"/>
+									</Node>
+									<Node score="6.27412676923077">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076943.5"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1126124.0"/>
+								</Node>
+								<Node score="10.26342395">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1322836.5"/>
+								</Node>
+							</Node>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="13.5297022">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+									<Node score="33.773567">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652210.0"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="10.021741714285714">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1746002.0"/>
+								<Node score="9.139665454545453">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1704303.5"/>
+								</Node>
+							</Node>
+							<Node score="7.411712">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1757365.5"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+							<Node score="10.018816000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1773932.0"/>
+								<Node score="35.775490000000005">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+								</Node>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="51">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="10.158079959999998">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1756696.5"/>
+							<Node score="7.202360888888888">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1587682.0"/>
+								<Node score="6.856362666666667">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1177409.0"/>
+									<Node score="5.3131264">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1111610.0"/>
+										<Node score="6.179682461538462">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1079311.0"/>
+										</Node>
+									</Node>
+									<Node score="6.304085333333333">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1146060.5"/>
+									</Node>
+								</Node>
+								<Node score="24.30976">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+								</Node>
+								<Node score="8.758213457142858">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1344151.0"/>
+								</Node>
+							</Node>
+							<Node score="32.535553">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1595840.5"/>
+							</Node>
+							<Node score="7.559168">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+								<Node score="8.223232">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1628014.0"/>
+								</Node>
+							</Node>
+							<Node score="33.513983499999995">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="10.018816000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+							</Node>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="52">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="24.6661125">
+						<True/>
+						<Node score="8.619411363636367">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1590179.5"/>
+							<Node score="6.315008">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+								<Node score="6.486016">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+									<Node score="6.3552">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073600.5"/>
+										<Node score="6.861824">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1037557.5"/>
+										</Node>
+									</Node>
+									<Node score="8.293376">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076044.0"/>
+									</Node>
+								</Node>
+								<Node score="5.4912">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100970.5"/>
+									<Node score="5.8368">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1079311.0"/>
+									</Node>
+								</Node>
+								<Node score="6.083583999999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1111610.0"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1126124.0"/>
+							</Node>
+							<Node score="5.670976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+								<Node score="9.261843692307691">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+								</Node>
+							</Node>
+							<Node score="25.199614999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1226134.0"/>
+							</Node>
+						</Node>
+						<Node score="34.743297999999996">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687209.5"/>
+							<Node score="7.421952">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+								<Node score="32.535553">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1599168.5"/>
+								</Node>
+								<Node score="8.475989333333333">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1628014.0"/>
+								</Node>
+							</Node>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652880.5"/>
+								<Node score="33.773567">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+								</Node>
+							</Node>
+							<Node score="14.707711749999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+							</Node>
+						</Node>
+						<Node score="7.439701333333333">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+							<Node score="11.277824">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1727359.5"/>
+								<Node score="8.844288">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1704303.5"/>
+								</Node>
+							</Node>
+							<Node score="8.110592">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1746002.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="10.814805333333334">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="53">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="11.583205620689657">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1756696.5"/>
+							<Node score="7.1703552">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1182464.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+										<Node score="6.165504">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+										</Node>
+									</Node>
+								</Node>
+								<Node score="5.627050666666666">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+									<Node score="6.614912">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078070.5"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185897.0"/>
+							</Node>
+							<Node score="10.519330594594596">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642657.5"/>
+								<Node score="6.552704">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+								</Node>
+							</Node>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="10.018816000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1777358.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="54">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="9.039149166666668">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641479.5"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1040322.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									</Node>
+								</Node>
+								<Node score="5.999396571428571">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+									<Node score="4.909056">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1051284.0"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+								</Node>
+							</Node>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="9.0038272">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1683764.0"/>
+									<Node score="33.773567">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652210.0"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="8.110336">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762020.5"/>
+								<Node score="9.515845818181816">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1744540.0"/>
+								</Node>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="55">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.406784">
+						<True/>
+						<Node score="6.083583999999999">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1111876.0"/>
+							<Node score="21.284864000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+								<Node score="7.558144000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									<Node score="6.165504">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+									</Node>
+								</Node>
+							</Node>
+							<Node score="6.486016">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078411.5"/>
+								<Node score="6.440192000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073577.5"/>
+									<Node score="5.8368">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1054524.5"/>
+									</Node>
+								</Node>
+								<Node score="8.293376">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076044.0"/>
+								</Node>
+							</Node>
+							<Node score="5.3248">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1091270.0"/>
+							</Node>
+							<Node score="6.41536">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1102536.0"/>
+							</Node>
+						</Node>
+						<Node score="23.120895">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+						</Node>
+						<Node score="9.840666571428573">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+							<Node score="9.442455666666666">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1277120.0"/>
+								<Node score="6.974743272727273">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+								</Node>
+							</Node>
+							<Node score="18.3029076">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318786.5"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="10.018816000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="56">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="35.775490000000005">
+						<True/>
+						<Node score="10.675984701298704">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="7.980152411764705">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1309118.5"/>
+								<Node score="6.080853333333333">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+									<Node score="8.293376">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076943.5"/>
+										<Node score="6.102698666666666">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073577.5"/>
+										</Node>
+									</Node>
+									<Node score="5.499050666666666">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101914.0"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1126124.0"/>
+								</Node>
+								<Node score="11.698176000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+								</Node>
+							</Node>
+							<Node score="26.734592">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1316770.0"/>
+							</Node>
+							<Node score="7.003282285714286">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1383819.0"/>
+								<Node score="8.066816">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1342764.0"/>
+								</Node>
+							</Node>
+							<Node score="23.087444666666666">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1397610.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="57">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="11.038333244444445">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="6.7312639999999995">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1040322.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+									</Node>
+								</Node>
+								<Node score="5.0687999999999995">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1207675.5"/>
+									<Node score="6.281801142857143">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1190466.5"/>
+									</Node>
+								</Node>
+								<Node score="10.560512">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1208900.0"/>
+								</Node>
+							</Node>
+							<Node score="13.777237333333334">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1322836.5"/>
+								<Node score="5.738495999999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1304325.5"/>
+									<Node score="14.50328409090909">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1286786.5"/>
+									</Node>
+								</Node>
+								<Node score="26.7943936">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1315036.5"/>
+								</Node>
+							</Node>
+							<Node score="6.8950231578947365">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+								<Node score="8.948927937499999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1397610.5"/>
+								</Node>
+							</Node>
+							<Node score="30.852096999999997">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1516426.0"/>
+							</Node>
+						</Node>
+						<Node score="10.018816000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1773932.0"/>
+							<Node score="35.775490000000005">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="58">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="20.551339">
+						<True/>
+						<Node score="9.49022420289855">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1638372.5"/>
+							<Node score="6.32832">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+								<Node score="6.486016">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078411.5"/>
+									<Node score="5.904676571428571">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073600.5"/>
+										<Node score="6.861824">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1037557.5"/>
+										</Node>
+									</Node>
+									<Node score="8.293376">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1076044.0"/>
+									</Node>
+								</Node>
+								<Node score="4.321280000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1098955.5"/>
+									<Node score="5.370623999999999">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1090222.0"/>
+									</Node>
+								</Node>
+								<Node score="5.623808">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100536.5"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+							</Node>
+							<Node score="6.509183999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+								<Node score="8.419474285714285">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185897.0"/>
+								</Node>
+							</Node>
+							<Node score="25.199614999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1226134.0"/>
+							</Node>
+						</Node>
+						<Node score="33.869823">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1675412.5"/>
+							<Node score="8.440832">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1666965.5"/>
+								<Node score="33.773567">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1652210.0"/>
+								</Node>
+							</Node>
+						</Node>
+						<Node score="9.1725824">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="34.743297999999996">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687023.5"/>
+								<Node score="9.803776000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1682728.5"/>
+								</Node>
+							</Node>
+							<Node score="9.7513472">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1728638.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="11.809792">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="59">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="11.212800000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="10.1639149245283">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641479.5"/>
+								<Node score="8.828825566666666">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1298229.0"/>
+									<Node score="21.284864000000002">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1040322.0"/>
+										<Node score="6.165504">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1029052.0"/>
+										</Node>
+									</Node>
+									<Node score="6.086299826086957">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+									</Node>
+								</Node>
+								<Node score="27.032576000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+									<Node score="16.932352">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1316475.0"/>
+									</Node>
+								</Node>
+								<Node score="6.051035428571429">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1389128.5"/>
+								</Node>
+							</Node>
+							<Node score="33.2544">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1647773.0"/>
+								<Node score="33.773567">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642663.5"/>
+								</Node>
+							</Node>
+							<Node score="9.120954181818183">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1758432.5"/>
+								<Node score="12.585301666666666">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1687209.5"/>
+								</Node>
+							</Node>
+							<Node score="35.775490000000005">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="60">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.406784">
+						<True/>
+						<Node score="6.526902857142857">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+							<Node score="21.284864000000002">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1046574.0"/>
+								<Node score="7.558144">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+								</Node>
+							</Node>
+							<Node score="6.265855999999999">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1120516.0"/>
+								<Node score="8.293376">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078070.5"/>
+									<Node score="6.149461333333334">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1073577.5"/>
+									</Node>
+								</Node>
+								<Node score="5.07392">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100521.0"/>
+								</Node>
+							</Node>
+							<Node score="23.120895">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+							</Node>
+							<Node score="8.6544384">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+							</Node>
+						</Node>
+						<Node score="25.199614999999998">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1226134.0"/>
+						</Node>
+						<Node score="10.196342173076921">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="29.47584">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+								<Node score="10.088547064516131">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1414248.5"/>
+								</Node>
+							</Node>
+							<Node score="6.76195961904762">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="10.018816000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="61">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="10.181167709302327">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="6.072661333333333">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+								<Node score="6.2625280000000005">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1077284.5"/>
+									<Node score="6.052864">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1062721.5"/>
+										<Node score="5.8368">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1049339.0"/>
+										</Node>
+									</Node>
+									<Node score="6.682624000000001">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1069679.5"/>
+									</Node>
+								</Node>
+								<Node score="4.321280000000001">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1100521.0"/>
+									<Node score="5.555053714285713">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1090222.0"/>
+									</Node>
+								</Node>
+								<Node score="6.41536">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1102536.0"/>
+								</Node>
+							</Node>
+							<Node score="24.30976">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1185847.5"/>
+								<Node score="7.100708571428571">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1180007.5"/>
+									<Node score="23.120895">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+									</Node>
+								</Node>
+								<Node score="24.036351999999997">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1183201.5"/>
+								</Node>
+							</Node>
+							<Node score="8.274944000000001">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1277120.0"/>
+								<Node score="6.1458529523809515">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1244223.0"/>
+								</Node>
+							</Node>
+							<Node score="25.510912">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1280518.5"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1763087.5"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+						</Node>
+						<Node score="37.010433">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1787473.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="62">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="10.018816000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1773932.0"/>
+							<Node score="9.996986904761906">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1590179.5"/>
+								<Node score="5.4464512">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+									<Node score="21.284864000000002">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1053532.0"/>
+										<Node score="7.558144">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+										</Node>
+									</Node>
+									<Node score="6.6686976">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078944.5"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1139644.5"/>
+								</Node>
+								<Node score="7.274718608695653">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1254990.5"/>
+								</Node>
+							</Node>
+							<Node score="32.535553">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1599168.5"/>
+							</Node>
+							<Node score="27.939200749999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1685465.5"/>
+								<Node score="8.01792">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1641987.0"/>
+								</Node>
+							</Node>
+							<Node score="8.889977904761903">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759835.0"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="63">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="37.010433">
+						<True/>
+						<Node score="10.018854">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1774605.0"/>
+							<Node score="6.479303111111111">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1038377.0"/>
+									<Node score="6.165504">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1029052.0"/>
+									</Node>
+								</Node>
+								<Node score="6.143385599999999">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+									<Node score="5.3244276363636365">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1101480.0"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1127198.0"/>
+								</Node>
+							</Node>
+							<Node score="25.199614999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1226134.0"/>
+							</Node>
+							<Node score="8.179694933333336">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1642657.5"/>
+								<Node score="13.436604631578946">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1318208.5"/>
+								</Node>
+							</Node>
+							<Node score="28.5378556">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1675412.5"/>
+							</Node>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+			<Segment id="64">
+				<True/>
+				<TreeModel functionName="regression" missingValueStrategy="nullPrediction" noTrueChildStrategy="returnLastPrediction">
+					<MiningSchema>
+						<MiningField name="double(0)"/>
+					</MiningSchema>
+					<Node score="12.321792">
+						<True/>
+						<Node score="9.567994116279072">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1759945.0"/>
+							<Node score="7.611245714285714">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1223957.0"/>
+								<Node score="21.284864000000002">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1046574.0"/>
+									<Node score="7.558144">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1034792.5"/>
+										<Node score="6.165504">
+											<SimplePredicate field="double(0)" operator="lessOrEqual" value="1028232.5"/>
+										</Node>
+									</Node>
+								</Node>
+								<Node score="5.757952">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1112369.0"/>
+									<Node score="6.759570285714285">
+										<SimplePredicate field="double(0)" operator="lessOrEqual" value="1078411.5"/>
+									</Node>
+								</Node>
+								<Node score="23.120895">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1123491.5"/>
+								</Node>
+							</Node>
+							<Node score="25.199614999999998">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1226134.0"/>
+							</Node>
+							<Node score="29.47584">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1426066.0"/>
+								<Node score="10.306292826086956">
+									<SimplePredicate field="double(0)" operator="lessOrEqual" value="1414248.5"/>
+								</Node>
+							</Node>
+							<Node score="6.687317333333333">
+								<SimplePredicate field="double(0)" operator="lessOrEqual" value="1511933.0"/>
+							</Node>
+						</Node>
+						<Node score="35.775490000000005">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1762414.5"/>
+						</Node>
+						<Node score="10.018816000000001">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1764490.0"/>
+						</Node>
+						<Node score="12.406784">
+							<SimplePredicate field="double(0)" operator="lessOrEqual" value="1778031.5"/>
+						</Node>
+					</Node>
+				</TreeModel>
+			</Segment>
+		</Segmentation>
+	</MiningModel>
+</PMML>

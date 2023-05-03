@@ -108,7 +108,7 @@ public class TestBenchmarks{
         assumeTrue(this.currentGPU.equals(GPU.V100));
 
         // get the configuration for the selected GPU into a Config class
-        String CONFIG_PATH = PATH + "/config_V100_collect_data.json";
+        String CONFIG_PATH = PATH + "/config_V100_test_policies.json";
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
         Config parsedConfig = gson.fromJson(reader, Config.class);

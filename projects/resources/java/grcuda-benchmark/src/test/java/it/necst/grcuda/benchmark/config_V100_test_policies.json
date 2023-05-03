@@ -1,5 +1,5 @@
 {
-        "num_iter": 10,
+        "num_iter": 5,
         "reInit": false,
         "randomInit": false,
         "cpuValidation": false,
@@ -15,7 +15,9 @@
         },
         "benchmarks": [ "B1M",
                         "B5M",
-                        "B11M"],
+                        "B11M",
+                        "B6M"
+                ],
         "numBlocks": {
                 "B1":  64,
                 "B1M": 64,
@@ -25,7 +27,7 @@
         },
         "exec_policies" : ["async"],
         "dependency_policies": ["with-const"],
-        "new_stream_policies": ["always-new"],
+        "new_stream_policies": ["reuse"],
         "parent_stream_policies": ["multigpu-disjoint"],
         "choose_device_policies": [
                 "minmax-parallel-history-driven",
