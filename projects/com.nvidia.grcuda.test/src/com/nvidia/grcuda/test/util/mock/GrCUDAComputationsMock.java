@@ -244,6 +244,43 @@ public class GrCUDAComputationsMock {
         );
     }
 
+
+    // K0 -> K4 -> K8 ---> K10
+    // K1 -> K5 /     \--> K11
+    // K2 -> K6 -> K9 -\-> K12
+    // K3 -> K7 /------\-> K13
+    public static List<GrCUDAComputationalElement> manyKernelsMockComputationWithTime(AsyncGrCUDAExecutionContext context) {
+        DeviceArrayMock a = new DeviceArrayMock(10);
+        DeviceArrayMock b = new DeviceArrayMock(10);
+        DeviceArrayMock c = new DeviceArrayMock(10);
+        DeviceArrayMock d = new DeviceArrayMock(10);
+        float low_time = 1;
+        float high_time = 1000;
+        return Arrays.asList(
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(a)), low_time),
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(b)), low_time),
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(c)), low_time),
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(d)), low_time),
+
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(a)), low_time),
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(b)), high_time),
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(c)), low_time),
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(d)), high_time),
+
+                new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(a), new ArgumentMock(b)), low_time),
+                new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(c), new ArgumentMock(d)), low_time),
+
+                new KernelExecutionMock(context, Collections.singletonList(new ArgumentMock(a, true))),
+                // When using stream-aware and 4 GPUs, this is scheduled on device 2 (of 4) as device 1 has synced the computation on it (with K8),
+                // and device 2 is the first device with fewer streams;
+                new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(a, true), new ArgumentMock(b))),
+                // When using stream-aware and 4 GPUs, this is scheduled on device 3 (reuse the stream of K9);
+                new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(a, true), new ArgumentMock(c))),
+                // When using stream-aware and 4 GPUs, this is scheduled on device 2 (device with fewer streams, device 1 has 2);
+                new KernelExecutionMock(context, Arrays.asList(new ArgumentMock(a, true), new ArgumentMock(d)))
+        );
+    }
+
     ///////////////////////////////////////////////////////////////////////
     // Complex GPU benchmarks, inspired by the real benchmarks in GrCUDA //
     ///////////////////////////////////////////////////////////////////////

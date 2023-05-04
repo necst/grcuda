@@ -18,6 +18,7 @@ import java.util.Collection;
 import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.executeMockComputation;
 import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.executeMockComputationAndValidate;
 import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.forkJoinMockComputationWithTime;
+import static com.nvidia.grcuda.test.util.mock.GrCUDAComputationsMock.manyKernelsMockComputationWithTime;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -40,7 +41,7 @@ public class HistoryDrivenDAGMockTest {
     private final static int HITS_NUM_STREAMS = 2;
 
     @Test
-    public void HistoryDrivenForkJoinWithTwoGPUTest() throws UnsupportedTypeException {
+    public void MinMaxParallelHistoryDrivenForkJoinWithTwoGPUTest() throws UnsupportedTypeException {
         int numGPU = 2;
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
@@ -49,7 +50,49 @@ public class HistoryDrivenDAGMockTest {
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
         executeMockComputationAndValidate(forkJoinMockComputationWithTime(context),
-                Arrays.asList(0, 1, 1, 1, 1));
+                Arrays.asList(0, 1, 0, 0, 0));
         assertEquals(3, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void MinMaxSerialHistoryDrivenForkJoinWithTwoGPUTest() throws UnsupportedTypeException {
+        int numGPU = 2;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MINMAX_SERIAL_HISTORY_DRIVEN)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        executeMockComputationAndValidate(forkJoinMockComputationWithTime(context),
+                Arrays.asList(0, 1, 0, 0, 0));
+        assertEquals(3, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void MinMaxParallelHistoryDrivenManyKernelsWithFourGPUTest() throws UnsupportedTypeException {
+        int numGPU = 4;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MINMAX_PARALLEL_HISTORY_DRIVEN)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        executeMockComputationAndValidate(manyKernelsMockComputationWithTime(context),
+                Arrays.asList(0, 1, 2, 3, 0, 1, 2, 3, 0, 2, 0, 0, 2, 2));
+        assertEquals(6, context.getStreamManager().getNumberOfStreams());
+    }
+
+    @Test
+    public void MinMaxSerialHistoryDrivenManyKernelsWithFourGPUTest() throws UnsupportedTypeException {
+        int numGPU = 4;
+        AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
+                .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
+                .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MINMAX_SERIAL_HISTORY_DRIVEN)
+                .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
+                .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
+        executeMockComputationAndValidate(manyKernelsMockComputationWithTime(context),
+                Arrays.asList(0, 1, 2, 3, 0, 1, 2, 3, 0, 2, 0, 0, 2, 2));
+        assertEquals(6, context.getStreamManager().getNumberOfStreams());
     }
 }
