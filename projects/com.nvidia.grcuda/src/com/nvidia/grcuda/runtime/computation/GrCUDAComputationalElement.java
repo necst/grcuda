@@ -38,6 +38,7 @@ import com.nvidia.grcuda.runtime.computation.streamattach.StreamAttachArchitectu
 import com.nvidia.grcuda.runtime.computation.dependency.DependencyComputation;
 import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext;
 import com.nvidia.grcuda.runtime.executioncontext.AsyncGrCUDAExecutionContext;
+import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
 import com.nvidia.grcuda.runtime.stream.DefaultStream;
 import com.oracle.truffle.api.TruffleLogger;
@@ -47,6 +48,7 @@ import com.nvidia.grcuda.runtime.Kernel;
 import com.nvidia.grcuda.runtime.KernelArguments;
 import com.nvidia.grcuda.runtime.KernelConfig;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -119,6 +121,8 @@ public abstract class GrCUDAComputationalElement {
     private float executionTimeMs = 0;
 
     protected float predictionTime;
+
+    private List<ExecutionDAG.DAGVertex> parents = new ArrayList<>();
 
     /**
      * Constructor that takes an argument set initializer to build the set of arguments used in the dependency computation
@@ -384,6 +388,12 @@ public abstract class GrCUDAComputationalElement {
     public float getPredictionTime() {
         return this.predictionTime;
     }
+
+    public void setParents(List<ExecutionDAG.DAGVertex> par) {
+        this.parents = new ArrayList<>(par);
+    }
+
+    public List<ExecutionDAG.DAGVertex> getParentVertices() { return parents; }
 
     /**
      * The default initializer will simply store all the arguments,
