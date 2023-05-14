@@ -65,7 +65,7 @@ public class AsyncArrayPrefetcherHistoryDriven extends AbstractArrayPrefetcher {
         List<ComputationArgumentWithValue> argumentsThatCanCreateDependencies =  computation.getArgumentsThatCanCreateDependencies();
         List<GrCUDAComputationalElement> parents = computation.getParentVertices().stream().map(ExecutionDAG.DAGVertex::getComputation).collect(Collectors.toList());
         // Partition the `parents` list into two lists based on the condition `isComputationFinished()`
-        Map<Boolean, List<GrCUDAComputationalElement>> partitionedParents = parents.stream()
+        Map<Boolean, List<GrCUDAComputationalElement>> partitionedParents = parents.stream().filter(cElem -> cElem.getStream().getStreamDeviceId() != computation.getStream().getStreamDeviceId())
                 .collect(Collectors.partitioningBy(GrCUDAComputationalElement::isComputationFinished));
         // Retrieve the lists from the partitioned map
         List<GrCUDAComputationalElement> finishedParents = partitionedParents.get(true);
@@ -88,14 +88,11 @@ public class AsyncArrayPrefetcherHistoryDriven extends AbstractArrayPrefetcher {
 
         // prefetch arrays whose related computation is finished
         for (GrCUDAComputationalElement p : finishedParents){
-            // if computation and parent are on the same GPU, we shouldn't do anything
-            if (computation.getStream().getStreamDeviceId() != p.getStream().getStreamDeviceId()){
-                for (AbstractArray array : p.getArrayArguments()){
-                    if(arraysThatCanCreateDependencies.contains(array) && array.isArrayUpdatedInLocation(p.getStream().getStreamDeviceId())){
-                        runtime.cudaMemPrefetchAsync(array, streamToPrefetch);
-                        // we remove the array to avoid multiple prefetch
-                        arraysThatCanCreateDependencies.remove(array);
-                    }
+            for (AbstractArray array : p.getArrayArguments()){
+                if(arraysThatCanCreateDependencies.contains(array) && array.isArrayUpdatedInLocation(p.getStream().getStreamDeviceId())){
+                    runtime.cudaMemPrefetchAsync(array, streamToPrefetch);
+                    // we remove the array to avoid multiple prefetch
+                    arraysThatCanCreateDependencies.remove(array);
                 }
             }
         }
@@ -105,15 +102,12 @@ public class AsyncArrayPrefetcherHistoryDriven extends AbstractArrayPrefetcher {
 
         // prefetch arrays whose related computation is finished but waiting for the end of the parent
         for (GrCUDAComputationalElement p : unfinishedParents){
-            // if computation and parent are on the same GPU, we shouldn't do anything
-            if (computation.getStream().getStreamDeviceId() != p.getStream().getStreamDeviceId()){
-                runtime.cudaStreamWaitEvent(streamToPrefetch, p.getEventStop().get());
-                for (AbstractArray array : p.getArrayArguments()){
-                    if(arraysThatCanCreateDependencies.contains(array)){
-                        runtime.cudaMemPrefetchAsync(array, streamToPrefetch);
-                        // we remove the array to avoid multiple prefetch
-                        arraysThatCanCreateDependencies.remove(array);
-                    }
+            runtime.cudaStreamWaitEvent(streamToPrefetch, p.getEventStop().get());
+            for (AbstractArray array : p.getArrayArguments()){
+                if(arraysThatCanCreateDependencies.contains(array)){
+                    runtime.cudaMemPrefetchAsync(array, streamToPrefetch);
+                    // we remove the array to avoid multiple prefetch
+                    arraysThatCanCreateDependencies.remove(array);
                 }
             }
         }

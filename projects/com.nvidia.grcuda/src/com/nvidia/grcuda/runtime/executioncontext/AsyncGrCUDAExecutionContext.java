@@ -38,6 +38,7 @@ import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.DeviceList;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.prefetch.AsyncArrayPrefetcher;
+import com.nvidia.grcuda.runtime.computation.prefetch.AsyncArrayPrefetcherHistoryDriven;
 import com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -67,7 +68,7 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         this.streamManager = streamManager;
         // Compute if we should use a prefetcher;
         if (options.isInputPrefetch() && this.cudaRuntime.isArchitectureIsPascalOrNewer()) {
-            arrayPrefetcher = new AsyncArrayPrefetcher(this.cudaRuntime);
+            arrayPrefetcher = new AsyncArrayPrefetcherHistoryDriven(this.cudaRuntime);
         }
     }
 
