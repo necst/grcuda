@@ -104,7 +104,7 @@ public class AsyncArrayPrefetcherHistoryDriven extends AbstractArrayPrefetcher {
         for (GrCUDAComputationalElement p : unfinishedParents){
             runtime.cudaStreamWaitEvent(streamToPrefetch, p.getEventStop().get());
             for (AbstractArray array : p.getArrayArguments()){
-                if(arraysThatCanCreateDependencies.contains(array)){
+                if(arraysThatCanCreateDependencies.contains(array) && array.isArrayUpdatedInLocation(p.getStream().getStreamDeviceId())){
                     runtime.cudaMemPrefetchAsync(array, streamToPrefetch);
                     // we remove the array to avoid multiple prefetch
                     arraysThatCanCreateDependencies.remove(array);
