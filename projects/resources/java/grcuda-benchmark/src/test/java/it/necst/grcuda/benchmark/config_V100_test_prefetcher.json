@@ -7,13 +7,13 @@
   "debug": false,
   "nvprof_profile": false,
   "num_elem": {
-          "B1": [160000000, 950000000],
-          "B1M": [160000000, 950000000],
-          "B5M": [10000000, 35000000],
-          "B6M": [1000000, 1800000],
-          "B11M": [20000, 60000]
+          "B1": [950000000],
+          "B1M": [950000000],
+          "B5M": [35000000],
+          "B6M": [1800000],
+          "B11M": [60000]
   },
-  "benchmarks": [ "B5M", "B6M", "B11M"],
+  "benchmarks": [ "B1M", "B5M", "B6M", "B11M"],
   "numBlocks": {
           "B1":  64,
           "B1M": 64,
@@ -25,7 +25,7 @@
   "dependency_policies": ["with-const"],
   "new_stream_policies": ["reuse"],
   "parent_stream_policies": ["multigpu-disjoint"],
-  "choose_device_policies": ["minmax-transfer-time"],
+  "choose_device_policies": ["minmax-parallel-history-driven"],
   "memory_advise": ["none"],
   "prefetch": [true],
   "stream_attach": [false],
