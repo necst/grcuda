@@ -122,7 +122,7 @@ public abstract class GrCUDAComputationalElement {
 
     protected float predictionTime;
 
-    private List<ExecutionDAG.DAGVertex> parents = new ArrayList<>();
+    private ExecutionDAG.DAGVertex vertex;
 
     /**
      * Constructor that takes an argument set initializer to build the set of arguments used in the dependency computation
@@ -389,11 +389,11 @@ public abstract class GrCUDAComputationalElement {
         return this.predictionTime;
     }
 
-    public void setParents(List<ExecutionDAG.DAGVertex> par) {
-        this.parents = new ArrayList<>(par);
+    public void setVertex(ExecutionDAG.DAGVertex v) {
+        this.vertex = v;
     }
 
-    public List<ExecutionDAG.DAGVertex> getParentVertices() { return parents; }
+    public ExecutionDAG.DAGVertex getVertex() { return vertex; }
 
     /**
      * The default initializer will simply store all the arguments,

@@ -119,9 +119,7 @@ public class ExecutionDAG implements TruffleObject {
         if (newVertex.isFrontier()) {
             frontier.add(newVertex);
         }
-        // Add parents to the computational element
-        kernel.setParents(newVertex.getParentVertices());
-
+        kernel.setVertex(newVertex);
         return newVertex;
     }
 
