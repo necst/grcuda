@@ -30,25 +30,14 @@
  */
 package com.nvidia.grcuda.runtime.computation.prefetch;
 
-import com.nvidia.grcuda.runtime.computation.ComputationArgumentWithValue;
 import com.nvidia.grcuda.runtime.array.AbstractArray;
 import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.stream.CUDAStream;
-import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.Map;
+public class CpuAsyncArrayPrefetcher extends AbstractArrayPrefetcher {
 
-import com.nvidia.grcuda.runtime.executioncontext.ExecutionDAG;
-
-public class AsyncArrayPrefetcherHistoryDriven extends AbstractArrayPrefetcher {
-
-    public AsyncArrayPrefetcherHistoryDriven(CUDARuntime runtime) {
+    public CpuAsyncArrayPrefetcher(CUDARuntime runtime) {
         super(runtime);
     }
 
@@ -62,28 +51,13 @@ public class AsyncArrayPrefetcherHistoryDriven extends AbstractArrayPrefetcher {
      */
     @Override
     public void prefetchToGpu(GrCUDAComputationalElement computation) {
-        List<ComputationArgumentWithValue> argumentsThatCanCreateDependencies =  computation.getArgumentsThatCanCreateDependencies();
-        List<ExecutionDAG.DAGEdge> parents = computation.getVertex().getParents();
-        CUDAStream streamToPrefetch = computation.getStream();
-        // order edge by start vertex predictionTime
-        parents.sort(Comparator.comparingDouble(edge -> edge.getStart().getComputation().getPredictionTime()));
-        // prefetch arrays that create dependencies
-        for (ExecutionDAG.DAGEdge p : parents){
-            GrCUDAComputationalElement parentComputation = p.getStart().getComputation();
-            // if parent and child are in the same gpu we don't have to prefetch
-            if(parentComputation.getStream().getStreamDeviceId() != computation.getStream().getStreamDeviceId()){
-                // before prefetching we should wait the parent's computation end
-                runtime.cudaStreamWaitEvent(streamToPrefetch, parentComputation.getEventStop().get());
-                // prefetch AbstractArrays which create dependencies
-                for (ComputationArgumentWithValue a : p.getDependencies()){
-                    if (a.getArgumentValue() instanceof AbstractArray) {
-                        AbstractArray array = (AbstractArray) a.getArgumentValue();
-                        // control if array is updated on parent device, maybe we might avoid it
-                        if (array.isArrayUpdatedInLocation(parentComputation.getStream().getStreamDeviceId())) {
-                            runtime.cudaMemPrefetchAsync(array, streamToPrefetch);
-                        }
-                    }
-                }
+        for (AbstractArray array : computation.getArrayArguments()) {
+            // The array has been used by the CPU, so we should prefetch it;
+            if (array.isArrayUpdatedOnCPU()) {
+                CUDAStream streamToPrefetch = computation.getStream();
+                runtime.cudaMemPrefetchAsync(array, streamToPrefetch);
+                // Add the new array location
+                array.addArrayUpToDateLocations(streamToPrefetch.getStreamDeviceId());
             }
         }
     }
