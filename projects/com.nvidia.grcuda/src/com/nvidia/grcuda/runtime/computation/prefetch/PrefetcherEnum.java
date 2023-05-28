@@ -31,7 +31,21 @@
 package com.nvidia.grcuda.runtime.computation.prefetch;
 
 public enum PrefetcherEnum {
-    NONE,
-    ASYNC,
-    SYNC
+    NONE("none"),
+    ASYNC_CPU("async-cpu"),
+    ASYNC_CPU_NO_DEP("async-cpu-no-dep"),
+    ASYNC_HISTORY_CPU("async-history-driven-cpu"),
+    ASYNC_HISTORY_CPU_NO_DEP("async-history-driven-cpu-no-dep"),
+    SYNC("sync");
+
+    private final String name;
+
+    PrefetcherEnum(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public final String toString() {
+        return name;
+    }
 }

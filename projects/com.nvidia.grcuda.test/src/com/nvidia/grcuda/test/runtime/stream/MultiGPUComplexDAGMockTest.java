@@ -71,7 +71,7 @@ public class MultiGPUComplexDAGMockTest {
                 true, this.numberOfGPUs, this.numberOfGPUs,
                 new GrCUDAOptionMap(new OptionValuesMockBuilder()
                         .add(GrCUDAOptions.DependencyPolicy, DependencyPolicyEnum.WITH_CONST.toString())
-                        .add(GrCUDAOptions.InputPrefetch, false)
+                        .add(GrCUDAOptions.InputPrefetch, GrCUDAOptionMap.DEFAULT_INPUT_PREFETCH.toString())
                         .add(GrCUDAOptions.BandwidthMatrix, System.getenv("GRCUDA_HOME") + File.separatorChar +
                                 "projects" + File.separatorChar + "resources" + File.separatorChar +
                                 "connection_graph" + File.separatorChar + "datasets" + File.separatorChar + "connection_graph_8_v100.csv").build()));

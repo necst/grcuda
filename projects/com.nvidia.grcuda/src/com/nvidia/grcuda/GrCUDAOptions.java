@@ -97,7 +97,7 @@ public final class GrCUDAOptions {
     public static final OptionKey<Boolean> ForceStreamAttach = new OptionKey<>(GrCUDAOptionMap.DEFAULT_FORCE_STREAM_ATTACH);
 
     @Option(category = OptionCategory.USER, help = "Always prefetch input arrays to GPU if possible (e.g. post-Pascal GPUs).", stability = OptionStability.EXPERIMENTAL) //
-    public static final OptionKey<Boolean> InputPrefetch = new OptionKey<>(GrCUDAOptionMap.DEFAULT_INPUT_PREFETCH);
+    public static final OptionKey<String> InputPrefetch = new OptionKey<>(GrCUDAOptionMap.DEFAULT_INPUT_PREFETCH.toString());
 
     @Option(category = OptionCategory.USER, help = "Set how many GPUs can be used during computation. It must be at least 1, and if > 1 more than 1 GPUs are used (if available).", stability = OptionStability.EXPERIMENTAL) //
     public static final OptionKey<Integer> NumberOfGPUs = new OptionKey<>(GrCUDAOptionMap.DEFAULT_NUMBER_OF_GPUs);

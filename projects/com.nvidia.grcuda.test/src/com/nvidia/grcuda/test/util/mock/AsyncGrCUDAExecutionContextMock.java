@@ -82,7 +82,7 @@ public class AsyncGrCUDAExecutionContextMock extends AsyncGrCUDAExecutionContext
         super(null,
                 new GrCUDAOptionMap(new OptionValuesMockBuilder()
                         .add(GrCUDAOptions.DependencyPolicy, dependencyPolicy.toString())
-                        .add(GrCUDAOptions.InputPrefetch, false).build()),
+                        .add(GrCUDAOptions.InputPrefetch, GrCUDAOptionMap.DEFAULT_INPUT_PREFETCH.toString()).build()),
                 new GrCUDAStreamManagerMock(null, retrieveStreamPolicy, parentStreamPolicyEnum, deviceSelectionPolicyEnum, GrCUDAOptionMap.DEFAULT_BANDWIDTH_MATRIX, numberOfAvailableGPUs, numberOfGPUsToUse));
         this.architectureIsPascalOrNewer = architectureIsPascalOrNewer;
     }

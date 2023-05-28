@@ -36,6 +36,7 @@ import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicy;
 import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.computation.prefetch.PrefetcherEnum;
 import org.graalvm.polyglot.Context;
 
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ public class GrCUDATestUtil {
     public static Collection<Object[]> getAllOptionCombinationsSingleGPU() {
         Collection<Object[]> options = GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
                 {ExecutionPolicyEnum.SYNC, ExecutionPolicyEnum.ASYNC},
-                {true, false},  // InputPrefetch
+                {PrefetcherEnum.NONE},  // InputPrefetch
                 {RetrieveNewStreamPolicyEnum.REUSE, RetrieveNewStreamPolicyEnum.ALWAYS_NEW},
                 {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT},
                 {DependencyPolicyEnum.NO_CONST, DependencyPolicyEnum.WITH_CONST},
@@ -82,7 +83,7 @@ public class GrCUDATestUtil {
         List<Object[]> combinations = new ArrayList<>();
         options.forEach(optionArray -> {
             GrCUDATestOptionsStruct newStruct = new GrCUDATestOptionsStruct(
-                    (ExecutionPolicyEnum) optionArray[0], (boolean) optionArray[1],
+                    (ExecutionPolicyEnum) optionArray[0], (PrefetcherEnum) optionArray[1],
                     (RetrieveNewStreamPolicyEnum) optionArray[2], (RetrieveParentStreamPolicyEnum) optionArray[3],
                     (DependencyPolicyEnum) optionArray[4], (DeviceSelectionPolicyEnum) optionArray[5],
                     (boolean) optionArray[6], (boolean) optionArray[7], (int) optionArray[8]);
@@ -103,7 +104,7 @@ public class GrCUDATestUtil {
     public static Collection<Object[]> getAllOptionCombinationsMultiGPU() {
         Collection<Object[]> options = GrCUDATestUtil.crossProduct(Arrays.asList(new Object[][]{
                 {ExecutionPolicyEnum.ASYNC},
-                {true, false},  // InputPrefetch
+                {PrefetcherEnum.NONE},  // InputPrefetch
                 {RetrieveNewStreamPolicyEnum.REUSE, RetrieveNewStreamPolicyEnum.ALWAYS_NEW}, // Simplify number of tests, don't use all options;
                 {RetrieveParentStreamPolicyEnum.SAME_AS_PARENT, RetrieveParentStreamPolicyEnum.DISJOINT, RetrieveParentStreamPolicyEnum.MULTIGPU_EARLY_DISJOINT, RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT},
                 {DependencyPolicyEnum.WITH_CONST, DependencyPolicyEnum.NO_CONST},   // Simplify number of tests, don't use all options;
@@ -116,7 +117,7 @@ public class GrCUDATestUtil {
         List<Object[]> combinations = new ArrayList<>();
         options.forEach(optionArray -> {
             GrCUDATestOptionsStruct newStruct = new GrCUDATestOptionsStruct(
-                    (ExecutionPolicyEnum) optionArray[0], (boolean) optionArray[1],
+                    (ExecutionPolicyEnum) optionArray[0], (PrefetcherEnum) optionArray[1],
                     (RetrieveNewStreamPolicyEnum) optionArray[2], (RetrieveParentStreamPolicyEnum) optionArray[3],
                     (DependencyPolicyEnum) optionArray[4], (DeviceSelectionPolicyEnum) optionArray[5],
                     (boolean) optionArray[6], (boolean) optionArray[7], (int) optionArray[8]);
@@ -130,7 +131,7 @@ public class GrCUDATestUtil {
     public static Context createContextFromOptions(GrCUDATestOptionsStruct options, int numberOfGPUs) {
         return buildTestContext()
                 .option("grcuda.ExecutionPolicy", options.policy.toString())
-                .option("grcuda.InputPrefetch", String.valueOf(options.inputPrefetch))
+                .option("grcuda.InputPrefetch", options.inputPrefetch.toString())
                 .option("grcuda.RetrieveNewStreamPolicy", options.retrieveNewStreamPolicy.toString())
                 .option("grcuda.RetrieveParentStreamPolicy", options.retrieveParentStreamPolicy.toString())
                 .option("grcuda.DependencyPolicy", options.dependencyPolicy.toString())

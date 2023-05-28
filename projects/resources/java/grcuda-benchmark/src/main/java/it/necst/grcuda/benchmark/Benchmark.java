@@ -159,7 +159,7 @@ public abstract class Benchmark {
                 .option("log.grcuda.com.nvidia.grcuda.GrCUDAContext.level", "SEVERE")
                 //GrCUDA env settings
                 .option("grcuda.ExecutionPolicy", config.executionPolicy)
-                .option("grcuda.InputPrefetch", String.valueOf(config.inputPrefetch))
+                .option("grcuda.InputPrefetch", config.inputPrefetch)
                 .option("grcuda.RetrieveNewStreamPolicy", config.retrieveNewStreamPolicy)
                 .option("grcuda.RetrieveParentStreamPolicy", config.retrieveParentStreamPolicy)
                 .option("grcuda.DependencyPolicy", config.dependencyPolicy)

@@ -37,6 +37,7 @@ import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.DeviceList;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
 import com.nvidia.grcuda.runtime.computation.prefetch.SyncArrayPrefetcher;
+import com.nvidia.grcuda.runtime.computation.prefetch.PrefetcherEnum;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
 
@@ -52,7 +53,7 @@ public class SyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext {
     public SyncGrCUDAExecutionContext(CUDARuntime cudaRuntime, GrCUDAOptionMap options) {
         super(cudaRuntime, options);
         // Compute if we should use a prefetcher;
-        if (options.isInputPrefetch() && this.cudaRuntime.isArchitectureIsPascalOrNewer()) {
+        if (options.getInputPrefetch().equals(PrefetcherEnum.SYNC) && this.cudaRuntime.isArchitectureIsPascalOrNewer()) {
             arrayPrefetcher = new SyncArrayPrefetcher(this.cudaRuntime);
         }
     }

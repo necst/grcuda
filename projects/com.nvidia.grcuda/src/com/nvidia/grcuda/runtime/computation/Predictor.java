@@ -264,7 +264,7 @@ public class Predictor {
 
     String getDevicesInfo() {
         CUDARuntime cudaRuntime = this.kernel.getGrCUDAExecutionContext().getCudaRuntime();
-        return "NumOfGPUs=" + cudaRuntime.getNumberOfGPUsToUse() + "Prefetch=" + cudaRuntime.getContext().getOptions().isInputPrefetch();
+        return "NumOfGPUs=" + cudaRuntime.getNumberOfGPUsToUse() + "Prefetch=" + cudaRuntime.getContext().getOptions().getInputPrefetch().toString();
     }
 
     //Return signature, grid and block sizes for hash

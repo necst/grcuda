@@ -191,7 +191,7 @@ public class TestBenchmarks{
                             cdp = parsedConfig.choose_device_policies;
                         }
                         for(String m : parsedConfig.memory_advise){
-                            for(Boolean p : parsedConfig.prefetch ){
+                            for(String p : parsedConfig.prefetch){
                                 for(Boolean s : parsedConfig.stream_attach){
                                     for(Boolean t : parsedConfig.time_computation){
                                         BANDWIDTH_MATRIX = GRCUDA_HOME + "/projects/resources/connection_graph/datasets/connection_graph.csv";
@@ -308,7 +308,7 @@ class Config {
     ArrayList<String> choose_device_policies;
     ArrayList<String> memory_advise;
 
-    ArrayList<Boolean> prefetch;
+    ArrayList<String> prefetch;
     ArrayList<Boolean> stream_attach;
     ArrayList<Boolean> time_computation;
     boolean train_computation;

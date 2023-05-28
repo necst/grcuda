@@ -63,7 +63,7 @@ public class GrCUDAOptionMapTest {
         setOption(GrCUDAOptions.CuBLASEnabled, true);
         setOption(GrCUDAOptions.CuMLEnabled, true);
         setOption(GrCUDAOptions.ForceStreamAttach, GrCUDAOptionMap.DEFAULT_FORCE_STREAM_ATTACH);
-        setOption(GrCUDAOptions.InputPrefetch, false);
+        setOption(GrCUDAOptions.InputPrefetch, GrCUDAOptionMap.DEFAULT_INPUT_PREFETCH.toString());
         setOption(GrCUDAOptions.TensorRTEnabled, false);
         setOption(GrCUDAOptions.CuBLASLibrary, CUBLASRegistry.DEFAULT_LIBRARY);
         setOption(GrCUDAOptions.CuMLLibrary, CUMLRegistry.DEFAULT_LIBRARY);

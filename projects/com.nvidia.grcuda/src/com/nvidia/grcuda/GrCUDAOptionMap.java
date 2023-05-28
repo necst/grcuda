@@ -36,6 +36,7 @@ import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.computation.prefetch.PrefetcherEnum;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.InvalidArrayIndexException;
@@ -76,7 +77,7 @@ public class GrCUDAOptionMap implements TruffleObject {
     public static final RetrieveParentStreamPolicyEnum DEFAULT_PARENT_STREAM_POLICY = RetrieveParentStreamPolicyEnum.SAME_AS_PARENT;
     public static final DeviceSelectionPolicyEnum DEFAULT_DEVICE_SELECTION_POLICY = DeviceSelectionPolicyEnum.SINGLE_GPU;
     public static final MemAdviserEnum DEFAULT_MEM_ADVISE_POLICY = MemAdviserEnum.NONE;
-    public static final boolean DEFAULT_INPUT_PREFETCH = false;  // Value obtained from the input flags;
+    public static final PrefetcherEnum DEFAULT_INPUT_PREFETCH = PrefetcherEnum.NONE;  // Value obtained from the input flags;
     public static final boolean DEFAULT_FORCE_STREAM_ATTACH = false;
     public static final boolean DEFAULT_TENSORRT_ENABLED = false;
     public static final boolean DEFAULT_ENABLE_COMPUTATION_TIMERS = false;
@@ -114,6 +115,9 @@ public class GrCUDAOptionMap implements TruffleObject {
         optionsMap.replace(optionNames.get(GrCUDAOptions.DeviceSelectionPolicy), parseDeviceSelectionPolicy(options.get(GrCUDAOptions.DeviceSelectionPolicy)));
         // Memory advise policy;
         optionsMap.replace(optionNames.get(GrCUDAOptions.MemAdvisePolicy), parseMemAdvisePolicy(options.get(GrCUDAOptions.MemAdvisePolicy)));
+        // Prefetcher policy;
+        optionsMap.replace(optionNames.get(GrCUDAOptions.InputPrefetch), parsePrefetcherPolicy(options.get(GrCUDAOptions.InputPrefetch)));
+
     }
 
     /**
@@ -191,6 +195,19 @@ public class GrCUDAOptionMap implements TruffleObject {
         }
     }
 
+    private static PrefetcherEnum parsePrefetcherPolicy(String policyString) {
+        if (Objects.equals(policyString, PrefetcherEnum.ASYNC_CPU.toString())) return PrefetcherEnum.ASYNC_CPU;
+        else if (Objects.equals(policyString, PrefetcherEnum.ASYNC_CPU_NO_DEP.toString())) return PrefetcherEnum.ASYNC_CPU_NO_DEP;
+        else if (Objects.equals(policyString, PrefetcherEnum.ASYNC_HISTORY_CPU.toString())) return PrefetcherEnum.ASYNC_HISTORY_CPU;
+        else if (Objects.equals(policyString, PrefetcherEnum.ASYNC_HISTORY_CPU_NO_DEP.toString())) return PrefetcherEnum.ASYNC_HISTORY_CPU_NO_DEP;
+        else if (Objects.equals(policyString, PrefetcherEnum.SYNC.toString())) return PrefetcherEnum.SYNC;
+        else if (Objects.equals(policyString, PrefetcherEnum.NONE.toString())) return PrefetcherEnum.NONE;
+        else {
+            LOGGER.warning("Warning: unknown memory advice policy=" + policyString + "; using default=" + DEFAULT_INPUT_PREFETCH);
+            return DEFAULT_INPUT_PREFETCH;
+        }
+    }
+
     public Boolean isCuBLASEnabled(){
         return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.CuBLASEnabled);
     }
@@ -235,8 +252,8 @@ public class GrCUDAOptionMap implements TruffleObject {
         return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.ForceStreamAttach);
     }
 
-    public Boolean isInputPrefetch(){
-        return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.InputPrefetch);
+    public PrefetcherEnum getInputPrefetch(){
+        return (PrefetcherEnum) getOptionValueFromOptionKey(GrCUDAOptions.InputPrefetch);
     }
     
     public Boolean isTimeComputation() { return (Boolean) getOptionValueFromOptionKey(GrCUDAOptions.EnableComputationTimers); }

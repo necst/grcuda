@@ -56,7 +56,7 @@ public class BenchmarkConfig {
     public boolean cpuValidate = false;
     // GrCUDA context settings
     public String executionPolicy;
-    public boolean inputPrefetch;
+    public String inputPrefetch;
     public String retrieveNewStreamPolicy;
     public String retrieveParentStreamPolicy;
     public String dependencyPolicy;
@@ -92,7 +92,7 @@ public class BenchmarkConfig {
                 ", reAlloc=" +reAlloc+
                 ", cpuValidate=" + cpuValidate +
                 ", executionPolicy='" + executionPolicy + '\'' +
-                ", inputPrefetch=" + inputPrefetch +
+                ", inputPrefetch='" + inputPrefetch + '\'' +
                 ", retrieveNewStreamPolicy='" + retrieveNewStreamPolicy + '\'' +
                 ", retrieveParentStreamPolicy='" + retrieveParentStreamPolicy + '\'' +
                 ", dependencyPolicy='" + dependencyPolicy + '\'' +

@@ -35,10 +35,11 @@ import com.nvidia.grcuda.runtime.executioncontext.ExecutionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.DeviceSelectionPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveNewStreamPolicyEnum;
 import com.nvidia.grcuda.runtime.stream.policy.RetrieveParentStreamPolicyEnum;
+import com.nvidia.grcuda.runtime.computation.prefetch.PrefetcherEnum;
 
 public class GrCUDATestOptionsStruct {
     public final ExecutionPolicyEnum policy;
-    public final boolean inputPrefetch;
+    public final PrefetcherEnum inputPrefetch;
     public final RetrieveNewStreamPolicyEnum retrieveNewStreamPolicy;
     public final RetrieveParentStreamPolicyEnum retrieveParentStreamPolicy;
     public final DependencyPolicyEnum dependencyPolicy;
@@ -51,7 +52,7 @@ public class GrCUDATestOptionsStruct {
      * A simple struct that holds a combination of GrCUDA options, extracted from the output of {@link GrCUDATestUtil#getAllOptionCombinationsSingleGPU}
      */
     public GrCUDATestOptionsStruct(ExecutionPolicyEnum policy,
-                                   boolean inputPrefetch,
+                                   PrefetcherEnum inputPrefetch,
                                    RetrieveNewStreamPolicyEnum retrieveNewStreamPolicy,
                                    RetrieveParentStreamPolicyEnum retrieveParentStreamPolicy,
                                    DependencyPolicyEnum dependencyPolicy,

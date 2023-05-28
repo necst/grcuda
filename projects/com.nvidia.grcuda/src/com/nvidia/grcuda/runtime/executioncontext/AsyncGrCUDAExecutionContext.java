@@ -37,7 +37,11 @@ import com.nvidia.grcuda.runtime.CUDARuntime;
 import com.nvidia.grcuda.runtime.Device;
 import com.nvidia.grcuda.runtime.DeviceList;
 import com.nvidia.grcuda.runtime.computation.GrCUDAComputationalElement;
+import com.nvidia.grcuda.runtime.computation.prefetch.CpuAsyncArrayPrefetcher;
 import com.nvidia.grcuda.runtime.computation.prefetch.CpuAndNoDepAsyncArrayPrefetcher;
+import com.nvidia.grcuda.runtime.computation.prefetch.HistoryDrivenCpuAsyncArrayPrefetcher;
+import com.nvidia.grcuda.runtime.computation.prefetch.HistoryDrivenCpuAndNoDepAsyncArrayPrefetcher;
+import com.nvidia.grcuda.runtime.computation.prefetch.NoneArrayPrefetcher;
 import com.nvidia.grcuda.runtime.stream.GrCUDAStreamManager;
 import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.interop.UnsupportedTypeException;
@@ -66,8 +70,23 @@ public class AsyncGrCUDAExecutionContext extends AbstractGrCUDAExecutionContext 
         super(cudaRuntime, options);
         this.streamManager = streamManager;
         // Compute if we should use a prefetcher;
-        if (options.isInputPrefetch() && this.cudaRuntime.isArchitectureIsPascalOrNewer()) {
-            arrayPrefetcher = new CpuAndNoDepAsyncArrayPrefetcher(this.cudaRuntime);
+        if (this.cudaRuntime.isArchitectureIsPascalOrNewer()) {
+            switch (options.getInputPrefetch()) {
+                case ASYNC_CPU:
+                    arrayPrefetcher = new CpuAsyncArrayPrefetcher(this.cudaRuntime);
+                    break;
+                case ASYNC_CPU_NO_DEP:
+                    arrayPrefetcher = new CpuAndNoDepAsyncArrayPrefetcher(this.cudaRuntime);
+                    break;
+                case ASYNC_HISTORY_CPU:
+                    arrayPrefetcher = new HistoryDrivenCpuAsyncArrayPrefetcher(this.cudaRuntime);
+                    break;
+                case ASYNC_HISTORY_CPU_NO_DEP:
+                    arrayPrefetcher = new HistoryDrivenCpuAndNoDepAsyncArrayPrefetcher(this.cudaRuntime);
+                    break;
+                default:
+                    arrayPrefetcher = new NoneArrayPrefetcher(this.cudaRuntime);
+            }
         }
     }
 
