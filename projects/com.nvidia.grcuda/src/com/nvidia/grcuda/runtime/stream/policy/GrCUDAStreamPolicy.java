@@ -98,8 +98,8 @@ public class GrCUDAStreamPolicy {
             case MINMAX_TRANSFER_TIME:
                 this.deviceSelectionPolicy = new TransferTimeDeviceSelectionPolicy.MinMaxTransferTimeDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
                 break;
-            case MINMAX_SERIAL_HISTORY_DRIVEN:
-                this.deviceSelectionPolicy = new HistoryDrivenDeviceSelectionPolicy.MinMaxSerialHistoryDrivenDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
+            case PARALLEL_HISTORY_DRIVEN:
+                this.deviceSelectionPolicy = new HistoryDrivenDeviceSelectionPolicy.ParallelHistoryDrivenDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);
                 break;
             case MINMAX_PARALLEL_HISTORY_DRIVEN:
                 this.deviceSelectionPolicy = new HistoryDrivenDeviceSelectionPolicy.MinMaxParallelHistoryDrivenDeviceSelectionPolicy(devicesManager, dataThreshold, bandwidthMatrixPath);

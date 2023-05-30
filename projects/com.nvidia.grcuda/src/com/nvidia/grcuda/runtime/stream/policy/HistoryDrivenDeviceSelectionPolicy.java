@@ -63,7 +63,7 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
      */
     private final double startValue = Double.POSITIVE_INFINITY;
 
-    private final boolean parallel;
+    private final boolean onTopTransferTime;
     /**
      * Some policies can use a threshold that specifies how much data (in percentage) must be available
      * on a device so that the device can be considered for execution.
@@ -80,52 +80,54 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
 
     private final double[][] linkBandwidth = new double[devicesManager.getNumberOfGPUsToUse() + 1][devicesManager.getNumberOfGPUsToUse() + 1];
 
-    public HistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath, boolean parallel) {
+    public HistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath, boolean onTopTransferTime) {
         super(devicesManager);
 
         this.dataThreshold = dataThreshold;
-        this.parallel = parallel;
+        this.onTopTransferTime = onTopTransferTime;
 
-        List<List<String>> records = new ArrayList<>();
-        // Read each line in the CSV and store each line into a string array, splitting strings on ",";
-        try (BufferedReader br = new BufferedReader(new FileReader(bandwidthMatrixPath))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] values = line.split(",");
-                records.add(Arrays.asList(values));
+        if (onTopTransferTime) {
+            List<List<String>> records = new ArrayList<>();
+            // Read each line in the CSV and store each line into a string array, splitting strings on ",";
+            try (BufferedReader br = new BufferedReader(new FileReader(bandwidthMatrixPath))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] values = line.split(",");
+                    records.add(Arrays.asList(values));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        // Read each line, and reconstruct the bandwidth matrix.
-        // Given N GPUs and 1 CPU, we have a [GPU + 1][GPU+ 1] symmetric matrix.
-        // Each line is "start_id", "end_id", "bandwidth";
-        for (int il = 1; il < records.size(); il++) {
-            int startDevice = Integer.parseInt(records.get(il).get(0));
-            int endDevice = Integer.parseInt(records.get(il).get(1));
-            // Skip invalid entries, and ignore GPUs with ID larger than the number of GPUs to use;
-            if (startDevice >= -1 && startDevice < devicesManager.getNumberOfGPUsToUse()
-                    && endDevice >= -1 && endDevice < devicesManager.getNumberOfGPUsToUse()) {
-                // Approximate to the floor, to smooth random bandwidth fluctuations in data transfer;
-                double bandwidth = Math.floor(Double.parseDouble(records.get(il).get(2)));
-                if (startDevice != -1) {
-                    // GPU-GPU interconnection;
-                    this.linkBandwidth[startDevice][endDevice] = bandwidth;
-                } else {
-                    // -1 identifies CPU-GPU interconnection, store it in the last spot;
-                    this.linkBandwidth[devicesManager.getNumberOfGPUsToUse()][endDevice] = bandwidth;
-                    this.linkBandwidth[endDevice][devicesManager.getNumberOfGPUsToUse()] = bandwidth;
+            // Read each line, and reconstruct the bandwidth matrix.
+            // Given N GPUs and 1 CPU, we have a [GPU + 1][GPU+ 1] symmetric matrix.
+            // Each line is "start_id", "end_id", "bandwidth";
+            for (int il = 1; il < records.size(); il++) {
+                int startDevice = Integer.parseInt(records.get(il).get(0));
+                int endDevice = Integer.parseInt(records.get(il).get(1));
+                // Skip invalid entries, and ignore GPUs with ID larger than the number of GPUs to use;
+                if (startDevice >= -1 && startDevice < devicesManager.getNumberOfGPUsToUse()
+                        && endDevice >= -1 && endDevice < devicesManager.getNumberOfGPUsToUse()) {
+                    // Approximate to the floor, to smooth random bandwidth fluctuations in data transfer;
+                    double bandwidth = Math.floor(Double.parseDouble(records.get(il).get(2)));
+                    if (startDevice != -1) {
+                        // GPU-GPU interconnection;
+                        this.linkBandwidth[startDevice][endDevice] = bandwidth;
+                    } else {
+                        // -1 identifies CPU-GPU interconnection, store it in the last spot;
+                        this.linkBandwidth[devicesManager.getNumberOfGPUsToUse()][endDevice] = bandwidth;
+                        this.linkBandwidth[endDevice][devicesManager.getNumberOfGPUsToUse()] = bandwidth;
+                    }
                 }
             }
-        }
-        // Interconnections are supposedly symmetric. Enforce this behavior by averaging results.
-        // In other words, B[i][j] = B[j][j] <- (B[i][j] + B[j][i]) / 2.
-        // Ignore the diagonal, and the last column and row (it represents the CPU and is already symmetric by construction);
-        for (int i = 0; i < this.linkBandwidth.length - 1; i++) {
-            for (int j = i; j < this.linkBandwidth.length - 1; j++) {
-                double averageBandwidth = (this.linkBandwidth[i][j] + this.linkBandwidth[j][i]) / 2;
-                this.linkBandwidth[i][j] = averageBandwidth;
-                this.linkBandwidth[j][i] = averageBandwidth;
+            // Interconnections are supposedly symmetric. Enforce this behavior by averaging results.
+            // In other words, B[i][j] = B[j][j] <- (B[i][j] + B[j][i]) / 2.
+            // Ignore the diagonal, and the last column and row (it represents the CPU and is already symmetric by construction);
+            for (int i = 0; i < this.linkBandwidth.length - 1; i++) {
+                for (int j = i; j < this.linkBandwidth.length - 1; j++) {
+                    double averageBandwidth = (this.linkBandwidth[i][j] + this.linkBandwidth[j][i]) / 2;
+                    this.linkBandwidth[i][j] = averageBandwidth;
+                    this.linkBandwidth[j][i] = averageBandwidth;
+                }
             }
         }
     }
@@ -193,6 +195,7 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
      * @return if any data is present on any GPU. If false, we can use a fallback policy instead
      */
     private boolean computeMetrics(ExecutionDAG.DAGVertex vertex, double[] argumentTime) {
+    
         GrCUDAComputationalElement computationalElement = vertex.getComputation();
         List<AbstractArray> arguments = computationalElement.getArrayArguments();
 
@@ -213,27 +216,38 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
             }
         }
 
-        
         List<GrCUDAComputationalElement> parents = vertex.getParentComputations();
-        if (parallel) {
-            int device;
-            float prediction;
-            double[] maxParentTimePerDevice = new double[argumentTime.length];
-            Arrays.fill(maxParentTimePerDevice, 0);
-            for (GrCUDAComputationalElement el : parents) { 
-                device = el.getStream().getStreamDeviceId();
-                prediction = el.getPredictionTime();
-                if (maxParentTimePerDevice[device] < prediction) maxParentTimePerDevice[device] = prediction;
-            }
-            for (int i = 0; i < argumentTime.length; i++) {
-                argumentTime[i] += maxParentTimePerDevice[i];
-            }
-        } else {
-            for (GrCUDAComputationalElement el : parents) { 
-                argumentTime[el.getStream().getStreamDeviceId()] += el.getPredictionTime();
+    
+        int device;
+        float prediction;
+        float maxPred_1 = 0;
+        float maxPred_2 = 0;
+        int maxDev_1 = 0;
+        int maxDev_2 = 0;
+        for (GrCUDAComputationalElement el : parents) { 
+            device = el.getStream().getStreamDeviceId();
+            prediction = el.getPredictionTime();
+            if (maxPred_1 < prediction) {
+                if (maxDev_1 != device) {
+                    maxPred_2 = maxPred_1; 
+                    maxDev_2 = maxDev_1;
+                }
+                maxDev_1 = device;
+                maxPred_1 = prediction;
+            } else if (prediction > maxPred_2 && device != maxDev_1) {
+                maxDev_2 = device;
+                maxPred_2 = prediction;
             }
         }
 
+        for (int i = 0; i < argumentTime.length; i++) {
+            if (i != maxDev_1) {
+                argumentTime[i] += maxPred_1;
+            } else {
+                argumentTime[i] += maxPred_2;
+            }
+        }
+        
         return isAnyDataPresentOnGPUs;
     }
 
@@ -280,27 +294,41 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
 
     @Override
     Device retrieveImpl(ExecutionDAG.DAGVertex vertex, List<Device> devices) {
-        // Estimated transfer time if the computation is scheduled on device i-th;
-        double[] argumentTime = new double[devicesManager.getNumberOfGPUsToUse()];
-        // Compute the synchronization time on each device, and if any device has any data at all;
-        boolean isAnyDataPresentOnGPUs = computeMetrics(vertex, argumentTime);
-        List<Device> devicesWithEnoughData = new ArrayList<>();
-        if (isAnyDataPresentOnGPUs) {  // Skip this step if no GPU has any data in it;
-            // Array that tracks the size, in bytes, of data that is already present on each device;
-            long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse()];
-            // Compute the amount of data on each device, and if any device has any data at all;
-            computeDataSizeOnDevices(vertex, alreadyPresentDataSize);
-            // Compute the list of devices that have at least X% of data already available;
-            devicesWithEnoughData = findDevicesWithEnoughData(alreadyPresentDataSize, vertex, devices);
-        }
-        // If no device has at least X% of data available, it's not worth optimizing data locality (exploration preferred to exploitation);
-        if (!devicesWithEnoughData.isEmpty()) {
-            // The best device is the one with minimum transfer time;
-            return findDevice(devicesWithEnoughData, argumentTime);
+        if (this.onTopTransferTime) {
+            // Estimated transfer time if the computation is scheduled on device i-th;
+            double[] argumentTime = new double[devicesManager.getNumberOfGPUsToUse()];
+            // Compute the synchronization time on each device, and if any device has any data at all;
+            boolean isAnyDataPresentOnGPUs = computeMetrics(vertex, argumentTime);
+            List<Device> devicesWithEnoughData = new ArrayList<>();
+            if (isAnyDataPresentOnGPUs) {  // Skip this step if no GPU has any data in it;
+                // Array that tracks the size, in bytes, of data that is already present on each device;
+                long[] alreadyPresentDataSize = new long[devicesManager.getNumberOfGPUsToUse()];
+                // Compute the amount of data on each device, and if any device has any data at all;
+                computeDataSizeOnDevices(vertex, alreadyPresentDataSize);
+                // Compute the list of devices that have at least X% of data already available;
+                devicesWithEnoughData = findDevicesWithEnoughData(alreadyPresentDataSize, vertex, devices);
+            }
+            // If no device has at least X% of data available, it's not worth optimizing data locality (exploration preferred to exploitation);
+            if (!devicesWithEnoughData.isEmpty()) {
+                // The best device is the one with minimum transfer time;
+                return findDevice(devicesWithEnoughData, argumentTime);
+            }
         } else {
-            // No data is present on any GPU: select the device with round-robin;
-            return roundRobin.retrieve(vertex, devices);
+            List<GrCUDAComputationalElement> parents = vertex.getParentComputations();
+            int chosenDevice = -1;
+            float maxPrediction = 0;
+            for (GrCUDAComputationalElement p : parents) {
+                if (maxPrediction < p.getPredictionTime()) {
+                    chosenDevice = p.getStream().getStreamDeviceId();
+                    maxPrediction = p.getPredictionTime();
+                }
+            }
+            if (chosenDevice != -1) {
+                for (Device d : devices) 
+                    if (d.getDeviceId() == chosenDevice)  return d;     
+            } 
         }
+        return roundRobin.retrieve(vertex, devices);
     }
 
     public double[][] getLinkBandwidth() {
@@ -311,10 +339,10 @@ public abstract class HistoryDrivenDeviceSelectionPolicy extends DeviceSelection
  * Assume that data are transferred from the device that gives the best possible bandwidth.
  * In other words, find the minimum transfer time among all devices considering the minimum transfer time for each device;
  */
-public static class MinMaxSerialHistoryDrivenDeviceSelectionPolicy extends HistoryDrivenDeviceSelectionPolicy {
-    public MinMaxSerialHistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
+public static class MinMaxParallelHistoryDrivenDeviceSelectionPolicy extends HistoryDrivenDeviceSelectionPolicy {
+    public MinMaxParallelHistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
         // Use max, we pick the maximum bandwidth between two devices;
-        super(devicesManager, dataThreshold, bandwidthMatrixPath,false);
+        super(devicesManager, dataThreshold, bandwidthMatrixPath, true);
     }
 }
 
@@ -322,9 +350,9 @@ public static class MinMaxSerialHistoryDrivenDeviceSelectionPolicy extends Histo
  * Assume that data are transferred from the device that gives the worst possible bandwidth.
  * In other words, find the minimum transfer time among all devices considering the maximum transfer time for each device;
  */
-public static class MinMaxParallelHistoryDrivenDeviceSelectionPolicy extends HistoryDrivenDeviceSelectionPolicy {
-    public MinMaxParallelHistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
-        super(devicesManager, dataThreshold, bandwidthMatrixPath, true);
+public static class ParallelHistoryDrivenDeviceSelectionPolicy extends HistoryDrivenDeviceSelectionPolicy {
+    public ParallelHistoryDrivenDeviceSelectionPolicy(GrCUDADevicesManager devicesManager, double dataThreshold, String bandwidthMatrixPath) {
+        super(devicesManager, dataThreshold, bandwidthMatrixPath, false);
     }
 }
 }

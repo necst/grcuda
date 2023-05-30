@@ -37,7 +37,7 @@ public enum DeviceSelectionPolicyEnum {
     MIN_TRANSFER_SIZE("min-transfer-size"),
     MINMIN_TRANSFER_TIME("minmin-transfer-time"),
     MINMAX_TRANSFER_TIME("minmax-transfer-time"),
-    MINMAX_SERIAL_HISTORY_DRIVEN("minmax-serial-history-driven"),
+    PARALLEL_HISTORY_DRIVEN("parallel-history-driven"),
     MINMAX_PARALLEL_HISTORY_DRIVEN("minmax-parallel-history-driven");
 
     private final String name;

@@ -13,9 +13,7 @@
                 "B6M": [1000000],
                 "B11M": [20000]
         },
-        "benchmarks": [ "B1M",
-                        "B5M",
-                        "B11M"],
+        "benchmarks": [ "B1M"],
         "numBlocks": {
                 "B1":  64,
                 "B1M": 64,
@@ -27,9 +25,9 @@
         "dependency_policies": ["with-const"],
         "new_stream_policies": ["always-new"],
         "parent_stream_policies": ["multigpu-disjoint"],
-        "choose_device_policies": ["minmax-parallel-history-driven"],
+        "choose_device_policies": ["minmax-parallel-history-driven", "parallel-history-driven"],
         "memory_advise": ["none"],
-        "prefetch": ["async-cpu"],
+        "prefetch": ["async-cpu", "async-cpu-no-dep", "async-history-driven-cpu", "async-history-driven-cpu-no-dep"],
         "stream_attach": [false],
         "time_computation": [false],
         "train_computation": false,

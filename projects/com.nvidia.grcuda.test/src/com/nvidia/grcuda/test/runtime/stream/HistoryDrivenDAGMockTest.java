@@ -55,12 +55,12 @@ public class HistoryDrivenDAGMockTest {
     }
 
     @Test
-    public void MinMaxSerialHistoryDrivenForkJoinWithTwoGPUTest() throws UnsupportedTypeException {
+    public void ParallelHistoryDrivenForkJoinWithTwoGPUTest() throws UnsupportedTypeException {
         int numGPU = 2;
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
                 .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.MULTIGPU_DISJOINT)
-                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MINMAX_SERIAL_HISTORY_DRIVEN)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.PARALLEL_HISTORY_DRIVEN)
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
         executeMockComputationAndValidate(forkJoinMockComputationWithTime(context),
@@ -88,7 +88,7 @@ public class HistoryDrivenDAGMockTest {
         AsyncGrCUDAExecutionContext context = new GrCUDAExecutionContextMockBuilder()
                 .setRetrieveNewStreamPolicy(this.retrieveNewStreamPolicy)
                 .setRetrieveParentStreamPolicy(RetrieveParentStreamPolicyEnum.DISJOINT)
-                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.MINMAX_SERIAL_HISTORY_DRIVEN)
+                .setDeviceSelectionPolicy(DeviceSelectionPolicyEnum.PARALLEL_HISTORY_DRIVEN)
                 .setDependencyPolicy(DependencyPolicyEnum.WITH_CONST)
                 .setNumberOfGPUsToUse(numGPU).setNumberOfAvailableGPUs(numGPU).build();
         executeMockComputationAndValidate(manyKernelsMockComputationWithTime(context),
