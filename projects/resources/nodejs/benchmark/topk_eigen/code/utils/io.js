@@ -20,7 +20,7 @@ const readDataset = (path, normalize) => {
         if (v_val == undefined) val.push(1)
         else val.push(v_val)
         x.push(v_x)
-        y.push(v_y - 1)
+        y.push(v_y - 1) // WHY?
     })
 
     x.shift()

@@ -183,7 +183,7 @@ class Lanczos {
      * @private
      */
     _createBuffers = () => {
-        //console.log("buffers")
+        console.log("buffers")
         this.deviceVecIn = this.matrixPartitions.map(unused => this.cu.DeviceArray(this.inputType, this.N))
         this.deviceVecInLP = this.matrixPartitions.map(unused => this.cu.DeviceArray(this.inputType, Math.round(this.N / 2)))
         this.deviceIntermediateDotProductValues = this.matrixPartitions.map(unused => this.cu.DeviceArray(this.outputType, BLOCKS))
@@ -198,7 +198,7 @@ class Lanczos {
         this.deviceVecNext = this.matrixPartitions.map(partition => this.cu.DeviceArray(this.outputType, partition.N))
         this.deviceNormalizeOut = this.matrixPartitions.map(partition => this.cu.DeviceArray(this.outputType, partition.N))
         this.deviceLanczosVectors = this.matrixPartitions.map(partition => this.cu.DeviceArray(this.outputType, partition.N * this.numEigen))
-        //console.log(" endbuffers")
+        console.log(" endbuffers")
 
         this.alpha = 0.0 //this.cu.DeviceArray(this.outputType, 1)
         this.beta = 0.0 //this.cu.DeviceArray(this.outputType, 1)
@@ -218,7 +218,7 @@ class Lanczos {
      * @private
      */
     _buildKernels = () => {
-        //console.log("buildkernels")
+        console.log("buildkernels")
         const SPMV = this.cu.buildkernel(kernelsDef.SPMV(this.inputType, this.middleType, this.inputType), "spmv", "const pointer, const pointer, const pointer, const pointer, pointer, const sint32")
         const DOT_PRODUCT = this.cu.buildkernel(kernelsDef.DOT_PRODUCT(this.inputType, this.middleType, this.outputType), "dot_product", "const pointer, const pointer, pointer, const sint32, const sint32")
         const DOT_PRODUCT_HP = this.cu.buildkernel(kernelsDef.DOT_PRODUCT(this.outputType, this.outputType, this.outputType), "dot_product", "const pointer, const pointer, pointer, const sint32, const sint32")
@@ -231,7 +231,7 @@ class Lanczos {
         const CAST_LP_HP = this.cu.buildkernel(kernelsDef.CAST(this.arrayInputType, this.inputType), "device_cast" ,"const pointer, pointer, const sint32")
         const CAST_HP_LP = this.cu.buildkernel(kernelsDef.CAST(this.inputType, this.arrayInputType), "device_cast" ,"const pointer, pointer, const sint32")
 
-        //console.log("finished buildkernels")
+        console.log("finished buildkernels")
         this.kernels = {
             SPMV,
             AXPB_XTENDED,
@@ -292,13 +292,13 @@ class Lanczos {
         const beginTime = System.nanoTime()
 
         if (this.arrayInputType != this.inputType) {
-            //console.log("cast1")
+            console.log("cast1")
             this._launchPartitionKernel(
                 "CAST_HP_LP",
                 DEFAULT_KERNEL_CONFIG,
                 [this.deviceCooVal, this.deviceCooValLP, nnzs]
             )
-            //console.log("cast2")
+            console.log("cast2")
             this._launchPartitionKernel(
                 "CAST_HP_LP",
                 DEFAULT_KERNEL_CONFIG,
@@ -310,7 +310,7 @@ class Lanczos {
                 DEFAULT_KERNEL_CONFIG,
                 [this.deviceCooX, this.deviceCooY, this.deviceCooValLP, this.deviceVecInLP, this.deviceVecOutSpmv, nnzs]
             )
-            //console.log("spmv", this.deviceVecOutSpmv[0][0])
+            console.log("spmv", this.deviceVecOutSpmv[0][0])
 
             this._launchPartitionKernel(
                 "DOT_PRODUCT",
@@ -324,7 +324,7 @@ class Lanczos {
                 DEFAULT_KERNEL_CONFIG,
                 [this.deviceCooX, this.deviceCooY, this.deviceCooVal, this.deviceVecIn, this.deviceVecOutSpmv, nnzs]
             )
-            //console.log("spmv", this.deviceVecOutSpmv[0][0])
+            console.log("spmv", this.deviceVecOutSpmv[0][0])
 
             this._launchPartitionKernel(
                 "DOT_PRODUCT",
@@ -332,13 +332,13 @@ class Lanczos {
                 [this.deviceVecOutSpmv, this.deviceVecIn, this.alphaIntermediate, Ns, offsets]
             )
 
-            //console.log("dp2", this.alphaIntermediate[0][0])
+            console.log("dp2", this.alphaIntermediate[0][0])
 
         }
 
         this.alpha = this.alphaIntermediate.reduce((acc, cur) => acc + cur[0], 0.0)
         this.tridiagonalMatrix.push(this.alpha)
-        //console.log("alpha")
+        console.log("alpha")
 
         if (this.arrayInputType != this.inputType) {
             this._launchPartitionKernel(
@@ -354,7 +354,7 @@ class Lanczos {
                 [Array(this.numPartitions).fill(-this.alpha), this.deviceVecIn, this.deviceVecOutSpmv, Array(this.numPartitions).fill(0), this.deviceLanczosVectors, this.deviceVecNext, Ns, offsets, Array(this.numPartitions).fill(0)]
             )
         }
-        //console.log("axpb")
+        console.log("axpb")
 
         for (let i = 1; i < this.numEigen; ++i) {
 
@@ -366,7 +366,7 @@ class Lanczos {
             )
 
 
-            //console.log("l2_norm", this.betaIntermediate[0][0])
+            console.log("l2_norm", this.betaIntermediate[0][0])
 
             this.beta = Math.sqrt(this.betaIntermediate.reduce((acc, cur) => acc + cur[0], 0.0))
             this.tridiagonalMatrix.push(this.beta)
@@ -377,7 +377,7 @@ class Lanczos {
                 DEFAULT_KERNEL_CONFIG,
                 [this.deviceVecNext, Array(this.numPartitions).fill(1 / this.beta), this.deviceNormalizeOut, Ns]
             )
-            //console.log("norm")
+            console.log("norm")
 
             // Copy vec in to lancsoz vectors
             if (this.arrayInputType != this.inputType) {
@@ -393,7 +393,7 @@ class Lanczos {
                     [this.deviceVecIn, this.deviceLanczosVectors, Ns, Ns.map(N => N * (i - 1)), offsets]
                 )
             }
-            //console.log("copy")
+            console.log("copy")
 
 
             // Copy deviceNormalizedOut slicewise, by rotating pointers that refer to a certain partition
@@ -406,7 +406,7 @@ class Lanczos {
                         DEFAULT_KERNEL_CONFIG,
                         [deviceNormalizedOutTmp, this.deviceVecInLP, Ns, offsets, Array(this.numPartitions).fill(0)]
                     )
-                    //console.log("copytoVecIn")
+                    console.log("copytoVecIn")
 
                     let lastVector = this.deviceVecInLP.pop()
                     this.deviceVecInLP.unshift(lastVector)
@@ -417,7 +417,7 @@ class Lanczos {
                         DEFAULT_KERNEL_CONFIG,
                         [deviceNormalizedOutTmp, this.deviceVecIn, Ns, offsets, Array(this.numPartitions).fill(0)]
                     )
-                    //console.log("copytoVecIn")
+                    console.log("copytoVecIn")
 
 
                     let lastVector = this.deviceVecIn.pop()
@@ -432,7 +432,7 @@ class Lanczos {
                     DEFAULT_KERNEL_CONFIG,
                     [this.deviceCooX, this.deviceCooY, this.deviceCooValLP, this.deviceVecInLP, this.deviceVecOutSpmv, nnzs]
                 )
-                //console.log("spmv")
+                console.log("spmv")
 
                 this._launchPartitionKernel(
                     "DOT_PRODUCT",
@@ -445,7 +445,7 @@ class Lanczos {
                     DEFAULT_KERNEL_CONFIG,
                     [this.deviceCooX, this.deviceCooY, this.deviceCooVal, this.deviceVecIn, this.deviceVecOutSpmv, nnzs]
                 )
-                //console.log("spmv")
+                console.log("spmv")
 
                 this._launchPartitionKernel(
                     "DOT_PRODUCT",
@@ -454,7 +454,7 @@ class Lanczos {
                 )
             }
 
-            //console.log("dp2", this.alphaIntermediate[0][0])
+            console.log("dp2", this.alphaIntermediate[0][0])
 
             this.alpha = this.alphaIntermediate.reduce((acc, cur) => acc + cur[0], 0.0)
             this.tridiagonalMatrix.push(this.alpha)
@@ -473,7 +473,7 @@ class Lanczos {
                 )
             }
 
-            //console.log("axpb")
+            console.log("axpb")
 
             if (this.reorthogonalize) {
                 for (let j = 0; j < i; ++j) {
@@ -484,7 +484,7 @@ class Lanczos {
                         [this.deviceVecNext, this.deviceLanczosVectors, this.alphaIntermediateHP, Ns, Ns.map(N => N * j)]
                     )
              
-                    //console.log("dp2")
+                    console.log("dp2")
 
                     this.alphaHP = this.alphaIntermediateHP.reduce((acc, cur) => acc + cur[0], 0)
 
@@ -493,7 +493,7 @@ class Lanczos {
                         [BLOCKS, THREADS_PER_BLOCK],
                         [this.deviceVecNext, this.deviceLanczosVectors, Array(this.numPartitions).fill(this.alpha), Ns, Ns]
                     )
-                    //console.log("sub")
+                    console.log("sub")
 
 
                 }

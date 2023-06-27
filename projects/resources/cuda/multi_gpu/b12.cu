@@ -34,6 +34,7 @@
 void read_matrix(const std::string file_path, i32 &N, i32 &M, i32 &NNZ, std::vector<i32> &x, std::vector<i32> &y,
                  std::vector<f32> &val) {
     std::ifstream input(file_path);
+    std::cout<< input.good() << std::endl;
     std::string cur_line;
     int cur_x, cur_y;
 
@@ -304,6 +305,7 @@ void Benchmark12M::load_matrix(bool normalize = false) {
     y_mem = (i32 *) std::malloc(nnz * sizeof(i32));
     val_mem = (f32 *) std::malloc(nnz * sizeof(f32));
 
+    // std::vector.data() returns a pointer to memory used for the vector
     std::memcpy(x_mem, x.data(), nnz * sizeof(i32));
     std::memcpy(y_mem, y.data(), nnz * sizeof(i32));
     std::memcpy(val_mem, val.data(), nnz * sizeof(f32));
