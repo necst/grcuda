@@ -1,5 +1,6 @@
 const {
     fillWith,
+    fillWithConst,
     arrayNormalize,
     launchKernel,
     take,
@@ -148,8 +149,8 @@ class Lanczos {
         })
 
 
-        fillWith(this.vecsIn[0], Math.random)
-        arrayNormalize(this.vecsIn[0])
+        fillWithConst(this.vecsIn[0], 1 / this.N)
+        //arrayNormalize(this.vecsIn[0])
         for (let i = 1; i < this.numPartitions; ++i) {
             copy(this.vecsIn[0], this.vecsIn[i])
         }
@@ -513,9 +514,9 @@ class Lanczos {
      * @returns {Lanczos} the instance itself for chaining
      */
     reset = () => {
-        fillWith(this.deviceVecIn[0], Math.random)
+        fillWithConst(this.deviceVecIn[0], 1 / this.N )
         fillWith(this.deviceVecOutSpmv[0], () => { return 0 })
-        arrayNormalize(this.deviceVecIn[0])
+        //arrayNormalize(this.deviceVecIn[0])
 
         for (let i = 1; i < this.numPartitions; ++i) {
             copy(this.deviceVecIn[0], this.deviceVecIn[i])
@@ -524,6 +525,15 @@ class Lanczos {
         for (let i = 1; i < this.numPartitions; ++i) {
             copy(this.deviceVecOutSpmv[0], this.deviceVecOutSpmv[i])
         }
+
+        // reset all
+        this.alpha = 0.0 
+        this.beta = 0.0
+        //this.matrixPartitions.forEach((partition, i) => { arrayMemset(this.alphaIntermediate[i], 1, 0) })
+        //this.matrixPartitions.forEach((partition, i) => { arrayMemset(this.betaIntermediate[i], 1, 0) })
+        this.matrixPartitions.forEach((partition, i) => { arrayMemset(this.deviceVecNext[i], partition.N, 0) })
+        this.matrixPartitions.forEach((partition, i) => { arrayMemset(this.deviceNormalizeOut[i], partition.N, 0) })
+        //this.matrixPartitions.forEach((partition, i) => { arrayMemset(this.deviceLanczosVectors[i], partition.N * this.numEigen, 0) })
 
         return this
     }
@@ -535,8 +545,13 @@ class Lanczos {
      */
     printResults = () => {
         const accuracyOrth = Math.abs((this.computeAccuracy() * 180 / Math.PI) - 90)
-        process.stdout.write(`${this.matrixName},${this.numEigen},${this.iteration},${accuracyOrth},${this.executionTime}`)
+        //process.stdout.write(`${this.matrixName},${this.numEigen},${this.iteration},${accuracyOrth},${this.executionTime}`)
         //console.log(`${this.matrixName},${this.N},${this.nnz},${this.numEigen},${this.iteration},${this.executionTime / 1000},${this.numPartitions}`)
+        for (let i = 0; i < this.numEigen * 2 - 1; ++i) {
+            let r = this.tridiagonalMatrix[i];
+            process.stdout.write(i + " -> " + r + ", " )
+        }
+        console.log("")
         return this
     }
 

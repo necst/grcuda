@@ -10,6 +10,12 @@ const fillWith = (array, fillFn) => {
     }
 }
 
+const fillWithConst = (array, fill) => {
+    for (let i = 0; i < array.length; ++i) {
+        array[i] = fill
+    }
+}
+
 const dotProduct = (v1, v2) => {
     let acc = 0.0;
 
