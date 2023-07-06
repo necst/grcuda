@@ -10,7 +10,7 @@ const cooMatrix = readDataset(process.argv[2], true)
 const numEigen = parseInt(process.argv[3])
 const numRuns = parseInt(process.argv[4])
 const numPartitions = parseInt(process.argv[5])
-const reorthogonalize = process.argv[6] === "true"
+const reorthogonalize = process.argv[6] === "false"
 const debug = process.argv[7] === "true"
 
 const input = process.argv[8] || "float"
@@ -30,7 +30,7 @@ for (let i = 0; i < numRuns; ++i) {
     lanczosKernel
         .compute(i)
         .printResults()
-
+/* 
     jacobiKernel
         .build(lanczosKernel.tridiagonalMatrix)
         .compute()
@@ -43,9 +43,9 @@ for (let i = 0; i < numRuns; ++i) {
             jacobiKernel.matrix,
             jacobiKernel.eigenvectors
         )
-
+ */
     lanczosKernel.reset()
-    jacobiKernel.reset()
+    //jacobiKernel.reset()
 }
 
 lanczosKernel.free()
