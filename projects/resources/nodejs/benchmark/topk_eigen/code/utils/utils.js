@@ -16,6 +16,13 @@ const fillWithConst = (array, fill) => {
     }
 }
 
+const printArray = (array) => {
+    for (let i = 0; i < array.length; ++i) {
+        process.stdout.write(array[i] + " ")
+    }
+    console.log("array lenght: " + array.length)
+}
+
 const dotProduct = (v1, v2) => {
     let acc = 0.0;
 
@@ -159,6 +166,7 @@ const spmvCoo = (cooMatrix, vIn, N, nnz) => {
 
 module.exports = {
     fillWith,
+    fillWithConst,
     arrayNormalize,
     arrayMemset,
     copy,
@@ -167,5 +175,6 @@ module.exports = {
     createMatrix, 
     dotProduct, 
     matmul, 
-    spmvCoo
+    spmvCoo,
+    printArray
 }
