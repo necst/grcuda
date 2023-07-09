@@ -1,11 +1,13 @@
 const {
     fillWith,
+    fillWithConst,
     arrayNormalize,
     launchKernel,
     take,
     dotProduct,
     matmul,
-    spmvCoo
+    spmvCoo,
+    printArray
 } = require("../utils/utils.js")
 //console.log = () => {}
 const kernelsDef = require("../utils/kernels.js");
@@ -148,8 +150,8 @@ class Lanczos {
         })
 
 
-        fillWith(this.vecsIn[0], Math.random)
-        arrayNormalize(this.vecsIn[0])
+        fillWithConst(this.vecsIn[0], 1 / this.N)
+        //arrayNormalize(this.vecsIn[0])
         for (let i = 1; i < this.numPartitions; ++i) {
             copy(this.vecsIn[0], this.vecsIn[i])
         }
@@ -273,12 +275,55 @@ class Lanczos {
      * @returns {Lanczos} the instance itself for chaining
      */
     compute = (iteration) => {
-        // console.log("compute")
+
+        console.log("Before computation: ")
+
+            // console.log("VecIn")    
+            // printArray(this.deviceVecIn[0])
+            // //console.log(this.deviceVecIn.length)
+            
+        
+        
+            // console.log("VecOutSpmv")
+        
+            // printArray(this.deviceVecOutSpmv)
+            // //console.log(this.deviceVecOutSpmv.length)
+        
+
+            // console.log("VecNext")
+        
+            // printArray(this.deviceVecNext)
+            // //console.log(this.deviceVecNext.length)
+        
+
+            // console.log("alphaIntermediate")
+        
+            // printArray(this.alphaIntermediate)
+            // //console.log(this.alphaIntermediate.length)
+        
+
+            // console.log("betaIntermediate")
+        
+            // printArray(this.betaIntermediate)
+            // //console.log(this.betaIntermediate.length)
+        
+
+            // console.log("LanczosVectors")
+        
+            // printArray(this.deviceLanczosVectors)
+            // //console.log(this.deviceLanczosVectors.length)
+    
+        
+        
+
+        console.log("Start computation")
+
         this.iteration = iteration
         this.tridiagonalMatrix = []
 
         const nnzs = this.matrixPartitions.map(p => p.size)
         const Ns = this.matrixPartitions.map(p => p.N)
+
         const offsets = [0]
         for (let i = 1; i < this.numPartitions; ++i) {
             offsets.push(this.matrixPartitions[i - 1].N + offsets[i - 1])
@@ -319,12 +364,48 @@ class Lanczos {
             )
         } else {
 
+            /*
+            for (let i = 0; i < this.numPartitions; i++){
+                console.log("coo x : ", i)
+                printArray(this.deviceCooX[i]);
+            } 
+
+            for (let i = 0; i < this.numPartitions; i++){
+                console.log("coo y : ", i)
+                printArray(this.deviceCooY[i]);
+            } 
+
+            for (let i = 0; i < this.numPartitions; i++){
+                console.log("coo val : ", i)
+                printArray(this.deviceCooVal[i]);
+            }  
+            */
+
+
             this._launchPartitionKernel(
                 "SPMV",
                 DEFAULT_KERNEL_CONFIG,
                 [this.deviceCooX, this.deviceCooY, this.deviceCooVal, this.deviceVecIn, this.deviceVecOutSpmv, nnzs]
-            )
-            console.log("spmv", this.deviceVecOutSpmv[0][0])
+            )  
+
+            
+/*          for (let i = 0; i < this.numPartitions; i++){
+                console.log("vec in : ", i)
+                printArray(this.deviceVecIn[i]);
+            } 
+
+            for (let i = 0; i < this.numPartitions; i++){
+                console.log("alpha intermediate: ", i)
+                printArray(this.alphaIntermediate[i]);
+            }  
+
+            console.log("Ns: ")
+            printArray(Ns);
+
+            console.log("offsets: ")
+            printArray(offsets); */
+            
+            
 
             this._launchPartitionKernel(
                 "DOT_PRODUCT",
@@ -332,13 +413,19 @@ class Lanczos {
                 [this.deviceVecOutSpmv, this.deviceVecIn, this.alphaIntermediate, Ns, offsets]
             )
 
-            console.log("dp2", this.alphaIntermediate[0][0])
+/*             
+            for (let i = 0; i < this.numPartitions; i++){
+                console.log("alpha intermediate: ", i)
+                printArray(this.alphaIntermediate[i]);
+            } */  
+ 
+            //console.log("dp2", this.alphaIntermediate[0][0])
 
         }
 
         this.alpha = this.alphaIntermediate.reduce((acc, cur) => acc + cur[0], 0.0)
         this.tridiagonalMatrix.push(this.alpha)
-        console.log("alpha")
+        //console.log("alpha")
 
         if (this.arrayInputType != this.inputType) {
             this._launchPartitionKernel(
@@ -354,7 +441,7 @@ class Lanczos {
                 [Array(this.numPartitions).fill(-this.alpha), this.deviceVecIn, this.deviceVecOutSpmv, Array(this.numPartitions).fill(0), this.deviceLanczosVectors, this.deviceVecNext, Ns, offsets, Array(this.numPartitions).fill(0)]
             )
         }
-        console.log("axpb")
+        //console.log("axpb")
 
         for (let i = 1; i < this.numEigen; ++i) {
 
@@ -366,7 +453,7 @@ class Lanczos {
             )
 
 
-            console.log("l2_norm", this.betaIntermediate[0][0])
+            //console.log("l2_norm", this.betaIntermediate[0][0])
 
             this.beta = Math.sqrt(this.betaIntermediate.reduce((acc, cur) => acc + cur[0], 0.0))
             this.tridiagonalMatrix.push(this.beta)
@@ -377,7 +464,7 @@ class Lanczos {
                 DEFAULT_KERNEL_CONFIG,
                 [this.deviceVecNext, Array(this.numPartitions).fill(1 / this.beta), this.deviceNormalizeOut, Ns]
             )
-            console.log("norm")
+            //console.log("norm")
 
             // Copy vec in to lancsoz vectors
             if (this.arrayInputType != this.inputType) {
@@ -393,7 +480,7 @@ class Lanczos {
                     [this.deviceVecIn, this.deviceLanczosVectors, Ns, Ns.map(N => N * (i - 1)), offsets]
                 )
             }
-            console.log("copy")
+            //console.log("copy")
 
 
             // Copy deviceNormalizedOut slicewise, by rotating pointers that refer to a certain partition
@@ -417,7 +504,7 @@ class Lanczos {
                         DEFAULT_KERNEL_CONFIG,
                         [deviceNormalizedOutTmp, this.deviceVecIn, Ns, offsets, Array(this.numPartitions).fill(0)]
                     )
-                    console.log("copytoVecIn")
+                    //console.log("copytoVecIn")
 
 
                     let lastVector = this.deviceVecIn.pop()
@@ -440,12 +527,23 @@ class Lanczos {
                     [this.deviceVecOutSpmv, this.deviceVecInLP, this.alphaIntermediate, Ns, offsets]
                 )
             } else {
+
+                for (let i = 0; i < this.numPartitions; i++){
+                    console.log("vec in : ", i)
+                    printArray(this.deviceVecIn[i]);
+                }
+
+                for (let i = 0; i < this.numPartitions; i++){
+                    console.log("vec out : ", i)
+                    printArray(this.deviceVecOutSpmv[i]);
+                }
+
                 this._launchPartitionKernel(
                     "SPMV",
                     DEFAULT_KERNEL_CONFIG,
                     [this.deviceCooX, this.deviceCooY, this.deviceCooVal, this.deviceVecIn, this.deviceVecOutSpmv, nnzs]
                 )
-                console.log("spmv")
+                //console.log("spmv")
 
                 this._launchPartitionKernel(
                     "DOT_PRODUCT",
@@ -454,9 +552,10 @@ class Lanczos {
                 )
             }
 
-            console.log("dp2", this.alphaIntermediate[0][0])
+            //console.log("dp2", this.alphaIntermediate[0][0])
 
             this.alpha = this.alphaIntermediate.reduce((acc, cur) => acc + cur[0], 0.0)
+            console.log("alpha: " + this.alpha + " ,iter: " + i)
             this.tridiagonalMatrix.push(this.alpha)
 
             if (this.arrayInputType != this.inputType) {
@@ -473,7 +572,7 @@ class Lanczos {
                 )
             }
 
-            console.log("axpb")
+            //console.log("axpb")
 
             if (this.reorthogonalize) {
                 for (let j = 0; j < i; ++j) {
@@ -513,9 +612,9 @@ class Lanczos {
      * @returns {Lanczos} the instance itself for chaining
      */
     reset = () => {
-        fillWith(this.deviceVecIn[0], Math.random)
+        fillWithConst(this.deviceVecIn[0], 1 / this.N )
         fillWith(this.deviceVecOutSpmv[0], () => { return 0 })
-        arrayNormalize(this.deviceVecIn[0])
+        //arrayNormalize(this.deviceVecIn[0])
 
         for (let i = 1; i < this.numPartitions; ++i) {
             copy(this.deviceVecIn[0], this.deviceVecIn[i])
@@ -524,6 +623,16 @@ class Lanczos {
         for (let i = 1; i < this.numPartitions; ++i) {
             copy(this.deviceVecOutSpmv[0], this.deviceVecOutSpmv[i])
         }
+
+        // reset all
+        this.alpha = 0.0 
+        this.beta = 0.0
+        //this.matrixPartitions.forEach((partition, i) => { arrayMemset(this.alphaIntermediate[i], 1, 0) })
+        //this.matrixPartitions.forEach((partition, i) => { arrayMemset(this.betaIntermediate[i], 1, 0) })
+        this.matrixPartitions.forEach((partition, i) => { arrayMemset(this.deviceVecNext[i], partition.N, 0) })
+        this.matrixPartitions.forEach((partition, i) => { arrayMemset(this.deviceNormalizeOut[i], partition.N, 0) })
+        this.matrixPartitions.forEach((partition, i) => { arrayMemset(this.deviceVecOutSpmv[i], partition.N, 0) })
+        //this.matrixPartitions.forEach((partition, i) => { arrayMemset(this.deviceLanczosVectors[i], partition.N * this.numEigen, 0) })
 
         return this
     }
@@ -535,7 +644,7 @@ class Lanczos {
      */
     printResults = () => {
         const accuracyOrth = Math.abs((this.computeAccuracy() * 180 / Math.PI) - 90)
-        process.stdout.write(`${this.matrixName},${this.numEigen},${this.iteration},${accuracyOrth},${this.executionTime}`)
+        //process.stdout.write(`${this.matrixName},${this.numEigen},${this.iteration},${accuracyOrth},${this.executionTime}`)
         //console.log(`${this.matrixName},${this.N},${this.nnz},${this.numEigen},${this.iteration},${this.executionTime / 1000},${this.numPartitions}`)
         for (let i = 0; i < this.numEigen * 2 - 1; ++i) {
             let r = this.tridiagonalMatrix[i];
