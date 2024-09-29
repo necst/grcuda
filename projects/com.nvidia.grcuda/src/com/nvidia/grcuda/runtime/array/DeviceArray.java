@@ -41,6 +41,7 @@ import com.nvidia.grcuda.runtime.executioncontext.AbstractGrCUDAExecutionContext
 import com.nvidia.grcuda.runtime.LittleEndianNativeArrayView;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayReadExecution;
 import com.nvidia.grcuda.runtime.computation.arraycomputation.DeviceArrayWriteExecution;
+import com.nvidia.grcuda.runtime.CUDARuntime.MemAdviseFlagEnum;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Cached.Shared;
@@ -75,6 +76,11 @@ public class DeviceArray extends AbstractArray implements TruffleObject {
         this.nativeView = allocateMemory();
         // Register the array in the AsyncGrCUDAExecutionContext;
         this.registerArray();
+        this.setPreferredLocation(-1);
+    }
+
+    private void setPreferredLocation(int location) {
+        this.grCUDAExecutionContext.getCudaRuntime().cudaMemAdvise(this, location, MemAdviseFlagEnum.CUDA_MEM_ADVISE_SET_PREFERRED_LOCATION);
     }
 
     /**

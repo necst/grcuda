@@ -699,6 +699,16 @@ public final class CUDARuntime {
         }
     }
 
+    public void cudaMemAdvise(AbstractArray array, int device, MemAdviseFlagEnum cudaMemoryAdvise) {
+        try {
+            Object callable = CUDARuntimeFunction.CUDA_MEM_ADVISE.getSymbol(this);
+            Object result = INTEROP.execute(callable, array.getPointer(), array.getSizeBytes(), cudaMemoryAdvise.id, device);
+            checkCUDAReturnCode(result, "cudaMemAdvise");
+        } catch (InteropException e) {
+            throw new GrCUDAException(e);
+        }
+    }
+
     public enum MemAdviseFlagEnum {
         CUDA_MEM_ADVISE_SET_READ_MOSTLY(1),
         CUDA_MEM_ADVISE_UNSET_READ_MOSTLY(2),
