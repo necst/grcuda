@@ -68,11 +68,17 @@ public class TestBenchmarks{
         br.readLine(); // discard "name" at the beginning of the output
         while((line=br.readLine())!=null){
             GPU g = GPU.valueOfName(line);
-            assertNotEquals("There is no configuration file for the current GPU model, please add it and modify the GPU enum in TestBenchmarks.java",null, g);
-            detectedGPUS.add(g);
+            // assertNotEquals("There is no configuration file for the current GPU model, please add it and modify the GPU enum in TestBenchmarks.java",null, g);
+            if(g == null){
+                detectedGPUS.add(GPU.fallback_2gpu);
+            }else{
+                detectedGPUS.add(g);
+            }
+            
         }
-        assertEquals(1, detectedGPUS.size());
+        // assertEquals(1, detectedGPUS.size());
         this.currentGPU = detectedGPUS.iterator().next();
+        // System.out.println(this.currentGPU);
     }
 
     @Test
@@ -130,6 +136,22 @@ public class TestBenchmarks{
 
         iterateAllPossibleConfig(parsedConfig);
     }
+
+    @Test
+    public void runAll_fallback_2gpu() throws FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, JsonProcessingException {
+        // Ensure the current GPU does not match any of the GPUs defined in the enum
+        assumeTrue(this.currentGPU.equals(GPU.fallback_2gpu));
+
+        // get the configuration for the selected GPU into a Config class
+        String CONFIG_PATH = PATH + "/config_fallback.json";
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonReader reader = new JsonReader(new FileReader(CONFIG_PATH));
+        Config parsedConfig = gson.fromJson(reader, Config.class);
+        //System.out.println(gson.toJson(parsedConfig)); // print the current configuration
+
+        iterateAllPossibleConfig(parsedConfig);
+    }
+
 
     /*
     This method reflects the pattern of benchmark_wrapper.py present in the python suite.
@@ -250,9 +272,10 @@ public class TestBenchmarks{
 
 enum GPU {
     GTX1660_SUPER("GeForce GTX 1660 SUPER"),
-    A100("NVIDIA A100-SXM4-40GB"),
+    A100("NVIDIA A100-SXM4-40GB"), // OCI: NVIDIA A100-SXM4-40GB / LEONARDO: NVIDIA A100-SXM-64GB
     V100("Tesla V100-SXM2-16GB"),
-    GTX960("GeForce GTX 960");
+    GTX960("GeForce GTX 960"),
+    fallback_2gpu("null");
 
     public final String name;
 
