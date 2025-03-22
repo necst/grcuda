@@ -175,7 +175,7 @@ If you want to build GrCUDA yourself, instead of using an existing release, you 
 This section contains all the steps required to setup GrCUDA if your goal is to contribute to its development, or simply hack with it.
 For simplicity, let's assume that your installation is done in your home directory, `~`.
 
-If you are installing GrCUDA on a new machine, you can simply follow or execute `oci_setup/setup_machine_from_scratch.sh` first, and then `oci_setup/setup_graalvm.sh`. 
+If you are installing GrCUDA on a new machine, you can simply follow or execute `scripts/oci_setup/setup_machine_from_scratch.sh` first, and then `scripts/oci_setup/setup_graalvm.sh`. 
 Here we repeat the same steps, with additional comments. 
 The installation process has been validated with CUDA 11.4 - 11.7 and Ubuntu 20.04.
 The same `oci_setup` has a number of useful scripts to configure machines on OCI and easily use GrCUDA.
