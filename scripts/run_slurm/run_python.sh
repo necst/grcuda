@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH -A IscrC_GrOUT
-#SBATCH -p boost_usr_prod
-#SBATCH --qos boost_qos_dbg
+#SBATCH -A XXX
+#SBATCH -p XXX
+#SBATCH --qos XXX
 #SBATCH --time 00:10:00     # format: HH:MM:SS
 #SBATCH -N 1                # 1 node
 #SBATCH --gres=gpu:2        
