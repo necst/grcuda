@@ -6,7 +6,14 @@
 ## (java workloads) maven installed/configured, e.g.:
 # module load maven/3.8.4
 
-## setup env
+###################
+###### SETUP ######
+###################
+
+# INSTALL_DIR should point to the install folder of your choice (GrCUDA will be cloned there if not already present)
+# or the parent folder where grcuda's source files have been unpacked
+# i.e. if grcuda is placed in: /home/X/my_custom_install_dir/grcuda
+# INSTALL_DIR should point to /home/X/my_custom_install_dir
 export INSTALL_DIR=$HOME/cf25_grcuda ## modify as necessary
 mkdir -p $INSTALL_DIR
 

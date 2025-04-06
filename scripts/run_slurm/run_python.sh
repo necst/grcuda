@@ -18,7 +18,6 @@ mx build;
 
 ######## install ########
 mkdir -p $GRAAL_HOME/languages/grcuda;
-cp $GRCUDA_HOME/mxbuild/dists/jdk1.8/grcuda.jar $GRAAL_HOME/languages/grcuda/.;
 cp $GRCUDA_HOME/mxbuild/dists/grcuda.jar $GRAAL_HOME/languages/grcuda/.;
 cd $GRCUDA_HOME/projects/resources/connection_graph
 ./run.sh 
@@ -34,4 +33,4 @@ nvidia-smi --query-gpu=gpu_name --format=csv
 export JAVA_HOME=$GRAAL_HOME
 source $INSTALL_DIR/graalpython_venv/bin/activate
 cd $GRCUDA_HOME/projects/resources/python/benchmark
-graalpython --jvm --polyglot benchmark_wrapper.py -d -i 1
+graalpython --jvm --polyglot benchmark_wrapper_custom.py -d -i 1

@@ -2,8 +2,13 @@
 source env.sh
 
 ### GrCUDA
-# cd $INSTALL_DIR
-# git clone https://github.com/necst/grcuda.git
+cd $INSTALL_DIR
+if [ ! -d "grcuda" ]; then
+    echo "Cloning GrCUDA..."
+    git clone https://github.com/necst/grcuda.git
+else
+    echo "GrCUDA already present, skipping clone."
+fi
 
 ### GRAALVM
 cd $INSTALL_DIR
@@ -41,4 +46,5 @@ graalpython -m venv $INSTALL_DIR/graalpython_venv
 source $INSTALL_DIR/graalpython_venv/bin/activate
 graalpython -m ginstall install setuptools;
 graalpython -m ginstall install Cython;
-graalpython -m ginstall install numpy;
+graalpython -m ensurepip;
+pip install numpy==1.16.4
